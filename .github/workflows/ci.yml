@@ -41,19 +41,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup
-        uses: denoland/setup-deno@v2
-
-      - name: Build
-        run: deno task compile
-
   publish:
     runs-on: ubuntu-latest
 
