@@ -1,0 +1,3 @@
+core:
+  - changed-files:
+      - any-glob-to-any-file: core/**

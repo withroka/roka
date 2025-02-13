@@ -1,0 +1,30 @@
+{
+  "workspace": [],
+  "tasks": {
+    "test": "deno test -A --unstable-kv --doc **/*.ts",
+    "coverage": "deno task test --coverage && deno coverage --html",
+    "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",
+    "doc": "deno doc --lint --html $(find . -path '**/*.ts' -type file)",
+    "ok": "deno task lint && deno task doc && deno task test"
+  },
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended", "jsr"],
+      "include": [
+        "camelcase",
+        "default-param-last",
+        "eqeqeq",
+        "no-non-null-assertion",
+        "no-sync-fn-in-async-fn",
+        "no-throw-literal",
+        "single-var-declarator"
+      ]
+    }
+  },
+  "imports": {
+  }
+}
