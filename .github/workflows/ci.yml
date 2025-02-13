@@ -40,16 +40,3 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
-  publish:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup
-        uses: denoland/setup-deno@v2
-
-      - name: Publish (dry run)
-        run: deno publish --dry-run
