@@ -1,5 +1,6 @@
 {
   "workspace": [
+    "./core/git",
     "./core/testing"
   ],
   "tasks": {
