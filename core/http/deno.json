@@ -1,0 +1,8 @@
+{
+  "name": "@roka/http",
+  "exports": {
+    "./graphql": "./graphql.ts",
+    "./json": "./json.ts",
+    "./request": "./request.ts"
+  }
+}

@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@std/assert@^1.0.10": "1.0.11",
     "jsr:@std/assert@^1.0.11": "1.0.11",
+    "jsr:@std/async@^1.0.10": "1.0.10",
     "jsr:@std/collections@^1.0.10": "1.0.10",
     "jsr:@std/data-structures@^1.0.6": "1.0.6",
     "jsr:@std/fs@^1.0.9": "1.0.11",
@@ -10,7 +11,9 @@
     "jsr:@std/path@^1.0.8": "1.0.8",
     "jsr:@std/testing@^1.0.9": "1.0.9",
     "npm:@octokit/openapi-types@^23.0.1": "23.0.1",
-    "npm:@octokit/rest@^21.1.0": "21.1.0_@octokit+core@6.1.3"
+    "npm:@octokit/rest@^21.1.0": "21.1.0_@octokit+core@6.1.3",
+    "npm:@urql/core@^5.1.0": "5.1.0",
+    "npm:@urql/exchange-retry@^1.3.0": "1.3.0_@urql+core@5.1.0"
   },
   "jsr": {
     "@std/assert@1.0.11": {
@@ -18,6 +21,9 @@
       "dependencies": [
         "jsr:@std/internal"
       ]
+    },
+    "@std/async@1.0.10": {
+      "integrity": "2ff1b1c7d33d1416159989b0f69e59ec7ee8cb58510df01e454def2108b3dbec"
     },
     "@std/collections@1.0.10": {
       "integrity": "903af106a3d92970d74e20f7ebff77d9658af9bef4403f1dc42a7801c0575899"
@@ -49,6 +55,9 @@
     }
   },
   "npm": {
+    "@0no-co/graphql.web@1.0.13": {
+      "integrity": "sha512-jqYxOevheVTU1S36ZdzAkJIdvRp2m3OYIG5SEoKDw5NI8eVwkoI0D/Q3DYNGmXCxkA6CQuoa7zvMiDPTLqUNuw=="
+    },
     "@octokit/auth-token@5.1.2": {
       "integrity": "sha512-JcQDsBdg49Yky2w2ld20IHAlwr8d/d8N6NiOXbtuoPCqzbsiJgF633mVUw3x4mo0H5ypataQIX7SFu3yy44Mpw=="
     },
@@ -133,6 +142,20 @@
         "@octokit/openapi-types"
       ]
     },
+    "@urql/core@5.1.0": {
+      "integrity": "sha512-yC3sw8yqjbX45GbXxfiBY8GLYCiyW/hLBbQF9l3TJrv4ro00Y0ChkKaD9I2KntRxAVm9IYBqh0awX8fwWAe/Yw==",
+      "dependencies": [
+        "@0no-co/graphql.web",
+        "wonka"
+      ]
+    },
+    "@urql/exchange-retry@1.3.0_@urql+core@5.1.0": {
+      "integrity": "sha512-FLt+d81gP4oiHah4hWFDApimc+/xABWMU1AMYsZ1PVB0L0YPtrMCjbOp9WMM7hBzy4gbTDrG24sio0dCfSh/HQ==",
+      "dependencies": [
+        "@urql/core",
+        "wonka"
+      ]
+    },
     "before-after-hook@3.0.2": {
       "integrity": "sha512-Nik3Sc0ncrMK4UUdXQmAnRtzmNQTAAXmXIopizwZ1W1t8QmfJj+zL4OA2I7XPTPW5z5TDqv4hRo/JzouDJnX3A=="
     },
@@ -141,16 +164,22 @@
     },
     "universal-user-agent@7.0.2": {
       "integrity": "sha512-0JCqzSKnStlRRQfCdowvqy3cy0Dvtlb8xecj/H8JFZuCze4rwjPZQOgvFvn0Ws/usCHQFGpyr+pB9adaGwXn4Q=="
+    },
+    "wonka@6.3.4": {
+      "integrity": "sha512-CjpbqNtBGNAeyNS/9W6q3kSkKE52+FjIj7AkFlLr11s/VWGUu6a2CdYSdGxocIhIVjaW/zchesBQUKPVU69Cqg=="
     }
   },
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^1.0.11",
+      "jsr:@std/async@^1.0.10",
       "jsr:@std/collections@^1.0.10",
       "jsr:@std/path@^1.0.8",
       "jsr:@std/testing@^1.0.9",
       "npm:@octokit/openapi-types@^23.0.1",
-      "npm:@octokit/rest@^21.1.0"
+      "npm:@octokit/rest@^21.1.0",
+      "npm:@urql/core@^5.1.0",
+      "npm:@urql/exchange-retry@^1.3.0"
     ]
   }
 }
