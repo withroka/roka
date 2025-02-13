@@ -1,0 +1,6 @@
+{
+  "name": "@roka/async",
+  "exports": {
+    "./pool": "./pool.ts"
+  }
+}
