@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup
+        uses: denoland/setup-deno@v2
+
+      - name: Release packages
+        run: deno task version --release
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
