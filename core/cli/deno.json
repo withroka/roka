@@ -1,0 +1,6 @@
+{
+  "name": "@roka/cli",
+  "exports": {
+    "./config": "./config.ts"
+  }
+}
