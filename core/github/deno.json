@@ -1,0 +1,4 @@
+{
+  "name": "@roka/github",
+  "exports": "./github.ts"
+}
