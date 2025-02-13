@@ -1,0 +1,7 @@
+{
+  "name": "@roka/git",
+  "exports": {
+    ".": "./git.ts",
+    "./conventional": "./conventional.ts"
+  }
+}
