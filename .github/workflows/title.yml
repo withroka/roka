@@ -33,4 +33,9 @@ jobs:
             test
           scopes: |
             \*
+            async
+            cli
+            http
+            git
+            github
             testing
