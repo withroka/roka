@@ -33,4 +33,5 @@ jobs:
             test
           scopes: |
             \*
+            git
             testing
