@@ -1,0 +1,8 @@
+{
+  "name": "@roka/package",
+  "version": "0.0.0",
+  "exports": {
+    ".": "./package.ts",
+    "./version": "./version.ts"
+  }
+}

@@ -1,11 +1,11 @@
+import { type Git, git } from "@roka/git";
+import { conventional } from "@roka/git/conventional";
 import {
   type Config,
   getPackage,
   getWorkspace,
   type Package,
-} from "@roka/build/package";
-import { type Git, git } from "@roka/git";
-import { conventional } from "@roka/git/conventional";
+} from "@roka/package";
 import { tempDir } from "@roka/testing";
 import { assertEquals, assertRejects } from "@std/assert";
 import { join } from "@std/path/join";
@@ -58,7 +58,7 @@ Deno.test("getPackage() fails on non-Deno package", async () => {
 
 Deno.test("getPackage() returns current package", async () => {
   const pkg = await getPackage();
-  assertEquals(pkg.config.name, "@roka/build");
+  assertEquals(pkg.config.name, "@roka/package");
 });
 
 Deno.test("getPackage() returns given package", async () => {
