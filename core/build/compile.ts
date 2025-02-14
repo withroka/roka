@@ -52,10 +52,10 @@ export async function compile(
     pkg.config.compile ?? {};
   assert(main, "Compile entrypoint is required");
   const version = options?.release ? pkg.config?.version : pkg.version;
-  if (!version) {
-    throw new PackageError(`Cannot determine version for ${pkg.config.name}`);
-  }
-  const directory = join("dist", pkg.module, version);
+  const directory = version
+    ? join("dist", pkg.module, version)
+    : join("dist", pkg.module);
+  console.log(directory);
   try {
     await Deno.remove(directory, { recursive: true });
   } catch (e: unknown) {
@@ -63,7 +63,7 @@ export async function compile(
   }
   await Deno.mkdir(directory, { recursive: true });
   const config = join(directory, "deno.json");
-  pkg.config.version = version;
+  if (version) pkg.config.version = version;
   await Deno.writeTextFile(config, JSON.stringify(pkg.config, null, 2));
   const artifacts = await pool(target, async (target) => {
     const output = join(directory, target, pkg.module);
