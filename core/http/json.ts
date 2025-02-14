@@ -1,4 +1,4 @@
-import { request } from "@roka/http/request";
+import { request } from "@roka/http";
 
 /** A client for making JSON-based HTTP requests. */
 export class JsonClient {

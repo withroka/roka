@@ -1,4 +1,4 @@
-import { RequestError } from "@roka/http/request";
+import { RequestError } from "@roka/http";
 import {
   type AnyVariables,
   cacheExchange,
