@@ -36,6 +36,7 @@ jobs:
             async
             build
             cli
+            example
             git
             github
             git

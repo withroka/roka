@@ -1,0 +1,10 @@
+{
+  "name": "@roka/build",
+  "version": "0.0.0",
+  "exports": {
+    "./compile": "./compile.ts",
+    "./package": "./package.ts",
+    "./release": "./release.ts",
+    "./version": "./version.ts"
+  }
+}

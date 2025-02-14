@@ -1,12 +1,10 @@
-name: Release
+name: Bump
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
-  release:
+  bump:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +17,9 @@ jobs:
       - name: Setup
         uses: denoland/setup-deno@v2
 
-      - name: Release packages
-        run: deno task release --release
+      - name: Bump versions
+        run: deno task release --bump
         env:
+          GITHUB_ACTOR: "${{ github.actor }}"
+          GITHUB_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
