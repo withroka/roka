@@ -566,9 +566,7 @@ async function run(
   try {
     const { code, stdout, stderr } = await command.output();
     if (code !== 0) {
-      const escapedArgs = args.map((x) => `"${x.replace('"', '\\"')}"`).join(
-        " ",
-      );
+      const escapedArgs = args.map((x) => JSON.stringify(x)).join(" ");
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout)
         .split("\n")
         .map((l) => `  ${l}`);
