@@ -9,7 +9,6 @@ import {
   type Package,
   PackageError,
 } from "@roka/package";
-import { displayVersion } from "@roka/package/version";
 import { assert } from "@std/assert";
 import { format as formatBytes } from "@std/fmt/bytes";
 import { join } from "@std/path";
@@ -199,7 +198,7 @@ async function main(args: string[]) {
   const command = new Command()
     .name("version")
     .description("Manage workspace package versions.")
-    .version(await displayVersion())
+    // .version(await displayVersion())
     .arguments("[directories...:file]")
     .option("--changelog", "Prints changelog for updated packages.", {
       default: false,
