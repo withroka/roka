@@ -2,8 +2,9 @@
   "name": "@roka/http",
   "version": "0.1.0",
   "exports": {
-    "./graphql": "./graphql.ts",
+    ".": "./mod.ts",
     "./json": "./json.ts",
+    "./graphql": "./graphql.ts",
     "./request": "./request.ts"
   }
 }
