@@ -2,7 +2,7 @@ import {
   type Config,
   getPackage,
   getWorkspace,
-  Package,
+  type Package,
 } from "@roka/build/package";
 import { type Git, git } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
