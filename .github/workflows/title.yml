@@ -34,9 +34,10 @@ jobs:
           scopes: |
             \*
             async
+            build
             cli
-            http
             git
             github
             git
+            http
             testing
