@@ -2,7 +2,6 @@ import { Command, EnumType } from "@cliffy/command";
 import { pool } from "@roka/async/pool";
 import type { Permissions } from "@roka/package";
 import { getWorkspace, type Package, PackageError } from "@roka/package";
-import { displayVersion } from "@roka/package/version";
 import { assert } from "@std/assert/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
@@ -162,7 +161,7 @@ async function main(args: string[]) {
   const command = new Command()
     .name("compile")
     .description("Compile packages.")
-    .version(await displayVersion())
+    // .version(await displayVersion())
     .arguments("[directories...:file]")
     .type("target", new EnumType(await compileTargets()))
     .option("--target=<architechture:target>", "Target OS architecture.", {
