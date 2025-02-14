@@ -1,5 +1,6 @@
 import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
+import { assert } from "@std/assert";
 import { distinctBy } from "@std/collections";
 import { basename, dirname, fromFileUrl, join, normalize } from "@std/path";
 import {
@@ -105,10 +106,14 @@ export interface Config {
 
 /** Information about a package release. */
 export interface Release {
-  /** Release version. */
+  /**
+   * Release version.
+   *
+   * If there was no tag release, this will be "0.0.0".
+   */
   version: string;
-  /** Release tag. */
-  tag: Tag;
+  /** Latest release tag. */
+  tag?: Tag;
 }
 
 /** Information about a package update. */
@@ -211,7 +216,7 @@ async function getRelease(pkg: Package): Promise<Release | undefined> {
     ...await repo.tagList({ name, sort, pointsAt: "HEAD" }),
     ...await repo.tagList({ name, sort, noContains: "HEAD" }),
   ];
-  if (tag === undefined) return;
+  if (tag === undefined) return { version: "0.0.0" };
   const version = tag.name?.split("@")[1];
   if (!version || !canParseVersion(version)) {
     throw new PackageError(
@@ -222,6 +227,7 @@ async function getRelease(pkg: Package): Promise<Release | undefined> {
 }
 
 async function getUpdate(pkg: Package): Promise<Update | undefined> {
+  if (!pkg.release) return undefined;
   const log = await git({ cwd: pkg.directory }).log({
     ...pkg.release?.tag !== undefined
       ? { range: { from: pkg.release.tag } }
@@ -235,14 +241,14 @@ async function getUpdate(pkg: Package): Promise<Update | undefined> {
   }
   if (!changelog.length) return undefined;
   const type = (changelog.some((c) => c.breaking) &&
-      parseVersion(pkg.release?.version ?? "0.0.0").major > 0)
+      parseVersion(pkg.release.version).major > 0)
     ? "major"
     : (changelog.some((c) => c.type === "feat") ||
         changelog.some((c) => c.breaking))
     ? "minor"
     : "patch";
   const version = formatVersion({
-    ...incrementVersion(parseVersion(pkg.release?.version ?? "0.0.0"), type),
+    ...incrementVersion(parseVersion(pkg.release.version), type),
     ...changelog[0] &&
       { prerelease: [`pre.${changelog.length}`], build: [changelog[0].short] },
   });
@@ -250,8 +256,10 @@ async function getUpdate(pkg: Package): Promise<Update | undefined> {
 }
 
 function forcedUpdate(pkg: Package): Update {
-  const oldVersion = parseVersion(pkg.release?.version ?? "0.0.0");
-  const newVersion = parseVersion(pkg.config.version ?? "0.0.0");
+  assert(pkg.release?.version, "Cannot force update without prior a version");
+  assert(pkg.config.version, "Cannot force update without target a version");
+  const oldVersion = parseVersion(pkg.release.version);
+  const newVersion = parseVersion(pkg.config.version);
   if (lessThan(newVersion, oldVersion)) {
     throw new PackageError("Cannot force update to an older version");
   }
