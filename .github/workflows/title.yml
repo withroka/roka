@@ -34,11 +34,12 @@ jobs:
           scopes: |
             \*
             async
-            build
             cli
             example
+            forge
+            git
             git
             github
-            git
             http
+            package
             testing
