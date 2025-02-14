@@ -1,3 +1,6 @@
+example:
+  - changed-files:
+      - any-glob-to-any-file: app/example/**
 core:
   - changed-files:
       - any-glob-to-any-file: core/**
