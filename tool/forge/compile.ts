@@ -55,7 +55,6 @@ export async function compile(
   const directory = version
     ? join("dist", pkg.module, version)
     : join("dist", pkg.module);
-  console.log(directory);
   try {
     await Deno.remove(directory, { recursive: true });
   } catch (e: unknown) {
