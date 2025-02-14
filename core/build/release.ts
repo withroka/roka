@@ -24,10 +24,10 @@ function changelogText(pkg: Package): string {
 
 async function releaseBody(pkg: Package): Promise<string> {
   assert(pkg.version, "Cannot release a package without version");
-  const title = pkg.release ? "Changelog" : "Initial release";
+  const title = pkg.release?.tag ? "Changelog" : "Initial release";
   const repo = await github().repo();
   const tag = `${pkg.module}@${pkg.version}`;
-  const fullChangelogUrl = pkg?.release
+  const fullChangelogUrl = pkg?.release?.tag
     ? `compare/${pkg.release.tag.name}...${tag}`
     : `commits/${tag}/${pkg.directory}`;
   return [
