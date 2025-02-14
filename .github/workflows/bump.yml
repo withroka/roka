@@ -18,7 +18,7 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Bump versions
-        run: deno task release --bump
+        run: deno task package --bump
         env:
           GITHUB_ACTOR: "${{ github.actor }}"
           GITHUB_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
