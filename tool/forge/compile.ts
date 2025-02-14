@@ -1,11 +1,11 @@
 import { Command, EnumType } from "@cliffy/command";
 import { pool } from "@roka/async/pool";
+import type { Permissions } from "@roka/package";
 import { getWorkspace, type Package, PackageError } from "@roka/package";
 import { displayVersion } from "@roka/package/version";
 import { assert } from "@std/assert/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
-import type { Permissions } from "../../core/package/package.ts";
 
 /** Options for compiling a package. */
 export interface CompileOptions {
