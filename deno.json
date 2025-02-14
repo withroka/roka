@@ -2,17 +2,18 @@
   "workspace": [
     "./app/example",
     "./core/async",
-    "./core/build",
     "./core/cli",
     "./core/git",
     "./core/github",
     "./core/http",
-    "./core/testing"
+    "./core/package",
+    "./core/testing",
+    "./tool/forge"
   ],
   "tasks": {
-    "package": "deno run -A core/build/release.ts",
+    "forge": "deno run -A tool/forge/release.ts",
     "bump": "gh workflow run bump",
-    "compile": "deno run -A core/build/compile.ts",
+    "compile": "deno run -A tool/forge/compile.ts",
     "install": "deno task compile --install=$HOME/.local/bin",
     "test": "deno test -A --unstable-kv --doc **/*.ts",
     "coverage": "deno task test --coverage && deno coverage --html",

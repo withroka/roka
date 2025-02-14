@@ -1,11 +1,11 @@
 import { Command, EnumType } from "@cliffy/command";
 import { pool } from "@roka/async/pool";
-import { getWorkspace, type Package, PackageError } from "@roka/build/package";
-import { displayVersion } from "@roka/build/version";
+import { getWorkspace, type Package, PackageError } from "@roka/package";
+import { displayVersion } from "@roka/package/version";
 import { assert } from "@std/assert/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
-import type { Permissions } from "./package.ts";
+import type { Permissions } from "../../core/package/package.ts";
 
 /** Options for compiling a package. */
 export interface CompileOptions {
@@ -55,7 +55,6 @@ export async function compile(
   const directory = version
     ? join("dist", pkg.module, version)
     : join("dist", pkg.module);
-  console.log(directory);
   try {
     await Deno.remove(directory, { recursive: true });
   } catch (e: unknown) {

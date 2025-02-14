@@ -1,20 +1,20 @@
 import { Command } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool } from "@roka/async/pool";
-import { compile, compileTargets } from "@roka/build/compile";
+import { git, type User } from "@roka/git";
+import { github, type Repository } from "@roka/github";
 import {
   getPackage,
   getWorkspace,
   type Package,
   PackageError,
-} from "@roka/build/package";
-import { displayVersion } from "@roka/build/version";
-import { git, type User } from "@roka/git";
-import { github, type Repository } from "@roka/github";
+} from "@roka/package";
+import { displayVersion } from "@roka/package/version";
 import { assert } from "@std/assert";
 import { format as formatBytes } from "@std/fmt/bytes";
 import { join } from "@std/path";
 import { format as formatVersion, parse as parseVersion } from "@std/semver";
+import { compile, compileTargets } from "./compile.ts";
 
 const BRANCH = "automated/bump";
 
