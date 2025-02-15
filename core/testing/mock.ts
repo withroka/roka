@@ -3,35 +3,55 @@ import { omit } from "@std/collections";
 import { basename, dirname, fromFileUrl, join } from "@std/path";
 import { MockError, stub } from "@std/testing/mock";
 
-const MOCKS = "__mocks__";
-
 export { MockError } from "@std/testing/mock";
 
 /** The mode of mock. */
 export type MockMode = "replay" | "update";
 
+/** Options for mocking functions, like {@linkcode mockFetch}. */
+export interface MockOptions {
+  /**
+   * Mock output directory.
+   * @default {"__mocks__"}
+   */
+  dir?: string;
+  /**
+   * Mock mode. Defaults to {@code "replay"}, unless the `-u` or `--update` flag
+   * is passed, in which case this will be set to {@code "update"}. This option
+   * takes higher priority than the update flag.
+   */
+  mode?: MockMode;
+}
+
 type Records = Record<string, unknown[]>;
 
 class MockManager {
   static instance = new MockManager();
-  private mocks = new Map<string, { current: Records; recorded: Records }>();
+  private mocks = new Map<
+    string,
+    { options: MockOptions | undefined; current: Records; recorded: Records }
+  >();
 
   private constructor() {
     addEventListener("unload", () => this.close());
   }
 
-  async load<T>(t: Deno.TestContext, name: string) {
-    const path = MockManager.testPath(t);
+  async load<T>(
+    t: Deno.TestContext,
+    name: string,
+    options: MockOptions | undefined,
+  ) {
+    const path = MockManager.testPath(t, options);
     if (!this.mocks.has(path)) {
       try {
         const { mock } = await import(path);
-        this.mocks.set(path, { current: mock, recorded: {} });
+        this.mocks.set(path, { options, current: mock, recorded: {} });
       } catch (e: unknown) {
         if (!(e instanceof TypeError)) throw e;
-        if (getMockMode() === "replay") {
+        if (mockMode(options) === "replay") {
           throw new MockError(`Failed to load mock file: ${path}`);
         }
-        this.mocks.set(path, { current: {}, recorded: {} });
+        this.mocks.set(path, { options, current: {}, recorded: {} });
       }
     }
     const key = MockManager.testKey(t, name);
@@ -44,10 +64,15 @@ class MockManager {
     }
   }
 
-  record(t: Deno.TestContext, name: string, result: object) {
-    const path = MockManager.testPath(t);
+  record(
+    t: Deno.TestContext,
+    name: string,
+    result: object,
+    options?: MockOptions,
+  ) {
+    const path = MockManager.testPath(t, options);
     if (!this.mocks.has(path)) {
-      this.mocks.set(path, { current: {}, recorded: {} });
+      this.mocks.set(path, { options, current: {}, recorded: {} });
     }
     const records = this.mocks.get(path)?.recorded;
     assert(records, "Records not found");
@@ -56,10 +81,13 @@ class MockManager {
     records[key].push(result);
   }
 
-  private static testPath(context: Deno.TestContext) {
+  private static testPath(
+    context: Deno.TestContext,
+    options: MockOptions | undefined,
+  ) {
     return join(
       dirname(fromFileUrl(context.origin)),
-      MOCKS,
+      options?.dir ?? "__mocks__",
       `${basename(context.origin)}.mock`,
     );
   }
@@ -86,10 +114,10 @@ class MockManager {
   }
 
   private close() {
-    if (getMockMode() === "replay") return;
     const updated = [];
     const removed = [];
-    for (const [path, { current, recorded }] of this.mocks) {
+    for (const [path, { options, current, recorded }] of this.mocks) {
+      if (mockMode(options) === "replay") continue;
       removed.push(...Object.keys(current).filter((key) => !recorded[key]));
       const contents = [`export const mock = {};\n`];
       for (const [key, calls] of Object.entries(recorded)) {
@@ -131,10 +159,11 @@ class MockManager {
  * Get the mode of the mocking system. Defaults to `replay`, unless the `-u`
  * or `--update` flag is passed, in which case this will be set to `update`.
  */
-export function getMockMode(): MockMode {
-  return Deno.args.some((arg) => arg === "--update" || arg === "-u")
-    ? "update"
-    : "replay";
+function mockMode(options?: MockOptions | undefined): MockMode {
+  return options?.mode ??
+    (Deno.args.some((arg) => arg === "--update" || arg === "-u")
+      ? "update"
+      : "replay");
 }
 
 /** A mock for global fetch that records and replays responses. */
@@ -218,10 +247,10 @@ async function getResponseData(response: Response): Promise<FetchResponse> {
 /**
  * Create a mock for the global `fetch` function.
  *
- * Usage is {@link ../../std/testing/doc/snapshot/~ | @std/testing/snapshot}
- * style. Running tests with `--update` or `-u` flag will create a mock file
- * in the `__mocks__` directory, using real fetch calls. The mock file will
- * be used in subsequent test runs, when the these flags are not present.
+ * Usage is {@code @std/testing/snapshot} style. Running tests with `--update`
+ * or `-u` flag will create a mock file in the `__mocks__` directory, using real
+ * fetch calls. The mock file will be used in subsequent test runs, when the
+ * these flags are not present.
  *
  * When running tests with the mock, responses will be returned from matching
  * requests with URL and method. If no matching request is found, or, If at the
@@ -252,7 +281,10 @@ async function getResponseData(response: Response): Promise<FetchResponse> {
  * @param context The test context.
  * @returns The mock fetch instance.
  */
-export function mockFetch(context: Deno.TestContext): MockFetch {
+export function mockFetch(
+  context: Deno.TestContext,
+  options?: MockOptions,
+): MockFetch {
   let calls: FetchCall[] | undefined = undefined;
   let remaining: FetchCall[] = [];
 
@@ -266,16 +298,17 @@ export function mockFetch(context: Deno.TestContext): MockFetch {
       calls = await MockManager.instance.load<FetchCall>(
         context,
         "fetch",
+        options,
       );
       remaining = calls;
     }
-    if (getMockMode() === "update") {
+    if (mockMode(options) === "update") {
       const response = await spy.original.call(globalThis, input, init);
       call = {
         request,
         response: await getResponseData(response),
       };
-      MockManager.instance.record(context, "fetch", call);
+      MockManager.instance.record(context, "fetch", call, options);
     } else {
       const signature = getSignature(request);
       const found = remaining.find((call) =>
@@ -294,7 +327,7 @@ export function mockFetch(context: Deno.TestContext): MockFetch {
     original: spy.original,
     restore() {
       spy.restore();
-      if (getMockMode() === "replay") {
+      if (mockMode(options) === "replay") {
         if (calls === undefined) {
           throw new MockError("No fetch calls made");
         }
