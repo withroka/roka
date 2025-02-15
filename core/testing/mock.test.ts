@@ -24,6 +24,7 @@ Deno.test("mockFetch() implements spy like interface", async (t) => {
     assertEquals(response.status, 200);
     assertFalse(fetch.restored);
     await assertSnapshot(t, await response.text());
+    await assertSnapshot(t, "5");
   } finally {
     fetch.restore();
     assert(fetch.restored);
