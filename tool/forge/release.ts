@@ -115,7 +115,7 @@ async function createReleases(
     console.log("🚫 No packages to release.");
     return;
   }
-  await pool(packages, async (pkg) => {
+  for (const pkg of packages) {
     assert(pkg.config.version, "Cannot release a package without version");
     const version = parseVersion(pkg.config.version);
     const name = `${pkg.module}@${pkg.config.version}`;
@@ -155,16 +155,19 @@ async function createReleases(
         // https://github.com/denoland/deno/issues/27988
         concurrency: 1,
       });
-      await pool(artifacts.flat(), async (artifact) => {
-        const asset = await release.assets.upload(artifact);
-        console.log(
-          `🏺 Uploaded ${asset.name} (${
-            formatBytes(asset.size)
-          }) to release ${release.name} `,
-        );
-      }, { concurrency: 10 });
+      await pool(
+        artifacts.flat().map(async (artifact) => {
+          const asset = await release.assets.upload(artifact);
+          console.log(
+            `🏺 Uploaded ${asset.name} (${
+              formatBytes(asset.size)
+            }) to release ${release.name} `,
+          );
+        }),
+        { concurrency: 10 },
+      );
     }
-  });
+  }
 }
 
 function output(packages: Package[], changelog: boolean) {
