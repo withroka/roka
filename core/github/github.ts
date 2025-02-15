@@ -130,9 +130,17 @@ export interface Release {
   commit: string;
   /** Release body. */
   body: string;
-  /** Whether the release is a draft. */
+  /**
+   * Whether the release is a draft.
+   *
+   * @todo rename to `draft`
+   */
   isDraft: boolean;
-  /** Whether the release is a prerelease. */
+  /**
+   * Whether the release is a prerelease.
+   *
+   * @todo rename to `preRelease`
+   */
   isPreRelease: boolean;
   /** Update the release. */
   update(options?: UpdateReleaseOptions): Promise<Release>;
@@ -147,7 +155,11 @@ export interface Release {
   };
 }
 
-/** Options for listing releases. */
+/**
+ * Options for listing releases.
+ *
+ * @todo Add pre-relase filtering.
+ */
 export type ListReleaseOptions = Partial<
   Pick<Release, "name" | "tag" | "isDraft">
 >;

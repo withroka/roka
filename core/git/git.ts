@@ -25,7 +25,11 @@ export class GitError extends Error {
   }
 }
 
-/** A local repository with git commands. */
+/**
+ * A local repository with git commands.
+ *
+ * @todo Add {@code head()}.
+ */
 export interface Git {
   /** Local repository directory. */
   directory: string;
