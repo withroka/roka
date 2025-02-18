@@ -71,7 +71,7 @@ class MockManager {
           strAbbreviateSize: Infinity,
           trailingComma: true,
         }).replaceAll("\r", "\\r");
-        contents.push(`mock[\`${key}\`] = \n${serialized};\n`);
+        contents.push(`mock[\`${key}\`] =\n${serialized};\n`);
       }
       await Deno.mkdir(dirname(path), { recursive: true });
       await Deno.writeTextFile(path, contents.join("\n"));
