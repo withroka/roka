@@ -1,3 +1,14 @@
+/**
+ * Mock objects that can record and replay interactions in tests.
+ *
+ * The mocking system mimicks the behavior of the `@std/testing/snapshot`
+ * module. Running tests with the `--update` or `-u` flag will create a mock
+ * file in the `__mocks__` directory, using real calls. The mock file will be
+ * used in subsequent test runs, when these flags are not present.
+ *
+ * @module
+ */
+
 import { assert } from "@std/assert/assert";
 import { omit } from "@std/collections";
 import { dirname, fromFileUrl, parse, resolve, toFileUrl } from "@std/path";
@@ -16,14 +27,12 @@ export interface MockOptions {
    */
   dir?: string;
   /**
-   * Mock mode. Defaults to {@code "replay"}, unless the `-u` or `--update` flag
-   * is passed, in which case this will be set to {@code "update"}. This option
+   * Mock mode. Defaults to `"replay"`, unless the `-u` or `--update` flag
+   * is passed, in which case this will be set to `"update"`. This option
    * takes higher priority than the update flag.
    */
   mode?: MockMode;
-  /**
-   * Name of the mock to use in the mock file.
-   */
+  /** Name of the mock to use in the mock file. */
   name?: string;
   /**
    * Mock output path.
@@ -193,10 +202,6 @@ class MockManager {
   }
 }
 
-/**
- * Get the mode of the mocking system. Defaults to `replay`, unless the `-u`
- * or `--update` flag is passed, in which case this will be set to `update`.
- */
 function mockMode(options: MockOptions | undefined): MockMode {
   return options?.mode ??
     (Deno.args.some((arg) => arg === "--update" || arg === "-u")
@@ -204,19 +209,19 @@ function mockMode(options: MockOptions | undefined): MockMode {
       : "replay");
 }
 
-/** A mock for global fetch that records and replays responses. */
+/** A mock for global fetch returned by {@linkcode mockFetch}. */
 export interface MockFetch extends Disposable {
   (input: URL | Request | string, init?: RequestInit): Promise<Response>;
   /** The current mode of the mock. */
   mode: MockMode;
-  /** The function that is mocked. */
+  /** The original `fetch` function that is being mocked. */
   original: (
     input: URL | Request | string,
     init?: RequestInit,
   ) => Promise<Response>;
-  /** Whether or not the original instance method has been restored. */
+  /** Whether or not the original `fetch` has been restored. */
   restored: boolean;
-  /** If mocking an instance method, this restores the original instance method. */
+  /** Restores the original `fetch` instance. */
   restore(): void;
 }
 
@@ -287,7 +292,7 @@ async function getResponseData(response: Response): Promise<FetchResponse> {
 /**
  * Create a mock for the global `fetch` function.
  *
- * Usage is {@code @std/testing/snapshot} style. Running tests with `--update`
+ * Usage is `@std/testing/snapshot` style. Running tests with `--update`
  * or `-u` flag will create a mock file in the `__mocks__` directory, using real
  * fetch calls. The mock file will be used in subsequent test runs, when the
  * these flags are not present.
@@ -319,7 +324,6 @@ async function getResponseData(response: Response): Promise<FetchResponse> {
  * actual network calls, and the changes in mock behavior to be peer-reviewed.
  *
  * @param context The test context.
- * @returns The mock fetch instance.
  */
 export function mockFetch(
   context: Deno.TestContext,
