@@ -6,12 +6,13 @@ import {
   assertRejects,
   assertThrows,
 } from "@std/assert";
+import { STATUS_CODE } from "@std/http/status";
 import { assertSnapshot } from "@std/testing/snapshot";
 
 Deno.test("mockFetch() stubs fetch", async (t) => {
   using _fetch = mockFetch(t);
   const response = await fetch("https://example.com");
-  assertEquals(response.status, 200);
+  assertEquals(response.status, STATUS_CODE.OK);
   await assertSnapshot(t, await response.text());
 });
 
@@ -21,7 +22,7 @@ Deno.test("mockFetch() implements spy like interface", async (t) => {
   try {
     assert(fetch.original === original);
     const response = await fetch("https://example.com");
-    assertEquals(response.status, 200);
+    assertEquals(response.status, STATUS_CODE.OK);
     assertFalse(fetch.restored);
     await assertSnapshot(t, await response.text());
   } finally {
@@ -55,7 +56,11 @@ Deno.test("mockFetch() replays by method", async (t) => {
     fetch("https://example.com", { method: "GET" }),
     fetch("https://example.com", { method: "POST" }),
   ]);
-  assertEquals(responses.map((r) => r.status), [200, 200, 403]);
+  assertEquals(responses.map((r) => r.status), [
+    STATUS_CODE.OK,
+    STATUS_CODE.OK,
+    STATUS_CODE.Forbidden,
+  ]);
 });
 
 Deno.test("mockFetch() checks missing mock file", async (t) => {

@@ -1,4 +1,10 @@
-import { RequestError } from "@roka/http";
+/**
+ * GraphQL over HTTP. Useful for building GraphQL based API clients.
+ *
+ * @module
+ */
+
+import { RequestError } from "@roka/http/request";
 import {
   type AnyVariables,
   cacheExchange,
@@ -7,82 +13,88 @@ import {
 } from "@urql/core";
 import { retryExchange } from "@urql/exchange-retry";
 
-/** A GraphQL client for making queries and handling pagination. */
-export class GraphQLClient {
-  private client;
+/** A GraphQL client returned by {@linkcode client}. */
+export interface GraphQLClient {
+  /** Makes a GraphQL query. */
+  query<T>(
+    query: string,
+    variables?: Record<string, unknown>,
+  ): Promise<T>;
+  /** Makes a paginated GraphQL query, given a {@linkcode GraphQLPaginator}. */
+  queryPaginated<T, Node, Edge, PageInfo>(
+    query: string,
+    paginator: GraphQLPaginator<T, Node, Edge, PageInfo>,
+    variables?: Record<string, unknown>,
+  ): Promise<Node[]>;
+}
 
-  /**
-   * Creates an instance of GraphQLClient.
-   *
-   * @param url The URL of the GraphQL endpoint.
-   * @param options Configuration options.
-   * @param options.token Optional authorization token.
-   */
-  constructor(url: string, options: { token?: string } = {}) {
-    this.client = new Client({
-      url,
-      exchanges: [cacheExchange, retryExchange({}), fetchExchange],
-      fetchOptions: () => {
-        return {
-          headers: {
-            ...(options.token
-              ? { "Authorization": `Bearer ${options.token}` }
-              : {}),
-          },
-        };
-      },
-    });
-  }
+/** Options for {@linkcode client}. */
+export interface GraphQLClientOptions {
+  /** The bearer token to be sent with the request headers. */
+  token?: string;
+}
 
+/** A GraphQL paginator taht traverses response data to generate pages. */
+export interface GraphQLPaginator<T, Node, Edge, PageInfo> {
+  /** Extracts edges from the response data. */
+  edges(data: T): Edge[];
+  /** Extracts nodes from an edge. */
+  node(edge: Edge): Node;
+  /** Extracts an object that contains page and cursor information. */
+  pageInfo(data: T): PageInfo;
   /**
-   * Make a GraphQL query.
+   * Extracts the cursor for the next page from page information.
    *
-   * @param queryPaths An array of paths to the GraphQL query files.
-   * @param variables Optional variables for the query.
-   * @returns The query result.
-   * @throws {RequestError} If the query fails.
+   * This function must return `null` if there are no more pages.
    */
-  async query<T>(
-    queryPaths: string[],
-    variables: AnyVariables = {},
-  ): Promise<T> {
-    const query = (await Promise.all(
-      queryPaths.map(async (path) =>
-        await Deno.readTextFile(
-          new URL(`${path}.graphql`, Deno.mainModule),
-        )
-      ),
-    )).join("\n");
-    const response = await this.client.query(query, variables);
-    if (response.error) {
-      throw new RequestError(response.error.message);
-    }
-    return response.data as T;
-  }
+  cursor(pageInfo: PageInfo): string | null;
+}
 
-  /**
-   * Make a paginated GraphQL query.
-   *
-   * @param queryPaths An array of paths to the GraphQL query files.
-   * @param getEdges A function to extract edges from the query result.
-   * @param getCursor A function to extract the cursor from the query result.
-   */
-  async queryPaginated<T, U>(
-    queryPaths: string[],
-    getEdges: (data: T) => { edges: { node: U }[] },
-    getCursor: (data: T) => string | null,
-    variables: AnyVariables & { cursor?: string; limit?: number } = {},
-  ): Promise<U[]> {
-    let nodes: U[] = [];
-    let cursor: string | null = null;
-    do {
-      const data = await this.query<T>(queryPaths, { ...variables, cursor });
-      nodes = nodes.concat(getEdges(data).edges.map((edge) => edge.node));
-      cursor = getCursor(data);
-    } while (
-      cursor &&
-      (variables.limit === undefined || nodes.length < variables.limit)
-    );
-    return nodes;
-  }
+/** Creates an HTTP client for making GraphQL requests. */
+export function client(
+  url: string,
+  options?: GraphQLClientOptions,
+): GraphQLClient {
+  const client = new Client({
+    url,
+    exchanges: [cacheExchange, retryExchange({}), fetchExchange],
+    fetchOptions: () => {
+      return {
+        headers: {
+          ...options?.token && { "Authorization": `Bearer ${options.token}` },
+        },
+      };
+    },
+  });
+  return {
+    async query<T>(
+      query: string,
+      variables: Record<string, unknown> = {},
+    ): Promise<T> {
+      const response = await client.query(query, variables);
+      if (response.error) {
+        throw new RequestError(response.error.message, response.data.status);
+      }
+      return response.data as T;
+    },
+    async queryPaginated<T, Node, Edge, PageInfo>(
+      query: string,
+      paginator: GraphQLPaginator<T, Node, Edge, PageInfo>,
+      variables: AnyVariables & { cursor?: string; limit?: number } = {},
+    ): Promise<Node[]> {
+      const nodes: Node[] = [];
+      let cursor: string | null = null;
+      do {
+        const data = await this.query<T>(query, { ...variables, cursor });
+        const edges = paginator.edges(data);
+        nodes.push(...edges.map(paginator.node));
+        const pageInfo = paginator.pageInfo(data);
+        cursor = paginator.cursor(pageInfo);
+      } while (
+        cursor &&
+        (variables.limit === undefined || nodes.length < variables.limit)
+      );
+      return nodes;
+    },
+  };
 }
