@@ -19,6 +19,22 @@ export { MockError } from "@std/testing/mock";
 /** The mode of mock. */
 export type MockMode = "replay" | "update";
 
+/** A mock for global fetch returned by {@linkcode mockFetch}. */
+export interface MockFetch extends Disposable {
+  (input: URL | Request | string, init?: RequestInit): Promise<Response>;
+  /** The current mode of the mock. */
+  mode: MockMode;
+  /** The original `fetch` function that is being mocked. */
+  original: (
+    input: URL | Request | string,
+    init?: RequestInit,
+  ) => Promise<Response>;
+  /** Whether or not the original `fetch` has been restored. */
+  restored: boolean;
+  /** Restores the original `fetch` instance. */
+  restore(): void;
+}
+
 /** Options for mocking functions, like {@linkcode mockFetch}. */
 export interface MockOptions {
   /**
@@ -42,6 +58,196 @@ export interface MockOptions {
    * handled as normal.
    */
   path?: string;
+}
+
+/**
+ * Create a mock for the global `fetch` function.
+ *
+ * Usage is `@std/testing/snapshot` style. Running tests with `--update`
+ * or `-u` flag will create a mock file in the `__mocks__` directory, using real
+ * fetch calls. The mock file will be used in subsequent test runs, when the
+ * these flags are not present.
+ *
+ * When running tests with the mock, responses will be returned from matching
+ * requests with URL and method. If no matching request is found, or, If at the
+ * end of the test, there are still unhandled calls, a {@link MockError} will
+ * be thrown.
+ *
+ * @example
+ * ```ts
+ * import { mockFetch } from "@roka/testing/mock";
+ * import { assertEquals } from "@std/assert";
+ *
+ * Deno.test("mockFetch", async (t) => {
+ *  using fetch = mockFetch(t);
+ *  const response = await fetch("https://example.com");
+ *  assertEquals(response.status, 200);
+ * });
+ * ```
+ *
+ * When using the mock, the `--allow-read` permission must be enabled, or else
+ * any calls to `fetch` will fail due to insufficient permissions. Additionally,
+ * when updating the mock, the `--allow-write` and `--allow-net` permissions
+ * must be enabled.
+ *
+ * The mock file that is created under the `__mocks__` directory needs to be
+ * committed to version control. This allows for tests not needing to rely on
+ * actual network calls, and the changes in mock behavior to be peer-reviewed.
+ *
+ * @param context The test context.
+ */
+export function mockFetch(
+  context: Deno.TestContext,
+  options?: MockOptions,
+): MockFetch {
+  let calls: FetchCall[] | undefined = undefined;
+  let remaining: FetchCall[] = [];
+  let errored = false;
+
+  const stubbed = stub(globalThis, "fetch", async function (
+    input: URL | Request | string,
+    init?: RequestInit,
+  ): Promise<Response> {
+    const request = requestData(input, init);
+    let call: FetchCall;
+    if (calls === undefined) {
+      let mock: FetchCall[];
+      try {
+        mock = await MockManager.instance.load<FetchCall>(
+          context,
+          "fetch",
+          options,
+        );
+      } catch (e: unknown) {
+        errored = true;
+        throw e;
+      }
+      // another call might have loaded the mock
+      if (calls === undefined) {
+        calls = mock;
+        remaining = [...mock];
+      }
+    }
+    if (mockMode(options) === "update") {
+      const response = await stubbed.original.call(globalThis, input, init);
+      call = { request, response: await responseData(response) };
+      MockManager.instance.record(context, "fetch", call, options);
+    } else {
+      const found = remaining.find((call) =>
+        signature(call.request) === signature(request)
+      );
+      if (found === undefined) {
+        errored = true;
+        throw new MockError(`No matching fetch call found: ${request.input}`);
+      }
+      remaining.splice(remaining.indexOf(found), 1);
+      call = found;
+    }
+    return new Response(call.response.body, call.response.init);
+  });
+
+  const fetch = Object.assign(stubbed.fake, {
+    mode: mockMode(options),
+    original: stubbed.original,
+    restore() {
+      stubbed.restore();
+      if (mockMode(options) === "replay" && !errored) {
+        if (calls === undefined) {
+          throw new MockError("No fetch calls made");
+        }
+        if (remaining.length > 0) {
+          throw new MockError(
+            `Unmatched fetch calls: ${
+              remaining.map((c) => signature(c.request))
+            }`,
+          );
+        }
+      }
+    },
+    [Symbol.dispose]() {
+      fetch.restore();
+    },
+  });
+
+  return Object.defineProperties(fetch, {
+    restored: {
+      enumerable: true,
+      get() {
+        return stubbed.restored;
+      },
+    },
+  }) as MockFetch;
+}
+
+interface FetchRequest {
+  input: string;
+  init?: Omit<RequestInit, "signal">;
+}
+
+interface FetchResponse {
+  init: ResponseInit;
+  body?: string;
+}
+
+interface FetchCall {
+  request: FetchRequest;
+  response: FetchResponse;
+}
+
+function signature(request: FetchRequest): string {
+  return [
+    request.input,
+    request.init?.method ?? "GET",
+    request.init?.body,
+  ].filter((x) => x !== undefined || x !== null).join(" ").trimEnd();
+}
+
+function stripHeaders(headers: HeadersInit): HeadersInit {
+  const stripped = new Headers(headers);
+  stripped.delete("Authorization");
+  stripped.delete("Cookie");
+  stripped.delete("Set-Cookie");
+  return Object.fromEntries(stripped.entries());
+}
+
+function requestData(
+  input: URL | Request | string,
+  init?: RequestInit,
+): FetchRequest {
+  if (input instanceof Request) {
+    return requestData(new URL(input.url), { ...input, ...init });
+  }
+  if (typeof input === "string") {
+    return requestData(new URL(input), init);
+  }
+  if (init) {
+    init = {
+      ...init?.headers ? { headers: stripHeaders(init?.headers) } : {},
+      ...omit(init, ["headers", "signal"]),
+    };
+  }
+  return {
+    input: input.toString(),
+    ...init ? { init } : {},
+  };
+}
+
+async function responseData(response: Response): Promise<FetchResponse> {
+  return {
+    ...response?.body && { body: await response.text() },
+    init: {
+      status: response.status,
+      statusText: response.statusText,
+      headers: stripHeaders(response.headers),
+    },
+  };
+}
+
+function mockMode(options: MockOptions | undefined): MockMode {
+  return options?.mode ??
+    (Deno.args.some((arg) => arg === "--update" || arg === "-u")
+      ? "update"
+      : "replay");
 }
 
 interface Mock {
@@ -200,213 +406,4 @@ class MockManager {
       console.log(`%c   • ${name}`, "color: red;");
     }
   }
-}
-
-function mockMode(options: MockOptions | undefined): MockMode {
-  return options?.mode ??
-    (Deno.args.some((arg) => arg === "--update" || arg === "-u")
-      ? "update"
-      : "replay");
-}
-
-/** A mock for global fetch returned by {@linkcode mockFetch}. */
-export interface MockFetch extends Disposable {
-  (input: URL | Request | string, init?: RequestInit): Promise<Response>;
-  /** The current mode of the mock. */
-  mode: MockMode;
-  /** The original `fetch` function that is being mocked. */
-  original: (
-    input: URL | Request | string,
-    init?: RequestInit,
-  ) => Promise<Response>;
-  /** Whether or not the original `fetch` has been restored. */
-  restored: boolean;
-  /** Restores the original `fetch` instance. */
-  restore(): void;
-}
-
-interface FetchRequest {
-  input: string;
-  init?: Omit<RequestInit, "signal">;
-}
-
-interface FetchResponse {
-  init: ResponseInit;
-  body?: string;
-}
-
-interface FetchCall {
-  request: FetchRequest;
-  response: FetchResponse;
-}
-
-function getSignature(request: FetchRequest): string {
-  return [
-    request.input,
-    request.init?.method ?? "GET",
-    request.init?.body,
-  ].filter((x) => x !== undefined || x !== null).join(" ").trimEnd();
-}
-
-function stripHeaders(headers: HeadersInit): HeadersInit {
-  const stripped = new Headers(headers);
-  stripped.delete("Authorization");
-  stripped.delete("Cookie");
-  stripped.delete("Set-Cookie");
-  return Object.fromEntries(stripped.entries());
-}
-
-function getRequestData(
-  input: URL | Request | string,
-  init?: RequestInit,
-): FetchRequest {
-  if (input instanceof Request) {
-    return getRequestData(new URL(input.url), { ...input, ...init });
-  }
-  if (typeof input === "string") {
-    return getRequestData(new URL(input), init);
-  }
-  if (init) {
-    init = {
-      ...init?.headers ? { headers: stripHeaders(init?.headers) } : {},
-      ...omit(init, ["headers", "signal"]),
-    };
-  }
-  return {
-    input: input.toString(),
-    ...init ? { init } : {},
-  };
-}
-
-async function getResponseData(response: Response): Promise<FetchResponse> {
-  return {
-    ...response?.body && { body: await response.text() },
-    init: {
-      status: response.status,
-      statusText: response.statusText,
-      headers: stripHeaders(response.headers),
-    },
-  };
-}
-
-/**
- * Create a mock for the global `fetch` function.
- *
- * Usage is `@std/testing/snapshot` style. Running tests with `--update`
- * or `-u` flag will create a mock file in the `__mocks__` directory, using real
- * fetch calls. The mock file will be used in subsequent test runs, when the
- * these flags are not present.
- *
- * When running tests with the mock, responses will be returned from matching
- * requests with URL and method. If no matching request is found, or, If at the
- * end of the test, there are still unhandled calls, a {@link MockError} will
- * be thrown.
- *
- * @example
- * ```ts
- * import { mockFetch } from "@roka/testing/mock";
- * import { assertEquals } from "@std/assert";
- *
- * Deno.test("mockFetch", async (t) => {
- *  using fetch = mockFetch(t);
- *  const response = await fetch("https://example.com");
- *  assertEquals(response.status, 200);
- * });
- * ```
- *
- * When using the mock, the `--allow-read` permission must be enabled, or else
- * any calls to `fetch` will fail due to insufficient permissions. Additionally,
- * when updating the mock, the `--allow-write` and `--allow-net` permissions
- * must be enabled.
- *
- * The mock file that is created under the `__mocks__` directory needs to be
- * committed to version control. This allows for tests not needing to rely on
- * actual network calls, and the changes in mock behavior to be peer-reviewed.
- *
- * @param context The test context.
- */
-export function mockFetch(
-  context: Deno.TestContext,
-  options?: MockOptions,
-): MockFetch {
-  let calls: FetchCall[] | undefined = undefined;
-  let remaining: FetchCall[] = [];
-  let errored = false;
-
-  const stubbed = stub(globalThis, "fetch", async function (
-    input: URL | Request | string,
-    init?: RequestInit,
-  ): Promise<Response> {
-    const request = getRequestData(input, init);
-    let call: FetchCall;
-    if (calls === undefined) {
-      let mock: FetchCall[];
-      try {
-        mock = await MockManager.instance.load<FetchCall>(
-          context,
-          "fetch",
-          options,
-        );
-      } catch (e: unknown) {
-        errored = true;
-        throw e;
-      }
-      // another call might have loaded the mock
-      if (calls === undefined) {
-        calls = mock;
-        remaining = [...mock];
-      }
-    }
-    if (mockMode(options) === "update") {
-      const response = await stubbed.original.call(globalThis, input, init);
-      call = {
-        request,
-        response: await getResponseData(response),
-      };
-      MockManager.instance.record(context, "fetch", call, options);
-    } else {
-      const signature = getSignature(request);
-      const found = remaining.find((call) =>
-        getSignature(call.request) === signature
-      );
-      if (found === undefined) {
-        errored = true;
-        throw new MockError(`No matching fetch call found: ${request.input}`);
-      }
-      remaining.splice(remaining.indexOf(found), 1);
-      call = found;
-    }
-    return new Response(call.response.body, call.response.init);
-  });
-
-  const fetch = Object.assign(stubbed.fake, {
-    mode: mockMode(options),
-    original: stubbed.original,
-    restore() {
-      stubbed.restore();
-      if (mockMode(options) === "replay" && !errored) {
-        if (calls === undefined) {
-          throw new MockError("No fetch calls made");
-        }
-        if (remaining.length > 0) {
-          throw new MockError(
-            "Unmatched fetch calls: " +
-              remaining.map((c) => getSignature(c.request)),
-          );
-        }
-      }
-    },
-    [Symbol.dispose]() {
-      fetch.restore();
-    },
-  });
-
-  return Object.defineProperties(fetch, {
-    restored: {
-      enumerable: true,
-      get() {
-        return stubbed.restored;
-      },
-    },
-  }) as MockFetch;
 }
