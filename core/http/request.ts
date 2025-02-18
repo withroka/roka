@@ -1,116 +1,113 @@
-import { retry, type RetryOptions } from "@std/async";
+/**
+ * Common HTTP request functionality. Useful for making low level requests.
+ *
+ * @module
+ */
+
+import { assert } from "@std/assert/assert";
+import { retry, type RetryOptions } from "@std/async/retry";
+import { omit } from "@std/collections/omit";
+import { STATUS_CODE } from "@std/http/status";
 
 export { type RetryOptions } from "@std/async";
+
+/** Predefined agent strings. */
+export const AGENT = {
+  Browser:
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Safari/605.1.15",
+} as const;
+
+const RETRYABLE_STATUSES: number[] = [
+  STATUS_CODE.TooManyRequests,
+  STATUS_CODE.ServiceUnavailable,
+  STATUS_CODE.GatewayTimeout,
+] as const;
 
 /** Represents an error that occurs during a request. */
 export class RequestError extends Error {
   /**
-   * Creates an instance of RequestError.
+   * Construct RequestError.
    *
-   * @param msg The error message to be associated with this error.
+   * @param message The error message to be associated with this error.
+   * @param status The status code of the response.
    */
-  constructor(msg: string) {
-    super(msg);
+  constructor(message: string, readonly status: number) {
+    super(message);
     this.name = "RequestError";
   }
 }
 
-const RETRYABLE_STATUSES = [
-  429, // Too many requests
-  504, // Gateway timeout
-];
-
-/** Represents an HTTP request method. */
-export type RequestMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
-
 /** Represents the options for an HTTP request. */
-export interface RequestOptions {
+export interface RequestOptions extends RequestInit {
   /** Errors that would not cause a {@linkcode RequestError}. */
-  allowedErrors?: string[];
-  /** Request body. */
-  body?: string | object;
-  /** Request method. */
-  method?: RequestMethod;
-  /** Request headers. */
-  headers?: Record<string, string>;
+  allowedErrors?: number[];
   /** Retry options. */
   retry?: RetryOptions;
-  /** Authentication token. */
+  /** The user agent to be sent with the request headers. */
+  agent?: string;
+  /** The authorization to be sent with the request headers. */
   token?: string;
-  /** Referrer. */
-  referrer?: string;
-  /** User agent. */
-  userAgent?: string;
 }
 
 /**
- * Makes an HTTP request with the given URL and options, and returns a response object.
- * Retries the request if it fails due to too many requests.
+ * A wrapper around the Fetch API that handles common functionality.
  *
- * @template T The expected response type.
- * @param url The URL to request.
- * @param options The options for the request.
- * @returns An object containing the response and optionally an error.
- * @throws {RequestError} If the response is not ok and the error type is not allowed.
+ * 1. Retries
+ *
+ * If response status is retryable, for example a 429, the request will be
+ * retried. Default retry strategy is exponential backoff, and it can be
+ * customized with {@linkcode RequestOptions.retry}.
+ *
+ * 2. Error handling
+ *
+ * The function throws a {@linkcode RequestError} for non-retryable errors and
+ * retryable errors that persist. The {@linkcode RequestOptions.allowedErrors}
+ * array can be used to specify status codes that should not throw an error.
+ * These are returns with the response object.
+ *
+ * 3. Headers
+ *
+ * A default browser agent is always sent with the request, unless overridden
+ * with {@linkcode RequestOptions.agent}.
+ *
+ * If set, the {@linkcode RequestOptions.token} is sent as a bearer token in the
+ * `Authorization` header.
+ *
+ * @see {@linkcode RequestOptions} for further optional configuration.
+ *
+ * @param input The URL or Request object to fetch.
+ * @param init Standard `fetch` init, extended with {@linkcode RequestOptions}.
  */
 export async function request<T>(
-  url: string,
-  options: RequestOptions = {},
-): Promise<{
-  response: Response;
-  error?: { type: string; message: string };
-}> {
+  input: Request | URL | string,
+  init?: RequestOptions,
+): Promise<Response> {
+  let caught: unknown = undefined;
   const response = await retry(async () => {
-    const response = await fetch(url, {
-      method: options.method ?? "GET",
-      headers: {
-        ...options.headers,
-        ...(options.token
-          ? { "Authorization": `Bearer ${options.token}` }
-          : {}),
-        ...(options.referrer ? { "Referer": options.referrer } : {}),
-        "User-Agent": options.userAgent ??
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Safari/605.1.15",
-      },
-      ...options.body
-        ? {
-          body: (typeof options.body === "string"
-            ? options.body
-            : JSON.stringify(options.body)),
-        }
-        : {},
-    });
-    if (RETRYABLE_STATUSES.includes(response.status)) {
-      await response.body?.cancel();
-      throw new RequestError(response.statusText);
+    try {
+      const response = await fetch(input, {
+        ...init && omit(init, ["agent", "token", "headers"]),
+        headers: {
+          ...init?.headers,
+          ...(init?.agent && { "User-Agent": init.agent }),
+          ...(init?.token && { "Authorization": `Bearer ${init.token}` }),
+        },
+      });
+      if (RETRYABLE_STATUSES.includes(response.status)) {
+        await response.body?.cancel();
+        throw new RequestError(response.statusText, response.status);
+      }
+      return response;
+    } catch (e: unknown) {
+      caught = e;
+      return undefined;
     }
-    return response;
-  }, options.retry);
-
+  }, init?.retry);
+  if (caught) throw caught;
+  assert(response, "response was left undefined");
   if (!response.ok) {
-    const error = await getErrorFromResponse(response);
-    if (options.allowedErrors?.includes(error.type)) {
-      return { response, error };
-    }
-    throw new RequestError(`${error.message} [${error.type}]`);
+    if (init?.allowedErrors?.includes(response.status)) return response;
+    throw new RequestError(response.statusText, response.status);
   }
-
-  return { response };
-}
-
-async function getErrorFromResponse(
-  response: Response,
-): Promise<{ type: string; message: string }> {
-  const text = await response.text();
-  try {
-    const { error } = JSON.parse(text) as {
-      error: { type: string; message: string };
-    };
-    return error;
-  } catch {
-    return {
-      type: response.status.toString(),
-      message: response.statusText,
-    };
-  }
+  return response;
 }

@@ -1,0 +1,132 @@
+export const snapshot = {};
+
+snapshot[`client().query() 1`] = `
+{
+  repository: {
+    __typename: "Repository",
+    issues: {
+      __typename: "IssueConnection",
+      nodes: [
+        {
+          __typename: "Issue",
+          number: 7,
+          state: "CLOSED",
+        },
+      ],
+    },
+  },
+}
+`;
+
+snapshot[`client().queryPaginated() 1`] = `
+[
+  {
+    __typename: "Issue",
+    number: 7,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 8,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 9,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 10,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 11,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 12,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 13,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 14,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 15,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 16,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 17,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 18,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 19,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 20,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 21,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 22,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 23,
+    state: "CLOSED",
+    title: "Test",
+  },
+  {
+    __typename: "Issue",
+    number: 24,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+]
+`;
