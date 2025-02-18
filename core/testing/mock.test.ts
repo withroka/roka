@@ -88,6 +88,17 @@ Deno.test("mockFetch() checks call not replayed", async (t) => {
   }
 });
 
+Deno.test("mockFetch() disposes silently after missing call", async (t) => {
+  using fetch = mockFetch(t);
+  if (fetch.mode === "update") await fetch("https://example.com");
+  if (fetch.mode === "replay") {
+    await assertRejects(
+      async () => await fetch("http://example.com"),
+      MockError,
+    );
+  }
+});
+
 Deno.test("mockFetch() matches body", async (t) => {
   using fetch = mockFetch(t);
   await Promise.all([
