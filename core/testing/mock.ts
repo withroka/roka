@@ -1,6 +1,6 @@
 import { assert } from "@std/assert/assert";
 import { omit } from "@std/collections";
-import { basename, dirname, fromFileUrl, isAbsolute, join } from "@std/path";
+import { dirname, fromFileUrl, parse, resolve, toFileUrl } from "@std/path";
 import { MockError, stub } from "@std/testing/mock";
 
 export { MockError } from "@std/testing/mock";
@@ -61,7 +61,7 @@ class MockManager {
     if (!this.paths.has(path)) {
       let records: Record<string, unknown[]>;
       try {
-        const { mock } = await import(path);
+        const { mock } = await import(toFileUrl(path).toString());
         records = mock;
       } catch (e: unknown) {
         if (!(e instanceof TypeError)) throw e;
@@ -103,14 +103,15 @@ class MockManager {
     context: Deno.TestContext,
     options: MockOptions | undefined,
   ): string {
-    if (options?.path && isAbsolute(options.path)) return options.path;
-    return join(
-      dirname(fromFileUrl(context.origin)),
-      options?.path ?? join(
-        options?.dir ?? "__mocks__",
-        `${basename(context.origin)}.mock`,
-      ),
-    );
+    const testFile = fromFileUrl(context.origin);
+    const { dir, base } = parse(testFile);
+    if (options?.path) {
+      return resolve(dir, options.path);
+    } else if (options?.dir) {
+      return resolve(dir, options.dir, `${base}.mock`);
+    } else {
+      return resolve(dir, "__mocks__", `${base}.mock`);
+    }
   }
 
   private static mockName(
@@ -160,7 +161,7 @@ class MockManager {
         if (before !== after) updatedNames.push(mock.name);
         contents.push(`mock[\`${mock.name}\`] =\n${after};\n`);
       }
-      Deno.mkdirSync(dirname(path), { recursive: true });
+      Deno.mkdirSync(dirname(fromFileUrl(path)), { recursive: true });
       Deno.writeTextFileSync(path, contents.join("\n"));
     }
     if (updatedNames.length) {
