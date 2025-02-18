@@ -1,28 +1,57 @@
-import { pooledMap as denoPooledMap } from "@std/async";
+/**
+ * Pooling functions for async iterables.
+ *
+ * @module
+ */
+
+import { pooledMap } from "@std/async";
+
+/** Options for the pool function. */
+export interface PoolOptions {
+  /**
+   * The maximum number of concurrent operations.
+   * {@default 1}
+   */
+  concurrency?: number;
+}
 
 /**
- * Maps an array of data to an array of results with concurrency control.
+ * Resolves a iterable of promises, limiting the maximum amount of concurrency.
  *
- * @example
+ * @example with iterables of promises
  * ```ts
+ * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "jsr:@std/assert";
  *
- * const results = await pool([1, 2, 3], async (n) => n * 2, { concurrency: 2 });
- * assertEquals(results, [2, 4, 6]);
+ * const results = await pool(
+ *   [Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)],
+ *   { concurrency: 2 },
+ * );
+ * assertEquals(results, [1, 2, 3]);
  * ```
  *
- * @template T The type of the input data.
- * @template R The type of the output data.
- * @param array The array of data to map.
- * @param iteratorFn The function to apply to each element of the array.
- * @param options Configuration options.
- * @param options.concurrency The maximum number of concurrent operations.
- * @returns A promise that resolves to an array of results.
+ * @example with async iterables
+ * ```ts
+ * import { pool } from "@roka/async/pool";
+ * import { assertEquals } from "jsr:@std/assert";
+ *
+ * async function* asyncGenerator() {
+ *   yield Promise.resolve(1);
+ *   yield Promise.resolve(2);
+ *   yield Promise.resolve(3);
+ * }
+ *
+ * const results = await pool(asyncGenerator());
+ * assertEquals(results, [1, 2, 3]);
+ * ```
  */
-export async function pool<T, R>(
-  array: Iterable<T> | AsyncIterable<T>,
-  iteratorFn: (data: T) => Promise<R>,
+export async function pool<T>(
+  array: Iterable<Promise<T>> | AsyncIterable<T>,
   { concurrency = 1 } = {},
-): Promise<R[]> {
-  return await Array.fromAsync(denoPooledMap(concurrency, array, iteratorFn));
+): Promise<T[]> {
+  return await Array.fromAsync(
+    Symbol.asyncIterator in array
+      ? pooledMap(concurrency, array, (x) => Promise.resolve(x))
+      : pooledMap(concurrency, array, (x) => x),
+  );
 }
