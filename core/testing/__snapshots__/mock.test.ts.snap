@@ -99,3 +99,5 @@ snapshot[`mockFetch() implements spy like interface 1`] = `
 </html>
 '
 `;
+
+snapshot[`mockFetch() implements spy like interface 2`] = `"5"`;

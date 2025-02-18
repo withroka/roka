@@ -12,10 +12,10 @@ mock[`mockFetch() stubs fetch > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1143",
+          "cache-control": "max-age=2556",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:31 GMT",
+          date: "Sat, 15 Feb 2025 21:35:54 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -38,10 +38,10 @@ mock[`mockFetch() implements spy like interface > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1902",
+          "cache-control": "max-age=2555",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:32 GMT",
+          date: "Sat, 15 Feb 2025 21:35:55 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -63,11 +63,11 @@ mock[`mockFetch() replays multiple calls > fetch`] =
       init: {
         headers: {
           "accept-ranges": "bytes",
-          "cache-control": "max-age=1886",
+          "cache-control": "max-age=1896",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
           connection: "keep-alive",
-          date: "Sat, 15 Feb 2025 20:00:32 GMT",
+          date: "Sat, 15 Feb 2025 21:35:55 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -85,10 +85,10 @@ mock[`mockFetch() replays multiple calls > fetch`] =
       init: {
         headers: {
           "accept-ranges": "bytes",
-          "cache-control": "max-age=1902",
+          "cache-control": "max-age=1889",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:32 GMT",
+          date: "Sat, 15 Feb 2025 21:35:55 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -106,10 +106,10 @@ mock[`mockFetch() replays multiple calls > fetch`] =
       init: {
         headers: {
           "accept-ranges": "bytes",
-          "cache-control": "max-age=1902",
+          "cache-control": "max-age=1889",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:32 GMT",
+          date: "Sat, 15 Feb 2025 21:35:55 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -128,10 +128,10 @@ mock[`mockFetch() replays multiple calls > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1902",
+          "cache-control": "max-age=1889",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:32 GMT",
+          date: "Sat, 15 Feb 2025 21:35:55 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -154,10 +154,10 @@ mock[`mockFetch() with URL > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1901",
+          "cache-control": "max-age=1888",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:33 GMT",
+          date: "Sat, 15 Feb 2025 21:35:56 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -180,10 +180,10 @@ mock[`mockFetch() with Request > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1610",
+          "cache-control": "max-age=1888",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:34 GMT",
+          date: "Sat, 15 Feb 2025 21:35:56 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -198,6 +198,9 @@ mock[`mockFetch() replays by method > fetch`] =
 [
   {
     request: {
+      init: {
+        method: "GET",
+      },
       input: "https://example.com/",
     },
     response: {
@@ -205,10 +208,10 @@ mock[`mockFetch() replays by method > fetch`] =
       init: {
         headers: {
           "accept-ranges": "bytes",
-          "cache-control": "max-age=1541",
+          "cache-control": "max-age=2218",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:34 GMT",
+          date: "Sat, 15 Feb 2025 21:35:57 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -225,14 +228,15 @@ mock[`mockFetch() replays by method > fetch`] =
       input: "https://example.com/",
     },
     response: {
-      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;cc20c817&#46;1739649634&#46;10e4f974\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;cc20c817&#46;1739649634&#46;10e4f974</P>\n</BODY>\n</HTML>\n`,
+      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;ce20c817&#46;1739655356&#46;3dd12e39\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;ce20c817&#46;1739655356&#46;3dd12e39</P>\n</BODY>\n</HTML>\n`,
       init: {
         headers: {
+          "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
           "cache-control": "max-age=0",
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Sat, 15 Feb 2025 20:00:34 GMT",
+          date: "Sat, 15 Feb 2025 21:35:57 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -241,9 +245,6 @@ mock[`mockFetch() replays by method > fetch`] =
   },
   {
     request: {
-      init: {
-        method: "GET",
-      },
       input: "https://example.com/",
     },
     response: {
@@ -251,11 +252,10 @@ mock[`mockFetch() replays by method > fetch`] =
       init: {
         headers: {
           "accept-ranges": "bytes",
-          "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1541",
+          "cache-control": "max-age=2218",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:34 GMT",
+          date: "Sat, 15 Feb 2025 21:35:57 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -278,10 +278,10 @@ mock[`mockFetch() checks call not recorded > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1194",
+          "cache-control": "max-age=2218",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:35 GMT",
+          date: "Sat, 15 Feb 2025 21:35:57 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -304,10 +304,10 @@ mock[`mockFetch() checks no call made > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1214",
+          "cache-control": "max-age=2245",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:35 GMT",
+          date: "Sat, 15 Feb 2025 21:35:58 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -330,10 +330,10 @@ mock[`mockFetch() checks call not replayed > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1193",
+          "cache-control": "max-age=2216",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:36 GMT",
+          date: "Sat, 15 Feb 2025 21:35:59 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -351,10 +351,10 @@ mock[`mockFetch() checks call not replayed > fetch`] =
       init: {
         headers: {
           "accept-ranges": "bytes",
-          "cache-control": "max-age=1193",
+          "cache-control": "max-age=2216",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 15 Feb 2025 20:00:36 GMT",
+          date: "Sat, 15 Feb 2025 21:35:59 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -376,14 +376,14 @@ mock[`mockFetch() matches body > fetch`] =
       input: "https://example.com/",
     },
     response: {
-      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c7643717&#46;1739649636&#46;22ce3381\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1739649636&#46;22ce3381</P>\n</BODY>\n</HTML>\n`,
+      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1739655360&#46;84ec1f14\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1739655360&#46;84ec1f14</P>\n</BODY>\n</HTML>\n`,
       init: {
         headers: {
           "cache-control": "max-age=0",
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Sat, 15 Feb 2025 20:00:36 GMT",
+          date: "Sat, 15 Feb 2025 21:36:00 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -398,14 +398,14 @@ mock[`mockFetch() matches body > fetch`] =
       input: "https://example.com/",
     },
     response: {
-      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c7643717&#46;1739649636&#46;22ce3382\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1739649636&#46;22ce3382</P>\n</BODY>\n</HTML>\n`,
+      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1739655360&#46;84ec1f16\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1739655360&#46;84ec1f16</P>\n</BODY>\n</HTML>\n`,
       init: {
         headers: {
           "cache-control": "max-age=0",
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Sat, 15 Feb 2025 20:00:36 GMT",
+          date: "Sat, 15 Feb 2025 21:36:00 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -421,7 +421,7 @@ mock[`mockFetch() matches body > fetch`] =
       input: "https://example.com/",
     },
     response: {
-      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c7643717&#46;1739649636&#46;22ce3380\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1739649636&#46;22ce3380</P>\n</BODY>\n</HTML>\n`,
+      body: `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1739655359&#46;84ec1f13\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1739655359&#46;84ec1f13</P>\n</BODY>\n</HTML>\n`,
       init: {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
@@ -429,7 +429,7 @@ mock[`mockFetch() matches body > fetch`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Sat, 15 Feb 2025 20:00:36 GMT",
+          date: "Sat, 15 Feb 2025 21:36:00 GMT",
         },
         status: 403,
         statusText: "Forbidden",
