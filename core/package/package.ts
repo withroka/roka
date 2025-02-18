@@ -145,7 +145,11 @@ export interface WorkspaceOptions {
   directories?: string[];
 }
 
-/** Returns information about a package. */
+/**
+ * Returns information about a package.
+ *
+ * @todo Rename to something simpler.
+ */
 export async function getPackage(options?: PackageOptions): Promise<Package> {
   const directory = normalize(
     options?.directory ?? dirname(fromFileUrl(Deno.mainModule)),
@@ -174,7 +178,13 @@ export async function getPackage(options?: PackageOptions): Promise<Package> {
   return pkg;
 }
 
-/** Returns all packages, recursively traversing workspaces. */
+/**
+ * Returns all packages, recursively traversing workspaces.
+ *
+ * @todo Rename to something simpler.
+ * @todo Skip root.
+ * @todo Add a name filter.
+ */
 export async function getWorkspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
