@@ -59,9 +59,8 @@ Deno.test("mockFetch() replays by method", async (t) => {
 });
 
 Deno.test("mockFetch() checks missing mock file", async (t) => {
-  const fetch = mockFetch(t, { mode: "replay", dir: "__mocks__/missing" });
+  using fetch = mockFetch(t, { mode: "replay", dir: "__mocks__/missing" });
   await assertRejects(() => fetch("https://example.com"), MockError);
-  assertThrows(() => fetch.restore(), MockError);
 });
 
 Deno.test("mockFetch() checks no call made", (t) => {

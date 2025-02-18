@@ -348,7 +348,6 @@ export function mockFetch(
           options,
         );
       } catch (e: unknown) {
-        mock = [];
         errored = true;
         throw e;
       }
