@@ -1,71 +1,125 @@
 import { assert } from "@std/assert/assert";
 import { omit } from "@std/collections";
-import { basename, dirname, fromFileUrl, join } from "@std/path";
+import { basename, dirname, fromFileUrl, isAbsolute, join } from "@std/path";
 import { MockError, stub } from "@std/testing/mock";
-
-const MOCKS = "__mocks__";
 
 export { MockError } from "@std/testing/mock";
 
 /** The mode of mock. */
 export type MockMode = "replay" | "update";
 
-type Records = Record<string, unknown[]>;
+/** Options for mocking functions, like {@linkcode mockFetch}. */
+export interface MockOptions {
+  /**
+   * Mock output directory.
+   * @default {"__mocks__"}
+   */
+  dir?: string;
+  /**
+   * Mock mode. Defaults to {@code "replay"}, unless the `-u` or `--update` flag
+   * is passed, in which case this will be set to {@code "update"}. This option
+   * takes higher priority than the update flag.
+   */
+  mode?: MockMode;
+  /**
+   * Name of the mock to use in the mock file.
+   */
+  name?: string;
+  /**
+   * Mock output path.
+   *
+   * If both {@linkcode MockOptions.dir} and {@linkcode MockOptions.path} are
+   * specified, the `dir` option will be ignored and the `path` option will be
+   * handled as normal.
+   */
+  path?: string;
+}
+
+interface Mock {
+  name: string;
+  options: MockOptions | undefined;
+  path: string;
+  current: unknown[];
+  recorded: unknown[];
+}
 
 class MockManager {
   static instance = new MockManager();
-  private mocks = new Map<string, { current: Records; recorded: Records }>();
+  private paths = new Map<string, Record<string, unknown[]>>();
+  private mocks = new Map<string, Mock>();
 
   private constructor() {
     addEventListener("unload", () => this.close());
   }
 
-  async load<T>(t: Deno.TestContext, name: string) {
-    const path = MockManager.testPath(t);
-    if (!this.mocks.has(path)) {
+  async load<T>(
+    t: Deno.TestContext,
+    component: string,
+    options: MockOptions | undefined,
+  ): Promise<T[]> {
+    const path = MockManager.mockPath(t, options);
+    if (!this.paths.has(path)) {
+      let records: Record<string, unknown[]>;
       try {
         const { mock } = await import(path);
-        this.mocks.set(path, { current: mock, recorded: {} });
+        records = mock;
       } catch (e: unknown) {
         if (!(e instanceof TypeError)) throw e;
-        if (getMockMode() === "replay") {
-          throw new MockError(`Failed to load mock file: ${path}`);
+        if (mockMode(options) === "replay") {
+          throw new MockError(`No mock found: ${path}`);
         }
-        this.mocks.set(path, { current: {}, recorded: {} });
+        records = {};
+      }
+      if (!this.paths.has(path)) {
+        this.paths.set(path, records);
       }
     }
-    const key = MockManager.testKey(t, name);
-    try {
-      const mock = this.mocks.get(path);
-      assert(mock?.current, `Mock not found from file: ${path}`);
-      return (mock.current[key] ?? []) as T[];
-    } catch {
-      throw new MockError(`Failed to load mock: ${path} ${key}`);
-    }
+    const name = MockManager.mockName(t, component, options);
+    const mocks = this.paths.get(path);
+    const mock = mocks && mocks[name];
+    this.mocks.set(name, {
+      name,
+      options,
+      path,
+      current: mock ?? [],
+      recorded: [],
+    });
+    return (mock ?? []) as T[];
   }
 
-  record(t: Deno.TestContext, name: string, result: object) {
-    const path = MockManager.testPath(t);
-    if (!this.mocks.has(path)) {
-      this.mocks.set(path, { current: {}, recorded: {} });
-    }
-    const records = this.mocks.get(path)?.recorded;
-    assert(records, "Records not found");
-    const key = MockManager.testKey(t, name);
-    if (!records[key]) records[key] = [];
-    records[key].push(result);
+  record(
+    t: Deno.TestContext,
+    component: string,
+    result: object,
+    options?: MockOptions,
+  ) {
+    const name = MockManager.mockName(t, component, options);
+    const records = this.mocks.get(name)?.recorded;
+    assert(records !== undefined, "Mock not loaded");
+    records.push(result);
   }
 
-  private static testPath(context: Deno.TestContext) {
+  private static mockPath(
+    context: Deno.TestContext,
+    options: MockOptions | undefined,
+  ): string {
+    if (options?.path && isAbsolute(options.path)) return options.path;
     return join(
       dirname(fromFileUrl(context.origin)),
-      MOCKS,
-      `${basename(context.origin)}.mock`,
+      options?.path ?? join(
+        options?.dir ?? "__mocks__",
+        `${basename(context.origin)}.mock`,
+      ),
     );
   }
 
-  private static testKey(context: Deno.TestContext, name: string) {
-    const breadcrumb = [context.name, name];
+  private static mockName(
+    context: Deno.TestContext,
+    component: string,
+    options: MockOptions | undefined,
+  ): string {
+    if (options?.name) return options?.name;
+    const breadcrumb = [context.name, component];
     while (context.parent) {
       breadcrumb.unshift(context.parent.name);
       context = context.parent;
@@ -86,43 +140,54 @@ class MockManager {
   }
 
   private close() {
-    if (getMockMode() === "replay") return;
-    const updated = [];
-    const removed = [];
-    for (const [path, { current, recorded }] of this.mocks) {
-      removed.push(...Object.keys(current).filter((key) => !recorded[key]));
+    const updatedNames: string[] = [];
+    const removedNames: string[] = [];
+    for (const mocks of this.paths.values()) {
+      removedNames.push(
+        ...Object.keys(mocks).filter((mock) => !this.mocks.has(mock)),
+      );
+    }
+    const byPath = Map.groupBy(this.mocks.values(), (mock) => mock.path);
+    for (const [path, mocks] of byPath.entries()) {
+      const updated = mocks.filter((mock) =>
+        mockMode(mock.options) === "update"
+      );
+      if (!updated.length) continue;
       const contents = [`export const mock = {};\n`];
-      for (const [key, calls] of Object.entries(recorded)) {
-        const content = this.serialize(calls);
-        if (!current[key] || this.serialize(current[key]) !== content) {
-          updated.push(key);
-        }
-        contents.push(`mock[\`${key}\`] =\n${content};\n`);
+      for (const mock of updated) {
+        const before = this.serialize(mock.current);
+        const after = this.serialize(mock.recorded);
+        if (before !== after) updatedNames.push(mock.name);
+        contents.push(`mock[\`${mock.name}\`] =\n${after};\n`);
       }
       Deno.mkdirSync(dirname(path), { recursive: true });
       Deno.writeTextFileSync(path, contents.join("\n"));
     }
-    if (updated.length) {
+    if (updatedNames.length) {
       // deno-lint-ignore no-console
       console.log(
-        `%c\n > ${updated.length} ${
-          updated.length === 1 ? "mock" : "mocks"
+        `%c\n > ${updatedNames.length} ${
+          updatedNames.length === 1 ? "mock" : "mocks"
         } updated.`,
         "color: green; font-weight: bold;",
       );
+      for (const name of updatedNames) {
+        // deno-lint-ignore no-console
+        console.log(`%c   • ${name}`, "color: green;");
+      }
     }
-    if (removed.length) {
+    if (removedNames.length) {
       // deno-lint-ignore no-console
       console.log(
-        `%c\n > ${removed.length} ${
-          removed.length === 1 ? "mock" : "mocks"
-        } deleted.`,
+        `%c\n > ${removedNames.length} ${
+          removedNames.length === 1 ? "mock" : "mocks"
+        } removed.`,
         "color: red; font-weight: bold;",
       );
     }
-    for (const key of removed) {
+    for (const name of removedNames) {
       // deno-lint-ignore no-console
-      console.log(`%c   • ${key}`, "color: red;");
+      console.log(`%c   • ${name}`, "color: red;");
     }
   }
 }
@@ -131,15 +196,18 @@ class MockManager {
  * Get the mode of the mocking system. Defaults to `replay`, unless the `-u`
  * or `--update` flag is passed, in which case this will be set to `update`.
  */
-export function getMockMode(): MockMode {
-  return Deno.args.some((arg) => arg === "--update" || arg === "-u")
-    ? "update"
-    : "replay";
+function mockMode(options: MockOptions | undefined): MockMode {
+  return options?.mode ??
+    (Deno.args.some((arg) => arg === "--update" || arg === "-u")
+      ? "update"
+      : "replay");
 }
 
 /** A mock for global fetch that records and replays responses. */
 export interface MockFetch extends Disposable {
   (input: URL | Request | string, init?: RequestInit): Promise<Response>;
+  /** The current mode of the mock. */
+  mode: MockMode;
   /** The function that is mocked. */
   original: (
     input: URL | Request | string,
@@ -218,10 +286,10 @@ async function getResponseData(response: Response): Promise<FetchResponse> {
 /**
  * Create a mock for the global `fetch` function.
  *
- * Usage is {@link ../../std/testing/doc/snapshot/~ | @std/testing/snapshot}
- * style. Running tests with `--update` or `-u` flag will create a mock file
- * in the `__mocks__` directory, using real fetch calls. The mock file will
- * be used in subsequent test runs, when the these flags are not present.
+ * Usage is {@code @std/testing/snapshot} style. Running tests with `--update`
+ * or `-u` flag will create a mock file in the `__mocks__` directory, using real
+ * fetch calls. The mock file will be used in subsequent test runs, when the
+ * these flags are not present.
  *
  * When running tests with the mock, responses will be returned from matching
  * requests with URL and method. If no matching request is found, or, If at the
@@ -252,30 +320,44 @@ async function getResponseData(response: Response): Promise<FetchResponse> {
  * @param context The test context.
  * @returns The mock fetch instance.
  */
-export function mockFetch(context: Deno.TestContext): MockFetch {
+export function mockFetch(
+  context: Deno.TestContext,
+  options?: MockOptions,
+): MockFetch {
   let calls: FetchCall[] | undefined = undefined;
   let remaining: FetchCall[] = [];
 
-  const spy = stub(globalThis, "fetch", async function (
+  const stubbed = stub(globalThis, "fetch", async function (
     input: URL | Request | string,
     init?: RequestInit,
-  ) {
+  ): Promise<Response> {
     const request = getRequestData(input, init);
     let call: FetchCall;
-    if (!calls) {
-      calls = await MockManager.instance.load<FetchCall>(
-        context,
-        "fetch",
-      );
-      remaining = calls;
+    if (calls === undefined) {
+      let mock: FetchCall[];
+      try {
+        mock = await MockManager.instance.load<FetchCall>(
+          context,
+          "fetch",
+          options,
+        );
+      } catch (e: unknown) {
+        mock = [];
+        throw e;
+      }
+      // another call might have loaded the mock
+      if (calls === undefined) {
+        calls = mock;
+        remaining = [...mock];
+      }
     }
-    if (getMockMode() === "update") {
-      const response = await spy.original.call(globalThis, input, init);
+    if (mockMode(options) === "update") {
+      const response = await stubbed.original.call(globalThis, input, init);
       call = {
         request,
         response: await getResponseData(response),
       };
-      MockManager.instance.record(context, "fetch", call);
+      MockManager.instance.record(context, "fetch", call, options);
     } else {
       const signature = getSignature(request);
       const found = remaining.find((call) =>
@@ -290,11 +372,12 @@ export function mockFetch(context: Deno.TestContext): MockFetch {
     return new Response(call.response.body, call.response.init);
   });
 
-  const fetch = Object.assign(spy.fake, {
-    original: spy.original,
+  const fetch = Object.assign(stubbed.fake, {
+    mode: mockMode(options),
+    original: stubbed.original,
     restore() {
-      spy.restore();
-      if (getMockMode() === "replay") {
+      stubbed.restore();
+      if (mockMode(options) === "replay") {
         if (calls === undefined) {
           throw new MockError("No fetch calls made");
         }
@@ -315,7 +398,7 @@ export function mockFetch(context: Deno.TestContext): MockFetch {
     restored: {
       enumerable: true,
       get() {
-        return spy.restored;
+        return stubbed.restored;
       },
     },
   }) as MockFetch;
