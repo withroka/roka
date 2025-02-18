@@ -6,7 +6,7 @@ import {
   getWorkspace,
   type Package,
 } from "@roka/package";
-import { tempDir } from "@roka/testing";
+import { tempDirectory } from "@roka/testing";
 import { assertEquals, assertRejects } from "@std/assert";
 import { join } from "@std/path/join";
 
@@ -62,7 +62,7 @@ Deno.test("getPackage() returns current package", async () => {
 });
 
 Deno.test("getPackage() returns given package", async () => {
-  await using directory = await tempDir();
+  await using directory = await tempDirectory();
   await createPackage(directory.path, {
     name: "@scope/module",
     version: "1.2.3",
@@ -291,7 +291,7 @@ Deno.test("getPackage() returns update at initial version", async () => {
 });
 
 Deno.test("getWorkspace() returns non-workspace package", async () => {
-  await using directory = await tempDir();
+  await using directory = await tempDirectory();
   await createPackage(directory.path, { name: "name", version: "version" });
   const packages = await getWorkspace({ directories: [directory.path] });
   assertEquals(packages, [{
@@ -303,7 +303,7 @@ Deno.test("getWorkspace() returns non-workspace package", async () => {
 });
 
 Deno.test("getWorkspace() returns workspace packages", async () => {
-  await using directory = await tempDir();
+  await using directory = await tempDirectory();
   const root = await createPackage(directory.path, {
     name: "root",
     workspace: ["./first", "./second"],
@@ -321,7 +321,7 @@ Deno.test("getWorkspace() returns workspace packages", async () => {
 });
 
 Deno.test("getWorkspace() returns nested workspace packages", async () => {
-  await using directory = await tempDir();
+  await using directory = await tempDirectory();
   const root = await createPackage(directory.path, {
     name: "root",
     workspace: ["./first"],
