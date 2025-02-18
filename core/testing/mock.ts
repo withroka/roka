@@ -170,7 +170,7 @@ class MockManager {
         if (before !== after) updatedNames.push(mock.name);
         contents.push(`mock[\`${mock.name}\`] =\n${after};\n`);
       }
-      Deno.mkdirSync(dirname(fromFileUrl(path)), { recursive: true });
+      Deno.mkdirSync(dirname(path), { recursive: true });
       Deno.writeTextFileSync(path, contents.join("\n"));
     }
     if (updatedNames.length) {
@@ -348,7 +348,7 @@ export function mockFetch(
           options,
         );
       } catch (e: unknown) {
-        mock = [];
+        errored = true;
         throw e;
       }
       // another call might have loaded the mock
