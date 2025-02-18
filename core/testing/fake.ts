@@ -1,6 +1,12 @@
+/**
+ * Fake objects to replace real equivalents in tests.
+ *
+ * @module
+ */
+
 import { stub } from "@std/testing/mock";
 
-/** A mock console that records calls to itself instead of printing. */
+/** A fake console returned by {@linkcode fakeConsole}. */
 export interface FakeConsole extends Disposable {
   /** Logs a message with the `debug` level. */
   debug: (...data: unknown[]) => void;
@@ -17,14 +23,16 @@ export interface FakeConsole extends Disposable {
     level: "debug" | "log" | "info" | "warn" | "error";
     data: unknown[];
   }[];
-  /** Whether or not the original instance console has been restored. */
+  /** Whether or not the original `console` instance has been restored. */
   restored: boolean;
-  /** If mocking an instance console, this restores the original instance console. */
+  /** Restores the original `console` instance. */
   restore: () => void;
 }
 
 /**
- * Create a mock for common `console` methods.
+ * Create a fake for common `console` methods.
+ *
+ * Useful for verifying output from command-line tools.
  *
  * @example
  * ```ts
@@ -37,8 +45,6 @@ export interface FakeConsole extends Disposable {
  *  assertEquals(console.calls, [{ level: "log", data: ["message"] }]);
  * });
  * ```
- *
- * @returns The mock console instance.
  */
 
 export function fakeConsole(): FakeConsole {
