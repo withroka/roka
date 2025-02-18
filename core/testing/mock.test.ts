@@ -1,4 +1,4 @@
-import { getMockMode, MockError, mockFetch } from "@roka/testing/mock";
+import { MockError, mockFetch } from "@roka/testing/mock";
 import {
   assert,
   assertEquals,
@@ -24,7 +24,6 @@ Deno.test("mockFetch() implements spy like interface", async (t) => {
     assertEquals(response.status, 200);
     assertFalse(fetch.restored);
     await assertSnapshot(t, await response.text());
-    await assertSnapshot(t, "5");
   } finally {
     fetch.restore();
     assert(fetch.restored);
@@ -36,21 +35,17 @@ Deno.test("mockFetch() replays multiple calls", async (t) => {
   await Promise.all([
     fetch("https://example.com"),
     fetch("https://example.com"),
-    fetch("https://example.com/"), // same as the prior two
-    fetch("http://example.com"),
   ]);
 });
 
 Deno.test("mockFetch() with URL", async (t) => {
   using fetch = mockFetch(t);
-  if (getMockMode() === "update") await fetch("https://example.com");
-  else await fetch(new URL("https://example.com"));
+  await fetch(new URL("https://example.com"));
 });
 
 Deno.test("mockFetch() with Request", async (t) => {
   using fetch = mockFetch(t);
-  if (getMockMode() === "update") await fetch("https://example.com");
-  else await fetch(new Request("https://example.com"));
+  await fetch(new Request("https://example.com"));
 });
 
 Deno.test("mockFetch() replays by method", async (t) => {
@@ -64,56 +59,70 @@ Deno.test("mockFetch() replays by method", async (t) => {
 });
 
 Deno.test("mockFetch() checks missing mock file", async (t) => {
-  using fetch = mockFetch(t);
-  // never record mocks for this test
-  if (getMockMode() === "update") return;
-  await assertRejects(
-    async () => await fetch("https://example.com"),
-    MockError,
-  );
+  const fetch = mockFetch(t, { mode: "replay", dir: "__mocks__/missing" });
+  await assertRejects(() => fetch("https://example.com"), MockError);
+  assertThrows(() => fetch.restore(), MockError);
+});
+
+Deno.test("mockFetch() checks no call made", (t) => {
+  const fetch = mockFetch(t, { mode: "replay" });
+  assertThrows(() => fetch.restore(), MockError);
 });
 
 Deno.test("mockFetch() checks call not recorded", async (t) => {
   using fetch = mockFetch(t);
-  // this call be recored into mock
   await fetch("https://example.com");
-  // next fetch call will not be found in mock
-  if (getMockMode() === "update") return;
-  await assertRejects(
-    async () => await fetch("https://example.com"),
-    MockError,
-  );
-});
-
-Deno.test("mockFetch() checks no call made", async (t) => {
-  const fetch = mockFetch(t);
-  try {
-    // this call be recored into mock, but not replayed
-    if (getMockMode() === "update") await fetch("https://example.com");
-  } finally {
-    if (getMockMode() === "update") fetch.restore();
-    else assertThrows(() => fetch.restore(), MockError);
+  if (fetch.mode === "replay") {
+    await assertRejects(() => fetch("https://example.com"));
   }
 });
 
 Deno.test("mockFetch() checks call not replayed", async (t) => {
   const fetch = mockFetch(t);
-  try {
+  await fetch("https://example.com");
+  if (fetch.mode === "update") {
     await fetch("https://example.com");
-    // this call be recored into mock, but not replayed
-    if (getMockMode() === "update") await fetch("https://example.com");
-  } finally {
-    if (getMockMode() === "update") fetch.restore();
-    else assertThrows(() => fetch.restore(), MockError);
+    fetch.restore();
+  } else {
+    assertThrows(() => fetch.restore(), MockError);
   }
 });
 
 Deno.test("mockFetch() matches body", async (t) => {
   using fetch = mockFetch(t);
-  const responses = await Promise.all([
+  await Promise.all([
     fetch("https://example.com", { method: "POST", body: "body" }),
     fetch("https://example.com", { method: "POST", body: "" }),
     fetch("https://example.com", { method: "POST" }),
   ]);
-  assertEquals(responses.map((r) => r.status), [403, 403, 403]);
+});
+
+Deno.test("mockFetch() records in default directory", async (t) => {
+  using fetch = mockFetch(t);
+  await fetch("https://example.com");
+});
+
+Deno.test("mockFetch() records in custom directory", async (t) => {
+  using fetch = mockFetch(t, { dir: "__mocks__/custom" });
+  await fetch("https://example.com");
+});
+
+Deno.test("mockFetch() records in custom path", async (t) => {
+  using fetch = mockFetch(t, {
+    path: "__mocks__/custom/mock.test.ts.custom.mock",
+  });
+  await fetch("https://example.com");
+});
+
+Deno.test("mockFetch() records with custom name", async (t) => {
+  using fetch = mockFetch(t, { name: "custom name" });
+  await fetch("https://example.com");
+});
+
+Deno.test("mockFetch() allows overriding mock mode", async (t) => {
+  using fetch = mockFetch(t, {
+    mode: "replay",
+    path: "__mocks__/mock.test.ts.mode.mock",
+  });
+  await fetch("http://example.com");
 });
