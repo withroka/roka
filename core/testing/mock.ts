@@ -326,6 +326,7 @@ export function mockFetch(
 ): MockFetch {
   let calls: FetchCall[] | undefined = undefined;
   let remaining: FetchCall[] = [];
+  let errored = false;
 
   const stubbed = stub(globalThis, "fetch", async function (
     input: URL | Request | string,
@@ -364,6 +365,7 @@ export function mockFetch(
         getSignature(call.request) === signature
       );
       if (found === undefined) {
+        errored = true;
         throw new MockError(`No matching fetch call found: ${request.input}`);
       }
       remaining.splice(remaining.indexOf(found), 1);
@@ -377,7 +379,7 @@ export function mockFetch(
     original: stubbed.original,
     restore() {
       stubbed.restore();
-      if (mockMode(options) === "replay") {
+      if (mockMode(options) === "replay" && !errored) {
         if (calls === undefined) {
           throw new MockError("No fetch calls made");
         }

@@ -1,6 +1,6 @@
 export const mock = {};
 
-mock[`mockFetch() records in custom directory > fetch`] =
+mock[`mockFetch() records in custom path > fetch`] =
 [
   {
     request: {
@@ -12,7 +12,7 @@ mock[`mockFetch() records in custom directory > fetch`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,h3-Q050=":443"; ma=93600,quic=":443"; ma=93600; v="46,43"',
-          "cache-control": "max-age=1623",
+          "cache-control": "max-age=1688",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
           date: "Tue, 18 Feb 2025 14:46:46 GMT",
