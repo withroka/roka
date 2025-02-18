@@ -358,11 +358,6 @@ class MockManager {
   private close() {
     const updatedNames: string[] = [];
     const removedNames: string[] = [];
-    for (const mocks of this.paths.values()) {
-      removedNames.push(
-        ...Object.keys(mocks).filter((mock) => !this.mocks.has(mock)),
-      );
-    }
     const byPath = Map.groupBy(this.mocks.values(), (mock) => mock.path);
     for (const [path, mocks] of byPath.entries()) {
       const updated = mocks.filter((mock) =>
@@ -376,6 +371,11 @@ class MockManager {
         if (before !== after) updatedNames.push(mock.name);
         contents.push(`mock[\`${mock.name}\`] =\n${after};\n`);
       }
+      removedNames.push(
+        ...Object.keys(this.paths.get(path) ?? {}).filter((mock) =>
+          !this.mocks.has(mock)
+        ),
+      );
       Deno.mkdirSync(dirname(path), { recursive: true });
       Deno.writeTextFileSync(path, contents.join("\n"));
     }
