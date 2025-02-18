@@ -181,7 +181,12 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   return pkg;
 }
 
-/** Returns all packages, recursively traversing workspaces. */
+/**
+ * Returns all packages, recursively traversing workspaces.
+ *
+ * @todo Skip root.
+ * @todo Add a name filter.
+ */
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
