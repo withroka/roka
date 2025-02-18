@@ -1,3 +1,4 @@
+import { assert } from "@std/assert/assert";
 import { omit } from "@std/collections";
 import { basename, dirname, fromFileUrl, join } from "@std/path";
 import { MockError, stub } from "@std/testing/mock";
@@ -9,34 +10,50 @@ export { MockError } from "@std/testing/mock";
 /** The mode of mock. */
 export type MockMode = "replay" | "update";
 
+type Records = Record<string, unknown[]>;
+
 class MockManager {
   static instance = new MockManager();
-  private paths = new Map<string, Map<string, object[]>>();
+  private mocks = new Map<string, { current: Records; recorded: Records }>();
 
   private constructor() {
-    addEventListener("unload", async () => {
-      await this.close();
-    });
+    addEventListener("unload", () => this.close());
   }
 
-  addCall(t: Deno.TestContext, name: string, result: object) {
+  async load<T>(t: Deno.TestContext, name: string) {
     const path = MockManager.testPath(t);
-    if (!this.paths.has(path)) this.paths.set(path, new Map());
-    const test = this.paths.get(path);
-    const key = MockManager.testKey(t, name);
-    if (!test?.has(key)) test?.set(key, []);
-    test?.get(key)?.push(result);
-  }
-
-  async getCalls<T>(t: Deno.TestContext, name: string) {
-    const path = MockManager.testPath(t);
+    if (!this.mocks.has(path)) {
+      try {
+        const { mock } = await import(path);
+        this.mocks.set(path, { current: mock, recorded: {} });
+      } catch (e: unknown) {
+        if (!(e instanceof TypeError)) throw e;
+        if (getMockMode() === "replay") {
+          throw new MockError(`Failed to load mock file: ${path}`);
+        }
+        this.mocks.set(path, { current: {}, recorded: {} });
+      }
+    }
     const key = MockManager.testKey(t, name);
     try {
-      const { mock } = await import(path);
-      return (mock[key] ?? []) as T[];
+      const mock = this.mocks.get(path);
+      assert(mock?.current, `Mock not found from file: ${path}`);
+      return (mock.current[key] ?? []) as T[];
     } catch {
       throw new MockError(`Failed to load mock: ${path} ${key}`);
     }
+  }
+
+  record(t: Deno.TestContext, name: string, result: object) {
+    const path = MockManager.testPath(t);
+    if (!this.mocks.has(path)) {
+      this.mocks.set(path, { current: {}, recorded: {} });
+    }
+    const records = this.mocks.get(path)?.recorded;
+    assert(records, "Records not found");
+    const key = MockManager.testKey(t, name);
+    if (!records[key]) records[key] = [];
+    records[key].push(result);
   }
 
   private static testPath(context: Deno.TestContext) {
@@ -56,25 +73,56 @@ class MockManager {
     return breadcrumb.join(" > ");
   }
 
-  private async close() {
-    if (getMockMode() === "replay") return;
+  private serialize(calls: unknown[]): string {
+    return Deno.inspect(calls, {
+      breakLength: Infinity,
+      compact: false,
+      depth: Infinity,
+      iterableLimit: Infinity,
+      sorted: true,
+      strAbbreviateSize: Infinity,
+      trailingComma: true,
+    }).replaceAll("\r", "\\r");
+  }
 
-    for (const [path, test] of this.paths) {
+  private close() {
+    if (getMockMode() === "replay") return;
+    const updated = [];
+    const removed = [];
+    for (const [path, { current, recorded }] of this.mocks) {
+      removed.push(...Object.keys(current).filter((key) => !recorded[key]));
       const contents = [`export const mock = {};\n`];
-      for (const [key, calls] of test) {
-        const serialized = Deno.inspect(calls, {
-          breakLength: Infinity,
-          compact: false,
-          depth: Infinity,
-          iterableLimit: Infinity,
-          sorted: true,
-          strAbbreviateSize: Infinity,
-          trailingComma: true,
-        }).replaceAll("\r", "\\r");
-        contents.push(`mock[\`${key}\`] =\n${serialized};\n`);
+      for (const [key, calls] of Object.entries(recorded)) {
+        const content = this.serialize(calls);
+        if (!current[key] || this.serialize(current[key]) !== content) {
+          updated.push(key);
+        }
+        contents.push(`mock[\`${key}\`] =\n${content};\n`);
       }
-      await Deno.mkdir(dirname(path), { recursive: true });
-      await Deno.writeTextFile(path, contents.join("\n"));
+      Deno.mkdirSync(dirname(path), { recursive: true });
+      Deno.writeTextFileSync(path, contents.join("\n"));
+    }
+    if (updated.length) {
+      // deno-lint-ignore no-console
+      console.log(
+        `%c\n > ${updated.length} ${
+          updated.length === 1 ? "mock" : "mocks"
+        } updated.`,
+        "color: green; font-weight: bold;",
+      );
+    }
+    if (removed.length) {
+      // deno-lint-ignore no-console
+      console.log(
+        `%c\n > ${removed.length} ${
+          removed.length === 1 ? "mock" : "mocks"
+        } deleted.`,
+        "color: red; font-weight: bold;",
+      );
+    }
+    for (const key of removed) {
+      // deno-lint-ignore no-console
+      console.log(`%c   • ${key}`, "color: red;");
     }
   }
 }
@@ -206,6 +254,7 @@ async function getResponseData(response: Response): Promise<FetchResponse> {
  */
 export function mockFetch(context: Deno.TestContext): MockFetch {
   let calls: FetchCall[] | undefined = undefined;
+  let remaining: FetchCall[] = [];
 
   const spy = stub(globalThis, "fetch", async function (
     input: URL | Request | string,
@@ -213,28 +262,29 @@ export function mockFetch(context: Deno.TestContext): MockFetch {
   ) {
     const request = getRequestData(input, init);
     let call: FetchCall;
+    if (!calls) {
+      calls = await MockManager.instance.load<FetchCall>(
+        context,
+        "fetch",
+      );
+      remaining = calls;
+    }
     if (getMockMode() === "update") {
       const response = await spy.original.call(globalThis, input, init);
       call = {
         request,
         response: await getResponseData(response),
       };
-      MockManager.instance.addCall(context, "fetch", call);
+      MockManager.instance.record(context, "fetch", call);
     } else {
-      if (!calls) {
-        calls = await MockManager.instance.getCalls<FetchCall>(
-          context,
-          "fetch",
-        );
-      }
       const signature = getSignature(request);
-      const found = calls?.find((call) =>
+      const found = remaining.find((call) =>
         getSignature(call.request) === signature
       );
       if (found === undefined) {
         throw new MockError(`No matching fetch call found: ${request.input}`);
       }
-      calls.splice(calls.indexOf(found), 1);
+      remaining.splice(remaining.indexOf(found), 1);
       call = found;
     }
     return new Response(call.response.body, call.response.init);
@@ -248,10 +298,10 @@ export function mockFetch(context: Deno.TestContext): MockFetch {
         if (calls === undefined) {
           throw new MockError("No fetch calls made");
         }
-        if (calls.length > 0) {
+        if (remaining.length > 0) {
           throw new MockError(
             "Unmatched fetch calls: " +
-              calls.map((c) => getSignature(c.request)),
+              remaining.map((c) => getSignature(c.request)),
           );
         }
       }
