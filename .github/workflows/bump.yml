@@ -22,8 +22,8 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Bump versions
-        run: deno task forge --bump
+        run: deno task forge bump --pr
         env:
-          GITHUB_ACTOR: "${{ github.actor }}"
-          GITHUB_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          GIT_NAME: "${{ github.actor }}"
+          GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
