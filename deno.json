@@ -42,8 +42,8 @@
   "imports": {
     "@cliffy/command": "jsr:@cliffy/command@^1.0.0-rc.7",
     "@cliffy/table": "jsr:@cliffy/table@^1.0.0-rc.7",
-    "@octokit/openapi-types": "npm:@octokit/openapi-types@^23.0.1",
-    "@octokit/rest": "npm:@octokit/rest@^21.1.0",
+    "@octokit/openapi-types": "npm:@octokit/openapi-types@^24.0.0",
+    "@octokit/rest": "npm:@octokit/rest@^21.1.1",
     "@std/assert": "jsr:@std/assert@^1.0.11",
     "@std/async": "jsr:@std/async@^1.0.10",
     "@std/collections": "jsr:@std/collections@^1.0.10",
