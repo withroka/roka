@@ -1,82 +1,109 @@
-import { basename, dirname, join } from "@std/path";
-
 /**
- * A key-value config store for the process.
+ * Config object that stores key-value pairs in the file system.
  *
- * By default, the config store is persisted to a file in the user's home
- * directory. It can be made in-memory by passing `path = ":memory:"` to the
- * constructor. This allows for an easy setup for testing.
+ * The config system wrap the {@link https://deno.com/kv | Deno.Kv} API to
+ * provide a simple key-value store for the running application.
+ *
+ * The config object is a disposable resource that should be closed when no
+ * longer needed.
  *
  * @example
  * ```ts
- * import { Config } from "@roka/cli/config";
+ * import { config } from "@roka/cli/config";
  * import { assertEquals } from "@std/assert";
- * using config = new Config<{ foo: string, bar: string }>({ path: ":memory:" });
- * await config.set({ foo: "foo" });
- * await config.set({ bar: "bar" });
- * assertEquals(await config.get(), { foo: "foo", bar: "bar" });
+ * using cfg = config<{ key: string }>({ path: ":memory:" });
+ * await cfg.set({ key: "value" });
+ * assertEquals(await cfg.get(), { key: "value" });
  * ```
+ *
+ * @module
  */
-export class Config<T extends Record<string, unknown>> {
-  private kv: Deno.Kv | undefined;
 
-  /**
-   * Creates a new config store.
-   *
-   * @param name Name of the config store.
-   * @param options Configuration options.
-   * @param options.path The path to the database file.
-   */
-  constructor(private readonly options?: { path?: string }) {}
+import { basename, dirname, join } from "@std/path";
 
+/** A key-value stored returned by {@linkcode config}. */
+export interface Config<T extends Record<string, unknown>> extends Disposable {
   /** Returns all data stored for this config. */
-  async get(): Promise<Partial<T>> {
-    const kv = await this.open();
-    const result = {} as Record<string, unknown>;
-    for await (const { key, value } of kv.list({ prefix: [] })) {
-      const [property] = key;
-      if (property) result[property.toString()] = value;
-    }
-    return result as Partial<T>;
-  }
-
+  get(): Promise<Partial<T>>;
   /** Writes data to the configuration. Prior data is not deleted. */
-  async set(value: Partial<T>): Promise<void> {
-    const kv = await this.open();
-    const set = kv.atomic();
-    for (const property of Object.getOwnPropertyNames(value)) {
-      set.set([property], value[property]);
-    }
-    await set.commit();
-  }
-
+  set(value: Partial<T>): Promise<void>;
   /** Clear all stored configuration data. */
-  async clear(): Promise<void> {
-    const kv = await this.open();
-    const del = kv.atomic();
-    for await (const { key } of kv.list({ prefix: [] })) {
-      del.delete(key);
-    }
-    await del.commit();
-  }
+  clear(): Promise<void>;
+}
 
-  /** Open the db connection to the persistent data. */
-  private async open(): Promise<Deno.Kv> {
-    if (!this.kv) {
-      const path = this.options?.path ??
-        join(
-          Deno.env.get("HOME") ?? ".",
-          "." + basename(dirname(Deno.mainModule)),
-          "config.db",
-        );
-      await Deno.mkdir(dirname(path), { recursive: true });
-      this.kv = await Deno.openKv(path);
-    }
-    return this.kv;
-  }
+/** Options for {@linkcode config}. */
+export interface ConfigOptions {
+  /**
+   * The path to the database file. If not provided, the file is stored in the
+   * user's home directory. The database can be made in-memory by setting this
+   * value to `":memory:"`.
+   * @default {"~/.<app>/config.db`}
+   */
+  path?: string;
+}
 
-  /** Close the db connection to the persistent data. */
-  [Symbol.dispose]() {
-    this.kv?.close();
+/**
+ * Creates a key-value config store for the process.
+ *
+ * @example
+ * ```ts
+ * import { config } from "@roka/cli/config";
+ * import { assertEquals } from "@std/assert";
+ * using cfg = config<{ foo: string, bar: string }>({ path: ":memory:" });
+ * await cfg.set({ foo: "foo" });
+ * await cfg.set({ bar: "bar" });
+ * assertEquals(await cfg.get(), { foo: "foo", bar: "bar" });
+ * ```
+ *
+ * @todo Add single key getters.
+ * @todo Add many key getters.
+ */
+export function config<T extends Record<string, unknown>>(
+  options?: ConfigOptions,
+): Config<T> {
+  let kv: Deno.Kv | undefined;
+  async function open(): Promise<Deno.Kv> {
+    if (kv) return kv;
+    const path = options?.path ??
+      join(
+        Deno.env.get("HOME") ?? ".",
+        `.${basename(dirname(Deno.mainModule))}`,
+        "config.db",
+      );
+    await Deno.mkdir(dirname(path), { recursive: true });
+    kv = await Deno.openKv(path);
+    return kv;
   }
+  const config = {
+    async get() {
+      const kv = await open();
+      const result = {} as Record<string, unknown>;
+      for await (const { key, value } of kv.list({ prefix: [] })) {
+        const [property] = key;
+        if (property) result[property.toString()] = value;
+      }
+      return result as Partial<T>;
+    },
+    async set(value: Partial<T>) {
+      const kv = await open();
+      const set = kv.atomic();
+      for (const property of Object.getOwnPropertyNames(value)) {
+        set.set([property], value[property]);
+      }
+      await set.commit();
+    },
+    async clear() {
+      const kv = await open();
+      const del = kv.atomic();
+      for await (const { key } of kv.list({ prefix: [] })) {
+        del.delete(key);
+      }
+      await del.commit();
+    },
+  };
+  return Object.assign(config, {
+    [Symbol.dispose]() {
+      kv?.close();
+    },
+  });
 }
