@@ -63,12 +63,12 @@ Deno.test("getPackage() returns current package", async () => {
 
 Deno.test("getPackage() returns given package", async () => {
   await using directory = await tempDirectory();
-  await createPackage(directory.path, {
+  await createPackage(directory.path(), {
     name: "@scope/module",
     version: "1.2.3",
   });
-  assertEquals(await getPackage({ directory: directory.path }), {
-    directory: directory.path,
+  assertEquals(await getPackage({ directory: directory.path() }), {
+    directory: directory.path(),
     module: "module",
     version: "1.2.3",
     config: { name: "@scope/module", version: "1.2.3" },
@@ -292,10 +292,10 @@ Deno.test("getPackage() returns update at initial version", async () => {
 
 Deno.test("getWorkspace() returns non-workspace package", async () => {
   await using directory = await tempDirectory();
-  await createPackage(directory.path, { name: "name", version: "version" });
-  const packages = await getWorkspace({ directories: [directory.path] });
+  await createPackage(directory.path(), { name: "name", version: "version" });
+  const packages = await getWorkspace({ directories: [directory.path()] });
   assertEquals(packages, [{
-    directory: directory.path,
+    directory: directory.path(),
     module: "name",
     version: "version",
     config: { name: "name", version: "version" },
@@ -304,37 +304,37 @@ Deno.test("getWorkspace() returns non-workspace package", async () => {
 
 Deno.test("getWorkspace() returns workspace packages", async () => {
   await using directory = await tempDirectory();
-  const root = await createPackage(directory.path, {
+  const root = await createPackage(directory.path(), {
     name: "root",
     workspace: ["./first", "./second"],
   });
-  const pkg1 = await createPackage(join(directory.path, "first"), {
+  const pkg1 = await createPackage(directory.path("first"), {
     name: "first",
     version: "first_version",
   });
-  const pkg2 = await createPackage(join(directory.path, "second"), {
+  const pkg2 = await createPackage(directory.path("second"), {
     name: "second",
     version: "second_version",
   });
-  const packages = await getWorkspace({ directories: [directory.path] });
+  const packages = await getWorkspace({ directories: [directory.path()] });
   assertEquals(packages, [root, pkg1, pkg2]);
 });
 
 Deno.test("getWorkspace() returns nested workspace packages", async () => {
   await using directory = await tempDirectory();
-  const root = await createPackage(directory.path, {
+  const root = await createPackage(directory.path(), {
     name: "root",
     workspace: ["./first"],
   });
-  const pkg1 = await createPackage(join(directory.path, "first"), {
+  const pkg1 = await createPackage(directory.path("first"), {
     name: "first",
     version: "first_version",
     workspace: ["./second"],
   });
-  const pkg2 = await createPackage(join(directory.path, "first", "second"), {
+  const pkg2 = await createPackage(directory.path("first", "second"), {
     name: "second",
     version: "second_version",
   });
-  const packages = await getWorkspace({ directories: [directory.path] });
+  const packages = await getWorkspace({ directories: [directory.path()] });
   assertEquals(packages, [root, pkg1, pkg2]);
 });

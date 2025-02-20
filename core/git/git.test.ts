@@ -39,7 +39,7 @@ async function tempRepo(
 
 Deno.test("git().config() configures user", async () => {
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.init();
   await repo.config({ user: { name: "name", email: "email" } });
   const commit = await repo.commit("commit", { sign: false, allowEmpty: true });
@@ -48,14 +48,14 @@ Deno.test("git().config() configures user", async () => {
 
 Deno.test("git().init() creates a repo", async () => {
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.init();
   assert((await Deno.stat(repo.path(".git"))).isDirectory);
 });
 
 Deno.test("git().init() creates a repo with initial branch", async () => {
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.init({ branch: "commit" });
   assertEquals(await repo.branch(), "commit");
   await repo.init();
@@ -66,7 +66,7 @@ Deno.test("git().clone() clones a repo", async () => {
   await remote.commit("first", { allowEmpty: true });
   await remote.commit("second", { allowEmpty: true });
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory);
   assertEquals(await repo.remote(), remote.directory);
   assertEquals(await repo.log(), await remote.log());
@@ -76,7 +76,7 @@ Deno.test("git().clone() clones a repo with remote name", async () => {
   await using remote = await tempRepo();
   await remote.commit("commit", { allowEmpty: true });
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory, { remote: "remote" });
   assertEquals(await repo.remote({ remote: "remote" }), remote.directory);
   assertEquals(await repo.log(), await remote.log());
@@ -88,7 +88,7 @@ Deno.test("git().clone() checks out a branch", async () => {
   await remote.commit("second", { allowEmpty: true });
   await remote.checkout({ target, newBranch: "branch" });
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory, { branch: "branch" });
   assertEquals(await repo.log(), [target]);
 });
@@ -99,7 +99,7 @@ Deno.test("git().clone() can do a shallow copy", async () => {
   await remote.commit("second", { allowEmpty: true });
   const third = await remote.commit("third", { allowEmpty: true });
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory, { depth: 1, local: false });
   assertEquals(await repo.log(), [third]);
 });
@@ -108,7 +108,7 @@ Deno.test("git().clone() local is no-op for local remote", async () => {
   await using remote = await tempRepo();
   const commit = await remote.commit("commit", { allowEmpty: true });
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory, { local: true });
   assertEquals(await repo.log(), [commit]);
 });
@@ -121,7 +121,7 @@ Deno.test("git().clone() can do a shallow copy of multiple branches", async () =
   await remote.commit("second", { allowEmpty: true });
   const third = await remote.commit("third", { allowEmpty: true });
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory, {
     branch: "branch1",
     depth: 1,
@@ -141,7 +141,7 @@ Deno.test("git().clone() can copy a single branch", async () => {
   await remote.checkout({ newBranch: "branch2" });
   await remote.commit("third", { allowEmpty: true });
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path });
+  const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory, { branch: "branch1", singleBranch: true });
   assertEquals(await repo.log(), [second, first]);
   await assertRejects(() => repo.checkout({ target: "branch2" }));
