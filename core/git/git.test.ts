@@ -1,4 +1,5 @@
-import { type Git, git, GitError } from "@roka/git";
+import { git, GitError } from "@roka/git";
+import { tempRepo } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing";
 import {
   assert,
@@ -7,35 +8,6 @@ import {
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
-
-async function tempRepo(
-  { bare, clone, remote }: { bare?: boolean; clone?: Git; remote?: string } =
-    {},
-): Promise<Git & AsyncDisposable> {
-  const cwd = await Deno.makeTempDir();
-  const config = {
-    user: { name: "A U Thor", email: "author@example.com" },
-    commit: { gpgsign: false },
-    tag: { gpgsign: false },
-  };
-  bare ??= false;
-  const repo = git({ cwd });
-  if (clone) {
-    await git({ cwd }).clone(clone.directory, {
-      bare,
-      config,
-      ...remote && { remote },
-    });
-  } else {
-    await repo.init({ bare });
-    await repo.config(config);
-  }
-  Object.assign(repo, {
-    [Symbol.asyncDispose]: () =>
-      Deno.remove(repo.directory, { recursive: true }),
-  });
-  return repo as Git & AsyncDisposable;
-}
 
 Deno.test("git().config() configures user", async () => {
   await using directory = await tempDirectory();
@@ -740,9 +712,12 @@ Deno.test("git().push() pushes commits to remote", async () => {
 
 Deno.test("git().push() pushes commits to remote with name", async () => {
   await using remote = await tempRepo({ bare: true });
-  await using repo = await tempRepo({ clone: remote, remote: "remote" });
+  const branch = await remote.branch();
+  assert(branch);
+  await using repo = await tempRepo();
+  await repo.addRemote(remote.directory, { remote: "remote" });
   const commit = await repo.commit("commit", { allowEmpty: true });
-  await repo.push({ remote: "remote" });
+  await repo.push({ remote: "remote", branch });
   assertEquals(await remote.log(), [commit]);
 });
 

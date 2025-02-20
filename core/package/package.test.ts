@@ -1,5 +1,5 @@
-import { type Git, git } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
+import { tempRepo } from "@roka/git/testing";
 import {
   type Config,
   getPackage,
@@ -9,35 +9,6 @@ import {
 import { tempDirectory } from "@roka/testing";
 import { assertEquals, assertRejects } from "@std/assert";
 import { join } from "@std/path/join";
-
-async function tempRepo(
-  { bare, clone, remote }: { bare?: boolean; clone?: Git; remote?: string } =
-    {},
-): Promise<Git & AsyncDisposable> {
-  const cwd = await Deno.makeTempDir();
-  const config = {
-    user: { name: "A U Thor", email: "author@example.com" },
-    commit: { gpgsign: false },
-    tag: { gpgsign: false },
-  };
-  bare ??= false;
-  const repo = git({ cwd });
-  if (clone) {
-    await git({ cwd }).clone(clone.directory, {
-      bare,
-      config,
-      ...remote && { remote },
-    });
-  } else {
-    await repo.init({ bare });
-    await repo.config(config);
-  }
-  Object.assign(repo, {
-    [Symbol.asyncDispose]: () =>
-      Deno.remove(repo.directory, { recursive: true }),
-  });
-  return repo as Git & AsyncDisposable;
-}
 
 async function createPackage(
   directory: string,

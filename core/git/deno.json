@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "exports": {
     ".": "./git.ts",
-    "./conventional": "./conventional.ts"
+    "./conventional": "./conventional.ts",
+    "./testing": "./testing.ts"
   }
 }

@@ -1,20 +1,9 @@
-import type { Commit } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
+import { testCommit } from "@roka/git/testing";
 import { assertEquals } from "@std/assert";
 
-function testCommit(summary: string): Commit {
-  return {
-    hash: "hash",
-    short: "short",
-    author: { name: "author-name", email: "author-email" },
-    committer: { name: "committer-name", email: "committer-email" },
-    summary: summary,
-    body: "body",
-  };
-}
-
 Deno.test("conventional() creates conventional commits", () => {
-  const commit = testCommit("feat(module): description");
+  const commit = testCommit({ summary: "feat(module): description" });
   assertEquals(conventional(commit), {
     ...commit,
     description: "description",
@@ -25,7 +14,7 @@ Deno.test("conventional() creates conventional commits", () => {
 });
 
 Deno.test("conventional() accepts be simple commits", () => {
-  const commit = testCommit("description");
+  const commit = testCommit({ summary: "description" });
   assertEquals(conventional(commit), {
     ...commit,
     description: "description",
@@ -36,7 +25,7 @@ Deno.test("conventional() accepts be simple commits", () => {
 });
 
 Deno.test("conventional() can create breaking commits", () => {
-  const commit = testCommit("feat!: description");
+  const commit = testCommit({ summary: "feat!: description" });
   assertEquals(conventional(commit), {
     ...commit,
     description: "description",
@@ -48,7 +37,7 @@ Deno.test("conventional() can create breaking commits", () => {
 
 Deno.test("conventional() can create breaking commits from footer", () => {
   const commit = {
-    ...testCommit("feat: description"),
+    ...testCommit({ summary: "feat: description" }),
     body: "BREAKING CHANGE: breaking",
   };
   assertEquals(conventional(commit), {
@@ -61,7 +50,7 @@ Deno.test("conventional() can create breaking commits from footer", () => {
 });
 
 Deno.test("conventional() can create breaking commit with module", () => {
-  const commit = testCommit("feat(module)!: description");
+  const commit = testCommit({ summary: "feat(module)!: description" });
   assertEquals(conventional(commit), {
     ...commit,
     description: "description",
@@ -72,7 +61,7 @@ Deno.test("conventional() can create breaking commit with module", () => {
 });
 
 Deno.test("conventional() can create multiple modules", () => {
-  const commit = testCommit("feat(module1,module2): description");
+  const commit = testCommit({ summary: "feat(module1,module2): description" });
   assertEquals(conventional(commit), {
     ...commit,
     description: "description",
@@ -83,7 +72,7 @@ Deno.test("conventional() can create multiple modules", () => {
 });
 
 Deno.test("conventional() commits must have a description", () => {
-  const commit = testCommit("feat(module): ");
+  const commit = testCommit({ summary: "feat(module): " });
   assertEquals(conventional(commit), {
     ...commit,
     description: "feat(module): ",
