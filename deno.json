@@ -15,11 +15,11 @@
     "bump": "gh workflow run bump",
     "compile": "deno run -A tool/forge/compile.ts",
     "install": "deno task compile --install=$HOME/.local/bin",
-    "test": "deno test --no-check -A --unstable-kv --doc **/*.ts",
+    "test": "deno test -A --unstable-kv --doc **/*.ts",
     "coverage": "deno task test --coverage && deno coverage --html",
-    "lint": "deno fmt -q --check && deno lint -q && deno check -rq **/*.ts",
+    "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",
     "doc": "deno doc --lint --html $(find . -path '**/*.ts' -type file)",
-    "ok": "deno task lint && deno task doc && deno task test && deno publish -q --dry-run --allow-dirty"
+    "ok": "deno task lint && deno task doc && deno task test && deno publish --quiet --dry-run --allow-dirty"
   },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,
