@@ -25,7 +25,7 @@ export class GitError extends Error {
   }
 }
 
-/** A local repository with git commands. */
+/** A local repository returned by {@linkcode git}. */
 export interface Git {
   /** Local repository directory. */
   directory: string;
