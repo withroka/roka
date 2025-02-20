@@ -18,6 +18,9 @@ jobs:
 
       - name: Setup
         uses: denoland/setup-deno@v2
+        with:
+          # https://github.com/denoland/deno/issues/28201
+          deno-version: v2.1.10
 
       - name: Test
         run: deno task lint
