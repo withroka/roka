@@ -1,59 +1,16 @@
-/**
- * Provides {@link https://www.conventionalcommits.org | Conventional Commits}.
- *
- * This module provides the {@link conventional} function to convert a
- * {@linkcode Commit} object to a {@linkcode ConventionalCommit} object.
- *
- * @example
- * ```ts
- * import { git } from "@roka/git";
- * import { conventional } from "@roka/git/conventional";
- * import { tempDirectory } from "@roka/testing/temp";
- * import { assertEquals } from "@std/assert";
- *
- * await using dir = await tempDirectory();
- * const repo = git({ cwd: dir.path });
- * await repo.init();
- * await repo.commit("feat(cli): add new command", {
- *   body: "BREAKING CHANGE: this is a breaking change",
- *   allowEmpty: true,
- * });
- *
- * const commit = conventional(await repo.head())
- * assertEquals(commit.type, "feat");
- * assertEquals(commit.modules, ["cli"]);
- * assertEquals(commit.breaking, true);
- * ```
- *
- * @see {@link https://www.conventionalcommits.org/en/v1.0.0/
- *             | Conventional Commits 1.0.0}
- *
- * @module
- */
-
 import type { Commit } from "@roka/git";
 import { assert } from "@std/assert";
 
 /**
  * A commit object that exposes conventional commit details.
  *
- * @example
- * ```ts
- * import { git } from "@roka/git";
- * import { conventional } from "@roka/git/conventional";
- * import { tempDirectory } from "@roka/testing/temp";
- * import { assertEquals } from "@std/assert";
+ * For example, a commit summary like `feat(cli): add new command` will have
+ * its type set to `feat` and modules set to `cli`.
  *
- * await using dir = await tempDirectory();
- * const repo = git({ cwd: dir.path });
- * await repo.init();
- * await repo.commit("feat(cli): add new command", { allowEmpty: true });
+ * A {@linkcode ConventionalCommit} object can be converted to a
+ * {@linkcode ConventionalCommit} using the {@linkcode conventional} function.
  *
- * const commit = conventional(await repo.head())
- * assertEquals(commit.type, "feat");
- * assertEquals(commit.modules, ["cli"]);
- * assertEquals(commit.breaking, false);
- * ```
+ * @see {@link https://www.conventionalcommits.org|Conventional Commits}
  */
 export interface ConventionalCommit extends Commit {
   /** Conventional commits: Commit description. */
