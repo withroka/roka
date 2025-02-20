@@ -25,6 +25,9 @@
  * assertEquals(commit.breaking, true);
  * ```
  *
+ * @see {@link https://www.conventionalcommits.org/en/v1.0.0/
+ *             | Conventional Commits 1.0.0}
+ *
  * @module
  */
 
@@ -34,13 +37,23 @@ import { assert } from "@std/assert";
 /**
  * A commit object that exposes conventional commit details.
  *
- * For example, a commit summary like `feat(cli): add new command` will have
- * its type set to `feat` and modules set to `cli`.
+ * @example
+ * ```ts
+ * import { git } from "@roka/git";
+ * import { conventional } from "@roka/git/conventional";
+ * import { tempDirectory } from "@roka/testing/temp";
+ * import { assertEquals } from "@std/assert";
  *
- * A {@linkcode ConventionalCommit} object can be converted to a
- * {@linkcode ConventionalCommit} using the {@linkcode conventional} function.
+ * await using dir = await tempDirectory();
+ * const repo = git({ cwd: dir.path });
+ * await repo.init();
+ * await repo.commit("feat(cli): add new command", { allowEmpty: true });
  *
- * @see {@link https://www.conventionalcommits.org|Conventional Commits}
+ * const commit = conventional(await repo.head())
+ * assertEquals(commit.type, "feat");
+ * assertEquals(commit.modules, ["cli"]);
+ * assertEquals(commit.breaking, false);
+ * ```
  */
 export interface ConventionalCommit extends Commit {
   /** Conventional commits: Commit description. */

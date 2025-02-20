@@ -32,7 +32,6 @@ jobs:
             style
             test
           scopes: |
-            \*
             async
             cli
             example
