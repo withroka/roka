@@ -1,3 +1,33 @@
+/**
+ * Provides {@link https://www.conventionalcommits.org | Conventional Commits}.
+ *
+ * This module provides the {@link conventional} function to convert a
+ * {@linkcode Commit} object to a {@linkcode ConventionalCommit} object.
+ *
+ * @example
+ * ```ts
+ * import { git } from "@roka/git";
+ * import { conventional } from "@roka/git/conventional";
+ * import { tempDirectory } from "@roka/testing/temp";
+ * import { assertEquals } from "@std/assert";
+ *
+ * await using dir = await tempDirectory();
+ * const repo = git({ cwd: dir.path });
+ * await repo.init();
+ * await repo.commit("feat(cli): add new command", {
+ *   body: "BREAKING CHANGE: this is a breaking change",
+ *   allowEmpty: true,
+ * });
+ *
+ * const commit = conventional(await repo.head())
+ * assertEquals(commit.type, "feat");
+ * assertEquals(commit.modules, ["cli"]);
+ * assertEquals(commit.breaking, true);
+ * ```
+ *
+ * @module
+ */
+
 import type { Commit } from "@roka/git";
 import { assert } from "@std/assert";
 

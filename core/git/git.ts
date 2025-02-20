@@ -1,14 +1,41 @@
+/**
+ * Objects to to interact with a local git repositories.
+ *
+ * This module provides, currently incomplete, functionality to interact with
+ * a local git repository. It is intended to be used for simple operations
+ * like creating commits, tags, and pushing to remotes.
+ *
+ * @example
+ * ```
+ * import { git } from "@roka/git";
+ * import { tempDirectory } from "@roka/testing/temp";
+ * import { assertEquals } from "@std/assert";
+ *
+ * await using dir = await tempDirectory();
+ * const repo = git({ cwd: dir.path });
+ * await repo.init();
+ *
+ * const commit = await repo.commit("Initial commit", { allowEmpty: true });
+ * assertEquals(await repo.head(), commit);
+ * assertEquals(await repo.log(), [commit]);
+ *
+ * const tag = await repo.tag("release");
+ * assertEquals(await repo.tagList(), [tag]);
+ * ```
+ *
+ * @todo Set and get any configuration.
+ * @todo Add stashing.
+ * @todo Handle merges, rebases, conflicts.
+ * @todo Add submodules.
+ * @todo Expose dates.
+ * @todo Verify signatures.
+ * @todo Add pruning.
+ *
+ * @module
+ */
+
 import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
 import { join } from "@std/path/join";
-
-// NOT IMPLEMENTED
-// - most configs
-// - merge, rebase, conflict resolution
-// - stash
-// - submodules
-// - dates
-// - verify signatures
-// - prune
 
 /** An error while running a git command. */
 export class GitError extends Error {
@@ -17,9 +44,7 @@ export class GitError extends Error {
    *
    * @param message The error message to be associated with this error.
    */
-  constructor(
-    message: string,
-  ) {
+  constructor(message: string) {
     super(message);
     this.name = "GitError";
   }
@@ -50,6 +75,8 @@ export interface Git {
     summary: string,
     options?: CommitOptions,
   ) => Promise<Commit>;
+  /** Returns the commit at the tip of `HEAD`. */
+  head: (options?: LogOptions) => Promise<Commit>;
   /** Returns the history of commits in the repository. */
   log: (options?: LogOptions) => Promise<Commit[]>;
   /** Creates a new tag in the repository. */
@@ -114,8 +141,8 @@ export interface RevisionRange {
   /**
    * Match objects that are reachable from either end, but not from both.
    *
-   * Ignored if either {@linkcode RevisionRange.from} or {@linkcode RevisionRange.to} is
-   * not set.
+   * Ignored if either {@linkcode RevisionRange.from} or
+   * {@linkcode RevisionRange.to} is not set.
    *
    * @default {false}
    */
@@ -157,7 +184,8 @@ export interface GitOptions {
    */
   cwd?: string;
   /**
-   * Git configuration options.
+   * Git configuration options for each executed git command.
+   *
    * These will override repository or global configurations.
    */
   config?: Config;
@@ -433,6 +461,11 @@ export function git(options?: GitOptions): Git {
       assert(hash, "Cannot find created commit");
       const [commit] = await this.log({ maxCount: 1, range: { to: hash } });
       assert(commit, "Cannot find created commit");
+      return commit;
+    },
+    async head() {
+      const [commit] = await this.log({ maxCount: 1 });
+      assert(commit, "No HEAD commit.");
       return commit;
     },
     async log(options) {

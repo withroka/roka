@@ -122,8 +122,7 @@ async function createReleases(
     let [release] = await repo.releases.list({ name, isDraft: true });
     {
       // create or update release
-      const [head] = await git().log();
-      if (!head) throw new PackageError("Cannot determine current commit");
+      const head = await git().head();
       const data = {
         name,
         tag: name,
