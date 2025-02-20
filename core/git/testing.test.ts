@@ -1,6 +1,6 @@
+import { tempRepo, testCommit } from "@roka/git/testing";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
-import { testCommit } from "./testing.ts";
 
 Deno.test("testCommit() creates a commit with fake data", () => {
   const commit = testCommit();
@@ -18,4 +18,26 @@ Deno.test("testCommit() can override fields", () => {
   const commit = testCommit({ summary: "test-summary", body: "test-body" });
   assertEquals(commit.summary, "test-summary");
   assertEquals(commit.body, "test-body");
+});
+
+Deno.test("tempRepo() creates a repo", async () => {
+  await using repo = await tempRepo();
+  const commit = await repo.commit("initial", { allowEmpty: true });
+  assertEquals(await repo.head(), commit);
+});
+
+Deno.test("tempRepo() can clone a repo from another repo", async () => {
+  await using remote = await tempRepo({ bare: true });
+  await using repo = await tempRepo({ clone: remote });
+  const commit = await repo.commit("initial", { allowEmpty: true });
+  await repo.push();
+  assertEquals(await remote.head(), commit);
+});
+
+Deno.test("tempRepo() can clone a repo from path", async () => {
+  await using remote = await tempRepo({ bare: true });
+  await using repo = await tempRepo({ clone: remote.path() });
+  const commit = await repo.commit("initial", { allowEmpty: true });
+  await repo.push();
+  assertEquals(await remote.head(), commit);
 });

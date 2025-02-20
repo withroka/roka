@@ -72,9 +72,7 @@ export class GitError extends Error {
 
 /** A local repository returned by {@linkcode git}. */
 export interface Git {
-  /** Local repository directory. */
-  directory: string;
-  /** Returns the full path to a file in the repository. */
+  /** Returns the repository directory, with optional relative children. */
   path: (...parts: string[]) => string;
   /** Configures repository options. */
   config: (config: Config) => Promise<void>;
@@ -435,11 +433,11 @@ export interface PullOptions
  * ```
  */
 export function git(options?: GitOptions): Git {
+  const directory = options?.cwd ?? ".";
   const gitOptions = options ?? {};
   return {
-    directory: options?.cwd ?? ".",
     path(...parts: string[]) {
-      return join(this.directory, ...parts);
+      return join(directory, ...parts);
     },
     async init(options) {
       await run(

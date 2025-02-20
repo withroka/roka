@@ -50,7 +50,7 @@ export function testCommit(commit?: Partial<Commit>): Commit {
 /** Options for {@linkcode tempRepo}. */
 export interface TempRepoOptions {
   /** Clone given repo, instead of creating an emtpy one. */
-  clone?: Git;
+  clone?: string | Git;
   /** Create a bare repository. */
   bare?: boolean;
 }
@@ -84,7 +84,8 @@ export async function tempRepo(
   };
   const repo = git({ cwd });
   if (clone) {
-    await git({ cwd }).clone(clone.directory, { bare, config });
+    const target = typeof clone === "string" ? clone : clone.path();
+    await git({ cwd }).clone(target, { bare, config });
   } else {
     await repo.init({ bare });
     await repo.config(config);
