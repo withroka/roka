@@ -1,26 +1,46 @@
 /**
- * Objects to to interact with a local git repositories.
+ * Objects to interact with a local git repositories.
  *
  * This module provides, currently incomplete, functionality to interact with
  * a local git repository. It is intended to be used for simple operations
  * like creating commits, tags, and pushing to remotes.
  *
  * @example
- * ```
+ * ```ts
  * import { git } from "@roka/git";
  * import { tempDirectory } from "@roka/testing/temp";
- * import { assertEquals } from "@std/assert";
  *
- * await using dir = await tempDirectory();
- * const repo = git({ cwd: dir.path });
+ * await using directory = await tempDirectory();
+ * const repo = git({
+ *   cwd: directory.path(),
+ *   config: {
+ *     user: { name: "name", email: "email" },
+ *     commit: { gpgsign: false },
+ *   },
+ * });
  * await repo.init();
+ * await repo.commit("Initial commit", { allowEmpty: true });
+ * ```
  *
+ * The `@roka/git/testing` module provides utilities to help write tests.
+ *
+ * @example
+ * ```ts
+ * import { tempRepo } from "@roka/git/testing";
+ * await using repo = await tempRepo();
  * const commit = await repo.commit("Initial commit", { allowEmpty: true });
- * assertEquals(await repo.head(), commit);
- * assertEquals(await repo.log(), [commit]);
+ * ```
  *
- * const tag = await repo.tag("release");
- * assertEquals(await repo.tagList(), [tag]);
+ * The `@roka/git/conventional` module provides utilities to work with
+ * {@link https://www.conventionalcommits.org | Conventional Commits}.
+ *
+ * @example
+ * ```ts
+ * import { conventional } from "@roka/git/conventional";
+ * import { testCommit } from "@roka/git/testing";
+ * const conventionalCommit = conventional(testCommit({
+ *   summary: "feat(cli): add command"
+ * }));
  * ```
  *
  * @todo Set and get any configuration.
@@ -371,7 +391,7 @@ export interface GitTransportOptions {
 
 /** Options for pushing to a remote. */
 export interface PushOptions extends GitTransportOptions, RemoteOptions {
-  /** Remote branch to push to. Default is the tracked remote branch. */
+  /** Remote branch to push to. Default is the current branch. */
   branch?: string;
   /** Force push to remote. */
   force?: boolean;
@@ -390,7 +410,30 @@ export interface PullOptions
   branch?: string;
 }
 
-/** Creates a new Git instance for a local repository. */
+/**
+ * Creates a new Git instance for a local repository.
+ *
+ * @example
+ * ```ts
+ * import { git } from "@roka/git";
+ * import { tempDirectory } from "@roka/testing/temp";
+ * import { assertEquals } from "@std/assert";
+ *
+ * await using directory = await tempDirectory();
+ * const repo = git({ cwd: directory.path() });
+ * await repo.init();
+ * await repo.config({ user: { name: "name", email: "email" } });
+ *
+ * await Deno.writeTextFile(repo.path("file.txt"), "content");
+ * await repo.add("file.txt");
+ * const commit = await repo.commit("Initial commit", { sign: false });
+ * assertEquals(await repo.head(), commit);
+ * assertEquals(await repo.log(), [commit]);
+ *
+ * const tag = await repo.tag("release", { sign: false });
+ * assertEquals(await repo.tagList(), [tag]);
+ * ```
+ */
 export function git(options?: GitOptions): Git {
   const gitOptions = options ?? {};
   return {
