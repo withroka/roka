@@ -11,9 +11,8 @@
  * await using repo = await tempRepo();
  * const commit = testCommit({ summary: "feat(cli): add command" });
  * await repo.commit(commit.summary, {
- *    body: commit.body,
- *    author: commit.author,
- *    allowEmpty: true,
+ *   author: commit.author,
+ *   allowEmpty: true,
  * });
  * assertEquals((await repo.head()).author, commit.author);
  * ```
@@ -41,6 +40,7 @@ export function testCommit(commit?: Partial<Commit>): Commit {
     short: "short",
     summary: "summary",
     body: "body",
+    trailers: { "trailer": "value" },
     author: { name: "author-name", email: "author-email" },
     committer: { name: "committer-name", email: "committer-email" },
     ...commit,

@@ -7,7 +7,8 @@ Deno.test("testCommit() creates a commit with fake data", () => {
   assert(commit.hash.length);
   assert(commit.short.length);
   assert(commit.summary.length);
-  assert(commit.body.length);
+  assert(commit.body?.length);
+  assert(commit.trailers);
   assert(commit.author.name.length);
   assert(commit.author.email.length);
   assert(commit.committer.name.length);

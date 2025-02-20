@@ -217,9 +217,52 @@ Deno.test("git().commit() creates a commit", async () => {
   await using repo = await tempRepo();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.add("file");
-  const commit = await repo.commit("summary", { body: "body" });
+  const commit = await repo.commit("summary");
   assertEquals(commit?.summary, "summary");
-  assertEquals(commit?.body, "body\n");
+  assertEquals(commit?.body, undefined);
+  assertEquals(commit?.trailers, {});
+});
+
+Deno.test("git().commit() creates a commit with body", async () => {
+  await using repo = await tempRepo();
+  const commit = await repo.commit("summary", {
+    body: "body",
+    allowEmpty: true,
+  });
+  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.body, "body");
+  assertEquals(commit?.trailers, {});
+});
+
+Deno.test("git().commit() ignores empty body", async () => {
+  await using repo = await tempRepo();
+  const commit = await repo.commit("summary", { body: "", allowEmpty: true });
+  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.body, undefined);
+  assertEquals(commit?.trailers, {});
+});
+
+Deno.test("git().commit() creates a commit with trailers", async () => {
+  await using repo = await tempRepo();
+  const commit = await repo.commit("summary", {
+    trailers: { key1: "value1", key2: "value2\n  multi\n  line" },
+    allowEmpty: true,
+  });
+  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.body, undefined);
+  assertEquals(commit?.trailers, { key1: "value1", key2: "value2 multi line" });
+});
+
+Deno.test("git().commit() creates a commit with body and trailers", async () => {
+  await using repo = await tempRepo();
+  const commit = await repo.commit("summary", {
+    body: "body",
+    trailers: { key: "value" },
+    allowEmpty: true,
+  });
+  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.body, "body");
+  assertEquals(commit?.trailers, { key: "value" });
 });
 
 Deno.test("git().commit() can automatically add files", async () => {
@@ -322,6 +365,29 @@ Deno.test("git().log() returns multiple commits", async () => {
   const commit1 = await repo.commit("first", { allowEmpty: true });
   const commit2 = await repo.commit("second", { allowEmpty: true });
   assertEquals(await repo.log(), [commit2, commit1]);
+});
+
+Deno.test("git().log() can parse message body", async () => {
+  await using repo = await tempRepo();
+  const commit = await repo.commit(
+    "summary\n\nbody\n\nkey1: value1\nkey2: value2\n",
+    { allowEmpty: true },
+  );
+  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.body, "body");
+  assertEquals(commit?.trailers, { key1: "value1", key2: "value2" });
+});
+
+Deno.test("git().log() can work with custom trailer separator", async () => {
+  await using repo = await tempRepo();
+  await repo.config({ trailer: { separators: "#" } });
+  const commit = await repo.commit(
+    "summary\n\nbody\n\nkey1 #value1\nkey2 #value2\n",
+    { allowEmpty: true },
+  );
+  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.body, "body");
+  assertEquals(commit?.trailers, { key1: "value1", key2: "value2" });
 });
 
 Deno.test("git().log() can limit number of commits", async () => {
@@ -509,7 +575,20 @@ Deno.test("git().tag() creates an annotated tag", async () => {
     commit,
     tagger: { name: "tagger", email: "tagger@example.com" },
     subject: "subject",
-    body: "body\n",
+    body: "body",
+  });
+});
+
+Deno.test("git().tag() ignores empty body", async () => {
+  await using repo = await tempRepo();
+  await repo.config({ user: { name: "tagger", email: "tagger@example.com" } });
+  const commit = await repo.commit("commit", { allowEmpty: true });
+  const tag = await repo.tag("tag", { subject: "subject", body: "" });
+  assertEquals(tag, {
+    name: "tag",
+    commit,
+    tagger: { name: "tagger", email: "tagger@example.com" },
+    subject: "subject",
   });
 });
 
