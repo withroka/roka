@@ -76,7 +76,7 @@ export interface Git {
     options?: CommitOptions,
   ) => Promise<Commit>;
   /** Returns the commit at the tip of `HEAD`. */
-  head: (options?: LogOptions) => Promise<Commit>;
+  head: () => Promise<Commit>;
   /** Returns the history of commits in the repository. */
   log: (options?: LogOptions) => Promise<Commit[]>;
   /** Creates a new tag in the repository. */
