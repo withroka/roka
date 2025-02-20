@@ -128,8 +128,10 @@ export interface Commit {
   short: string;
   /** Commit summary, the first line of the commit message. */
   summary: string;
-  /** Commit body, excluding the first line from the message. */
-  body: string;
+  /** Commit body, excluding the first line and trailers from the message. */
+  body?: string;
+  /** Trailer values at the end of the commit message. */
+  trailers: Record<string, string>;
   /** Author, who wrote the code. */
   author: User;
   /** Committter, who created the commit. */
@@ -178,6 +180,11 @@ export interface Config {
   tag?: {
     /** Whether to sign tags. */
     gpgsign?: boolean;
+  };
+  /** Trailer configuration. */
+  trailer?: {
+    /** Separator between key and value in trailers. */
+    separators?: string;
   };
   /** User configuration. */
   user?: Partial<User> & {
@@ -307,6 +314,8 @@ export interface CommitOptions extends SignOptions {
   author?: User | undefined;
   /** Commit body to append to the message.   */
   body?: string;
+  /** Trailers to append to the commit message. */
+  trailers?: Record<string, string>;
 }
 
 /** Options for fetching git logs. */
@@ -491,7 +500,8 @@ export function git(options?: GitOptions): Git {
         gitOptions,
         "commit",
         ["-m", summary],
-        options?.body && ["-m", options?.body],
+        options?.body !== undefined && ["-m", options?.body],
+        options?.trailers && trailerArg(options.trailers),
         options?.all && "--all",
         options?.allowEmpty && "--allow-empty",
         options?.amend && "--amend",
@@ -530,7 +540,7 @@ export function git(options?: GitOptions): Git {
         ["tag", name],
         options?.commit && commitArg(options.commit),
         options?.subject && ["-m", options.subject],
-        options?.body && ["-m", options.body],
+        options?.body !== undefined && ["-m", options.body],
         options?.force && "--force",
         options?.sign !== undefined && signArg(options.sign, "tag"),
       );
@@ -679,6 +689,11 @@ function userArg(user: User): string {
   return `${user.name} <${user.email}>`;
 }
 
+function trailerArg(trailers: Record<string, string>): string[] {
+  return Object.entries(trailers)
+    .map(([token, value]) => `--trailer=${token}: ${value}`);
+}
+
 function commitArg(commit: Commitish): string {
   return typeof commit === "string"
     ? commit
@@ -710,8 +725,9 @@ function rangeArg(range: RevisionRange): string {
 }
 
 type FormatField = { kind: "skip" } | {
-  kind: "string" | "number";
+  kind: "string";
   optional?: boolean;
+  transform?: (value: string, parent: Record<string, string>) => unknown;
   format: string;
 } | {
   kind: "object";
@@ -721,18 +737,25 @@ type FormatField = { kind: "skip" } | {
 
 type FormatFieldDescriptor<T> =
   | { kind: "skip" }
-  | (T extends object ? {
-      kind: "object";
-      fields: { [K in keyof T]: FormatFieldDescriptor<T[K]> };
-    }
-    : {
-      kind: T extends string ? "string"
-        : T extends number ? "number"
-        : never;
-      format: string;
-    })
-    & (undefined extends T ? { optional: true }
-      : { optional?: false });
+  | (
+    & (
+      | {
+        kind: "string";
+        format: string;
+        transform: (value: string, parent: Record<string, string>) => T;
+      }
+      | (T extends string ? {
+          kind: "string";
+          format: string;
+        }
+        : T extends object ? {
+            kind: "object";
+            fields: { [K in keyof T]: FormatFieldDescriptor<T[K]> };
+          }
+        : never)
+    )
+    & (undefined extends T ? { optional: true } : { optional?: false })
+  );
 
 type FormatDescriptor<T> = { delimiter: string } & FormatFieldDescriptor<T>;
 
@@ -757,7 +780,32 @@ const LOG_FORMAT: FormatDescriptor<Commit> = {
       },
     },
     summary: { kind: "string", format: "%s" },
-    body: { kind: "string", format: "%b" },
+    body: {
+      kind: "string",
+      format: "%b%H%(trailers)",
+      optional: true,
+      transform: (bodyAndTrailers: string, parent: Record<string, string>) => {
+        const hash = parent["hash"];
+        assert(hash, "Cannot parse git output");
+        let [body, trailers] = bodyAndTrailers.split(hash, 2);
+        if (trailers && body && body.endsWith(trailers)) {
+          body = body.slice(0, -trailers.length);
+        }
+        body = body?.trimEnd();
+        return body || undefined;
+      },
+    },
+    trailers: {
+      kind: "string",
+      format: "%(trailers:only=true,unfold=true,key_value_separator=: )",
+      transform: (trailers: string) => {
+        return trailers.split("\n").reduce((trailers, line) => {
+          const [key, value] = line.split(": ", 2);
+          if (key) trailers[key.trim()] = value?.trim() || "";
+          return trailers;
+        }, {} as Record<string, string>);
+      },
+    },
   },
 } satisfies FormatDescriptor<Commit>;
 
@@ -779,6 +827,7 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
         short: { kind: "skip" },
         summary: { kind: "skip" },
         body: { kind: "skip" },
+        trailers: { kind: "skip" },
         author: { kind: "skip" },
         committer: { kind: "skip" },
       },
@@ -806,6 +855,10 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
       kind: "string",
       optional: true,
       format: "%(if)%(object)%(then)%(body)%(else)%00%(end)",
+      transform: (body: string) => {
+        body = body.trimEnd();
+        return body || undefined;
+      },
     },
   },
 } satisfies FormatDescriptor<Tag>;
@@ -825,32 +878,37 @@ function formatArg<T>(format: FormatDescriptor<T>): string {
   return `${delimiter}!${formats.join(delimiter)}${delimiter}`;
 }
 
-function formattedObject(
+function formattedObject<T>(
+  parent: Record<string, string>,
   format: FormatField,
   parts: string[],
-): [string | number | Record<string, unknown> | undefined, number] {
-  if (format.kind === "skip") return [undefined, 0];
+): [Partial<T> | undefined, string | undefined, number] {
+  if (format.kind === "skip") return [undefined, undefined, 0];
   if (format.kind === "object") {
+    const parsed: Record<string, string> = {};
     const result: Record<string, unknown> = {};
     const length = Object.entries(format.fields).reduce((sum, [key, field]) => {
-      const [value, length] = formattedObject(field, parts);
+      const [value, raw, length] = formattedObject(parsed, field, parts);
       if (value !== undefined) result[key] = value;
+      if (raw !== undefined) parsed[key] = raw;
       return sum + length;
     }, 0);
     if (
       format.optional &&
       Object.values(result).every((v) => v === undefined || v === "\x00")
     ) {
-      return [undefined, length];
+      return [undefined, undefined, length];
     }
-    return [result, length];
+    return [result as Partial<T>, undefined, length];
   }
 
   const value = parts.shift();
   assert(value !== undefined, "Cannot parse git output");
-  if (format.optional && value === "\x00") return [undefined, value.length];
-  if (format.kind === "number") return [parseInt(value), value.length];
-  return [value, value.length];
+  if (format.optional && value === "\x00") {
+    return [undefined, value, value.length];
+  }
+  const result = format.transform ? format.transform(value, parent) : value;
+  return [result as Partial<T>, value, value.length];
 }
 
 function parseOutput<T>(
@@ -861,14 +919,15 @@ function parseOutput<T>(
   const fields = formatFields(format);
   while (output.length) {
     const delimiterEnd = output.indexOf("!");
-    assertGreater(delimiterEnd, 0, "cannot parse git output");
+    assertGreater(delimiterEnd, 0, "Cannot parse git output");
     const delimiter = output.slice(0, delimiterEnd);
     output = output.slice(delimiter.length + 1);
     const parts = output.split(delimiter, fields.length);
-    assertEquals(parts.length, fields.length, "cannot parse git output");
-    assertFalse(parts.some((p) => p === undefined), "cannot parse git output");
-    const [object, length] = formattedObject(format, parts);
-    result.push(object as Partial<T>);
+    assertEquals(parts.length, fields.length, "Cannot parse git output");
+    assertFalse(parts.some((p) => p === undefined), "Cannot parse git output");
+    const [object, _, length] = formattedObject({}, format, parts);
+    assert(object, "Cannot parse git output");
+    result.push(object);
     output = output.slice(length + (fields.length) * delimiter.length)
       .trimStart();
   }

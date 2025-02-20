@@ -234,7 +234,7 @@ async function getUpdate(pkg: Package): Promise<Update | undefined> {
       : { paths: ["."] },
   });
   const changelog = log.map((c) => conventional(c)).filter((c) =>
-    c.modules.includes(pkg.module) || c.modules.includes("*")
+    c.scopes.includes(pkg.module) || c.scopes.includes("*")
   );
   if (pkg.release?.version !== pkg.config.version) {
     return { ...forcedUpdate(pkg), changelog };
