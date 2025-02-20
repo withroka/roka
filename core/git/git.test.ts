@@ -1,4 +1,4 @@
-import { type Git, git } from "@roka/git";
+import { type Git, git, GitError } from "@roka/git";
 import { tempDirectory } from "@roka/testing";
 import {
   assert,
@@ -144,7 +144,7 @@ Deno.test("git().clone() can copy a single branch", async () => {
   const repo = git({ cwd: directory.path() });
   await repo.clone(remote.directory, { branch: "branch1", singleBranch: true });
   assertEquals(await repo.log(), [second, first]);
-  await assertRejects(() => repo.checkout({ target: "branch2" }));
+  await assertRejects(() => repo.checkout({ target: "branch2" }), GitError);
 });
 
 Deno.test("git().checkout() stays at current branch", async () => {
@@ -223,12 +223,12 @@ Deno.test("git().add() adds files", async () => {
 
 Deno.test("git().add() fails to add non-existent file", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.add("file"));
+  await assertRejects(() => repo.add("file"), GitError);
 });
 
 Deno.test("git().remove() fails to remove non-existent file", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.remove("file"));
+  await assertRejects(() => repo.remove("file"), GitError);
 });
 
 Deno.test("git().remove() removes files", async () => {
@@ -238,7 +238,7 @@ Deno.test("git().remove() removes files", async () => {
   await repo.commit("first");
   repo.remove("file");
   await repo.commit("second");
-  await assertRejects(() => Deno.stat(repo.path("file")));
+  await assertRejects(() => Deno.stat(repo.path("file")), Deno.errors.NotFound);
 });
 
 Deno.test("git().commit() creates a commit", async () => {
@@ -257,7 +257,7 @@ Deno.test("git().commit() can automatically add files", async () => {
   await repo.commit("commit");
   await Deno.writeTextFile(repo.path("file"), "content2");
   const commit = await repo.commit("commit", { all: true });
-  assertEquals(await repo.log({ maxCount: 1 }), [commit]);
+  assertEquals(await repo.head(), commit);
 });
 
 Deno.test("git().commit() can automatically remove files", async () => {
@@ -267,7 +267,7 @@ Deno.test("git().commit() can automatically remove files", async () => {
   await repo.commit("commit");
   await Deno.remove(repo.path("file"));
   const commit = await repo.commit("commit", { all: true });
-  assertEquals(await repo.log({ maxCount: 1 }), [commit]);
+  assertEquals(await repo.head(), commit);
 });
 
 Deno.test("git().commit() can amend a commit", async () => {
@@ -281,7 +281,7 @@ Deno.test("git().commit() can amend a commit", async () => {
 
 Deno.test("git().commit() disallows empty commit", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.commit("commit"));
+  await assertRejects(() => repo.commit("commit"), GitError);
 });
 
 Deno.test("git().commit() can create empty commit", async () => {
@@ -311,24 +311,32 @@ Deno.test("git().commit() can set committer", async () => {
 
 Deno.test("git().commit() summary cannot be empty", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.commit("", { allowEmpty: true }));
+  await assertRejects(() => repo.commit("", { allowEmpty: true }), GitError);
 });
 
 Deno.test("git().commit() cannot use wrong key", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() =>
-    repo.commit("commit", { allowEmpty: true, sign: "not-a-key" })
+  await assertRejects(
+    () => repo.commit("commit", { allowEmpty: true, sign: "not-a-key" }),
+    GitError,
   );
 });
 
-Deno.test("git().log() fails on non-repo", async () => {
+Deno.test("git().head() fails on empty repo", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.log());
+  await assertRejects(() => repo.head(), GitError);
+});
+
+Deno.test("git().head() returns head tip", async () => {
+  await using repo = await tempRepo();
+  await repo.commit("first", { allowEmpty: true });
+  const commit = await repo.commit("second", { allowEmpty: true });
+  assertEquals(await repo.head(), commit);
 });
 
 Deno.test("git().log() fails on empty repo", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.log());
+  await assertRejects(() => repo.log()), GitError;
 });
 
 Deno.test("git().log() returns single commit", async () => {
@@ -347,8 +355,9 @@ Deno.test("git().log() returns multiple commits", async () => {
 Deno.test("git().log() can limit number of commits", async () => {
   await using repo = await tempRepo();
   await repo.commit("first", { allowEmpty: true });
-  const commit = await repo.commit("second", { allowEmpty: true });
-  assertEquals(await repo.log({ maxCount: 1 }), [commit]);
+  const commit2 = await repo.commit("second", { allowEmpty: true });
+  const commit3 = await repo.commit("third", { allowEmpty: true });
+  assertEquals(await repo.log({ maxCount: 2 }), [commit3, commit2]);
 });
 
 Deno.test("git().log() can skip commits", async () => {
@@ -535,7 +544,7 @@ Deno.test("git().tag() creates an annotated tag", async () => {
 Deno.test("git().tag() cannot create annotated tag without subject", async () => {
   await using repo = await tempRepo();
   await repo.commit("commit", { allowEmpty: true });
-  await assertRejects(() => repo.tag("tag", { sign: true }));
+  await assertRejects(() => repo.tag("tag", { sign: true }), GitError);
 });
 
 Deno.test("git().tag() creates a tag with commit", async () => {
@@ -561,7 +570,7 @@ Deno.test("git().tag() cannot create duplicate tag", async () => {
   await using repo = await tempRepo();
   await repo.commit("commit", { allowEmpty: true });
   await repo.tag("tag");
-  await assertRejects(() => repo.tag("tag"));
+  await assertRejects(() => repo.tag("tag"), GitError);
 });
 
 Deno.test("git().tag() can force move a tag", async () => {
@@ -574,7 +583,7 @@ Deno.test("git().tag() can force move a tag", async () => {
 
 Deno.test("git().tag() cannot use wrong key", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.tag("tag", { sign: "not-a-key" }));
+  await assertRejects(() => repo.tag("tag", { sign: "not-a-key" }), GitError);
 });
 
 Deno.test("git().tagList() return empty list on empty repo", async () => {
@@ -669,7 +678,7 @@ Deno.test("git().addRemote() adds remote URL", async () => {
 Deno.test("git().addRemote() cannot add to the same remote", async () => {
   await using repo = await tempRepo();
   await repo.addRemote("url1");
-  await assertRejects(() => repo.addRemote("url2"));
+  await assertRejects(() => repo.addRemote("url2"), GitError);
 });
 
 Deno.test("git().addRemote() cannot add multiple remotes", async () => {
@@ -714,7 +723,10 @@ Deno.test("git().remoteDefaultBranch() detects detached remote head", async () =
 
 Deno.test("git().remoteDefaultBranch() fails on unknown remote", async () => {
   await using repo = await tempRepo();
-  await assertRejects(() => repo.remoteDefaultBranch({ remote: "remote" }));
+  await assertRejects(
+    () => repo.remoteDefaultBranch({ remote: "remote" }),
+    GitError,
+  );
 });
 
 Deno.test("git().push() pushes commits to remote", async () => {
@@ -750,7 +762,7 @@ Deno.test("git().push() fails on unsynced push", async () => {
   await repo1.commit("first", { allowEmpty: true });
   await repo2.commit("second", { allowEmpty: true });
   await repo1.push();
-  await assertRejects(() => repo2.push());
+  await assertRejects(() => repo2.push(), GitError);
 });
 
 Deno.test("git().push() can force push", async () => {
@@ -781,7 +793,7 @@ Deno.test("git().pushTag() cannot override remote tag", async () => {
   await remote.commit("new", { allowEmpty: true });
   await remote.tag("tag");
   await repo.tag("tag");
-  await assertRejects(() => repo.pushTag("tag"));
+  await assertRejects(() => repo.pushTag("tag"), GitError);
 });
 
 Deno.test("git().pushTag() can force override remote tag", async () => {
@@ -868,5 +880,5 @@ Deno.test("git().pull() can fetch all tags", async () => {
 Deno.test("git().pull() cannot use wrong key", async () => {
   await using remote = await tempRepo({ bare: true });
   await using repo = await tempRepo({ clone: remote });
-  await assertRejects(() => repo.pull({ sign: "not-a-key" }));
+  await assertRejects(() => repo.pull({ sign: "not-a-key" }), GitError);
 });
