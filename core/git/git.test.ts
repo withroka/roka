@@ -722,27 +722,27 @@ Deno.test("git().tagList() returns commit range", async () => {
 
 Deno.test("git().addRemote() adds remote URL", async () => {
   await using repo = await tempRepo();
-  await repo.addRemote("url");
+  await repo.remoteAdd("url");
   assertEquals(await repo.remote(), "url");
 });
 
 Deno.test("git().addRemote() cannot add to the same remote", async () => {
   await using repo = await tempRepo();
-  await repo.addRemote("url1");
-  await assertRejects(() => repo.addRemote("url2"), GitError);
+  await repo.remoteAdd("url1");
+  await assertRejects(() => repo.remoteAdd("url2"), GitError);
 });
 
 Deno.test("git().addRemote() cannot add multiple remotes", async () => {
   await using repo = await tempRepo();
-  await repo.addRemote("url1", { remote: "remote1" });
-  await repo.addRemote("url2", { remote: "remote2" });
+  await repo.remoteAdd("url1", { remote: "remote1" });
+  await repo.remoteAdd("url2", { remote: "remote2" });
   assertEquals(await repo.remote({ remote: "remote1" }), "url1");
   assertEquals(await repo.remote({ remote: "remote2" }), "url2");
 });
 
 Deno.test("git().remote() returns remote URL", async () => {
   await using repo = await tempRepo();
-  await repo.addRemote("url", { remote: "downstream" });
+  await repo.remoteAdd("url", { remote: "downstream" });
   assertEquals(await repo.remote({ remote: "downstream" }), "url");
 });
 
@@ -759,7 +759,7 @@ Deno.test("git().remoteDefaultBranch() can use remote name", async () => {
   await remote.commit("commit", { allowEmpty: true });
   const branch = await remote.branch();
   await using repo = await tempRepo();
-  await repo.addRemote(remote.path(), { remote: "remote" });
+  await repo.remoteAdd(remote.path(), { remote: "remote" });
   assertEquals(await repo.remoteDefaultBranch({ remote: "remote" }), branch);
 });
 
@@ -794,7 +794,7 @@ Deno.test("git().push() pushes commits to remote with name", async () => {
   const branch = await remote.branch();
   assert(branch);
   await using repo = await tempRepo();
-  await repo.addRemote(remote.path(), { remote: "remote" });
+  await repo.remoteAdd(remote.path(), { remote: "remote" });
   const commit = await repo.commit("commit", { allowEmpty: true });
   await repo.push({ remote: "remote", branch });
   assertEquals(await remote.log(), [commit]);
@@ -879,7 +879,7 @@ Deno.test("git().pull() can pull from remote with name", async () => {
   const branch = await remote.branch();
   assert(branch);
   await using repo = await tempRepo();
-  await repo.addRemote(remote.path(), { remote: "remote" });
+  await repo.remoteAdd(remote.path(), { remote: "remote" });
   await repo.pull({ remote: "remote", branch });
   assertEquals(await repo.log(), [commit]);
 });
