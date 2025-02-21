@@ -23,6 +23,6 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Release packages
-        run: deno task forge --release
+        run: deno task forge release --draft
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
