@@ -47,7 +47,7 @@ export function testCommit(commit?: Partial<Commit>): Commit {
   };
 }
 
-/** Options for {@linkcode tempRepo}. */
+/** Options for {@linkcode tempRepository}. */
 export interface TempRepoOptions {
   /** Clone given repo, instead of creating an emtpy one. */
   clone?: string | Git;
@@ -72,7 +72,7 @@ export interface TempRepoOptions {
  * assertEquals(await remote.commits.head(), commit);
  * ```
  */
-export async function tempRepo(
+export async function tempRepository(
   options?: TempRepoOptions,
 ): Promise<Git & AsyncDisposable> {
   const { clone, bare = false } = options ?? {};
