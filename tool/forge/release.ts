@@ -85,19 +85,19 @@ async function bumpVersions(
     .join("\n\n");
   {
     // commit version bump changes
-    await repo.git.checkout({ newBranch: BRANCH });
-    await repo.git.config({ user });
-    await repo.git.commit(title, { body, all: true });
+    await repo.git.branches.checkout({ new: BRANCH });
+    await repo.git.config.set({ user });
+    await repo.git.commits.create(title, { body, all: true });
   }
   const [pr] = await repo.pulls.list({ title, isClosed: false });
   {
     // create or update version bump PR
     if (pr) {
-      await repo.git.push({ force: true, branch: BRANCH }); // can this be done without force?
+      await repo.git.commits.push({ force: true, branch: BRANCH }); // can this be done without force?
       pr.update({ body });
       console.log(`🤖 Updated release PR ${pr.number} (${pr.url})`);
     } else {
-      await repo.git.push({ branch: BRANCH });
+      await repo.git.commits.push({ branch: BRANCH });
       const pr = await repo.pulls.create({ title, body, isDraft: true });
       console.log(`🤖 Created release PR ${pr.number} (${pr.url})`);
     }
@@ -122,7 +122,7 @@ async function createReleases(
     let [release] = await repo.releases.list({ name, isDraft: true });
     {
       // create or update release
-      const head = await git().head();
+      const head = await git().commits.head();
       const data = {
         name,
         tag: name,

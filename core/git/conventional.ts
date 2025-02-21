@@ -11,10 +11,10 @@
  * import { assertEquals } from "@std/assert";
  *
  * const repo = await tempRepo();
- * await repo.commit("feat(cli): add new command", { allowEmpty: true });
- * await repo.commit("fix(cli): fix last command", { allowEmpty: true });
+ * await repo.commits.create("feat(cli): add new command", { allowEmpty: true });
+ * await repo.commits.create("fix(cli): fix last command", { allowEmpty: true });
  *
- * const commits = (await repo.log()).map(conventional);
+ * const commits = (await repo.commits.log()).map(conventional);
  * ```
  *
  * This implementation conforms to the version 1.0.0 of the specification,
@@ -58,10 +58,10 @@ export interface ConventionalCommit extends Commit {
  *
  * const repo = await tempRepo();
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
- * await repo.add("file.txt");
- * await repo.commit("feat(cli): add new command", { allowEmpty: true });
+ * await repo.index.add("file.txt");
+ * await repo.commits.create("feat(cli): add new command", { allowEmpty: true });
  *
- * const commit = conventional(await repo.head())
+ * const commit = conventional(await repo.commits.head())
  * assertEquals(commit.type, "feat");
  * assertEquals(commit.scopes, ["cli"]);
  * assertFalse(commit.breaking);
