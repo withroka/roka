@@ -6,9 +6,9 @@
  *
  * @example
  * ```ts
- * import { testCommit, tempRepo } from "@roka/git/testing";
+ * import { testCommit, tempRepository } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
- * await using repo = await tempRepo();
+ * await using repo = await tempRepository();
  * const commit = testCommit({ summary: "feat(cli): add command" });
  * await repo.commits.create(commit.summary, {
  *   author: commit.author,
