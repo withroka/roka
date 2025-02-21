@@ -1,50 +1,41 @@
+/**
+ * Objects to interact with GitHub.
+ *
+ * This module provides, incomplete, opininiated functionality wrapped around
+ * {@link https://docs.github.com/en/rest | GitHub REST API}.
+ *
+ * @todo Provide dates.
+ * @todo Provide user.
+ * @todo Add `github().issues`.
+ * @todo Add `github().gists`.
+ * @todo Add `github().projects`.
+ * @todo Add `github().projects`.
+ * @todo Add `github().labels`.
+ * @todo Add `github().comments`.
+ * @todo Add `github().teams`.
+ * @todo Add `github().organizations`.
+ *
+ * @module
+ */
+
 import type { components } from "@octokit/openapi-types/types";
 import { Octokit } from "@octokit/rest";
 import { type Git, git as gitRepo } from "@roka/git";
 import { assert } from "@std/assert/assert";
 import { basename } from "@std/path";
 
-// NOT IMPLEMENTED
-// - dates
-// - users
-// - issues
-// - comments
-// - gists
-// - reactions
-// - projects
-// - labels
-// - milestones
-// - teams
-// - organizations
-
-/** Options for creating a GitHub API client. */
-export interface GitHubOptions {
-  /**
-   * GitHub personal access token.
-   *
-   * If a token is not provided, the client will be unauthenticated.
-   */
-  token?: string;
-}
-
-/** Options for configuring a repository. */
-export interface RepositoryOptions {
-  /**
-   * Local directory for the repository.
-   * @default {"."}
-   *
-   * The client will deduce the owner and repository name from the remote URL.
-   * Pull requests will also use the local state, such as the current branch.
-   */
-  directory?: string;
-}
-
 /** GitHub API client. */
 export interface GitHub {
-  /** Retrieve a repository using local remote URL. */
-  repo(options?: RepositoryOptions): Promise<Repository>;
-  /** Retrieve a repository using owner and repository name. */
-  repo(owner: string, repo: string, options?: RepositoryOptions): Repository;
+  repos: {
+    /** Retrieve a repository using local remote URL. */
+    get(options?: RepositoryGetOptions): Promise<Repository>;
+    /** Retrieve a repository using owner and repository name. */
+    get(
+      owner: string,
+      repo: string,
+      options?: RepositoryGetOptions,
+    ): Repository;
+  };
 }
 
 /** A GitHub repository with API operations. */
@@ -60,16 +51,16 @@ export interface Repository {
   /** Operations for manaing pull requests. */
   pulls: {
     /** List pull requests. */
-    list(options?: ListPullRequestOptions): Promise<PullRequest[]>;
+    list(options?: PullRequestListOptions): Promise<PullRequest[]>;
     /** Create a pull request. */
-    create(options?: CreatePullRequestOptions): Promise<PullRequest>;
+    create(options?: PullRequestCreateOptions): Promise<PullRequest>;
   };
   /** Operations for managing releases. */
   releases: {
     /** List releases. */
-    list(options?: ListReleaseOptions): Promise<Release[]>;
+    list(options?: ReleaseListOptions): Promise<Release[]>;
     /** Create a release. */
-    create(tag: string, options?: CreateReleaseOptions): Promise<Release>;
+    create(tag: string, options?: ReleaseCreateOptions): Promise<Release>;
   };
 }
 
@@ -96,23 +87,8 @@ export interface PullRequest {
   /** Whether the pull request is locked */
   isLocked: boolean;
   /** Update the pull request. */
-  update(options?: UpdatePullRequestOptions): Promise<PullRequest>;
+  update(options?: PullRequestUpdateOptions): Promise<PullRequest>;
 }
-
-/** Options for listing pull requests. */
-export type ListPullRequestOptions = Partial<
-  Pick<PullRequest, "title" | "head" | "base" | "isClosed">
->;
-
-/** Options for creating a pull request. */
-export type CreatePullRequestOptions = Partial<
-  Pick<PullRequest, "title" | "body" | "base" | "head" | "isDraft">
->;
-
-/** Options for updating a pull request. */
-export type UpdatePullRequestOptions = Partial<
-  Pick<PullRequest, "title" | "body" | "base" | "isClosed">
->;
 
 /** A GitHub release with API operations. */
 export interface Release {
@@ -135,7 +111,7 @@ export interface Release {
   /** Whether the release is a prerelease. */
   isPreRelease: boolean;
   /** Update the release. */
-  update(options?: UpdateReleaseOptions): Promise<Release>;
+  update(options?: ReleaseUpdateOptions): Promise<Release>;
   /** Delete the release. */
   delete(): Promise<void>;
   /** Operations for managing release assets. */
@@ -146,21 +122,6 @@ export interface Release {
     upload(file: string): Promise<ReleaseAsset>;
   };
 }
-
-/** Options for listing releases. */
-export type ListReleaseOptions = Partial<
-  Pick<Release, "name" | "tag" | "isDraft">
->;
-
-/** Options for creating a release. */
-export type CreateReleaseOptions = Partial<
-  Pick<Release, "name" | "body" | "commit" | "isDraft" | "isPreRelease">
->;
-
-/** Options for updating a release. */
-export type UpdateReleaseOptions = Partial<
-  Pick<Release, "name" | "body" | "tag" | "commit" | "isDraft" | "isPreRelease">
->;
 
 /** A GitHub release asset with API operations. */
 export interface ReleaseAsset {
@@ -180,32 +141,90 @@ export interface ReleaseAsset {
   delete(): Promise<void>;
 }
 
+/** Options for creating a GitHub API client. */
+export interface GitHubOptions {
+  /**
+   * GitHub personal access token.
+   *
+   * If a token is not provided, the client will be unauthenticated.
+   */
+  token?: string;
+}
+
+/** Options for retrieving a repository. */
+export interface RepositoryGetOptions {
+  /**
+   * Local directory for the repository.
+   * @default {"."}
+   *
+   * The client will deduce the owner and repository name from the remote URL.
+   * Pull requests will also use the local state, such as the current branch.
+   */
+  directory?: string;
+}
+
+/** Options for listing pull requests. */
+export type PullRequestListOptions = Partial<
+  Pick<PullRequest, "title" | "head" | "base" | "isClosed">
+>;
+
+/** Options for creating a pull request. */
+export type PullRequestCreateOptions = Partial<
+  Pick<PullRequest, "title" | "body" | "base" | "head" | "isDraft">
+>;
+
+/** Options for updating a pull request. */
+export type PullRequestUpdateOptions = Partial<
+  Pick<PullRequest, "title" | "body" | "base" | "isClosed">
+>;
+
+/** Options for listing releases. */
+export type ReleaseListOptions = Partial<
+  Pick<Release, "name" | "tag" | "isDraft">
+>;
+
+/** Options for creating a release. */
+export type ReleaseCreateOptions = Partial<
+  Pick<Release, "name" | "body" | "commit" | "isDraft" | "isPreRelease">
+>;
+
+/** Options for updating a release. */
+export type ReleaseUpdateOptions = Partial<
+  Pick<Release, "name" | "body" | "tag" | "commit" | "isDraft" | "isPreRelease">
+>;
+
 /** Creates a GitHub API client. */
 export function github(options?: GitHubOptions): GitHub {
   const api = new Octokit({ auth: options?.token });
-  return new class {
-    repo(owner: string, repo: string, options?: RepositoryOptions): Repository;
-    repo(options?: RepositoryOptions): Promise<Repository>;
-    repo(
-      ownerOrOptions?: string | RepositoryOptions,
-      repo?: string,
-      options?: RepositoryOptions,
-    ): Repository | Promise<Repository> {
-      if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
-      const git = gitRepo(
-        options?.directory !== undefined ? { cwd: options.directory } : {},
-      );
-      if (typeof ownerOrOptions === "string") {
-        assert(repo);
-        return repository(git, api, ownerOrOptions, repo);
+  return {
+    repos: new class {
+      get(
+        owner: string,
+        repo: string,
+        options?: RepositoryGetOptions,
+      ): Repository;
+      get(options?: RepositoryGetOptions): Promise<Repository>;
+      get(
+        ownerOrOptions?: string | RepositoryGetOptions,
+        repo?: string,
+        options?: RepositoryGetOptions,
+      ): Repository | Promise<Repository> {
+        if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
+        const git = gitRepo(
+          options?.directory !== undefined ? { cwd: options.directory } : {},
+        );
+        if (typeof ownerOrOptions === "string") {
+          assert(repo);
+          return repository(git, api, ownerOrOptions, repo);
+        }
+        return (async () => {
+          const remote = await git.remotes.get();
+          const { owner, repo } = parseRemote(remote.pushUrl);
+          return repository(git, api, owner, repo);
+        })();
       }
-      return (async () => {
-        const remote = await git.remotes.get();
-        const { owner, repo } = parseRemote(remote.pushUrl);
-        return repository(git, api, owner, repo);
-      })();
-    }
-  }();
+    }(),
+  };
 }
 
 function repository(

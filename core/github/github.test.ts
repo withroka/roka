@@ -1,13 +1,28 @@
+import { tempRepository } from "@roka/git/testing";
 import { github, type PullRequest, type Release } from "@roka/github";
-import { mockFetch } from "@roka/testing";
+import { mockFetch, tempDirectory } from "@roka/testing";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 
 const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 
-Deno.test("github().repo().pulls", async (t) => {
+Deno.test("github().repos.get() can use named repository", () => {
+  const repo = github({ token }).repos.get("withroka", "test");
+  assertEquals(repo.owner, "withroka");
+  assertEquals(repo.repo, "test");
+});
+
+Deno.test("github().repos.get() can use local repository", async () => {
+  await using git = await tempRepository();
+  await git.remotes.add("https://github.com/withroka/test.git");
+  const repo = await github({ token }).repos.get({ directory: git.path() });
+  assertEquals(repo.owner, "withroka");
+  assertEquals(repo.repo, "test");
+});
+
+Deno.test("github().repos.pulls", async (t) => {
   using _fetch = mockFetch(t);
-  const repo = github({ token }).repo("withroka", "test");
+  const repo = github({ token }).repos.get("withroka", "test");
   let pr: PullRequest;
 
   await t.step("create pull request", async () => {
@@ -46,9 +61,9 @@ Deno.test("github().repo().pulls", async (t) => {
   });
 });
 
-Deno.test("github().repo().releases", async (t) => {
+Deno.test("github().repos.releases", async (t) => {
   using _fetch = mockFetch(t);
-  const repo = github({ token }).repo("withroka", "test");
+  const repo = github({ token }).repos.get("withroka", "test");
   let release: Release;
 
   await t.step("create release", async () => {
@@ -58,6 +73,7 @@ Deno.test("github().repo().releases", async (t) => {
       isDraft: true,
       isPreRelease: false,
     });
+    assertEquals(release.repo, repo);
     assertEquals(release.tag, "test-tag");
     assertEquals(release.name, "Test release");
     assertEquals(release.body, "Initial body");
@@ -94,6 +110,23 @@ Deno.test("github().repo().releases", async (t) => {
     assertEquals(release.body, "Updated body");
     assertEquals(release.isDraft, false);
     assertEquals(release.isPreRelease, true);
+  });
+
+  await t.step("upload release asset", async () => {
+    await using directory = await tempDirectory();
+    await Deno.writeTextFile(directory.path("file.txt"), "content");
+    const asset = await release.assets.upload(directory.path("file.txt"));
+    assertEquals(asset.release, release);
+    assertEquals(asset.name, "file.txt");
+    assertEquals(asset.size, "content".length);
+  });
+
+  await t.step("list release asset", async () => {
+    const assets = await release.assets.list();
+    assertEquals(assets.length, 1);
+    assert(assets[0]);
+    assertEquals(assets[0]?.name, "file.txt");
+    assertEquals(assets[0]?.size, "content".length);
   });
 
   await t.step("delete release", async () => {

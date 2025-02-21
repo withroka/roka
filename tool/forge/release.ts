@@ -24,7 +24,7 @@ function changelogText(pkg: Package): string {
 async function releaseBody(pkg: Package): Promise<string> {
   assert(pkg.version, "Cannot release a package without version");
   const title = pkg.release?.tag ? "Changelog" : "Initial release";
-  const repo = await github().repo();
+  const repo = await github().repos.get();
   const tag = `${pkg.module}@${pkg.version}`;
   const fullChangelogUrl = pkg?.release?.tag
     ? `compare/${pkg.release.tag.name}...${tag}`
@@ -233,7 +233,7 @@ async function main(args: string[]) {
       ) => {
         if (directories.length === 0) directories = ["."];
         const packages = await getWorkspace({ directories });
-        const repo = await github({ token }).repo();
+        const repo = await github({ token }).repos.get();
         output(packages, changelog);
         const author = { ...actor && { name: actor }, ...email && { email } };
         if (bump) await bumpVersions(repo, packages, author);
