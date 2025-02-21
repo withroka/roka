@@ -8,6 +8,7 @@ const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 Deno.test("github().repo().pulls", async (t) => {
   using _fetch = mockFetch(t);
   const repo = github({ token }).repo("withroka", "test");
+  console.log(repo);
   let pr: PullRequest;
 
   await t.step("create pull request", async () => {

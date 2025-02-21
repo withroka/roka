@@ -116,8 +116,6 @@ export interface Git {
     create(name: string, options?: TagCreateOptions): Promise<Tag>;
     /** Lists all tags in the repository. */
     list(options?: TagListOptions): Promise<Tag[]>;
-    /** Pushes a tag to a remote. */
-    push: (tag: Tag | string, options?: TagPushOptions) => Promise<void>;
   };
   /** Remote operations. */
   remotes: {
@@ -152,27 +150,29 @@ export interface Commit {
 /** A tag in the Git repository. */
 export interface Tag {
   /** Tag name. */
-  name: string;
+  readonly name: string;
   /** Commit that is tagged. */
-  commit: Commit;
+  readonly commit: Commit;
   /** Tag subject from tag message. */
-  subject?: string;
+  readonly subject?: string;
   /** Tag body from tag message. */
-  body?: string;
+  readonly body?: string;
   /** Tagger, who created the tag. */
-  tagger?: User;
+  readonly tagger?: User;
+  /** Pushes a tag to a remote. */
+  push: (options?: TagPushOptions) => Promise<void>;
 }
 
 /** A remote repository tracked locally. */
 export interface Remote {
   /** Remote name. */
-  name: string;
+  readonly name: string;
   /** Remote fetch URL. */
-  fetchUrl: string;
+  readonly fetchUrl: string;
   /** Remote push URL. */
-  pushUrl: string;
-  /** Default branch on the remote. */
-  defaultBranch?: string;
+  readonly pushUrl: string;
+  /** Queries the default branch on the remote. */
+  defaultBranch: () => Promise<string | undefined>;
 }
 
 /** A revision range. */
@@ -622,22 +622,36 @@ export function git(options?: GitOptions): Git {
         );
         const tags = parseOutput(TAG_FORMAT, output);
         return await Promise.all(tags.map(async (tag) => {
+          assert(tag.name, "Tag name not filled");
           assert(tag.commit?.hash, "Commit hash not filled for tag");
           const [commit] = await git.commits.log({
             maxCount: 1,
             range: { to: tag.commit.hash },
           });
           assert(commit, "Cannot find tag commit");
-          tag.commit = commit;
-          return tag as Tag;
+          return new class implements Tag {
+            constructor(
+              readonly name: string,
+              readonly commit: Commit,
+              readonly subject?: string,
+              readonly body?: string,
+              readonly tagger?: User,
+            ) {}
+            async push(options?: TagPushOptions) {
+              await run(
+                gitOptions,
+                ["push", options?.remote ?? "origin", "tag", tagArg(this.name)],
+                options?.force && "--force",
+              );
+            }
+          }(
+            tag.name,
+            commit,
+            tag.subject,
+            tag.body,
+            tag.tagger,
+          );
         }));
-      },
-      async push(tag, options) {
-        await run(
-          gitOptions,
-          ["push", options?.remote ?? "origin", "tag", tagArg(tag)],
-          options?.force && "--force",
-        );
       },
     },
     remotes: {
@@ -646,21 +660,31 @@ export function git(options?: GitOptions): Git {
         return git.remotes.get(name);
       },
       async get(name = "origin") {
-        const info = await run(gitOptions, ["remote", "show", name]);
+        const remotes = (await run(gitOptions, "remote"))
+          .split("\n").filter((x) => x);
+        if (!remotes.includes(name)) throw new GitError("Remote not found");
+        const info = await run(gitOptions, ["remote", "show", "-n", name]);
         const match = info.match(
-          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*\n\s*HEAD branch:\s*(?<defaultBranch>.+)\s*(\n|$)/,
+          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*(\n|$)/,
         );
-        const { fetchUrl, pushUrl, defaultBranch } = { ...match?.groups };
-        assert(
-          fetchUrl && pushUrl && defaultBranch,
-          "Cannot parse remote information",
-        );
-        return {
-          name,
-          fetchUrl,
-          pushUrl,
-          ...defaultBranch !== "(unknown)" && { defaultBranch },
-        };
+        const { fetchUrl, pushUrl } = { ...match?.groups };
+        assert(fetchUrl && pushUrl, "Cannot parse remote information");
+        return new class implements Remote {
+          constructor(
+            readonly name: string,
+            readonly fetchUrl: string,
+            readonly pushUrl: string,
+          ) {}
+          async defaultBranch() {
+            const info = await run(gitOptions, ["remote", "show", name]);
+            const match = info.match(
+              /\n\s*HEAD branch:\s*(?<defaultBranch>.+)\s*(\n|$)/,
+            );
+            const { defaultBranch } = { ...match?.groups };
+            assert(defaultBranch, "Cannot parse remote information");
+            return defaultBranch === "(unknown)" ? undefined : defaultBranch;
+          }
+        }(name, fetchUrl, pushUrl);
       },
     },
   };
@@ -771,6 +795,13 @@ type FormatField = { kind: "skip" } | {
   fields: { [key: string]: FormatField };
 };
 
+type FunctionKeys<T> = {
+  // deno-lint-ignore ban-types
+  [K in keyof T]: T[K] extends Function ? K : never;
+}[keyof T];
+
+type NonFunctionFields<T> = Omit<T, FunctionKeys<T>>;
+
 type FormatFieldDescriptor<T> =
   | { kind: "skip" }
   | (
@@ -786,7 +817,9 @@ type FormatFieldDescriptor<T> =
         }
         : T extends object ? {
             kind: "object";
-            fields: { [K in keyof T]: FormatFieldDescriptor<T[K]> };
+            fields: {
+              [K in keyof NonFunctionFields<T>]: FormatFieldDescriptor<T[K]>;
+            };
           }
         : never)
     )

@@ -22,7 +22,6 @@
     "ok": "deno task lint && deno task doc && deno task test && deno publish --quiet --dry-run --allow-dirty"
   },
   "compilerOptions": {
-    "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true
   },
   "lint": {
