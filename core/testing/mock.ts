@@ -108,7 +108,7 @@ export function mockFetch(
     input: URL | Request | string,
     init?: RequestInit,
   ): Promise<Response> {
-    const request = requestData(input, init);
+    const request = await requestData(input, init);
     let call: FetchCall;
     if (calls === undefined) {
       let mock: FetchCall[];
@@ -210,26 +210,56 @@ function stripHeaders(headers: HeadersInit): HeadersInit {
   return Object.fromEntries(stripped.entries());
 }
 
-function requestData(
+async function requestData(
   input: URL | Request | string,
   init?: RequestInit,
-): FetchRequest {
+): Promise<FetchRequest> {
   if (input instanceof Request) {
-    return requestData(new URL(input.url), { ...input, ...init });
+    return await requestData(new URL(input.url), { ...input, ...init });
   }
   if (typeof input === "string") {
-    return requestData(new URL(input), init);
+    return await requestData(new URL(input), init);
   }
   if (init) {
     init = {
       ...init?.headers ? { headers: stripHeaders(init?.headers) } : {},
-      ...omit(init, ["headers", "signal"]),
+      ...omit(init, ["headers", "signal", "body"]),
+      ...(init?.body !== undefined && init?.body !== null) &&
+        { body: await bodyData(init.body) },
     };
   }
   return {
     input: input.toString(),
     ...init ? { init } : {},
   };
+}
+
+async function bodyData(body: BodyInit): Promise<string> {
+  if (typeof body === "string") return body;
+  if (body instanceof ArrayBuffer || body instanceof Uint8Array) {
+    return new TextDecoder().decode(body);
+  }
+  if (body instanceof Blob) return await body.text();
+  if (body instanceof URLSearchParams || body instanceof FormData) {
+    return JSON.stringify(Object.fromEntries(body.entries()));
+  }
+  if (body instanceof ReadableStream) {
+    const reader = body.getReader();
+    let result = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      result += new TextDecoder().decode(value);
+    }
+    return result;
+  }
+  if (Symbol.asyncIterator in body) {
+    return bodyData(await Array.fromAsync(body));
+  }
+  if (Symbol.iterator in body) {
+    return JSON.stringify(await Promise.all(Array.from(body).map(bodyData)));
+  }
+  return JSON.stringify(body);
 }
 
 async function responseData(response: Response): Promise<FetchResponse> {
