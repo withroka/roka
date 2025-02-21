@@ -26,8 +26,8 @@
  *
  * @example
  * ```ts
- * import { tempRepo } from "@roka/git/testing";
- * await using repo = await tempRepo();
+ * import { tempRepository } from "@roka/git/testing";
+ * await using repo = await tempRepository();
  * const commit = await repo.commits.create("Initial commit", { allowEmpty: true });
  * ```
  *

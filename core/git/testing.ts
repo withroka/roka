@@ -6,9 +6,9 @@
  *
  * @example
  * ```ts
- * import { testCommit, tempRepo } from "@roka/git/testing";
+ * import { testCommit, tempRepository } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
- * await using repo = await tempRepo();
+ * await using repo = await tempRepository();
  * const commit = testCommit({ summary: "feat(cli): add command" });
  * await repo.commits.create(commit.summary, {
  *   author: commit.author,
@@ -47,7 +47,7 @@ export function testCommit(commit?: Partial<Commit>): Commit {
   };
 }
 
-/** Options for {@linkcode tempRepo}. */
+/** Options for {@linkcode tempRepository}. */
 export interface TempRepoOptions {
   /** Clone given repo, instead of creating an emtpy one. */
   clone?: string | Git;
@@ -59,10 +59,10 @@ export interface TempRepoOptions {
  *
  * @example
  * ```ts
- * import { tempRepo } from "@roka/git/testing";
+ * import { tempRepository } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
- * await using remote = await tempRepo({ bare: true });
- * await using repo = await tempRepo({ clone: remote });
+ * await using remote = await tempRepository({ bare: true });
+ * await using repo = await tempRepository({ clone: remote });
  *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
@@ -72,7 +72,7 @@ export interface TempRepoOptions {
  * assertEquals(await remote.commits.head(), commit);
  * ```
  */
-export async function tempRepo(
+export async function tempRepository(
   options?: TempRepoOptions,
 ): Promise<Git & AsyncDisposable> {
   const { clone, bare = false } = options ?? {};
