@@ -112,6 +112,50 @@ Deno.test("mockFetch() matches body", async (t) => {
   ]);
 });
 
+Deno.test("mockFetch() matches arraybuffer body ", async (t) => {
+  using fetch = mockFetch(t);
+  await fetch("https://example.com", {
+    method: "POST",
+    body: new TextEncoder().encode("body"),
+  });
+});
+
+Deno.test("mockFetch() matches blob body ", async (t) => {
+  using fetch = mockFetch(t);
+  await fetch("https://example.com", {
+    method: "POST",
+    body: new Blob(["body"], { type: "text/plain" }),
+  });
+});
+
+Deno.test("mockFetch() matches form data body ", async (t) => {
+  using fetch = mockFetch(t);
+  const body = new FormData();
+  body.append("key", "value");
+  await fetch("https://example.com", { method: "POST", body });
+});
+
+Deno.test("mockFetch() matches form search params body ", async (t) => {
+  using fetch = mockFetch(t);
+  const body = new URLSearchParams();
+  body.append("key", "value");
+  await fetch("https://example.com", { method: "POST", body });
+});
+
+Deno.test("mockFetch() matches iterable body ", async (t) => {
+  using fetch = mockFetch(t);
+  const body = new TextEncoder().encode("body");
+  await fetch("https://example.com", { method: "POST", body });
+});
+
+Deno.test("mockFetch() matches async iterable body ", async (t) => {
+  using fetch = mockFetch(t);
+  async function* body() {
+    yield new TextEncoder().encode("body");
+  }
+  await fetch("https://example.com", { method: "POST", body: body() });
+});
+
 Deno.test("mockFetch() records in default directory", async (t) => {
   using fetch = mockFetch(t);
   await fetch("https://example.com");
