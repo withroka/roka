@@ -10,11 +10,11 @@
  * import { assertEquals } from "@std/assert";
  * await using repo = await tempRepo();
  * const commit = testCommit({ summary: "feat(cli): add command" });
- * await repo.commit(commit.summary, {
+ * await repo.commits.create(commit.summary, {
  *   author: commit.author,
  *   allowEmpty: true,
  * });
- * assertEquals((await repo.head()).author, commit.author);
+ * assertEquals((await repo.commits.head()).author, commit.author);
  * ```
  *
  * @module
@@ -65,11 +65,11 @@ export interface TempRepoOptions {
  * await using repo = await tempRepo({ clone: remote });
  *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
- * await repo.add("file.txt");
- * const commit = await repo.commit("feat: add feature");
- * await repo.push();
+ * await repo.index.add("file.txt");
+ * const commit = await repo.commits.create("feat: add feature");
+ * await repo.commits.push();
  *
- * assertEquals(await remote.head(), commit);
+ * assertEquals(await remote.commits.head(), commit);
  * ```
  */
 export async function tempRepo(
@@ -88,7 +88,7 @@ export async function tempRepo(
     await git({ cwd }).clone(target, { bare, config });
   } else {
     await repo.init({ bare });
-    await repo.config(config);
+    await repo.config.set(config);
   }
   return Object.assign(repo, {
     [Symbol.asyncDispose]: () => Deno.remove(cwd, { recursive: true }),

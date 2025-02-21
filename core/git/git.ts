@@ -19,7 +19,7 @@
  *   },
  * });
  * await repo.init();
- * await repo.commit("Initial commit", { allowEmpty: true });
+ * await repo.commits.create("Initial commit", { allowEmpty: true });
  * ```
  *
  * The `@roka/git/testing` module provides utilities to help write tests.
@@ -28,7 +28,7 @@
  * ```ts
  * import { tempRepo } from "@roka/git/testing";
  * await using repo = await tempRepo();
- * const commit = await repo.commit("Initial commit", { allowEmpty: true });
+ * const commit = await repo.commits.create("Initial commit", { allowEmpty: true });
  * ```
  *
  * The `@roka/git/conventional` module provides utilities to work with
@@ -43,10 +43,10 @@
  * }));
  * ```
  *
- * @todo Set and get any configuration.
- * @todo Add stashing.
+ * @todo Extend `git().config.set()` with more configurations.
+ * @todo Add `git().config.get()`
  * @todo Handle merges, rebases, conflicts.
- * @todo Add submodules.
+ * @todo Add `git().submodules`.
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
@@ -74,47 +74,58 @@ export class GitError extends Error {
 export interface Git {
   /** Returns the repository directory, with optional relative children. */
   path: (...parts: string[]) => string;
-  /** Configures repository options. */
-  config: (config: Config) => Promise<void>;
   /** Initializes a new git repository. */
   init: (options?: InitOptions) => Promise<void>;
   /** Clones a remote repository. */
   clone: (url: string, options?: CloneOptions) => Promise<void>;
-  /** Switches to a commit, or an existing or new branch. */
-  checkout: (options?: GitCheckoutOptions) => Promise<void>;
-  /** Returns the current branch name. */
-  branch: () => Promise<string | undefined>;
-  /** Stages files for commit. */
-  add: (pathspecs: string | string[]) => Promise<void>;
-  /** Removes files from the index. */
-  remove: (pathspecs: string | string[]) => Promise<void>;
-  /** Creates a new commit in the repository. */
-  commit: (
-    summary: string,
-    options?: CommitOptions,
-  ) => Promise<Commit>;
-  /** Returns the commit at the tip of `HEAD`. */
-  head: () => Promise<Commit>;
-  /** Returns the history of commits in the repository. */
-  log: (options?: LogOptions) => Promise<Commit[]>;
-  /** Creates a new tag in the repository. */
-  tag: (name: string, options?: TagOptions) => Promise<Tag>;
-  /** Lists all tags in the repository. */
-  tagList: (options?: TagListOptions) => Promise<Tag[]>;
-  /** Adds a remote to the repository. */
-  remoteAdd: (url: string, options?: RemoteOptions) => Promise<void>;
-  /** Returns the remote repository URL. */
-  remote: (options?: RemoteOptions) => Promise<string>;
-  /** Returns the remote head branch of the repository. */
-  remoteDefaultBranch: (
-    options?: RemoteOptions,
-  ) => Promise<string | undefined>;
-  /** Pushes commits to a remote. */
-  push: (options?: PushOptions) => Promise<void>;
-  /** Pushes a tag to a remote. */
-  pushTag: (tag: Tag | string, options?: PushTagOptions) => Promise<void>;
-  /** Pulls commits and tags from a remote. */
-  pull: (options?: PullOptions) => Promise<void>;
+  /** Config operations. */
+  config: {
+    /** Configures repository options. */
+    set: (config: Config) => Promise<void>;
+  };
+  /** Branch operations. */
+  branches: {
+    /** Returns the current branch name. */
+    get: () => Promise<string | undefined>;
+    /** Switches to a commit, or an existing or new branch. */
+    checkout: (options?: BranchCheckoutOptions) => Promise<void>;
+  };
+  /** Index operations. */
+  index: {
+    /** Stages files for commit. */
+    add: (pathspecs: string | string[]) => Promise<void>;
+    /** Removes files from the index. */
+    remove: (pathspecs: string | string[]) => Promise<void>;
+  };
+  /** Commit operations. */
+  commits: {
+    /** Creates a new commit in the repository. */
+    create: (summary: string, options?: CommitCreateOptions) => Promise<Commit>;
+    /** Returns the commit at the tip of `HEAD`. */
+    head: () => Promise<Commit>;
+    /** Returns the history of commits in the repository. */
+    log: (options?: CommitLogOptions) => Promise<Commit[]>;
+    /** Pushes commits to a remote. */
+    push: (options?: CommitPushOptions) => Promise<void>;
+    /** Pulls commits and tags from a remote. */
+    pull: (options?: CommitPullOptions) => Promise<void>;
+  };
+  /** Tag operations. */
+  tags: {
+    /** Creates a new tag in the repository. */
+    create(name: string, options?: TagCreateOptions): Promise<Tag>;
+    /** Lists all tags in the repository. */
+    list(options?: TagListOptions): Promise<Tag[]>;
+    /** Pushes a tag to a remote. */
+    push: (tag: Tag | string, options?: TagPushOptions) => Promise<void>;
+  };
+  /** Remote operations. */
+  remotes: {
+    /** Adds a remote to the repository. */
+    add: (url: string, name?: string) => Promise<Remote>;
+    /** Returns the remote repository URL. */
+    get: (name?: string) => Promise<Remote>;
+  };
 }
 
 /** A git ref that points to a commit. */
@@ -150,6 +161,18 @@ export interface Tag {
   body?: string;
   /** Tagger, who created the tag. */
   tagger?: User;
+}
+
+/** A remote repository tracked locally. */
+export interface Remote {
+  /** Remote name. */
+  name: string;
+  /** Remote fetch URL. */
+  fetchUrl: string;
+  /** Remote push URL. */
+  pushUrl: string;
+  /** Default branch on the remote. */
+  defaultBranch?: string;
 }
 
 /** A revision range. */
@@ -234,18 +257,6 @@ export interface InitOptions {
   branch?: string;
 }
 
-/** Options for signing commits and tags. */
-export interface SignOptions {
-  /**
-   * Sign the commit with GPG.
-   *
-   * If `true` or a string, object is signed with the default or given GPG key.
-   *
-   * If `false`, the commit is not signed.
-   */
-  sign?: boolean | string;
-}
-
 /** Options for cloning repositories. */
 export interface CloneOptions extends InitOptions, RemoteOptions {
   /** Set config for new repository, after initialization but before fetch. */
@@ -279,16 +290,16 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
 }
 
 /** Options for checkout. */
-export interface GitCheckoutOptions {
+export interface BranchCheckoutOptions {
   /**
    * Checkout at given commit or branch.
    * @default {"HEAD"}
    *
-   * A commit target implies {@linkcode GitCheckoutOptions.detach} to be `true`.
+   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be `true`.
    */
   target?: Commitish;
   /** Branch to create and checkout during checkout. */
-  newBranch?: string;
+  new?: string;
   /**
    * Detach `HEAD` during checkout from the target branch.
    * @default {false}
@@ -297,7 +308,7 @@ export interface GitCheckoutOptions {
 }
 
 /** Options for creating git commits. */
-export interface CommitOptions extends SignOptions {
+export interface CommitCreateOptions extends SignOptions {
   /**
    * Automatically stage modified or deleted files known to git.
    * @default {false}
@@ -319,7 +330,7 @@ export interface CommitOptions extends SignOptions {
 }
 
 /** Options for fetching git logs. */
-export interface LogOptions {
+export interface CommitLogOptions {
   /** Only commits by an author. */
   author?: User;
   /** Only commits by a committer. */
@@ -336,8 +347,23 @@ export interface LogOptions {
   text?: string;
 }
 
+/** Options for pushing to a remote. */
+export interface CommitPushOptions extends TransportOptions, RemoteOptions {
+  /** Remote branch to push to. Default is the current branch. */
+  branch?: string;
+  /** Force push to remote. */
+  force?: boolean;
+}
+
+/** Options for pulling from a remote. */
+export interface CommitPullOptions
+  extends RemoteOptions, TransportOptions, SignOptions {
+  /** Remote branch to pull from. Default is the tracked remote branch. */
+  branch?: string;
+}
+
 /** Options for creating tags. */
-export interface TagOptions extends SignOptions {
+export interface TagCreateOptions extends SignOptions {
   /**
    * Commit to tag.
    * @default {"HEAD"}
@@ -371,6 +397,12 @@ export interface TagListOptions {
   sort?: "version";
 }
 
+/** Options for pushing a tag to a remote. */
+export interface TagPushOptions extends RemoteOptions {
+  /** Force push to remote. */
+  force?: boolean;
+}
+
 /** Options for adding or querying remotes. */
 export interface RemoteOptions {
   /**
@@ -380,8 +412,20 @@ export interface RemoteOptions {
   remote?: string;
 }
 
+/** Options for signing commits and tags. */
+export interface SignOptions {
+  /**
+   * Sign the commit with GPG.
+   *
+   * If `true` or a string, object is signed with the default or given GPG key.
+   *
+   * If `false`, the commit is not signed.
+   */
+  sign?: boolean | string;
+}
+
 /** Options for pulling from or pushing to a remote. */
-export interface GitTransportOptions {
+export interface TransportOptions {
   /** Either update all refs on the other side, or don't update any.*/
   atomic?: boolean;
   /** Copy all tags.
@@ -396,27 +440,6 @@ export interface GitTransportOptions {
   tags?: boolean;
 }
 
-/** Options for pushing to a remote. */
-export interface PushOptions extends GitTransportOptions, RemoteOptions {
-  /** Remote branch to push to. Default is the current branch. */
-  branch?: string;
-  /** Force push to remote. */
-  force?: boolean;
-}
-
-/** Options for pushing a tag to a remote. */
-export interface PushTagOptions extends RemoteOptions {
-  /** Force push to remote. */
-  force?: boolean;
-}
-
-/** Options for pulling from a remote. */
-export interface PullOptions
-  extends RemoteOptions, GitTransportOptions, SignOptions {
-  /** Remote branch to pull from. Default is the tracked remote branch. */
-  branch?: string;
-}
-
 /**
  * Creates a new Git instance for a local repository.
  *
@@ -429,22 +452,22 @@ export interface PullOptions
  * await using directory = await tempDirectory();
  * const repo = git({ cwd: directory.path() });
  * await repo.init();
- * await repo.config({ user: { name: "name", email: "email" } });
+ * await repo.config.set({ user: { name: "name", email: "email" } });
  *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
- * await repo.add("file.txt");
- * const commit = await repo.commit("Initial commit", { sign: false });
- * assertEquals(await repo.head(), commit);
- * assertEquals(await repo.log(), [commit]);
+ * await repo.index.add("file.txt");
+ * const commit = await repo.commits.create("Initial commit", { sign: false });
+ * assertEquals(await repo.commits.head(), commit);
+ * assertEquals(await repo.commits.log(), [commit]);
  *
- * const tag = await repo.tag("release", { sign: false });
- * assertEquals(await repo.tagList(), [tag]);
+ * const tag = await repo.tags.create("release", { sign: false });
+ * assertEquals(await repo.tags.list(), [tag]);
  * ```
  */
 export function git(options?: GitOptions): Git {
   const directory = options?.cwd ?? ".";
   const gitOptions = options ?? {};
-  return {
+  const git: Git = {
     path(...parts: string[]) {
       return join(directory, ...parts);
     },
@@ -471,164 +494,177 @@ export function git(options?: GitOptions): Git {
         options?.singleBranch === true && "--single-branch",
       );
     },
-    async config(config) {
-      for (const cfg of configArgs(config)) {
-        await run(gitOptions, "config", cfg);
-      }
+    config: {
+      async set(config) {
+        for (const cfg of configArgs(config)) {
+          await run(gitOptions, "config", cfg);
+        }
+      },
     },
-    async checkout(options) {
-      await run(
-        gitOptions,
-        "checkout",
-        options?.detach && "--detach",
-        options?.newBranch !== undefined && ["-b", options.newBranch],
-        options?.target !== undefined && commitArg(options.target),
-      );
+    branches: {
+      async get() {
+        const branch = await run(gitOptions, "branch", "--show-current");
+        return branch ? branch : undefined;
+      },
+      async checkout(options) {
+        await run(
+          gitOptions,
+          "checkout",
+          options?.detach && "--detach",
+          options?.new !== undefined && ["-b", options.new],
+          options?.target !== undefined && commitArg(options.target),
+        );
+      },
     },
-    async branch() {
-      const branch = await run(gitOptions, "branch", "--show-current");
-      return branch ? branch : undefined;
+    index: {
+      async add(pathspecs) {
+        await run(gitOptions, "add", pathspecs);
+      },
+      async remove(pathspecs) {
+        await run(gitOptions, "rm", pathspecs);
+      },
     },
-    async add(pathspecs) {
-      await run(gitOptions, "add", pathspecs);
-    },
-    async remove(pathspecs) {
-      await run(gitOptions, "rm", pathspecs);
-    },
-    async commit(summary, options) {
-      const output = await run(
-        gitOptions,
-        "commit",
-        ["-m", summary],
-        options?.body !== undefined && ["-m", options?.body],
-        options?.trailers && trailerArg(options.trailers),
-        options?.all && "--all",
-        options?.allowEmpty && "--allow-empty",
-        options?.amend && "--amend",
-        options?.author && ["--author", userArg(options.author)],
-        options?.sign !== undefined && signArg(options.sign, "commit"),
-      );
-      const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
-      assert(hash, "Cannot find created commit");
-      const [commit] = await this.log({ maxCount: 1, range: { to: hash } });
-      assert(commit, "Cannot find created commit");
-      return commit;
-    },
-    async head() {
-      const [commit] = await this.log({ maxCount: 1 });
-      assert(commit, "No HEAD commit.");
-      return commit;
-    },
-    async log(options) {
-      const output = await run(
-        gitOptions,
-        ["log", `--format=${formatArg(LOG_FORMAT)}`],
-        options?.author && ["--author", userArg(options.author)],
-        options?.committer && ["--committer", userArg(options.committer)],
-        options?.maxCount !== undefined &&
-          ["--max-count", `${options.maxCount}`],
-        options?.paths && ["--", ...options.paths],
-        options?.range !== undefined && rangeArg(options.range),
-        options?.skip !== undefined && ["--skip", `${options.skip}`],
-        options?.text !== undefined && ["-S", options.text, "--pickaxe-regex"],
-      );
-      return parseOutput(LOG_FORMAT, output) as Commit[];
-    },
-    async tag(name, options): Promise<Tag> {
-      await run(
-        gitOptions,
-        ["tag", name],
-        options?.commit && commitArg(options.commit),
-        options?.subject && ["-m", options.subject],
-        options?.body !== undefined && ["-m", options.body],
-        options?.force && "--force",
-        options?.sign !== undefined && signArg(options.sign, "tag"),
-      );
-      const [tag] = await this.tagList({ name });
-      assert(tag, "Cannot find created tag");
-      return tag;
-    },
-    async tagList(options) {
-      const output = await run(
-        gitOptions,
-        ["tag", "--list", `--format=${formatArg(TAG_FORMAT)}`],
-        options?.name,
-        options?.contains !== undefined &&
-          ["--contains", commitArg(options.contains)],
-        options?.noContains !== undefined &&
-          ["--no-contains", commitArg(options.noContains)],
-        options?.pointsAt !== undefined &&
-          ["--points-at", commitArg(options.pointsAt)],
-        options?.sort === "version" && "--sort=-version:refname",
-      );
-      const tags = parseOutput(TAG_FORMAT, output);
-      return await Promise.all(tags.map(async (tag) => {
-        assert(tag.commit?.hash, "Commit hash not filled for tag");
-        const [commit] = await this.log({
+    commits: {
+      async create(summary, options) {
+        const output = await run(
+          gitOptions,
+          "commit",
+          ["-m", summary],
+          options?.body !== undefined && ["-m", options?.body],
+          options?.trailers && trailerArg(options.trailers),
+          options?.all && "--all",
+          options?.allowEmpty && "--allow-empty",
+          options?.amend && "--amend",
+          options?.author && ["--author", userArg(options.author)],
+          options?.sign !== undefined && signArg(options.sign, "commit"),
+        );
+        const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
+        assert(hash, "Cannot find created commit");
+        const [commit] = await git.commits.log({
           maxCount: 1,
-          range: { to: tag.commit.hash },
+          range: { to: hash },
         });
-        assert(commit, "Cannot find tag commit");
-        tag.commit = commit;
-        return tag as Tag;
-      }));
+        assert(commit, "Cannot find created commit");
+        return commit;
+      },
+      async head() {
+        const [commit] = await git.commits.log({ maxCount: 1 });
+        assert(commit, "No HEAD commit.");
+        return commit;
+      },
+      async log(options) {
+        const output = await run(
+          gitOptions,
+          ["log", `--format=${formatArg(LOG_FORMAT)}`],
+          options?.author && ["--author", userArg(options.author)],
+          options?.committer && ["--committer", userArg(options.committer)],
+          options?.maxCount !== undefined &&
+            ["--max-count", `${options.maxCount}`],
+          options?.paths && ["--", ...options.paths],
+          options?.range !== undefined && rangeArg(options.range),
+          options?.skip !== undefined && ["--skip", `${options.skip}`],
+          options?.text !== undefined &&
+            ["-S", options.text, "--pickaxe-regex"],
+        );
+        return parseOutput(LOG_FORMAT, output) as Commit[];
+      },
+      async push(options) {
+        await run(
+          gitOptions,
+          ["push", options?.remote ?? "origin"],
+          options?.branch,
+          options?.atomic === false && "--no-atomic",
+          options?.atomic === true && "--atomic",
+          options?.force && "--force",
+          options?.tags && "--tags",
+        );
+      },
+      async pull(options) {
+        await run(
+          gitOptions,
+          "pull",
+          options?.remote ?? "origin",
+          options?.branch,
+          options?.atomic && "--atomic",
+          options?.sign !== undefined && signArg(options.sign, "commit"),
+          options?.tags === false && "--no-tags",
+          options?.tags === true && "--tags",
+        );
+      },
     },
-    async remoteAdd(url, options) {
-      await run(
-        gitOptions,
-        ["remote", "add"],
-        options?.remote ?? "origin",
-        url,
-      );
+    tags: {
+      async create(name, options): Promise<Tag> {
+        await run(
+          gitOptions,
+          ["tag", name],
+          options?.commit && commitArg(options.commit),
+          options?.subject && ["-m", options.subject],
+          options?.body !== undefined && ["-m", options.body],
+          options?.force && "--force",
+          options?.sign !== undefined && signArg(options.sign, "tag"),
+        );
+        const [tag] = await git.tags.list({ name });
+        assert(tag, "Cannot find created tag");
+        return tag;
+      },
+      async list(options?: TagListOptions) {
+        const output = await run(
+          gitOptions,
+          ["tag", "--list", `--format=${formatArg(TAG_FORMAT)}`],
+          options?.name,
+          options?.contains !== undefined &&
+            ["--contains", commitArg(options.contains)],
+          options?.noContains !== undefined &&
+            ["--no-contains", commitArg(options.noContains)],
+          options?.pointsAt !== undefined &&
+            ["--points-at", commitArg(options.pointsAt)],
+          options?.sort === "version" && "--sort=-version:refname",
+        );
+        const tags = parseOutput(TAG_FORMAT, output);
+        return await Promise.all(tags.map(async (tag) => {
+          assert(tag.commit?.hash, "Commit hash not filled for tag");
+          const [commit] = await git.commits.log({
+            maxCount: 1,
+            range: { to: tag.commit.hash },
+          });
+          assert(commit, "Cannot find tag commit");
+          tag.commit = commit;
+          return tag as Tag;
+        }));
+      },
+      async push(tag, options) {
+        await run(
+          gitOptions,
+          ["push", options?.remote ?? "origin", "tag", tagArg(tag)],
+          options?.force && "--force",
+        );
+      },
     },
-    async remote(options) {
-      return await run(
-        gitOptions,
-        ["remote", "get-url"],
-        options?.remote ?? "origin",
-      );
-    },
-    async remoteDefaultBranch(options) {
-      const info = await run(
-        gitOptions,
-        ["remote", "show", options?.remote ?? "origin"],
-      );
-      const match = info.match(/\n\s*HEAD branch:\s*(?<branch>.+)\s*\n/);
-      if (!match?.groups?.branch) return undefined;
-      if (match.groups.branch === "(unknown)") return undefined;
-      return match.groups.branch;
-    },
-    async push(options) {
-      await run(
-        gitOptions,
-        ["push", options?.remote ?? "origin"],
-        options?.branch,
-        options?.atomic === false && "--no-atomic",
-        options?.atomic === true && "--atomic",
-        options?.force && "--force",
-        options?.tags && "--tags",
-      );
-    },
-    async pushTag(tag, options) {
-      await run(
-        gitOptions,
-        ["push", options?.remote ?? "origin", "tag", tagArg(tag)],
-        options?.force && "--force",
-      );
-    },
-    async pull(options) {
-      await run(
-        gitOptions,
-        "pull",
-        options?.remote ?? "origin",
-        options?.branch,
-        options?.atomic && "--atomic",
-        options?.sign !== undefined && signArg(options.sign, "commit"),
-        options?.tags === false && "--no-tags",
-        options?.tags === true && "--tags",
-      );
+    remotes: {
+      async add(url, name = "origin") {
+        await run(gitOptions, ["remote", "add"], name, url);
+        return git.remotes.get(name);
+      },
+      async get(name = "origin") {
+        const info = await run(gitOptions, ["remote", "show", name]);
+        const match = info.match(
+          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*\n\s*HEAD branch:\s*(?<defaultBranch>.+)\s*(\n|$)/,
+        );
+        const { fetchUrl, pushUrl, defaultBranch } = { ...match?.groups };
+        assert(
+          fetchUrl && pushUrl && defaultBranch,
+          "Cannot parse remote information",
+        );
+        return {
+          name,
+          fetchUrl,
+          pushUrl,
+          ...defaultBranch !== "(unknown)" && { defaultBranch },
+        };
+      },
     },
   };
+  return git;
 }
 
 async function run(

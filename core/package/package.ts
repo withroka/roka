@@ -248,8 +248,8 @@ async function getRelease(pkg: Package): Promise<Release | undefined> {
   const name = `${pkg.module}@*`;
   const sort = "version";
   const [tag] = [
-    ...await repo.tagList({ name, sort, pointsAt: "HEAD" }),
-    ...await repo.tagList({ name, sort, noContains: "HEAD" }),
+    ...await repo.tags.list({ name, sort, pointsAt: "HEAD" }),
+    ...await repo.tags.list({ name, sort, noContains: "HEAD" }),
   ];
   if (tag === undefined) return { version: "0.0.0" };
   const version = tag.name?.split("@")[1];
@@ -263,7 +263,7 @@ async function getRelease(pkg: Package): Promise<Release | undefined> {
 
 async function getUpdate(pkg: Package): Promise<Update | undefined> {
   if (!pkg.release) return undefined;
-  const log = await git({ cwd: pkg.directory }).log({
+  const log = await git({ cwd: pkg.directory }).commits.log({
     ...pkg.release?.tag !== undefined
       ? { range: { from: pkg.release.tag } }
       : { paths: ["."] },

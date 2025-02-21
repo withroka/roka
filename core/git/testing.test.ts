@@ -23,22 +23,22 @@ Deno.test("testCommit() can override fields", () => {
 
 Deno.test("tempRepo() creates a repo", async () => {
   await using repo = await tempRepo();
-  const commit = await repo.commit("initial", { allowEmpty: true });
-  assertEquals(await repo.head(), commit);
+  const commit = await repo.commits.create("initial", { allowEmpty: true });
+  assertEquals(await repo.commits.head(), commit);
 });
 
 Deno.test("tempRepo() can clone a repo from another repo", async () => {
   await using remote = await tempRepo({ bare: true });
   await using repo = await tempRepo({ clone: remote });
-  const commit = await repo.commit("initial", { allowEmpty: true });
-  await repo.push();
-  assertEquals(await remote.head(), commit);
+  const commit = await repo.commits.create("initial", { allowEmpty: true });
+  await repo.commits.push();
+  assertEquals(await remote.commits.head(), commit);
 });
 
 Deno.test("tempRepo() can clone a repo from path", async () => {
   await using remote = await tempRepo({ bare: true });
   await using repo = await tempRepo({ clone: remote.path() });
-  const commit = await repo.commit("initial", { allowEmpty: true });
-  await repo.push();
-  assertEquals(await remote.head(), commit);
+  const commit = await repo.commits.create("initial", { allowEmpty: true });
+  await repo.commits.push();
+  assertEquals(await remote.commits.head(), commit);
 });

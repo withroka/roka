@@ -200,8 +200,8 @@ export function github(options?: GitHubOptions): GitHub {
         return repository(git, api, ownerOrOptions, repo);
       }
       return (async () => {
-        const remote = await git.remote();
-        const { owner, repo } = parseRemote(remote);
+        const remote = await git.remotes.get();
+        const { owner, repo } = parseRemote(remote.pushUrl);
         return repository(git, api, owner, repo);
       })();
     }
@@ -237,12 +237,12 @@ function repository(
           );
       },
       async create(options) {
-        const head = options?.head ?? await git.branch();
+        const head = options?.head ?? await git.branches.get();
         assert(head, "Cannot determine current branch");
-        const base = options?.base ?? await git.remoteDefaultBranch();
+        const base = options?.base ?? (await git.remotes.get()).defaultBranch;
         assert(base, "Cannot determine remote base branch");
         const commit = !options?.title
-          ? (await git.log({ range: { from: base } })).pop()
+          ? (await git.commits.log({ range: { from: base } })).pop()
           : undefined;
         const title = options?.title ?? commit?.summary;
         const body = options?.body ?? commit?.body;
