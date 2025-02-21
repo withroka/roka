@@ -102,7 +102,7 @@ export interface Git {
   /** Lists all tags in the repository. */
   tagList: (options?: TagListOptions) => Promise<Tag[]>;
   /** Adds a remote to the repository. */
-  addRemote: (url: string, options?: RemoteOptions) => Promise<void>;
+  remoteAdd: (url: string, options?: RemoteOptions) => Promise<void>;
   /** Returns the remote repository URL. */
   remote: (options?: RemoteOptions) => Promise<string>;
   /** Returns the remote head branch of the repository. */
@@ -573,7 +573,7 @@ export function git(options?: GitOptions): Git {
         return tag as Tag;
       }));
     },
-    async addRemote(url, options) {
+    async remoteAdd(url, options) {
       await run(
         gitOptions,
         ["remote", "add"],
