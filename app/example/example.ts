@@ -1,3 +1,3 @@
-import { version } from "@roka/package/version";
+import { version } from "@roka/cli/version";
 
 console.log(`Hello, world! [version: ${await version()}]`);
