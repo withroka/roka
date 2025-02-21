@@ -6,11 +6,11 @@
  *
  * @example
  * ```ts
- * import { tempRepo } from "@roka/git/testing";
+ * import { tempRepository } from "@roka/git/testing";
  * import { conventional } from "@roka/git/conventional";
  * import { assertEquals } from "@std/assert";
  *
- * const repo = await tempRepo();
+ * const repo = await tempRepository();
  * await repo.commits.create("feat(cli): add new command", { allowEmpty: true });
  * await repo.commits.create("fix(cli): fix last command", { allowEmpty: true });
  *
@@ -52,11 +52,11 @@ export interface ConventionalCommit extends Commit {
  *
  * @example
  * ```ts
- * import { tempRepo } from "@roka/git/testing";
+ * import { tempRepository } from "@roka/git/testing";
  * import { conventional } from "@roka/git/conventional";
  * import { assertEquals, assertFalse } from "@std/assert";
  *
- * const repo = await tempRepo();
+ * const repo = await tempRepository();
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * await repo.commits.create("feat(cli): add new command", { allowEmpty: true });

@@ -59,10 +59,10 @@ export interface TempRepoOptions {
  *
  * @example
  * ```ts
- * import { tempRepo } from "@roka/git/testing";
+ * import { tempRepository } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
- * await using remote = await tempRepo({ bare: true });
- * await using repo = await tempRepo({ clone: remote });
+ * await using remote = await tempRepository({ bare: true });
+ * await using repo = await tempRepository({ clone: remote });
  *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
