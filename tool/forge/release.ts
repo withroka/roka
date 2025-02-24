@@ -24,7 +24,7 @@ function changelogText(pkg: Package): string {
 async function releaseBody(pkg: Package): Promise<string> {
   assert(pkg.version, "Cannot release a package without version");
   const title = pkg.release?.tag ? "Changelog" : "Initial release";
-  const repo = await github().repo();
+  const repo = await github().repos.get();
   const tag = `${pkg.module}@${pkg.version}`;
   const fullChangelogUrl = pkg?.release?.tag
     ? `compare/${pkg.release.tag.name}...${tag}`
@@ -89,7 +89,7 @@ async function bumpVersions(
     await repo.git.config.set({ user });
     await repo.git.commits.create(title, { body, all: true });
   }
-  const [pr] = await repo.pulls.list({ title, isClosed: false });
+  const [pr] = await repo.pulls.list({ title, closed: false });
   {
     // create or update version bump PR
     if (pr) {
@@ -98,7 +98,7 @@ async function bumpVersions(
       console.log(`🤖 Updated release PR ${pr.number} (${pr.url})`);
     } else {
       await repo.git.commits.push({ branch: BRANCH });
-      const pr = await repo.pulls.create({ title, body, isDraft: true });
+      const pr = await repo.pulls.create({ title, body, draft: true });
       console.log(`🤖 Created release PR ${pr.number} (${pr.url})`);
     }
   }
@@ -119,7 +119,7 @@ async function createReleases(
     assert(pkg.config.version, "Cannot release a package without version");
     const version = parseVersion(pkg.config.version);
     const name = `${pkg.module}@${pkg.config.version}`;
-    let [release] = await repo.releases.list({ name, isDraft: true });
+    let [release] = await repo.releases.list({ name, draft: true });
     {
       // create or update release
       const head = await git().commits.head();
@@ -132,7 +132,7 @@ async function createReleases(
         commit: head.hash,
       };
       if (release) {
-        if (!release.isDraft) {
+        if (!release.draft) {
           throw new PackageError("Cannot update a published release");
         }
         release = await release.update(data);
@@ -233,7 +233,7 @@ async function main(args: string[]) {
       ) => {
         if (directories.length === 0) directories = ["."];
         const packages = await getWorkspace({ directories });
-        const repo = await github({ token }).repo();
+        const repo = await github({ token }).repos.get();
         output(packages, changelog);
         const author = { ...actor && { name: actor }, ...email && { email } };
         if (bump) await bumpVersions(repo, packages, author);

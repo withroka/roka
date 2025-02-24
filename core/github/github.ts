@@ -1,50 +1,42 @@
+/**
+ * Objects to interact with GitHub.
+ *
+ * This module provides, incomplete, opininiated functionality wrapped around
+ * {@link https://docs.github.com/en/rest | GitHub REST API}.
+ *
+ * @todo Support pagination.
+ * @todo Provide dates.
+ * @todo Provide user.
+ * @todo Add `github().issues`.
+ * @todo Add `github().gists`.
+ * @todo Add `github().projects`.
+ * @todo Add `github().projects`.
+ * @todo Add `github().labels`.
+ * @todo Add `github().comments`.
+ * @todo Add `github().teams`.
+ * @todo Add `github().organizations`.
+ *
+ * @module
+ */
+
 import type { components } from "@octokit/openapi-types/types";
 import { Octokit } from "@octokit/rest";
 import { type Git, git as gitRepo } from "@roka/git";
 import { assert } from "@std/assert/assert";
 import { basename } from "@std/path";
 
-// NOT IMPLEMENTED
-// - dates
-// - users
-// - issues
-// - comments
-// - gists
-// - reactions
-// - projects
-// - labels
-// - milestones
-// - teams
-// - organizations
-
-/** Options for creating a GitHub API client. */
-export interface GitHubOptions {
-  /**
-   * GitHub personal access token.
-   *
-   * If a token is not provided, the client will be unauthenticated.
-   */
-  token?: string;
-}
-
-/** Options for configuring a repository. */
-export interface RepositoryOptions {
-  /**
-   * Local directory for the repository.
-   * @default {"."}
-   *
-   * The client will deduce the owner and repository name from the remote URL.
-   * Pull requests will also use the local state, such as the current branch.
-   */
-  directory?: string;
-}
-
 /** GitHub API client. */
 export interface GitHub {
-  /** Retrieve a repository using local remote URL. */
-  repo(options?: RepositoryOptions): Promise<Repository>;
-  /** Retrieve a repository using owner and repository name. */
-  repo(owner: string, repo: string, options?: RepositoryOptions): Repository;
+  repos: {
+    /** Retrieve a repository using local remote URL. */
+    get(options?: RepositoryGetOptions): Promise<Repository>;
+    /** Retrieve a repository using owner and repository name. */
+    get(
+      owner: string,
+      repo: string,
+      options?: RepositoryGetOptions,
+    ): Repository;
+  };
 }
 
 /** A GitHub repository with API operations. */
@@ -60,16 +52,16 @@ export interface Repository {
   /** Operations for manaing pull requests. */
   pulls: {
     /** List pull requests. */
-    list(options?: ListPullRequestOptions): Promise<PullRequest[]>;
+    list(options?: PullRequestListOptions): Promise<PullRequest[]>;
     /** Create a pull request. */
-    create(options?: CreatePullRequestOptions): Promise<PullRequest>;
+    create(options?: PullRequestCreateOptions): Promise<PullRequest>;
   };
   /** Operations for managing releases. */
   releases: {
     /** List releases. */
-    list(options?: ListReleaseOptions): Promise<Release[]>;
+    list(options?: ReleaseListOptions): Promise<Release[]>;
     /** Create a release. */
-    create(tag: string, options?: CreateReleaseOptions): Promise<Release>;
+    create(tag: string, options?: ReleaseCreateOptions): Promise<Release>;
   };
 }
 
@@ -90,29 +82,14 @@ export interface PullRequest {
   /** Pull request head branch. */
   head: string;
   /** Whether the pull request is a draft. */
-  isDraft: boolean;
+  draft: boolean;
   /** Whether the pull requst is closed. */
-  isClosed: boolean;
+  closed: boolean;
   /** Whether the pull request is locked */
-  isLocked: boolean;
+  locked: boolean;
   /** Update the pull request. */
-  update(options?: UpdatePullRequestOptions): Promise<PullRequest>;
+  update(options?: PullRequestUpdateOptions): Promise<PullRequest>;
 }
-
-/** Options for listing pull requests. */
-export type ListPullRequestOptions = Partial<
-  Pick<PullRequest, "title" | "head" | "base" | "isClosed">
->;
-
-/** Options for creating a pull request. */
-export type CreatePullRequestOptions = Partial<
-  Pick<PullRequest, "title" | "body" | "base" | "head" | "isDraft">
->;
-
-/** Options for updating a pull request. */
-export type UpdatePullRequestOptions = Partial<
-  Pick<PullRequest, "title" | "body" | "base" | "isClosed">
->;
 
 /** A GitHub release with API operations. */
 export interface Release {
@@ -131,11 +108,11 @@ export interface Release {
   /** Release body. */
   body: string;
   /** Whether the release is a draft. */
-  isDraft: boolean;
+  draft: boolean;
   /** Whether the release is a prerelease. */
-  isPreRelease: boolean;
+  preRelease: boolean;
   /** Update the release. */
-  update(options?: UpdateReleaseOptions): Promise<Release>;
+  update(options?: ReleaseUpdateOptions): Promise<Release>;
   /** Delete the release. */
   delete(): Promise<void>;
   /** Operations for managing release assets. */
@@ -146,21 +123,6 @@ export interface Release {
     upload(file: string): Promise<ReleaseAsset>;
   };
 }
-
-/** Options for listing releases. */
-export type ListReleaseOptions = Partial<
-  Pick<Release, "name" | "tag" | "isDraft">
->;
-
-/** Options for creating a release. */
-export type CreateReleaseOptions = Partial<
-  Pick<Release, "name" | "body" | "commit" | "isDraft" | "isPreRelease">
->;
-
-/** Options for updating a release. */
-export type UpdateReleaseOptions = Partial<
-  Pick<Release, "name" | "body" | "tag" | "commit" | "isDraft" | "isPreRelease">
->;
 
 /** A GitHub release asset with API operations. */
 export interface ReleaseAsset {
@@ -180,32 +142,90 @@ export interface ReleaseAsset {
   delete(): Promise<void>;
 }
 
+/** Options for creating a GitHub API client. */
+export interface GitHubOptions {
+  /**
+   * GitHub personal access token.
+   *
+   * If a token is not provided, the client will be unauthenticated.
+   */
+  token?: string;
+}
+
+/** Options for retrieving a repository. */
+export interface RepositoryGetOptions {
+  /**
+   * Local directory for the repository.
+   * @default {"."}
+   *
+   * The client will deduce the owner and repository name from the remote URL.
+   * Pull requests will also use the local state, such as the current branch.
+   */
+  directory?: string;
+}
+
+/** Options for listing pull requests. */
+export type PullRequestListOptions = Partial<
+  Pick<PullRequest, "title" | "head" | "base" | "closed">
+>;
+
+/** Options for creating a pull request. */
+export type PullRequestCreateOptions = Partial<
+  Pick<PullRequest, "title" | "body" | "base" | "head" | "draft">
+>;
+
+/** Options for updating a pull request. */
+export type PullRequestUpdateOptions = Partial<
+  Pick<PullRequest, "title" | "body" | "base" | "closed">
+>;
+
+/** Options for listing releases. */
+export type ReleaseListOptions = Partial<
+  Pick<Release, "name" | "tag" | "draft">
+>;
+
+/** Options for creating a release. */
+export type ReleaseCreateOptions = Partial<
+  Pick<Release, "name" | "body" | "commit" | "draft" | "preRelease">
+>;
+
+/** Options for updating a release. */
+export type ReleaseUpdateOptions = Partial<
+  Pick<Release, "name" | "body" | "tag" | "commit" | "draft" | "preRelease">
+>;
+
 /** Creates a GitHub API client. */
 export function github(options?: GitHubOptions): GitHub {
   const api = new Octokit({ auth: options?.token });
-  return new class {
-    repo(owner: string, repo: string, options?: RepositoryOptions): Repository;
-    repo(options?: RepositoryOptions): Promise<Repository>;
-    repo(
-      ownerOrOptions?: string | RepositoryOptions,
-      repo?: string,
-      options?: RepositoryOptions,
-    ): Repository | Promise<Repository> {
-      if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
-      const git = gitRepo(
-        options?.directory !== undefined ? { cwd: options.directory } : {},
-      );
-      if (typeof ownerOrOptions === "string") {
-        assert(repo);
-        return repository(git, api, ownerOrOptions, repo);
+  return {
+    repos: new class {
+      get(
+        owner: string,
+        repo: string,
+        options?: RepositoryGetOptions,
+      ): Repository;
+      get(options?: RepositoryGetOptions): Promise<Repository>;
+      get(
+        ownerOrOptions?: string | RepositoryGetOptions,
+        repo?: string,
+        options?: RepositoryGetOptions,
+      ): Repository | Promise<Repository> {
+        if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
+        const git = gitRepo(
+          options?.directory !== undefined ? { cwd: options.directory } : {},
+        );
+        if (typeof ownerOrOptions === "string") {
+          assert(repo);
+          return repository(git, api, ownerOrOptions, repo);
+        }
+        return (async () => {
+          const remote = await git.remotes.get();
+          const { owner, repo } = parseRemote(remote.pushUrl);
+          return repository(git, api, owner, repo);
+        })();
       }
-      return (async () => {
-        const remote = await git.remotes.get();
-        const { owner, repo } = parseRemote(remote.pushUrl);
-        return repository(git, api, owner, repo);
-      })();
-    }
-  }();
+    }(),
+  };
 }
 
 function repository(
@@ -226,8 +246,8 @@ function repository(
           owner,
           ...options?.head !== undefined && { head: options.head },
           ...options?.base !== undefined && { base: options.base },
-          ...options?.isClosed !== undefined
-            ? { state: options.isClosed ? "closed" : "open" }
+          ...options?.closed !== undefined
+            ? { state: options.closed ? "closed" : "open" }
             : { state: "all" },
         });
         return response.data
@@ -253,7 +273,7 @@ function repository(
           base,
           ...title !== undefined && { title },
           ...body !== undefined && { body },
-          ...options?.isDraft ? { draft: options?.isDraft } : {},
+          ...options?.draft ? { draft: options?.draft } : {},
         });
         return pullRequest(api, result, response.data);
       },
@@ -274,8 +294,8 @@ function repository(
             options?.tag === undefined || release.tag === options.tag
           )
           .filter((release) =>
-            options?.isDraft === undefined ||
-            release.isDraft === options.isDraft
+            options?.draft === undefined ||
+            release.draft === options.draft
           );
       },
       async create(tag, options) {
@@ -285,9 +305,9 @@ function repository(
           tag_name: tag,
           ...options?.name !== undefined && { name: options.name },
           ...options?.body !== undefined && { body: options.body },
-          ...options?.isDraft !== undefined && { draft: options?.isDraft },
-          ...options?.isPreRelease !== undefined &&
-            { prerelease: options?.isPreRelease },
+          ...options?.draft !== undefined && { draft: options?.draft },
+          ...options?.preRelease !== undefined &&
+            { prerelease: options?.preRelease },
           ...options?.commit !== undefined &&
             { target_commitish: options.commit },
         });
@@ -319,9 +339,9 @@ function pullRequest(
     body: data.body ?? "",
     base: data.base.ref,
     head: data.head.ref,
-    isDraft: data.draft ?? false,
-    isClosed: state === "closed",
-    isLocked: data.locked ?? false,
+    draft: data.draft ?? false,
+    closed: state === "closed",
+    locked: data.locked ?? false,
     async update(options) {
       const response = await api.rest.pulls.update({
         owner: repo.owner,
@@ -330,8 +350,8 @@ function pullRequest(
         ...options?.title !== undefined && { title: options.title },
         ...options?.body !== undefined && { body: options.body },
         ...options?.base !== undefined && { base: options.base },
-        ...options?.isClosed !== undefined &&
-          { state: options.isClosed ? "closed" : "open" },
+        ...options?.closed !== undefined &&
+          { state: options.closed ? "closed" : "open" },
       });
       return pullRequest(api, repo, response.data);
     },
@@ -356,8 +376,8 @@ function release(
     tag: data.tag_name,
     commit: data.target_commitish,
     body: data.body ?? "",
-    isDraft: data.draft ?? false,
-    isPreRelease: data.prerelease ?? false,
+    draft: data.draft ?? false,
+    preRelease: data.prerelease ?? false,
     async update(options) {
       const response = await api.rest.repos.updateRelease({
         owner: repo.owner,
@@ -368,9 +388,9 @@ function release(
         ...options?.tag !== undefined && { tag_name: options.tag },
         ...options?.commit !== undefined &&
           { target_commitish: options.commit },
-        ...options?.isDraft !== undefined && { draft: options?.isDraft },
-        ...options?.isPreRelease !== undefined &&
-          { prerelease: options?.isPreRelease },
+        ...options?.draft !== undefined && { draft: options?.draft },
+        ...options?.preRelease !== undefined &&
+          { prerelease: options?.preRelease },
       });
       return release(api, repo, response.data);
     },
