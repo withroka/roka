@@ -86,11 +86,11 @@ export interface Git {
   /** Branch operations. */
   branches: {
     /** Returns the current branch name. */
-    get: () => Promise<string | undefined>;
+    current: () => Promise<string | undefined>;
     /** Switches to a commit, or an existing or new branch. */
     checkout: (options?: BranchCheckoutOptions) => Promise<void>;
   };
-  /** Index operations. */
+  /** Index (staged area) operations. */
   index: {
     /** Stages files for commit. */
     add: (pathspecs: string | string[]) => Promise<void>;
@@ -119,12 +119,18 @@ export interface Git {
     /** Pushes a tag to a remote. */
     push: (tag: Tag | string, options?: TagPushOptions) => Promise<void>;
   };
-  /** Remote operations. */
+  /**
+   * Remote operations.
+   *
+   * Default remote name is `"origin"` for all remote methods.
+   */
   remotes: {
-    /** Adds a remote to the repository. */
-    add: (url: string, name?: string) => Promise<Remote>;
     /** Returns the remote repository URL. */
     get: (name?: string) => Promise<Remote>;
+    /** Adds a remote to the repository. */
+    add: (url: string, name?: string) => Promise<Remote>;
+    /** Queries the default branch on the remote. */
+    defaultBranch: (name?: string) => Promise<string | undefined>;
   };
 }
 
@@ -171,8 +177,6 @@ export interface Remote {
   fetchUrl: string;
   /** Remote push URL. */
   pushUrl: string;
-  /** Default branch on the remote. */
-  defaultBranch?: string;
 }
 
 /** A revision range. */
@@ -502,7 +506,7 @@ export function git(options?: GitOptions): Git {
       },
     },
     branches: {
-      async get() {
+      async current() {
         const branch = await run(gitOptions, "branch", "--show-current");
         return branch ? branch : undefined;
       },
@@ -622,17 +626,18 @@ export function git(options?: GitOptions): Git {
         );
         const tags = parseOutput(TAG_FORMAT, output);
         return await Promise.all(tags.map(async (tag) => {
+          assert(tag.name, "Tag name not filled");
           assert(tag.commit?.hash, "Commit hash not filled for tag");
           const [commit] = await git.commits.log({
             maxCount: 1,
             range: { to: tag.commit.hash },
           });
-          assert(commit, "Cannot find tag commit");
-          tag.commit = commit;
-          return tag as Tag;
+          assert(commit, "Cannot find commit for tag");
+          const name: string = tag.name;
+          return { ...tag, name, commit };
         }));
       },
-      async push(tag, options) {
+      async push(tag: Tag | string, options?: TagPushOptions) {
         await run(
           gitOptions,
           ["push", options?.remote ?? "origin", "tag", tagArg(tag)],
@@ -641,26 +646,30 @@ export function git(options?: GitOptions): Git {
       },
     },
     remotes: {
+      async get(name = "origin") {
+        const remotes = (await run(gitOptions, "remote"))
+          .split("\n").filter((x) => x);
+        if (!remotes.includes(name)) throw new GitError("Remote not found");
+        const info = await run(gitOptions, ["remote", "show", "-n", name]);
+        const match = info.match(
+          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*(\n|$)/,
+        );
+        const { fetchUrl, pushUrl } = { ...match?.groups };
+        assert(fetchUrl && pushUrl, "Cannot parse remote information");
+        return { name, fetchUrl, pushUrl };
+      },
       async add(url, name = "origin") {
         await run(gitOptions, ["remote", "add"], name, url);
         return git.remotes.get(name);
       },
-      async get(name = "origin") {
+      async defaultBranch(name = "origin") {
         const info = await run(gitOptions, ["remote", "show", name]);
         const match = info.match(
-          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*\n\s*HEAD branch:\s*(?<defaultBranch>.+)\s*(\n|$)/,
+          /\n\s*HEAD branch:\s*(?<defaultBranch>.+)\s*(\n|$)/,
         );
-        const { fetchUrl, pushUrl, defaultBranch } = { ...match?.groups };
-        assert(
-          fetchUrl && pushUrl && defaultBranch,
-          "Cannot parse remote information",
-        );
-        return {
-          name,
-          fetchUrl,
-          pushUrl,
-          ...defaultBranch !== "(unknown)" && { defaultBranch },
-        };
+        const { defaultBranch } = { ...match?.groups };
+        assert(defaultBranch, "Cannot parse remote information");
+        return defaultBranch === "(unknown)" ? undefined : defaultBranch;
       },
     },
   };
@@ -786,7 +795,9 @@ type FormatFieldDescriptor<T> =
         }
         : T extends object ? {
             kind: "object";
-            fields: { [K in keyof T]: FormatFieldDescriptor<T[K]> };
+            fields: {
+              [K in keyof T]: FormatFieldDescriptor<T[K]>;
+            };
           }
         : never)
     )

@@ -237,9 +237,9 @@ function repository(
           );
       },
       async create(options) {
-        const head = options?.head ?? await git.branches.get();
+        const head = options?.head ?? await git.branches.current();
         assert(head, "Cannot determine current branch");
-        const base = options?.base ?? (await git.remotes.get()).defaultBranch;
+        const base = options?.base ?? await git.remotes.defaultBranch();
         assert(base, "Cannot determine remote base branch");
         const commit = !options?.title
           ? (await git.commits.log({ range: { from: base } })).pop()
