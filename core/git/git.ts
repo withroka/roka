@@ -158,25 +158,25 @@ export interface Commit {
 /** A tag in the Git repository. */
 export interface Tag {
   /** Tag name. */
-  readonly name: string;
+  name: string;
   /** Commit that is tagged. */
-  readonly commit: Commit;
+  commit: Commit;
   /** Tag subject from tag message. */
-  readonly subject?: string;
+  subject?: string;
   /** Tag body from tag message. */
-  readonly body?: string;
+  body?: string;
   /** Tagger, who created the tag. */
-  readonly tagger?: User;
+  tagger?: User;
 }
 
 /** A remote repository tracked locally. */
 export interface Remote {
   /** Remote name. */
-  readonly name: string;
+  name: string;
   /** Remote fetch URL. */
-  readonly fetchUrl: string;
+  fetchUrl: string;
   /** Remote push URL. */
-  readonly pushUrl: string;
+  pushUrl: string;
 }
 
 /** A revision range. */
@@ -780,14 +780,6 @@ type FormatField = { kind: "skip" } | {
   fields: { [key: string]: FormatField };
 };
 
-type FunctionKeys<T> = Exclude<
-  {
-    // deno-lint-ignore ban-types
-    [K in keyof T]: T[K] extends Function ? K : never;
-  }[keyof T],
-  undefined
->;
-type NonFunctionFields<T> = Omit<T, FunctionKeys<T>>;
 type FormatFieldDescriptor<T> =
   | { kind: "skip" }
   | (
@@ -804,7 +796,7 @@ type FormatFieldDescriptor<T> =
         : T extends object ? {
             kind: "object";
             fields: {
-              [K in keyof NonFunctionFields<T>]: FormatFieldDescriptor<T[K]>;
+              [K in keyof T]: FormatFieldDescriptor<T[K]>;
             };
           }
         : never)

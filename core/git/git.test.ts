@@ -784,12 +784,10 @@ Deno.test("git().tags.create() creates a tag with another tag", async () => {
   await repo.tags.create("tag1");
   await repo.tags.create("tag2", { commit: "tag1" });
   const tags = await repo.tags.list();
-  assertEquals({ tags }, {
-    tags: [
-      { name: "tag1", commit },
-      { name: "tag2", commit },
-    ],
-  });
+  assertEquals(tags, [
+    { name: "tag1", commit },
+    { name: "tag2", commit },
+  ]);
 });
 
 Deno.test("git().tags.create() cannot create duplicate tag", async () => {
