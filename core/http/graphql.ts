@@ -85,6 +85,7 @@ export function client(
       const nodes: Node[] = [];
       let cursor: string | null = null;
       do {
+        // deno-lint-ignore no-await-in-loop
         const data = await this.query<T>(query, { ...variables, cursor });
         const edges = paginator.edges(data);
         nodes.push(...edges.map(paginator.node));

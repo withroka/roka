@@ -27,6 +27,7 @@ import { basename } from "@std/path";
 
 /** GitHub API client. */
 export interface GitHub {
+  /** Operations for managing repositories. */
   repos: {
     /** Retrieve a repository using local remote URL. */
     get(options?: RepositoryGetOptions): Promise<Repository>;

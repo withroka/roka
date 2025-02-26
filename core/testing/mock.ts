@@ -247,6 +247,7 @@ async function bodyData(body: BodyInit): Promise<string> {
     const reader = body.getReader();
     let result = "";
     while (true) {
+      // deno-lint-ignore no-await-in-loop
       const { done, value } = await reader.read();
       if (done) break;
       result += new TextDecoder().decode(value);

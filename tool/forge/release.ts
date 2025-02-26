@@ -115,7 +115,7 @@ async function createReleases(
     console.log("🚫 No packages to release.");
     return;
   }
-  for (const pkg of packages) {
+  await pool(packages.map(async (pkg) => {
     assert(pkg.config.version, "Cannot release a package without version");
     const version = parseVersion(pkg.config.version);
     const name = `${pkg.module}@${pkg.config.version}`;
@@ -166,7 +166,7 @@ async function createReleases(
         { concurrency: 10 },
       );
     }
-  }
+  }));
 }
 
 function output(packages: Package[], changelog: boolean) {
