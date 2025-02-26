@@ -90,6 +90,7 @@ Deno.test("github().repos.releases", async (t) => {
   await t.step("list releases", async () => {
     while (true) {
       // wait for the release to be available
+      // deno-lint-ignore no-await-in-loop
       const releases = await repo.releases.list({ tag: "test-tag" });
       if (releases.length > 0) {
         assert(releases.length === 1);

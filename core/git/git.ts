@@ -54,6 +54,7 @@
  * @module
  */
 
+import { pool } from "@roka/async/pool";
 import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
 import { join } from "@std/path/join";
 
@@ -500,9 +501,10 @@ export function git(options?: GitOptions): Git {
     },
     config: {
       async set(config) {
-        for (const cfg of configArgs(config)) {
-          await run(gitOptions, "config", cfg);
-        }
+        await pool(
+          configArgs(config).map((cfg) => run(gitOptions, "config", cfg)),
+          { concurrency: 1 },
+        );
       },
     },
     branches: {
