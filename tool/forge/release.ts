@@ -115,58 +115,62 @@ async function createReleases(
     console.log("🚫 No packages to release.");
     return;
   }
-  await pool(packages.map(async (pkg) => {
-    assert(pkg.config.version, "Cannot release a package without version");
-    const version = parseVersion(pkg.config.version);
-    const name = `${pkg.module}@${pkg.config.version}`;
-    let [release] = await repo.releases.list({ name, draft: true });
-    {
-      // create or update release
-      const head = await git().commits.head();
-      const data = {
-        name,
-        tag: name,
-        body: await releaseBody(pkg),
-        isDraft: true,
-        isPreRelease: !!version.prerelease?.length,
-        commit: head.hash,
-      };
-      if (release) {
-        if (!release.draft) {
-          throw new PackageError("Cannot update a published release");
-        }
-        release = await release.update(data);
-        console.log(`🚀 Updated release ${release.name} (${release.url})`);
-      } else {
-        release = await repo.releases.create(name, { ...data });
-        console.log(`🚀 Created release ${release.name} (${release.url})`);
+  await pool(packages.map((pkg) => createRelease(repo, pkg)), {
+    concurrency: 1,
+  });
+}
+
+async function createRelease(repo: Repository, pkg: Package) {
+  assert(pkg.config.version, "Cannot release a package without version");
+  const version = parseVersion(pkg.config.version);
+  const name = `${pkg.module}@${pkg.config.version}`;
+  let [release] = await repo.releases.list({ name, draft: true });
+  {
+    // create or update release
+    const head = await git().commits.head();
+    const data = {
+      name,
+      tag: name,
+      body: await releaseBody(pkg),
+      isDraft: true,
+      isPreRelease: !!version.prerelease?.length,
+      commit: head.hash,
+    };
+    if (release) {
+      if (!release.draft) {
+        throw new PackageError("Cannot update a published release");
       }
+      release = await release.update(data);
+      console.log(`🚀 Updated release ${release.name} (${release.url})`);
+    } else {
+      release = await repo.releases.create(name, { ...data });
+      console.log(`🚀 Created release ${release.name} (${release.url})`);
     }
-    // delete existing assets
-    const assets = await release.assets.list();
-    await Promise.all(assets.map((asset) => asset.delete()));
-    if (pkg.config.compile) {
-      const artifacts = await compile(pkg, {
-        target: await compileTargets(),
-        release: true,
-        bundle: true,
-        checksum: true,
-        // https://github.com/denoland/deno/issues/27988
-        concurrency: 1,
-      });
-      await pool(
-        artifacts.flat().map(async (artifact) => {
-          const asset = await release.assets.upload(artifact);
-          console.log(
-            `🏺 Uploaded ${asset.name} (${
-              formatBytes(asset.size)
-            }) to release ${release.name} `,
-          );
-        }),
-        { concurrency: 10 },
-      );
-    }
-  }));
+  }
+  // delete existing assets
+  const assets = await release.assets.list();
+  await Promise.all(assets.map((asset) => asset.delete()));
+  if (pkg.config.compile) {
+    const artifacts = await compile(pkg, {
+      target: await compileTargets(),
+      release: true,
+      bundle: true,
+      checksum: true,
+      // https://github.com/denoland/deno/issues/27988
+      concurrency: 1,
+    });
+    await pool(
+      artifacts.flat().map(async (artifact) => {
+        const asset = await release.assets.upload(artifact);
+        console.log(
+          `🏺 Uploaded ${asset.name} (${
+            formatBytes(asset.size)
+          }) to release ${release.name} `,
+        );
+      }),
+      { concurrency: 10 },
+    );
+  }
 }
 
 function output(packages: Package[], changelog: boolean) {
