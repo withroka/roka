@@ -503,6 +503,7 @@ export function git(options?: GitOptions): Git {
       async set(config) {
         await pool(
           configArgs(config).map((cfg) => run(gitOptions, "config", cfg)),
+          { concurrency: 1 },
         );
       },
     },
