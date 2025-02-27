@@ -82,7 +82,9 @@ function releaseCommand() {
       { prefix: "GITHUB_", required: true },
     )
     .action(async (options, ...names) => {
-      const packages = await filter(names);
+      const packages = (await filter(names)).filter((pkg) =>
+        pkg.config.version !== pkg.release?.version
+      );
       await pool(packages.map(async (pkg) => {
         const [rls, assets] = await release(pkg, options);
         console.log(`🚀 Released ${pkg.module} [${rls.url}]`);
