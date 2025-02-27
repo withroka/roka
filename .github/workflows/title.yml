@@ -40,5 +40,4 @@ jobs:
             github
             git
             http
-            package
             testing

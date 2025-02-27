@@ -6,7 +6,6 @@
     "./core/git",
     "./core/github",
     "./core/http",
-    "./core/package",
     "./core/testing",
     "./tool/forge"
   ],

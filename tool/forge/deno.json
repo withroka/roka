@@ -3,9 +3,11 @@
   "version": "0.0.2",
   "exports": {
     ".": "./cli.ts",
+    "./app": "./app.ts",
     "./bump": "./bump.ts",
     "./changelog": "./changelog.ts",
     "./compile": "./compile.ts",
+    "./package": "./package.ts",
     "./release": "./release.ts"
   },
   "compile": {
