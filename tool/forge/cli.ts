@@ -134,7 +134,7 @@ if (import.meta.main) {
     .name("forge")
     .description("Manage packages.")
     .usage("<command> [options] [packages...]")
-    .version(await version())
+    .version(await version({ build: true, deno: true }))
     .default("list")
     .command("list", listCommand())
     .command("compile", compileCommand(await targets()))
