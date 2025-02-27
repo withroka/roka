@@ -1,7 +1,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { pool } from "@roka/async/pool";
 import type { Permissions } from "@roka/package";
-import { getWorkspace, type Package, PackageError } from "@roka/package";
+import { type Package, PackageError, workspace } from "@roka/package";
 import { assert } from "@std/assert/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
@@ -178,7 +178,7 @@ async function main(args: string[]) {
     .action(
       async (options, ...directories) => {
         if (directories.length === 0) directories = ["."];
-        const packages = await getWorkspace({ directories });
+        const packages = await workspace({ directories });
         await pool(
           packages.filter((pkg) => pkg.config.compile).map(
             async (pkg) => {

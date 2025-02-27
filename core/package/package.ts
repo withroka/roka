@@ -1,3 +1,21 @@
+/**
+ * Package management utilities for Deno projects.
+ *
+ * The module leverages git tags and conventional commits to determine proper
+ * semantic versioning for packages during development.
+ *
+ * @example
+ * ```ts
+ * import { packageInfo, workspace, version } from "@roka/package";
+ *
+ * const pkg = await packageInfo();
+ * const packages = await workspace();
+ * const ver = await version();
+ * ```
+ *
+ * @module
+ */
+
 import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { assert } from "@std/assert";
@@ -26,7 +44,7 @@ export class PackageError extends Error {
   }
 }
 
-/** Information about a Deno package. */
+/** Core package information. */
 export interface Package {
   /** Package directory. */
   directory: string;
@@ -42,70 +60,7 @@ export interface Package {
   update?: Update;
 }
 
-/** Configuration for compiling the package. */
-export interface CompileConfig {
-  /** Entry module for the package. */
-  main?: string;
-  /** Include patterns for the package. */
-  include?: string[];
-  /** Enable unstable KV feature. */
-  kv?: boolean;
-  /** Allowed Deno runtime permissions. */
-  permissions?: Permissions;
-}
-
-/** Allowed Deno runtime permissions for compiled binary. */
-export interface Permissions {
-  /** Read file system permissions. */
-  read?:
-    | boolean
-    | NonNullable<Deno.ReadPermissionDescriptor["path"]>
-    | NonNullable<Deno.ReadPermissionDescriptor["path"]>[];
-  /** Write file system permissions. */
-  write?:
-    | boolean
-    | NonNullable<Deno.WritePermissionDescriptor["path"]>
-    | NonNullable<Deno.WritePermissionDescriptor["path"]>[];
-  /** Network access permissions. */
-  net?:
-    | boolean
-    | NonNullable<Deno.NetPermissionDescriptor["host"]>
-    | NonNullable<Deno.NetPermissionDescriptor["host"]>[];
-  /** Environment access permissions. */
-  env?:
-    | boolean
-    | NonNullable<Deno.EnvPermissionDescriptor["variable"]>
-    | NonNullable<Deno.EnvPermissionDescriptor["variable"]>[];
-  /** Run subprocess permissions. */
-  run?:
-    | boolean
-    | NonNullable<Deno.RunPermissionDescriptor["command"]>
-    | NonNullable<Deno.RunPermissionDescriptor["command"]>[];
-  /** System access permissions. */
-  sys?:
-    | boolean
-    | NonNullable<Deno.SysPermissionDescriptor["kind"]>
-    | NonNullable<Deno.SysPermissionDescriptor["kind"]>[];
-  /** Foreign function interface access permissions. */
-  ffi?:
-    | boolean
-    | NonNullable<Deno.FfiPermissionDescriptor["path"]>
-    | NonNullable<Deno.FfiPermissionDescriptor["path"]>[];
-}
-
-/** Configuration from `deno.json`. */
-export interface Config {
-  /** Package name. */
-  name?: string;
-  /** Package version. */
-  version?: string;
-  /** Workspace packages. */
-  workspace?: string[];
-  /** Configuration for compiling the package. */
-  compile?: CompileConfig;
-}
-
-/** Information about a package release. */
+/** Package release information. */
 export interface Release {
   /**
    * Release version.
@@ -117,26 +72,78 @@ export interface Release {
   tag?: Tag;
 }
 
-/** Information about a package update. */
+/** Semantic version update type. */
+export type UpdateType = "major" | "minor" | "patch";
+
+/** Package update information. */
 export interface Update {
   /** Type of the update. */
-  type: "major" | "minor" | "patch" | undefined;
+  type?: UpdateType;
   /** Updated version, if the package would be released at this state. */
   version: string;
   /** Changes in this update. */
   changelog: ConventionalCommit[];
 }
 
-/** Options for package retrieval. */
+/** Package configuration from `deno.json`. */
+export interface Config {
+  /** Package name. */
+  name?: string;
+  /** Package version. */
+  version?: string;
+  /** Workspace packages. */
+  workspace?: string[];
+  /** Configuration for compiling the package. */
+  compile?: CompileConfig;
+}
+
+/** Configuration for compiling the package. */
+export interface CompileConfig {
+  /** Entry module for the package. */
+  main?: string;
+  /** Include patterns for additional files to bundle. */
+  include?: string[];
+  /** Enable unstable KV feature. */
+  kv?: boolean;
+  /** Allowed Deno runtime permissions. */
+  permissions?: Permissions;
+}
+
+/** Allowed Deno runtime permissions for compiled binary. */
+export interface Permissions {
+  /** Read file system permissions. */
+  read?: PermissionDescriptor<Deno.ReadPermissionDescriptor["path"]>;
+  /** Write file system permissions. */
+  write?: PermissionDescriptor<Deno.WritePermissionDescriptor["path"]>;
+  /** Network access permissions. */
+  net?: PermissionDescriptor<Deno.NetPermissionDescriptor["host"]>;
+  /** Environment access permissions. */
+  env?: PermissionDescriptor<Deno.EnvPermissionDescriptor["variable"]>;
+  /** Run subprocess permissions. */
+  run?: PermissionDescriptor<Deno.RunPermissionDescriptor["command"]>;
+  /** System access permissions. */
+  sys?: PermissionDescriptor<Deno.SysPermissionDescriptor["kind"]>;
+  /** Foreign function interface access permissions. */
+  ffi?: PermissionDescriptor<Deno.FfiPermissionDescriptor["path"]>;
+}
+
+/** Permission descriptor for config from Deno type. */
+export type PermissionDescriptor<T> =
+  | boolean
+  | NonNullable<T>
+  | NonNullable<T[]>;
+
+/** Options for {@linkcode packageInfo}. */
 export interface PackageOptions {
   /**
-   * Package directory.
-   * @default {dirname(Deno.mainModule())}
+   * Package directory to analyze
+   *
+   * If a directory is not defined, the package of the main module is returned.
    */
   directory?: string;
 }
 
-/** Options for workspace retrieval. */
+/** Options for {@linkcode workspace}. */
 export interface WorkspaceOptions {
   /**
    * List of directories to fetch packages from.
@@ -146,11 +153,11 @@ export interface WorkspaceOptions {
 }
 
 /** Returns information about a package. */
-export async function getPackage(options?: PackageOptions): Promise<Package> {
+export async function packageInfo(options?: PackageOptions): Promise<Package> {
   const directory = normalize(
     options?.directory ?? dirname(fromFileUrl(Deno.mainModule)),
   );
-  const config = await getConfig(directory);
+  const config = await readConfig(directory);
   const pkg: Package = {
     directory,
     module: basename(config.name ?? directory),
@@ -159,9 +166,9 @@ export async function getPackage(options?: PackageOptions): Promise<Package> {
   if (pkg.config.version === undefined) return pkg;
   try {
     // this works if we are in a git repository
-    const release = await getRelease(pkg);
+    const release = await findRelease(pkg);
     if (release) pkg.release = release;
-    const update = await getUpdate(pkg);
+    const update = await calculateUpdate(pkg);
     if (update) pkg.update = update;
   } catch (e: unknown) {
     if (!(e instanceof GitError)) throw e;
@@ -175,17 +182,17 @@ export async function getPackage(options?: PackageOptions): Promise<Package> {
 }
 
 /** Returns all packages, recursively traversing workspaces. */
-export async function getWorkspace(
+export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
   const directories = options?.directories ?? ["."];
   const packages = await Promise.all(
-    directories?.map((directory) => getPackage({ directory, ...options })),
+    directories?.map((directory) => packageInfo({ directory, ...options })),
   );
   const all = (await Promise.all(
     packages.map(async (pkg) => [
       pkg,
-      ...await getWorkspace({
+      ...await workspace({
         ...options,
         directories: pkg.config.workspace?.map((child) =>
           join(pkg.directory, child)
@@ -208,7 +215,7 @@ export async function getWorkspace(
  */
 export async function version(): Promise<string> {
   try {
-    const pkg = await getPackage();
+    const pkg = await packageInfo();
     if (pkg.version) return pkg.version;
   } catch (e: unknown) {
     if (!(e instanceof PackageError)) throw e;
@@ -221,7 +228,7 @@ export async function version(): Promise<string> {
       })
     ) {
       try {
-        const pkg = await getPackage({ directory: dirname(path.path) });
+        const pkg = await packageInfo({ directory: dirname(path.path) });
         if (pkg.version) return pkg.version;
       } catch (e: unknown) {
         if (!(e instanceof PackageError)) throw e;
@@ -231,7 +238,7 @@ export async function version(): Promise<string> {
   return "(unknown)";
 }
 
-async function getConfig(directory: string): Promise<Config> {
+async function readConfig(directory: string): Promise<Config> {
   const configFile = join(directory, "deno.json");
   try {
     const data = await Deno.readTextFile(configFile);
@@ -243,7 +250,7 @@ async function getConfig(directory: string): Promise<Config> {
   }
 }
 
-async function getRelease(pkg: Package): Promise<Release | undefined> {
+async function findRelease(pkg: Package): Promise<Release | undefined> {
   const repo = git({ cwd: pkg.directory });
   const name = `${pkg.module}@*`;
   const sort = "version";
@@ -261,7 +268,7 @@ async function getRelease(pkg: Package): Promise<Release | undefined> {
   return { version, tag };
 }
 
-async function getUpdate(pkg: Package): Promise<Update | undefined> {
+async function calculateUpdate(pkg: Package): Promise<Update | undefined> {
   if (!pkg.release) return undefined;
   const log = await git({ cwd: pkg.directory }).commits.log({
     ...pkg.release?.tag !== undefined
