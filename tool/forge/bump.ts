@@ -1,6 +1,15 @@
+/**
+ * Version bump for packages.
+ *
+ * This module provides the {@linkcode bump} function which updates the version
+ * string in `deno.json` files for packages based on semantic versioning.
+ *
+ * @module
+ */
+
 import { changelog } from "@roka/forge/changelog";
+import { type Package, packageInfo } from "@roka/forge/package";
 import { github, type PullRequest } from "@roka/github";
-import { type Package, packageInfo } from "@roka/package";
 import { assert, assertEquals } from "@std/assert";
 import { join } from "@std/path";
 import { format, parse } from "@std/semver";

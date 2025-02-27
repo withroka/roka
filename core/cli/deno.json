@@ -2,7 +2,6 @@
   "name": "@roka/cli",
   "version": "0.1.0",
   "exports": {
-    "./config": "./config.ts",
-    "./version": "./version.ts"
+    "./config": "./config.ts"
   }
 }

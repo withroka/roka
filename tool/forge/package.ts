@@ -1,17 +1,17 @@
 /**
- * Package management utilities for Deno projects.
+ * Package management.
  *
- * The module leverages git tags and conventional commits to determine proper
- * semantic versioning for packages during development.
+ * Provides functions to work with packages, through the main function
+ * {@linkcode packageInfo}, which returns information about a package.
  *
- * @example
- * ```ts
- * import { packageInfo, workspace, version } from "@roka/package";
+ * - Package directory and name
+ * - Package config from `deno.json`
+ * - Latest package release from git tags
+ * - Updates since the last release
+ * - Calculated package version from conventional commits since last release
  *
- * const pkg = await packageInfo();
- * const packages = await workspace();
- * const ver = await version();
- * ```
+ * For monorepos, the {@linkcode workspace} function can be used to fetch all
+ * packages in the workspace.
  *
  * @module
  */
@@ -20,7 +20,6 @@ import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { assert } from "@std/assert";
 import { distinctBy } from "@std/collections";
-import { expandGlob } from "@std/fs";
 import { basename, dirname, fromFileUrl, join, normalize } from "@std/path";
 import {
   canParse as canParseVersion,
@@ -207,40 +206,6 @@ export async function workspace(
     ]),
   )).flat();
   return distinctBy(all, (pkg) => pkg.directory);
-}
-
-/**
- * Returns the version of the current package.
- *
- * The version is determined from whichever is available first:
- *  - release tags and {@link https://www.conventionalcommits.org | Conventional Commits} (local development)
- *  - config version from `deno.json` (deno run)
- *  - config version from `deno.json` in the dist directory (deno compile)
- *  - "(unknown)" if none of the above are available
- */
-export async function version(): Promise<string> {
-  try {
-    const pkg = await packageInfo();
-    if (pkg.version) return pkg.version;
-  } catch (e: unknown) {
-    if (!(e instanceof PackageError)) throw e;
-  }
-  if (import.meta.dirname) {
-    for await (
-      const path of expandGlob("**/deno.json", {
-        root: join(import.meta.dirname, "..", "..", "dist"),
-        includeDirs: false,
-      })
-    ) {
-      try {
-        const pkg = await packageInfo({ directory: dirname(path.path) });
-        if (pkg.version) return pkg.version;
-      } catch (e: unknown) {
-        if (!(e instanceof PackageError)) throw e;
-      }
-    }
-  }
-  return "(unknown)";
 }
 
 async function readConfig(directory: string): Promise<Config> {

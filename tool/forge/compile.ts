@@ -1,6 +1,19 @@
+/**
+ * Package compilation.
+ *
+ * Provides the {@linkcode compile} function for compiling Deno packages into
+ * standalone executables for various target platforms. Supports bundling,
+ * checksums, and local installation.
+ *
+ * @module
+ */
+
 import { pool } from "@roka/async/pool";
-import type { Permissions } from "@roka/package";
-import { type Package, PackageError } from "@roka/package";
+import {
+  type Package,
+  PackageError,
+  type Permissions,
+} from "@roka/forge/package";
 import { assert } from "@std/assert/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";

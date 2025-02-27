@@ -1,9 +1,20 @@
+/**
+ * Package releases.
+ *
+ * Provides the {@linkcode release} function that handles the creation of GitHub
+ * releases for packages, including tagging, release notes generation, and asset
+ * uploading. Supports both standard and draft releases with configurable
+ * options.
+ *
+ * @module
+ */
+
 import { pool } from "@roka/async/pool";
-import { compile, targets } from "@roka/forge/compile";
 import { changelog } from "@roka/forge/changelog";
+import { compile, targets } from "@roka/forge/compile";
+import { type Package, PackageError } from "@roka/forge/package";
 import { git } from "@roka/git";
 import { github, type Release, type ReleaseAsset } from "@roka/github";
-import { type Package, PackageError } from "@roka/package";
 import { assert } from "@std/assert";
 import { parse as parseVersion } from "@std/semver";
 
