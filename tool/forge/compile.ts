@@ -107,7 +107,7 @@ export async function compile(
   return artifacts;
 }
 
-/** Return all compile targets support by `deno compile`. */
+/** Return all compile targets supported by `deno compile`. */
 export async function targets(): Promise<string[]> {
   const command = new Deno.Command("deno", { args: ["compile", "--target"] });
   const { code, stderr } = await command.output();
