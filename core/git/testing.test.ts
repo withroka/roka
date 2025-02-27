@@ -2,7 +2,7 @@ import { tempRepository, testCommit } from "@roka/git/testing";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 
-Deno.test("testCommit() creates a commit with fake data", () => {
+Deno.test("testCommit() creates a commit with default data", () => {
   const commit = testCommit();
   assert(commit.hash.length);
   assert(commit.short.length);
@@ -15,10 +15,10 @@ Deno.test("testCommit() creates a commit with fake data", () => {
   assert(commit.committer.email.length);
 });
 
-Deno.test("testCommit() can override fields", () => {
-  const commit = testCommit({ summary: "test-summary", body: "test-body" });
-  assertEquals(commit.summary, "test-summary");
-  assertEquals(commit.body, "test-body");
+Deno.test("testCommit() creates a commit with custom data", () => {
+  const commit = testCommit({ summary: "custom-summary", body: "custom-body" });
+  assertEquals(commit.summary, "custom-summary");
+  assertEquals(commit.body, "custom-body");
 });
 
 Deno.test("tempRepo() creates a repo", async () => {

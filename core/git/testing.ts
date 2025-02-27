@@ -34,7 +34,7 @@ import { type Commit, type Git, git } from "@roka/git";
  * assertEquals(commit.summary, "feat(cli): add command");
  * ```
  */
-export function testCommit(commit?: Partial<Commit>): Commit {
+export function testCommit(data?: Partial<Commit>): Commit {
   return {
     hash: "hash",
     short: "short",
@@ -43,7 +43,7 @@ export function testCommit(commit?: Partial<Commit>): Commit {
     trailers: { "trailer": "value" },
     author: { name: "author-name", email: "author-email" },
     committer: { name: "committer-name", email: "committer-email" },
-    ...commit,
+    ...data,
   };
 }
 
