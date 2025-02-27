@@ -4,10 +4,10 @@ import { pool } from "@roka/async/pool";
 import { git, type User } from "@roka/git";
 import { github, type Repository } from "@roka/github";
 import {
-  getPackage,
-  getWorkspace,
   type Package,
   PackageError,
+  packageInfo,
+  workspace,
 } from "@roka/package";
 import { assert } from "@std/assert";
 import { format as formatBytes } from "@std/fmt/bytes";
@@ -71,7 +71,7 @@ async function bumpVersions(
     await writeConfig(pkg);
   }));
   packages = await Promise.all(
-    packages.map(async (pkg) => await getPackage({ directory: pkg.directory })),
+    packages.map(async (p) => await packageInfo({ directory: p.directory })),
   );
   const title = "chore: release";
   const body = packages
@@ -236,7 +236,7 @@ async function main(args: string[]) {
         ...directories
       ) => {
         if (directories.length === 0) directories = ["."];
-        const packages = await getWorkspace({ directories });
+        const packages = await workspace({ directories });
         const repo = await github({ token }).repos.get();
         output(packages, changelog);
         const author = { ...actor && { name: actor }, ...email && { email } };

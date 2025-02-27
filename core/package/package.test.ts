@@ -2,9 +2,9 @@ import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
 import {
   type Config,
-  getPackage,
-  getWorkspace,
   type Package,
+  packageInfo,
+  workspace,
 } from "@roka/package";
 import { tempDirectory } from "@roka/testing";
 import { assertEquals, assertRejects } from "@std/assert";
@@ -19,16 +19,16 @@ async function createPackage(
     join(directory, "deno.json"),
     JSON.stringify({ ...options }),
   );
-  return await getPackage({ directory });
+  return await packageInfo({ directory });
 }
 
 Deno.test("getPackage() fails on non-Deno package", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => getPackage({ directory: repo.path() }));
+  await assertRejects(() => packageInfo({ directory: repo.path() }));
 });
 
 Deno.test("getPackage() returns current package", async () => {
-  const pkg = await getPackage();
+  const pkg = await packageInfo();
   assertEquals(pkg.config.name, "@roka/package");
 });
 
@@ -38,7 +38,7 @@ Deno.test("getPackage() returns given package", async () => {
     name: "@scope/module",
     version: "1.2.3",
   });
-  assertEquals(await getPackage({ directory: directory.path() }), {
+  assertEquals(await packageInfo({ directory: directory.path() }), {
     directory: directory.path(),
     module: "module",
     version: "1.2.3",
@@ -51,7 +51,7 @@ Deno.test("getPackage() returns release version at release commit", async () => 
   await createPackage(repo.path(), { name: "@scope/module", version: "1.2.4" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("module@1.2.4");
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -69,7 +69,7 @@ Deno.test("getPackage() calculates patch version update", async () => {
   const commit = await repo.commits.create("fix(module): patch", {
     allowEmpty: true,
   });
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -92,7 +92,7 @@ Deno.test("getPackage() calculates minor version update", async () => {
   const commit = await repo.commits.create("feat(module): minor", {
     allowEmpty: true,
   });
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -115,7 +115,7 @@ Deno.test("getPackage() calculates major version update", async () => {
   const commit = await repo.commits.create("feat(module)!: major", {
     allowEmpty: true,
   });
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -144,7 +144,7 @@ Deno.test("getPackage() handles multiple commits in changelog", async () => {
   const commit3 = await repo.commits.create("fix(module): 3", {
     allowEmpty: true,
   });
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -168,7 +168,7 @@ Deno.test("getPackage() handles forced patch update", async () => {
   await createPackage(repo.path(), { name: "@scope/module", version: "1.2.4" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("module@1.2.3");
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -184,7 +184,7 @@ Deno.test("getPackage() handles forced minor update", async () => {
   await createPackage(repo.path(), { name: "@scope/module", version: "1.3.0" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("module@1.2.3");
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -200,7 +200,7 @@ Deno.test("getPackage() handles forced major update", async () => {
   await createPackage(repo.path(), { name: "@scope/module", version: "2.0.0" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("module@1.2.3");
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -219,7 +219,7 @@ Deno.test("getPackage() overrides calculated update", async () => {
   const commit = await repo.commits.create("fix(module): description", {
     allowEmpty: true,
   });
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -239,14 +239,14 @@ Deno.test("getPackage() returns rejects forced downgrade", async () => {
   await createPackage(repo.path(), { name: "@scope/module", version: "1.2.0" });
   await repo.commits.create("initial", { allowEmpty: true });
   await repo.tags.create("module@1.2.4");
-  await assertRejects(() => getPackage({ directory: repo.path() }));
+  await assertRejects(() => packageInfo({ directory: repo.path() }));
 });
 
 Deno.test("getPackage() returns empty release tag at initial version", async () => {
   await using repo = await tempRepository();
   await createPackage(repo.path(), { name: "@scope/module", version: "0.0.0" });
   await repo.commits.create("initial", { allowEmpty: true });
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -262,7 +262,7 @@ Deno.test("getPackage() returns update at initial version", async () => {
   await repo.commits.create("feat(module): introduce module", {
     allowEmpty: true,
   });
-  const pkg = await getPackage({ directory: repo.path() });
+  const pkg = await packageInfo({ directory: repo.path() });
   assertEquals(pkg, {
     directory: repo.path(),
     module: "module",
@@ -276,7 +276,7 @@ Deno.test("getPackage() returns update at initial version", async () => {
 Deno.test("getWorkspace() returns non-workspace package", async () => {
   await using directory = await tempDirectory();
   await createPackage(directory.path(), { name: "name", version: "version" });
-  const packages = await getWorkspace({ directories: [directory.path()] });
+  const packages = await workspace({ directories: [directory.path()] });
   assertEquals(packages, [{
     directory: directory.path(),
     module: "name",
@@ -299,7 +299,7 @@ Deno.test("getWorkspace() returns workspace packages", async () => {
     name: "second",
     version: "second_version",
   });
-  const packages = await getWorkspace({ directories: [directory.path()] });
+  const packages = await workspace({ directories: [directory.path()] });
   assertEquals(packages, [root, pkg1, pkg2]);
 });
 
@@ -318,6 +318,6 @@ Deno.test("getWorkspace() returns nested workspace packages", async () => {
     name: "second",
     version: "second_version",
   });
-  const packages = await getWorkspace({ directories: [directory.path()] });
+  const packages = await workspace({ directories: [directory.path()] });
   assertEquals(packages, [root, pkg1, pkg2]);
 });
