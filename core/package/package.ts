@@ -181,7 +181,12 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   return pkg;
 }
 
-/** Returns all packages, recursively traversing workspaces. */
+/**
+ * Returns all packages, recursively traversing workspaces.
+ *
+ * @todo Skip root.
+ * @todo Add a name filter.
+ */
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
@@ -223,7 +228,7 @@ export async function version(): Promise<string> {
   if (import.meta.dirname) {
     for await (
       const path of expandGlob("**/deno.json", {
-        root: join(import.meta.dirname, "..", "dist"),
+        root: join(import.meta.dirname, "..", "..", "dist"),
         includeDirs: false,
       })
     ) {

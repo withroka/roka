@@ -11,10 +11,7 @@
     "./tool/forge"
   ],
   "tasks": {
-    "forge": "deno run -A tool/forge/release.ts",
-    "bump": "gh workflow run bump",
-    "compile": "deno run -A tool/forge/compile.ts",
-    "install": "deno task compile --install=$HOME/.local/bin",
+    "forge": "deno run -A tool/forge/cli.ts",
     "test": "deno test -A --unstable-kv --doc **/*.ts",
     "coverage": "deno task test --coverage && deno coverage --html",
     "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",

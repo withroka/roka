@@ -52,4 +52,4 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Build
-        run: deno task compile
+        run: deno task forge compile

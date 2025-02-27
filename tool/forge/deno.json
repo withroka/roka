@@ -2,7 +2,20 @@
   "name": "@roka/forge",
   "version": "0.0.2",
   "exports": {
+    ".": "./cli.ts",
+    "./bump": "./bump.ts",
+    "./changelog": "./changelog.ts",
     "./compile": "./compile.ts",
     "./release": "./release.ts"
+  },
+  "compile": {
+    "main": "cli.ts",
+    "permissions": {
+      "env": ["HOME", "GIT_NAME", "GIT_EMAIL", "GITHUB_TOKEN"],
+      "read": true,
+      "write": true,
+      "net": "api.github.com",
+      "run": ["deno", "git"]
+    }
   }
 }

@@ -1,7 +1,6 @@
-import { Command, EnumType } from "@cliffy/command";
 import { pool } from "@roka/async/pool";
 import type { Permissions } from "@roka/package";
-import { type Package, PackageError, workspace } from "@roka/package";
+import { type Package, PackageError } from "@roka/package";
 import { assert } from "@std/assert/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
@@ -19,22 +18,14 @@ export interface CompileOptions {
   bundle?: boolean;
   /** Create a checksum file. */
   checksum?: boolean;
-  /** Install at given directory. */
-  install?: string;
+  /**
+   * Install at given directory.
+   *
+   * If set to `true`, the artifacts will be installed to `$HOME/.local/bin`.
+   */
+  install?: string | true;
   /** Max concurrent compilations. */
   concurrency?: number;
-}
-
-/** Return all compile targets support by `deno compile`. */
-export async function compileTargets(): Promise<string[]> {
-  const command = new Deno.Command("deno", { args: ["compile", "--target"] });
-  const { code, stderr } = await command.output();
-  assert(code !== 0, "Expected the command to fail");
-  const match = new TextDecoder().decode(stderr).match(
-    /\[possible values: (?<targets>.+)\]/,
-  );
-  assert(match?.groups?.targets, "Expected targets in stderr");
-  return match.groups.targets.split(", ");
 }
 
 /** Compile a package using the given options. */
@@ -69,13 +60,13 @@ export async function compile(
       const args = [
         "compile",
         `--target=${target}`,
-        permissionArgs(permissions, "read", false),
-        permissionArgs(permissions, "write", false),
-        permissionArgs(permissions, "net", false),
-        permissionArgs(permissions, "sys", true),
-        permissionArgs(permissions, "env", true),
-        permissionArgs(permissions, "run", true),
-        permissionArgs(permissions, "ffi", true),
+        permission(permissions, "read", false),
+        permission(permissions, "write", false),
+        permission(permissions, "net", false),
+        permission(permissions, "sys", true),
+        permission(permissions, "env", true),
+        permission(permissions, "run", true),
+        permission(permissions, "ffi", true),
         "--no-prompt",
         kv ? "--unstable-kv" : [],
         `--include=${config}`,
@@ -90,8 +81,11 @@ export async function compile(
         throw new PackageError(`Compile failed for ${pkg.config.name}`);
       }
       if (options?.install) {
-        await Deno.mkdir(options.install, { recursive: true });
-        await Deno.copyFile(output, join(options.install, basename(output)));
+        const install = options.install === true
+          ? `${Deno.env.get("HOME")}/.local/bin`
+          : options.install;
+        await Deno.mkdir(install, { recursive: true });
+        await Deno.copyFile(output, join(install, basename(output)));
       }
       if (!options?.bundle) return output;
       const isWindows = target.includes("windows");
@@ -113,7 +107,19 @@ export async function compile(
   return artifacts;
 }
 
-function permissionArgs<P extends keyof Permissions>(
+/** Return all compile targets supported by `deno compile`. */
+export async function targets(): Promise<string[]> {
+  const command = new Deno.Command("deno", { args: ["compile", "--target"] });
+  const { code, stderr } = await command.output();
+  assert(code !== 0, "Expected the command to fail");
+  const match = new TextDecoder().decode(stderr).match(
+    /\[possible values: (?<targets>.+)\]/,
+  );
+  assert(match?.groups?.targets, "Expected targets in stderr");
+  return match.groups.targets.split(", ");
+}
+
+function permission<P extends keyof Permissions>(
   permissions: Permissions,
   name: P,
   merge: boolean,
@@ -159,41 +165,3 @@ async function sha256sum(directory: string, artifacts: string[]) {
   }));
   return checksums.join("");
 }
-
-async function main(args: string[]) {
-  const command = new Command()
-    .name("compile")
-    .description("Compile packages.")
-    // .version(await displayVersion())
-    .arguments("[directories...:file]")
-    .type("target", new EnumType(await compileTargets()))
-    .option("--target=<architechture:target>", "Target OS architecture.", {
-      collect: true,
-    })
-    .option("--release", "Use new release version.", { default: false })
-    .option("--bundle", "Zip and bundle artfifacts.", { default: false })
-    .option("--checksum", "Create a checksum file.", { default: false })
-    .option("--install=<directory:file>", "Install at given directory.")
-    .option("--concurrency=<number:number>", "Max concurrent compilations.")
-    .action(
-      async (options, ...directories) => {
-        if (directories.length === 0) directories = ["."];
-        const packages = await workspace({ directories });
-        await pool(
-          packages.filter((pkg) => pkg.config.compile).map(
-            async (pkg) => {
-              const artifacts = await compile(pkg, options);
-              console.log(`🏺 Compiled ${pkg.module}`);
-              for (const artifact of artifacts) {
-                console.log(`    ${artifact}`);
-              }
-            },
-          ),
-          options,
-        );
-      },
-    );
-  await command.parse(args);
-}
-
-if (import.meta.main) await main(Deno.args);
