@@ -36,7 +36,7 @@ async function filter(packages: string[]) {
 
 function compileCommand(targets: string[]) {
   return new Command()
-    .description("Compile a package.")
+    .description("Compile packages into binary executables.")
     .arguments("[packages...:file]")
     .type("target", new EnumType(targets))
     .option("--target=<architecture:target>", "Target OS architecture.", {
@@ -61,7 +61,7 @@ function compileCommand(targets: string[]) {
 
 function bumpCommand() {
   return new Command()
-    .description("Bump package versions.")
+    .description("Bump versions on package config files.")
     .arguments("[packages...:file]")
     .option("--pr", "Create a pull request.", { default: false })
     .env("GIT_NAME=<name:string>", "Git user name for the bump commit.", {
@@ -105,32 +105,38 @@ function releaseCommand() {
     });
 }
 
-async function list(names: string[], changelog: boolean) {
-  const packages = await filter(names);
-  new Table().body(
-    packages.map((pkg) => [
-      "📦",
-      pkg.directory,
-      pkg.config.name,
-      pkg.version,
-      ...pkg.release?.version !== pkg.config.version
-        ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
-        : [],
-      changelog ? changelogText(pkg) : undefined,
-    ]),
-  ).render();
+function listCommand() {
+  return new Command()
+    .description("List packages, versions, and changelogs.")
+    .arguments("[packages...:file]")
+    .option("--changelog", "Print changelog of updated packages.", {
+      default: false,
+    })
+    .action(async ({ changelog }, ...names) => {
+      const packages = await filter(names);
+      new Table().body(
+        packages.map((pkg) => [
+          "📦",
+          pkg.directory,
+          pkg.config.name,
+          pkg.version,
+          ...pkg.release?.version !== pkg.config.version
+            ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
+            : [],
+          changelog ? changelogText(pkg) : undefined,
+        ]),
+      ).render();
+    });
 }
 
 if (import.meta.main) {
   await new Command()
     .name("forge")
     .description("Manage packages.")
+    .usage("<command> [options] [packages...]")
     .version(await version())
-    .arguments("[packages...:file]")
-    .option("--changelog", "Print changelog of updated packages.", {
-      default: false,
-    })
-    .action(({ changelog }, ...names) => list(names, changelog))
+    .default("list")
+    .command("list", listCommand())
     .command("compile", compileCommand(await targets()))
     .command("bump", bumpCommand())
     .command("release", releaseCommand())
