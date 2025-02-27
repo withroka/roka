@@ -1,5 +1,5 @@
 import { pool } from "@roka/async/pool";
-import { compile, targets } from "@roka/forge//compile";
+import { compile, targets } from "@roka/forge/compile";
 import { changelog } from "@roka/forge/changelog";
 import { git } from "@roka/git";
 import { github, type Release, type ReleaseAsset } from "@roka/github";
