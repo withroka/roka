@@ -228,7 +228,7 @@ export async function version(): Promise<string> {
   if (import.meta.dirname) {
     for await (
       const path of expandGlob("**/deno.json", {
-        root: join(import.meta.dirname, "..", "dist"),
+        root: join(import.meta.dirname, "..", "..", "dist"),
         includeDirs: false,
       })
     ) {
