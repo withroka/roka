@@ -27,7 +27,7 @@ function compileCommand(targets: string[]) {
     .description("Compile a package.")
     .arguments("[packages...:file]")
     .type("target", new EnumType(targets))
-    .option("--target=<architechture:target>", "Target OS architecture.", {
+    .option("--target=<architecture:target>", "Target OS architecture.", {
       collect: true,
     })
     .option("--release", "Use new release version.", { default: false })
