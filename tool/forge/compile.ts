@@ -80,8 +80,8 @@ export async function compile(
         permission(permissions, "env", true),
         permission(permissions, "run", true),
         permission(permissions, "ffi", true),
-        "--no-prompt",
-        kv ? "--unstable-kv" : [],
+        permissions?.prompt ? [] : ["--no-prompt"],
+        kv ? ["--unstable-kv"] : [],
         `--include=${config}`,
         include.map((path) => `--include=${join(pkg.directory, path)}`),
         `--output=${output}`,
@@ -132,7 +132,7 @@ export async function targets(): Promise<string[]> {
   return match.groups.targets.split(", ");
 }
 
-function permission<P extends keyof Permissions>(
+function permission<P extends Exclude<keyof Permissions, "prompt">>(
   permissions: Permissions,
   name: P,
   merge: boolean,

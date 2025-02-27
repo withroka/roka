@@ -124,6 +124,11 @@ export interface Permissions {
   sys?: PermissionDescriptor<Deno.SysPermissionDescriptor["kind"]>;
   /** Foreign function interface access permissions. */
   ffi?: PermissionDescriptor<Deno.FfiPermissionDescriptor["path"]>;
+  /**
+   * Prompt for permissions at runtime.
+   * @default {false}
+   */
+  prompt?: boolean;
 }
 
 /** Permission descriptor for config from Deno type. */
