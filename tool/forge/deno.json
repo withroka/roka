@@ -11,9 +11,10 @@
   "compile": {
     "main": "cli.ts",
     "permissions": {
-      "env": "HOME",
+      "env": ["HOME", "GIT_NAME", "GIT_EMAIL", "GITHUB_TOKEN"],
       "read": true,
       "write": true,
+      "net": "api.github.com",
       "run": ["deno", "git"]
     }
   }
