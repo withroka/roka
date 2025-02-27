@@ -1,6 +1,6 @@
 import { changelog } from "@roka/forge/changelog";
 import { github, type PullRequest } from "@roka/github";
-import { getPackage, type Package } from "@roka/package";
+import { type Package, packageInfo } from "@roka/package";
 import { assert, assertEquals } from "@std/assert";
 import { join } from "@std/path";
 import { format, parse } from "@std/semver";
@@ -34,21 +34,21 @@ export async function bump(
 ): Promise<PullRequest | undefined> {
   packages = await Promise.all(packages.map((pkg) => updateVersion(pkg)));
   if (!options?.pr || packages.length === 0) return undefined;
-  const repo = await github(options).repo();
+  const repo = await github(options).repos.get();
   const title = packages.length === 1
     ? "chore: bump package version"
     : "chore: bump package versions";
   const body = prBody(packages);
-  await repo.git.checkout({ newBranch: BUMP_BRANCH });
-  await repo.git.config({ ...options?.user && { user: options?.user } });
-  await repo.git.commit(title, { body, all: true });
-  let [pr] = await repo.pulls.list({ title, isClosed: false });
+  await repo.git.branches.checkout({ new: BUMP_BRANCH });
+  await repo.git.config.set({ ...options?.user && { user: options?.user } });
+  await repo.git.commits.create(title, { body, all: true });
+  let [pr] = await repo.pulls.list({ title, closed: false });
   if (pr) {
-    await repo.git.push({ force: true, branch: BUMP_BRANCH });
+    await repo.git.commits.push({ force: true, branch: BUMP_BRANCH });
     pr.update({ body });
   } else {
-    await repo.git.push({ branch: BUMP_BRANCH });
-    pr = await repo.pulls.create({ title, body, isDraft: true });
+    await repo.git.commits.push({ branch: BUMP_BRANCH });
+    pr = await repo.pulls.create({ title, body, draft: true });
   }
   return pr;
 }
@@ -66,7 +66,7 @@ async function updateVersion(pkg: Package): Promise<Package> {
     join(pkg.directory, "deno.json"),
     JSON.stringify(pkg.config, undefined, 2) + "\n",
   );
-  pkg = await getPackage({ directory: pkg.directory });
+  pkg = await packageInfo({ directory: pkg.directory });
   assertEquals(pkg.version, version, "Failed to update package version");
   return pkg;
 }

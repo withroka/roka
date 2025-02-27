@@ -1,16 +1,17 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool } from "@roka/async/pool";
+import { version } from "@roka/cli/version";
 import { bump } from "@roka/forge/bump";
 import { compile, targets } from "@roka/forge/compile";
 import { release } from "@roka/forge/release";
-import { getWorkspace } from "@roka/package";
+import { workspace } from "@roka/package";
 import { common } from "@std/path/common";
 import { resolve } from "@std/path/resolve";
 import { changelog as changelogText } from "./changelog.ts";
 
 async function filter(packages: string[]) {
-  return (await getWorkspace())
+  return (await workspace())
     .filter((pkg) => pkg.directory !== ".")
     .filter((pkg) =>
       packages.length === 0 ||
@@ -90,28 +91,34 @@ function releaseCommand() {
     });
 }
 
-await new Command()
-  .name("forge")
-  .description("Manage packages.")
-  // .version(await displayVersion())
-  .arguments("[packages...:file]")
-  .option("--changelog", "Print changelog of updated packages.")
-  .action(async ({ changelog }, ...names) => {
-    const packages = await filter(names);
-    new Table().body(
-      packages.map((pkg) => [
-        "📦",
-        pkg.directory,
-        pkg.config.name,
-        pkg.version,
-        ...pkg.release?.version !== pkg.config.version
-          ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
-          : [],
-        changelog ? changelogText(pkg) : undefined,
-      ]),
-    ).render();
-  })
-  .command("compile", compileCommand(await targets()))
-  .command("bump", bumpCommand())
-  .command("release", releaseCommand())
-  .parse();
+async function list(names: string[], changelog: boolean) {
+  const packages = await filter(names);
+  new Table().body(
+    packages.map((pkg) => [
+      "📦",
+      pkg.directory,
+      pkg.config.name,
+      pkg.version,
+      ...pkg.release?.version !== pkg.config.version
+        ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
+        : [],
+      changelog ? changelogText(pkg) : undefined,
+    ]),
+  ).render();
+}
+
+if (import.meta.main) {
+  await new Command()
+    .name("forge")
+    .description("Manage packages.")
+    .version(await version())
+    .arguments("[packages...:file]")
+    .option("--changelog", "Print changelog of updated packages.", {
+      default: false,
+    })
+    .action(({ changelog }, ...names) => list(names, changelog))
+    .command("compile", compileCommand(await targets()))
+    .command("bump", bumpCommand())
+    .command("release", releaseCommand())
+    .parse();
+}
