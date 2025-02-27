@@ -15,12 +15,12 @@ import { Table } from "@cliffy/table";
 import { pool } from "@roka/async/pool";
 import { version } from "@roka/forge/app";
 import { bump } from "@roka/forge/bump";
+import { changelog as changelogText } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { workspace } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
 import { common } from "@std/path/common";
 import { resolve } from "@std/path/resolve";
-import { changelog as changelogText } from "./changelog.ts";
 
 async function filter(packages: string[]) {
   return (await workspace())
