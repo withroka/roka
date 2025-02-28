@@ -42,6 +42,11 @@ export interface BumpOptions {
  *
  * The calculated version is based on {@linkcode Package.update}, dropping
  * pre-release and build information.
+ *
+ * When working with pull requests, if there is an open one for a bump, it will
+ * be updated with the new version information.
+ *
+ * @todo Recalculate versions when the bump PR is rebased.
  */
 export async function bump(
   packages: Package[],

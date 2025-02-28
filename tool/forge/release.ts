@@ -40,7 +40,14 @@ export interface ReleaseOptions {
   draft?: boolean;
 }
 
-/** Create a GitHub release from package. */
+/**
+ * Create a GitHub release from package.
+ *
+ * If a release already exists for the same module and version, it will be
+ * updated.
+ *
+ * @todo Calculate changelog from the exact commit that introduced the version.
+ */
 export async function release(
   pkg: Package,
   options?: ReleaseOptions,
