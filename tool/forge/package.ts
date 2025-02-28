@@ -186,9 +186,13 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
 }
 
 /**
- * Returns all packages, recursively traversing workspaces.
+ * Returns all packages for a workspace.
  *
- * @todo Skip root.
+ * If a directory is a monorepo, distinguished with the `workspace` field in
+ * its configuration, this function will return all packages in that monorepo,
+ * excluding its root. If the directory is not a monorepo, the function will
+ * return the package in the directory.
+ *
  * @todo Add a name filter.
  */
 export async function workspace(
@@ -196,21 +200,15 @@ export async function workspace(
 ): Promise<Package[]> {
   const directories = options?.directories ?? ["."];
   const packages = await Promise.all(
-    directories?.map((directory) => packageInfo({ directory, ...options })),
+    directories?.map(async (directory) => {
+      const pkg = await packageInfo({ directory, ...options });
+      if (pkg.config.workspace === undefined) return pkg;
+      return await Promise.all(pkg.config.workspace.map(async (child) => {
+        return await packageInfo({ directory: join(pkg.directory, child) });
+      }));
+    }),
   );
-  const all = (await Promise.all(
-    packages.map(async (pkg) => [
-      pkg,
-      ...await workspace({
-        ...options,
-        directories: pkg.config.workspace?.map((child) =>
-          join(pkg.directory, child)
-        ) ??
-          [],
-      }),
-    ]),
-  )).flat();
-  return distinctBy(all, (pkg) => pkg.directory);
+  return distinctBy(packages.flat(), (pkg) => pkg.directory);
 }
 
 async function readConfig(directory: string): Promise<Config> {
