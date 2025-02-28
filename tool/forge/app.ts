@@ -80,7 +80,7 @@ async function packageVersion(): Promise<string> {
     if (!(e instanceof PackageError)) throw e;
   }
   let directory = fromFileUrl(Deno.mainModule);
-  while (basename(dirname(directory)) !== "T") {
+  while (!basename(directory).match(/^deno-compile-.+$/)) {
     directory = dirname(directory);
     if (directory === dirname(directory)) break;
   }
