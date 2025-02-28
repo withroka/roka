@@ -7,8 +7,7 @@
  * @example
  * ```ts
  * import { version } from "@roka/forge/app";
- *
- * console.log(`App version: ${await version()}`);
+ * const appVersion = await version();
  * ```
  *
  * @module
