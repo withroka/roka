@@ -19,7 +19,6 @@
 import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { assert } from "@std/assert";
-import { distinctBy } from "@std/collections";
 import { basename, dirname, fromFileUrl, join, normalize } from "@std/path";
 import {
   canParse as canParseVersion,
@@ -140,7 +139,7 @@ export type PermissionDescriptor<T> =
 /** Options for {@linkcode packageInfo}. */
 export interface PackageOptions {
   /**
-   * Package directory to analyze
+   * Directory to return package from.
    *
    * If a directory is not defined, the package of the main module is returned.
    */
@@ -150,10 +149,10 @@ export interface PackageOptions {
 /** Options for {@linkcode workspace}. */
 export interface WorkspaceOptions {
   /**
-   * List of directories to fetch packages from.
+   * Directory to return packages from.
    * @default {["."]}
    */
-  directories?: string[];
+  directory?: string;
 }
 
 /** Returns information about a package. */
@@ -198,17 +197,12 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
-  const directories = options?.directories ?? ["."];
-  const packages = await Promise.all(
-    directories?.map(async (directory) => {
-      const pkg = await packageInfo({ directory, ...options });
-      if (pkg.config.workspace === undefined) return pkg;
-      return await Promise.all(pkg.config.workspace.map(async (child) => {
-        return await packageInfo({ directory: join(pkg.directory, child) });
-      }));
-    }),
-  );
-  return distinctBy(packages.flat(), (pkg) => pkg.directory);
+  const directory = options?.directory ?? ".";
+  const pkg = await packageInfo({ directory, ...options });
+  if (pkg.config.workspace === undefined) return [pkg];
+  return await Promise.all(pkg.config.workspace.map(async (child) => {
+    return await packageInfo({ directory: join(pkg.directory, child) });
+  }));
 }
 
 async function readConfig(directory: string): Promise<Config> {
