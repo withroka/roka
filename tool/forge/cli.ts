@@ -24,7 +24,6 @@ import { resolve } from "@std/path/resolve";
 
 async function filter(packages: string[]) {
   return (await workspace())
-    .filter((pkg) => pkg.directory !== ".")
     .filter((pkg) =>
       packages.length === 0 ||
       packages.includes(pkg.module) ||

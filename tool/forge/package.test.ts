@@ -273,7 +273,7 @@ Deno.test("packageInfo() returns update at initial version", async () => {
   });
 });
 
-Deno.test("workspace() returns non-workspace package", async () => {
+Deno.test("workspace() returns simple package", async () => {
   await using directory = await tempDirectory();
   await createPackage(directory.path(), { name: "name", version: "version" });
   const packages = await workspace({ directories: [directory.path()] });
@@ -285,12 +285,9 @@ Deno.test("workspace() returns non-workspace package", async () => {
   }]);
 });
 
-Deno.test("workspace() returns workspace packages", async () => {
+Deno.test("workspace() returns monorepo packages", async () => {
   await using directory = await tempDirectory();
-  const root = await createPackage(directory.path(), {
-    name: "root",
-    workspace: ["./first", "./second"],
-  });
+  await createPackage(directory.path(), { workspace: ["./first", "./second"] });
   const pkg1 = await createPackage(directory.path("first"), {
     name: "first",
     version: "first_version",
@@ -300,24 +297,21 @@ Deno.test("workspace() returns workspace packages", async () => {
     version: "second_version",
   });
   const packages = await workspace({ directories: [directory.path()] });
-  assertEquals(packages, [root, pkg1, pkg2]);
+  assertEquals(packages, [pkg1, pkg2]);
 });
 
-Deno.test("workspace() returns nested workspace packages", async () => {
+Deno.test("workspace() does not return nested workspace packages", async () => {
   await using directory = await tempDirectory();
-  const root = await createPackage(directory.path(), {
-    name: "root",
-    workspace: ["./first"],
-  });
+  await createPackage(directory.path(), { workspace: ["./first"] });
   const pkg1 = await createPackage(directory.path("first"), {
     name: "first",
     version: "first_version",
     workspace: ["./second"],
   });
-  const pkg2 = await createPackage(directory.path("first", "second"), {
+  await createPackage(directory.path("first", "second"), {
     name: "second",
     version: "second_version",
   });
   const packages = await workspace({ directories: [directory.path()] });
-  assertEquals(packages, [root, pkg1, pkg2]);
+  assertEquals(packages, [pkg1]);
 });
