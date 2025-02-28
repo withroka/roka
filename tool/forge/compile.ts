@@ -21,6 +21,11 @@ import { basename, join, relative } from "@std/path";
 /** Options for compiling a package. */
 export interface CompileOptions {
   /**
+   * Output directory for compiled artifacts.
+   * @default {"dist"}
+   */
+  dist?: string;
+  /**
    * Target OS architectures.
    * @default {[Deno.build.target]}
    */
@@ -46,8 +51,11 @@ export async function compile(
   pkg: Package,
   options?: CompileOptions,
 ): Promise<string[]> {
-  assert(pkg.config.compile, "Compile configuration is required");
+  if (!pkg.config.compile) {
+    throw new PackageError("Compile configuration is required");
+  }
   const {
+    dist = "dist",
     target = [Deno.build.target],
     concurrency = navigator.hardwareConcurrency,
   } = options ?? {};
@@ -56,8 +64,8 @@ export async function compile(
   assert(main, "Compile entrypoint is required");
   const version = options?.release ? pkg.config?.version : pkg.version;
   const directory = version
-    ? join("dist", pkg.module, version)
-    : join("dist", pkg.module);
+    ? join(dist, pkg.module, version)
+    : join(dist, pkg.module);
   try {
     await Deno.remove(directory, { recursive: true });
   } catch (e: unknown) {
