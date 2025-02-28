@@ -276,7 +276,7 @@ Deno.test("packageInfo() returns update at initial version", async () => {
 Deno.test("workspace() returns simple package", async () => {
   await using directory = await tempDirectory();
   await createPackage(directory.path(), { name: "name", version: "version" });
-  const packages = await workspace({ directories: [directory.path()] });
+  const packages = await workspace({ directory: directory.path() });
   assertEquals(packages, [{
     directory: directory.path(),
     module: "name",
@@ -296,7 +296,7 @@ Deno.test("workspace() returns monorepo packages", async () => {
     name: "second",
     version: "second_version",
   });
-  const packages = await workspace({ directories: [directory.path()] });
+  const packages = await workspace({ directory: directory.path() });
   assertEquals(packages, [pkg1, pkg2]);
 });
 
@@ -312,6 +312,6 @@ Deno.test("workspace() does not return nested workspace packages", async () => {
     name: "second",
     version: "second_version",
   });
-  const packages = await workspace({ directories: [directory.path()] });
+  const packages = await workspace({ directory: directory.path() });
   assertEquals(packages, [pkg1]);
 });
