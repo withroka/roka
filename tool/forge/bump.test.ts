@@ -107,13 +107,15 @@ Deno.test("bump() updates pull request", async () => {
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
   await git.commits.create("feat(module): introduce module");
+  const defaultBranch = await git.branches.current();
+  assertExists(defaultBranch);
   const pkg = await packageInfo({ directory: git.path() });
   const [pr1, pr2] = await Array.fromAsync(pooledMap(1, [1, 2], async () => {
     const pr = await bump([pkg], { repo, pr: true });
     const branch = await git.branches.current();
     console.log(branch);
     assertExists(branch);
-    await git.branches.checkout({ target: "main" });
+    await git.branches.checkout({ target: defaultBranch });
     await git.branches.delete(branch, { force: true });
     return pr;
   }));
