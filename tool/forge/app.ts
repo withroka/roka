@@ -16,7 +16,7 @@
 
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { expandGlob } from "@std/fs";
-import { dirname, join } from "@std/path";
+import { basename, dirname, fromFileUrl } from "@std/path";
 
 /** Options for {@linkcode version}. */
 export interface VersionOptions {
@@ -79,19 +79,22 @@ async function packageVersion(): Promise<string> {
   } catch (e: unknown) {
     if (!(e instanceof PackageError)) throw e;
   }
-  if (import.meta.dirname) {
-    for await (
-      const path of expandGlob("**/deno.json", {
-        root: join(import.meta.dirname, "..", "..", "dist"),
-        includeDirs: false,
-      })
-    ) {
-      try {
-        const pkg = await packageInfo({ directory: dirname(path.path) });
-        if (pkg.version) return pkg.version;
-      } catch (e: unknown) {
-        if (!(e instanceof PackageError)) throw e;
-      }
+  let directory = fromFileUrl(Deno.mainModule);
+  while (basename(dirname(directory)) !== "T") {
+    directory = dirname(directory);
+    if (directory === dirname(directory)) break;
+  }
+  for await (
+    const path of expandGlob("**/deno.json", {
+      root: directory,
+      includeDirs: false,
+    })
+  ) {
+    try {
+      const pkg = await packageInfo({ directory: dirname(path.path) });
+      if (pkg.version) return pkg.version;
+    } catch (e: unknown) {
+      if (!(e instanceof PackageError)) throw e;
     }
   }
   return "(unknown)";

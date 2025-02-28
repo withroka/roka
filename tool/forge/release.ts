@@ -14,7 +14,12 @@ import { changelog } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { type Package, PackageError } from "@roka/forge/package";
 import { git } from "@roka/git";
-import { github, type Release, type ReleaseAsset } from "@roka/github";
+import {
+  github,
+  type Release,
+  type ReleaseAsset,
+  type Repository,
+} from "@roka/github";
 import { assert } from "@std/assert";
 import { parse as parseVersion } from "@std/semver";
 
@@ -25,6 +30,12 @@ const GITHUB_CONCURRENCY = { concurrency: 10 };
 export interface ReleaseOptions {
   /** GitHub access token. */
   token?: string;
+  /**
+   * GitHub repository to use.
+   *
+   * If not defined, the repository is determined from the package directories.
+   */
+  repo?: Repository;
   /** Create a draft release. */
   draft?: boolean;
 }
@@ -34,18 +45,20 @@ export async function release(
   pkg: Package,
   options?: ReleaseOptions,
 ): Promise<[Release, ReleaseAsset[]]> {
-  assert(pkg.config.version, "Cannot release a package without version");
-  const repo = await github(options).repos.get();
+  if (pkg.config.version === undefined) {
+    throw new PackageError("Cannot release a package without version");
+  }
+  const { repo = await github(options).repos.get(), draft = false } = options ??
+    {};
   const version = parseVersion(pkg.config.version);
   const name = `${pkg.module}@${pkg.config.version}`;
-  const draft = options?.draft ?? false;
   let [release] = await repo.releases.list({ name, draft });
   const [head] = await git().commits.log();
   if (!head) throw new PackageError("Cannot determine current commit");
   const data = {
     name,
     tag: name,
-    body: await body(pkg),
+    body: body(pkg, repo),
     draft,
     preRelease: !!version.prerelease?.length,
     commit: head.hash,
@@ -84,10 +97,9 @@ export async function upload(
   );
 }
 
-async function body(pkg: Package): Promise<string> {
+function body(pkg: Package, repo: Repository): string {
   assert(pkg.version, "Cannot release a package without version");
   const title = pkg.release?.tag ? "Changelog" : "Initial release";
-  const repo = await github().repos.get();
   const tag = `${pkg.module}@${pkg.version}`;
   const fullChangelogUrl = pkg?.release?.tag
     ? `compare/${pkg.release.tag.name}...${tag}`
