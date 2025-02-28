@@ -174,7 +174,7 @@ export interface WorkspaceOptions {
    *
    * @default {[]}
    */
-  filter?: string[];
+  filters?: string[];
 }
 
 /** Returns information about a package. */
@@ -217,8 +217,8 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
-  const { directory = ".", filter = [] } = options ?? {};
-  const patterns = filter.map((f) => globToRegExp(f));
+  const { directory = ".", filters = [] } = options ?? {};
+  const patterns = filters.map((f) => globToRegExp(f));
   const pkg = await packageInfo({ directory, ...options });
   const packages = pkg.config.workspace === undefined
     ? [pkg]

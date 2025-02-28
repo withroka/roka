@@ -310,22 +310,18 @@ Deno.test("workspace() filters packages", async () => {
   await createPackage(repo.path(), {
     workspace: ["./dir1/pkg1", "./dir2/pkg2", "./dir2/pkg3"],
   });
-  const pkg1 = await createPackage(repo.path("dir1/pkg1"), { name: "pkg1" });
-  const pkg2 = await createPackage(repo.path("dir2/pkg2"), { name: "pkg2" });
-  const pkg3 = await createPackage(repo.path("dir2/pkg3"), { name: "pkg3" });
-  assertEquals(await workspace({ directory, filter: ["pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ directory, filter: ["pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ directory, filter: ["*1"] }), [pkg1]);
-  assertEquals(await workspace({ directory, filter: ["pkg*"] }), [
-    pkg1,
-    pkg2,
-    pkg3,
-  ]);
-  assertEquals(await workspace({ directory, filter: ["dir1/pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ directory, filter: ["dir2/*"] }), [
-    pkg2,
-    pkg3,
-  ]);
-  assertEquals(await workspace({ directory, filter: ["*/pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ directory, filter: ["none*"] }), []);
+  const p1 = await createPackage(repo.path("dir1/pkg1"), { name: "pkg1" });
+  const p2 = await createPackage(repo.path("dir2/pkg2"), { name: "pkg2" });
+  const p3 = await createPackage(repo.path("dir2/pkg3"), { name: "pkg3" });
+  assertEquals(await workspace({ directory, filters: ["pkg1"] }), [p1]);
+  assertEquals(await workspace({ directory, filters: ["pkg2"] }), [p2]);
+  assertEquals(await workspace({ directory, filters: ["*1"] }), [p1]);
+  assertEquals(await workspace({ directory, filters: ["pkg*"] }), [p1, p2, p3]);
+  assertEquals(await workspace({ directory, filters: ["dir1/pkg1"] }), [p1]);
+  assertEquals(await workspace({ directory, filters: ["*1/*"] }), [p1]);
+  assertEquals(await workspace({ directory, filters: ["*2/pkg?"] }), [p2, p3]);
+  assertEquals(await workspace({ directory, filters: ["dir2/*"] }), [p2, p3]);
+  assertEquals(await workspace({ directory, filters: ["*/pkg2"] }), [p2]);
+  assertEquals(await workspace({ directory, filters: ["none*"] }), []);
+  assertEquals(await workspace({ directory, filters: ["*2", "*3"] }), [p2, p3]);
 });

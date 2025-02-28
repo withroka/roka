@@ -33,8 +33,8 @@ function compileCommand(targets: string[]) {
     .option("--checksum", "Create a checksum file.", { default: false })
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
-    .action(async (options, ...filter) => {
-      const packages = (await workspace({ filter }))
+    .action(async (options, ...filters) => {
+      const packages = (await workspace({ filters }))
         .filter((pkg) => pkg.config.compile);
       await pool(packages.map(async (pkg) => {
         const artifacts = await compile(pkg, options);
@@ -60,8 +60,8 @@ function bumpCommand() {
       "GitHub personal token for GitHub actions.",
       { prefix: "GITHUB_" },
     )
-    .action(async (options, ...filter) => {
-      const packages = (await workspace({ filter }))
+    .action(async (options, ...filters) => {
+      const packages = (await workspace({ filters }))
         .filter((pkg) => pkg.update);
       const pr = await bump(packages, options);
       if (pr) console.log(`🚀 Created version bump pull request [${pr.url}]`);
@@ -79,8 +79,8 @@ function releaseCommand() {
       "GitHub personal token for GitHub actions.",
       { prefix: "GITHUB_", required: true },
     )
-    .action(async (options, ...filter) => {
-      const packages = (await workspace({ filter }))
+    .action(async (options, ...filters) => {
+      const packages = (await workspace({ filters }))
         .filter((pkg) => pkg.config.version !== pkg.release?.version);
       await pool(packages.map(async (pkg) => {
         const [rls, assets] = await release(pkg, options);
@@ -97,8 +97,8 @@ function listCommand() {
     .option("--changelog", "Print changelog of updated packages.", {
       default: false,
     })
-    .action(async ({ changelog }, ...filter) => {
-      const packages = await workspace({ filter });
+    .action(async ({ changelog }, ...filters) => {
+      const packages = await workspace({ filters });
       new Table().body(
         packages.map((pkg) => [
           "📦",
