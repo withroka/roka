@@ -113,7 +113,6 @@ Deno.test("bump() updates pull request", async () => {
   const [pr1, pr2] = await Array.fromAsync(pooledMap(1, [1, 2], async () => {
     const pr = await bump([pkg], { repo, pr: true });
     const branch = await git.branches.current();
-    console.log(branch);
     assertExists(branch);
     await git.branches.checkout({ target: defaultBranch });
     await git.branches.delete(branch, { force: true });
