@@ -45,6 +45,10 @@
  *
  * @todo Extend `git().config.set()` with more configurations.
  * @todo Add `git().config.get()`
+ * @todo Introduce the `Branch` object type.
+ * @todo Add `git().branches.copy()`
+ * @todo Add `git().branches.move()`
+ * @todo Add `git().branches.track()`
  * @todo Handle merges, rebases, conflicts.
  * @todo Add `git().submodules`.
  * @todo Expose dates.
@@ -56,6 +60,7 @@
 
 import { pool } from "@roka/async/pool";
 import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
+import { basename } from "@std/path/basename";
 import { join } from "@std/path/join";
 
 /** An error while running a git command. */
@@ -88,8 +93,14 @@ export interface Git {
   branches: {
     /** Returns the current branch name. */
     current: () => Promise<string | undefined>;
+    /** List branches in the repository alphabetically. */
+    list: (options?: BranchListOptions) => Promise<string[]>;
     /** Switches to a commit, or an existing or new branch. */
     checkout: (options?: BranchCheckoutOptions) => Promise<void>;
+    /** Creates a branch. */
+    create: (name: string) => Promise<void>;
+    /** Deletes a branch. */
+    delete: (name: string, options?: BranchDeleteOptions) => Promise<void>;
   };
   /** Index (staged area) operations. */
   index: {
@@ -204,6 +215,11 @@ export interface Config {
     /** Whether to sign commits. */
     gpgsign?: boolean;
   };
+  /** Init configuration. */
+  init?: {
+    /** Default branch name. */
+    defaultBranch?: string;
+  };
   /** Tag configuration. */
   tag?: {
     /** Whether to sign tags. */
@@ -294,6 +310,35 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
   tags?: boolean;
 }
 
+/** Options for listing refs (branches or tags). */
+export interface RefListOptions {
+  /** Ref selection pattern. Default is all relevant refs. */
+  name?: string;
+  /** Only refs that contain the specific commit. */
+  contains?: Commitish;
+  /** Only refs that do not contain the specific commit. */
+  noContains?: Commitish;
+  /** Only refs that point to the given commit. */
+  pointsAt?: Commitish;
+}
+
+/** Options for listing branches. */
+export interface BranchListOptions extends RefListOptions {
+  /**
+   * Include remote branches.
+   * @default {false}
+   */
+  all?: boolean;
+  /**
+   * Only remote branches.
+   *
+   * Implies {@linkcode BranchListOptions.all} to be `true`.
+   *
+   * @default {false}
+   */
+  remotes?: boolean;
+}
+
 /** Options for checkout. */
 export interface BranchCheckoutOptions {
   /**
@@ -310,6 +355,15 @@ export interface BranchCheckoutOptions {
    * @default {false}
    */
   detach?: boolean;
+}
+
+/** Options for deleting branches. */
+export interface BranchDeleteOptions {
+  /**
+   * Force delete the branch.
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /** Options for creating git commits. */
@@ -383,15 +437,7 @@ export interface TagCreateOptions extends SignOptions {
 }
 
 /** Options for listing tags. */
-export interface TagListOptions {
-  /** Tag selection pattern. Default is all tags. */
-  name?: string;
-  /** Only tags that contain the specific commit. */
-  contains?: Commitish;
-  /** Only tags that do not contain the specific commit. */
-  noContains?: Commitish;
-  /** Only tags of the given commit. */
-  pointsAt?: Commitish;
+export interface TagListOptions extends RefListOptions {
   /**
    * Sort option.
    *
@@ -512,6 +558,30 @@ export function git(options?: GitOptions): Git {
         const branch = await run(gitOptions, "branch", "--show-current");
         return branch ? branch : undefined;
       },
+      async list(options) {
+        const branches = await run(
+          gitOptions,
+          ["branch", "--list", "--format=%(refname)"],
+          options?.name,
+          options?.all && "--all",
+          options?.remotes && "--remotes",
+          options?.contains !== undefined &&
+            ["--contains", commitArg(options.contains)],
+          options?.noContains !== undefined &&
+            ["--no-contains", commitArg(options.noContains)],
+          options?.pointsAt !== undefined &&
+            ["--points-at", commitArg(options.pointsAt)],
+        );
+        // Reimplementing `refname:short`, which behaves differently on
+        // different git versions. This has a bug when a branch name really
+        // ends with `/HEAD`. This will be fixed when branches are objects.
+        return branches
+          .split("\n")
+          .filter((x) => x)
+          .filter((x) => basename(x) !== "HEAD")
+          .map((x) => x.replace(/^refs\/heads\//, ""))
+          .map((x) => x.replace(/^refs\/remotes\//, ""));
+      },
       async checkout(options) {
         await run(
           gitOptions,
@@ -519,6 +589,17 @@ export function git(options?: GitOptions): Git {
           options?.detach && "--detach",
           options?.new !== undefined && ["-b", options.new],
           options?.target !== undefined && commitArg(options.target),
+        );
+      },
+      async create(name) {
+        await run(gitOptions, "branch", name);
+      },
+      async delete(name, options) {
+        await run(
+          gitOptions,
+          "branch",
+          options?.force ? "-D" : "-d",
+          name,
         );
       },
     },

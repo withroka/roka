@@ -20,7 +20,7 @@
  * @module
  */
 
-import { type Commit, type Git, git } from "@roka/git";
+import { type Commit, type Config, type Git, git } from "@roka/git";
 
 /**
  * Creates a commit with fake data.
@@ -53,6 +53,8 @@ export interface TempRepoOptions {
   clone?: string | Git;
   /** Create a bare repository. */
   bare?: boolean;
+  /** Configuration for the repository. */
+  config?: Config;
 }
 
 /** Creates a temporary repository for testing.
@@ -81,13 +83,14 @@ export async function tempRepository(
     user: { name: "A U Thor", email: "author@example.com" },
     commit: { gpgsign: false },
     tag: { gpgsign: false },
+    ...options?.config,
   };
   const repo = git({ cwd });
   if (clone) {
     const target = typeof clone === "string" ? clone : clone.path();
     await git({ cwd }).clone(target, { bare, config });
   } else {
-    await repo.init({ bare });
+    await git({ cwd, config }).init({ bare });
     await repo.config.set(config);
   }
   return Object.assign(repo, {
