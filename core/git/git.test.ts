@@ -155,6 +155,16 @@ Deno.test("git().branches.list() returns all branches", async () => {
   assertEquals(await repo.branches.list(), ["branch", "main"]);
 });
 
+Deno.test("git().branches.list() returns all branches in detached HEAD", async () => {
+  await using repo = await tempRepository({
+    config: { init: { defaultBranch: "main" } },
+  });
+  await repo.commits.create("commit", { allowEmpty: true });
+  await repo.branches.checkout({ detach: true });
+  await repo.branches.create("branch");
+  assertEquals(await repo.branches.list(), ["branch", "main"]);
+});
+
 Deno.test("git().branches.list() matches branch name", async () => {
   await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
@@ -306,9 +316,20 @@ Deno.test("git().branches.create() creates a branch", async () => {
 
 Deno.test("git().branches.delete() fails on current branch", async () => {
   await using repo = await tempRepository();
+  await repo.commits.create("commit", { allowEmpty: true });
   const current = await repo.branches.current();
   assert(current);
   await assertRejects(() => repo.branches.delete(current), GitError);
+});
+
+Deno.test("git().branches.delete() can delete from detached HEAD", async () => {
+  await using repo = await tempRepository();
+  await repo.commits.create("commit", { allowEmpty: true });
+  const current = await repo.branches.current();
+  assert(current);
+  await repo.branches.checkout({ detach: true });
+  await repo.branches.delete(current);
+  assertEquals(await repo.branches.list(), []);
 });
 
 Deno.test("git().branches.delete() can delete branch", async () => {

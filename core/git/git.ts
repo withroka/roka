@@ -578,6 +578,7 @@ export function git(options?: GitOptions): Git {
           .split("\n")
           .filter((x) => x)
           .filter((x) => basename(x) !== "HEAD")
+          .filter((x) => !x.includes(" "))
           .map((x) => x.replace(/^refs\/heads\//, ""))
           .map((x) => x.replace(/^refs\/remotes\//, ""));
       },
