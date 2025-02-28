@@ -19,19 +19,6 @@ import { changelog as changelogText } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { workspace } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
-import { common } from "@std/path/common";
-import { resolve } from "@std/path/resolve";
-
-async function filter(packages: string[]) {
-  return (await workspace())
-    .filter((pkg) =>
-      packages.length === 0 ||
-      packages.includes(pkg.module) ||
-      packages.map((f) => resolve(f)).some((path) =>
-        common([resolve(pkg.directory), path]) === path
-      )
-    );
-}
 
 function compileCommand(targets: string[]) {
   return new Command()
@@ -46,10 +33,9 @@ function compileCommand(targets: string[]) {
     .option("--checksum", "Create a checksum file.", { default: false })
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
-    .action(async (options, ...names) => {
-      const packages = (await filter(names)).filter((pkg) =>
-        pkg.config.compile
-      );
+    .action(async (options, ...filter) => {
+      const packages = (await workspace({ filter }))
+        .filter((pkg) => pkg.config.compile);
       await pool(packages.map(async (pkg) => {
         const artifacts = await compile(pkg, options);
         console.log(`📦 Compiled ${pkg.module}`);
@@ -74,8 +60,9 @@ function bumpCommand() {
       "GitHub personal token for GitHub actions.",
       { prefix: "GITHUB_" },
     )
-    .action(async (options, ...names) => {
-      const packages = (await filter(names)).filter((pkg) => pkg.update);
+    .action(async (options, ...filter) => {
+      const packages = (await workspace({ filter }))
+        .filter((pkg) => pkg.update);
       const pr = await bump(packages, options);
       if (pr) console.log(`🚀 Created version bump pull request [${pr.url}]`);
       else console.log("📦 Bumped package versions");
@@ -92,10 +79,9 @@ function releaseCommand() {
       "GitHub personal token for GitHub actions.",
       { prefix: "GITHUB_", required: true },
     )
-    .action(async (options, ...names) => {
-      const packages = (await filter(names)).filter((pkg) =>
-        pkg.config.version !== pkg.release?.version
-      );
+    .action(async (options, ...filter) => {
+      const packages = (await workspace({ filter }))
+        .filter((pkg) => pkg.config.version !== pkg.release?.version);
       await pool(packages.map(async (pkg) => {
         const [rls, assets] = await release(pkg, options);
         console.log(`🚀 Released ${pkg.module} [${rls.url}]`);
@@ -111,8 +97,8 @@ function listCommand() {
     .option("--changelog", "Print changelog of updated packages.", {
       default: false,
     })
-    .action(async ({ changelog }, ...names) => {
-      const packages = await filter(names);
+    .action(async ({ changelog }, ...filter) => {
+      const packages = await workspace({ filter });
       new Table().body(
         packages.map((pkg) => [
           "📦",

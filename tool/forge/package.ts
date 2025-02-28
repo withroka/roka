@@ -19,7 +19,15 @@
 import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { assert } from "@std/assert";
-import { basename, dirname, fromFileUrl, join, normalize } from "@std/path";
+import {
+  basename,
+  dirname,
+  fromFileUrl,
+  globToRegExp,
+  join,
+  normalize,
+  relative,
+} from "@std/path";
 import {
   canParse as canParseVersion,
   format as formatVersion,
@@ -153,6 +161,20 @@ export interface WorkspaceOptions {
    * @default {["."]}
    */
   directory?: string;
+  /**
+   * Filter package by name or directory.
+   *
+   * Each filter is a glob pattern that matches the module name or the directory
+   * of the package relative to root. For example, either `"forge"` or the
+   * `"tool/forge"` filters would match a package named `@roka/forge` in the
+   * `tool/forge` directory.
+   *
+   * Any match will include the package in the result. If no filters are
+   * provided, all packages in the workspace will be returned.
+   *
+   * @default {[]}
+   */
+  filter?: string[];
 }
 
 /** Returns information about a package. */
@@ -191,18 +213,26 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
  * its configuration, this function will return all packages in that monorepo,
  * excluding its root. If the directory is not a monorepo, the function will
  * return the package in the directory.
- *
- * @todo Add a name filter.
  */
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
-  const directory = options?.directory ?? ".";
+  const { directory = ".", filter = [] } = options ?? {};
+  const patterns = filter.map((f) => globToRegExp(f));
   const pkg = await packageInfo({ directory, ...options });
-  if (pkg.config.workspace === undefined) return [pkg];
-  return await Promise.all(pkg.config.workspace.map(async (child) => {
-    return await packageInfo({ directory: join(pkg.directory, child) });
-  }));
+  const packages = pkg.config.workspace === undefined
+    ? [pkg]
+    : await Promise.all(pkg.config.workspace.map(async (child) => {
+      return await packageInfo({ directory: join(pkg.directory, child) });
+    }));
+  return packages
+    .filter((pkg) =>
+      patterns.length === 0 ||
+      patterns.some((p) =>
+        pkg.module.match(p) ||
+        relative(directory, pkg.directory).match(p)
+      )
+    );
 }
 
 async function readConfig(directory: string): Promise<Config> {
