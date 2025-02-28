@@ -58,7 +58,6 @@
  * @module
  */
 
-import { pool } from "@roka/async/pool";
 import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
 import { basename } from "@std/path/basename";
 import { join } from "@std/path/join";
@@ -547,10 +546,10 @@ export function git(options?: GitOptions): Git {
     },
     config: {
       async set(config) {
-        await pool(
-          configArgs(config).map((cfg) => run(gitOptions, "config", cfg)),
-          { concurrency: 1 },
-        );
+        for (const cfg of configArgs(config)) {
+          // deno-lint-ignore no-await-in-loop
+          await run(gitOptions, "config", cfg);
+        }
       },
     },
     branches: {
