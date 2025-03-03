@@ -349,7 +349,6 @@ function mockPath(
 
 function serialize(calls: unknown[]): string {
   return Deno.inspect(calls, {
-    breakLength: Infinity,
     compact: false,
     depth: Infinity,
     iterableLimit: Infinity,

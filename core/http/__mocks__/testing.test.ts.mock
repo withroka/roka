@@ -12,15 +12,60 @@ mock[`mockFetch() stubs fetch > fetch 1`] =
       },
     ],
     output: [
-      '<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset="utf-8" />\n    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <style type="text/css">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n</div>\n</body>\n</html>\n',
+      "<!doctype html>\n" +
+        "<html>\n" +
+        "<head>\n" +
+        "    <title>Example Domain</title>\n" +
+        "\n" +
+        '    <meta charset="utf-8" />\n' +
+        '    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n' +
+        '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+        '    <style type="text/css">\n' +
+        "    body {\n" +
+        "        background-color: #f0f0f2;\n" +
+        "        margin: 0;\n" +
+        "        padding: 0;\n" +
+        '        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+        "        \n" +
+        "    }\n" +
+        "    div {\n" +
+        "        width: 600px;\n" +
+        "        margin: 5em auto;\n" +
+        "        padding: 2em;\n" +
+        "        background-color: #fdfdff;\n" +
+        "        border-radius: 0.5em;\n" +
+        "        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n" +
+        "    }\n" +
+        "    a:link, a:visited {\n" +
+        "        color: #38488f;\n" +
+        "        text-decoration: none;\n" +
+        "    }\n" +
+        "    @media (max-width: 700px) {\n" +
+        "        div {\n" +
+        "            margin: 0 auto;\n" +
+        "            width: auto;\n" +
+        "        }\n" +
+        "    }\n" +
+        "    </style>    \n" +
+        "</head>\n" +
+        "\n" +
+        "<body>\n" +
+        "<div>\n" +
+        "    <h1>Example Domain</h1>\n" +
+        "    <p>This domain is for use in illustrative examples in documents. You may use this\n" +
+        "    domain in literature without prior coordination or asking for permission.</p>\n" +
+        '    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n' +
+        "</div>\n" +
+        "</body>\n" +
+        "</html>\n",
       {
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=3274",
+          "cache-control": "max-age=985",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 21:08:24 GMT",
+          date: "Mon, 03 Mar 2025 22:39:35 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -43,15 +88,60 @@ mock[`mockFetch() replays multiple calls > fetch 1`] =
       },
     ],
     output: [
-      '<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset="utf-8" />\n    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <style type="text/css">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n</div>\n</body>\n</html>\n',
+      "<!doctype html>\n" +
+        "<html>\n" +
+        "<head>\n" +
+        "    <title>Example Domain</title>\n" +
+        "\n" +
+        '    <meta charset="utf-8" />\n' +
+        '    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n' +
+        '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+        '    <style type="text/css">\n' +
+        "    body {\n" +
+        "        background-color: #f0f0f2;\n" +
+        "        margin: 0;\n" +
+        "        padding: 0;\n" +
+        '        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+        "        \n" +
+        "    }\n" +
+        "    div {\n" +
+        "        width: 600px;\n" +
+        "        margin: 5em auto;\n" +
+        "        padding: 2em;\n" +
+        "        background-color: #fdfdff;\n" +
+        "        border-radius: 0.5em;\n" +
+        "        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n" +
+        "    }\n" +
+        "    a:link, a:visited {\n" +
+        "        color: #38488f;\n" +
+        "        text-decoration: none;\n" +
+        "    }\n" +
+        "    @media (max-width: 700px) {\n" +
+        "        div {\n" +
+        "            margin: 0 auto;\n" +
+        "            width: auto;\n" +
+        "        }\n" +
+        "    }\n" +
+        "    </style>    \n" +
+        "</head>\n" +
+        "\n" +
+        "<body>\n" +
+        "<div>\n" +
+        "    <h1>Example Domain</h1>\n" +
+        "    <p>This domain is for use in illustrative examples in documents. You may use this\n" +
+        "    domain in literature without prior coordination or asking for permission.</p>\n" +
+        '    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n' +
+        "</div>\n" +
+        "</body>\n" +
+        "</html>\n",
       {
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=3326",
+          "cache-control": "max-age=702",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 21:08:24 GMT",
+          date: "Mon, 03 Mar 2025 22:39:35 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -70,14 +160,59 @@ mock[`mockFetch() replays multiple calls > fetch 1`] =
       },
     ],
     output: [
-      '<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset="utf-8" />\n    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <style type="text/css">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n</div>\n</body>\n</html>\n',
+      "<!doctype html>\n" +
+        "<html>\n" +
+        "<head>\n" +
+        "    <title>Example Domain</title>\n" +
+        "\n" +
+        '    <meta charset="utf-8" />\n' +
+        '    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n' +
+        '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+        '    <style type="text/css">\n' +
+        "    body {\n" +
+        "        background-color: #f0f0f2;\n" +
+        "        margin: 0;\n" +
+        "        padding: 0;\n" +
+        '        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+        "        \n" +
+        "    }\n" +
+        "    div {\n" +
+        "        width: 600px;\n" +
+        "        margin: 5em auto;\n" +
+        "        padding: 2em;\n" +
+        "        background-color: #fdfdff;\n" +
+        "        border-radius: 0.5em;\n" +
+        "        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n" +
+        "    }\n" +
+        "    a:link, a:visited {\n" +
+        "        color: #38488f;\n" +
+        "        text-decoration: none;\n" +
+        "    }\n" +
+        "    @media (max-width: 700px) {\n" +
+        "        div {\n" +
+        "            margin: 0 auto;\n" +
+        "            width: auto;\n" +
+        "        }\n" +
+        "    }\n" +
+        "    </style>    \n" +
+        "</head>\n" +
+        "\n" +
+        "<body>\n" +
+        "<div>\n" +
+        "    <h1>Example Domain</h1>\n" +
+        "    <p>This domain is for use in illustrative examples in documents. You may use this\n" +
+        "    domain in literature without prior coordination or asking for permission.</p>\n" +
+        '    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n' +
+        "</div>\n" +
+        "</body>\n" +
+        "</html>\n",
       {
         headers: {
           "accept-ranges": "bytes",
-          "cache-control": "max-age=3325",
+          "cache-control": "max-age=701",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 21:08:25 GMT",
+          date: "Mon, 03 Mar 2025 22:39:36 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -100,15 +235,60 @@ mock[`mockFetch() matches with URL > fetch 1`] =
       },
     ],
     output: [
-      '<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset="utf-8" />\n    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <style type="text/css">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n</div>\n</body>\n</html>\n',
+      "<!doctype html>\n" +
+        "<html>\n" +
+        "<head>\n" +
+        "    <title>Example Domain</title>\n" +
+        "\n" +
+        '    <meta charset="utf-8" />\n' +
+        '    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n' +
+        '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+        '    <style type="text/css">\n' +
+        "    body {\n" +
+        "        background-color: #f0f0f2;\n" +
+        "        margin: 0;\n" +
+        "        padding: 0;\n" +
+        '        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+        "        \n" +
+        "    }\n" +
+        "    div {\n" +
+        "        width: 600px;\n" +
+        "        margin: 5em auto;\n" +
+        "        padding: 2em;\n" +
+        "        background-color: #fdfdff;\n" +
+        "        border-radius: 0.5em;\n" +
+        "        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n" +
+        "    }\n" +
+        "    a:link, a:visited {\n" +
+        "        color: #38488f;\n" +
+        "        text-decoration: none;\n" +
+        "    }\n" +
+        "    @media (max-width: 700px) {\n" +
+        "        div {\n" +
+        "            margin: 0 auto;\n" +
+        "            width: auto;\n" +
+        "        }\n" +
+        "    }\n" +
+        "    </style>    \n" +
+        "</head>\n" +
+        "\n" +
+        "<body>\n" +
+        "<div>\n" +
+        "    <h1>Example Domain</h1>\n" +
+        "    <p>This domain is for use in illustrative examples in documents. You may use this\n" +
+        "    domain in literature without prior coordination or asking for permission.</p>\n" +
+        '    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n' +
+        "</div>\n" +
+        "</body>\n" +
+        "</html>\n",
       {
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=3325",
+          "cache-control": "max-age=640",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 21:08:25 GMT",
+          date: "Mon, 03 Mar 2025 22:39:36 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -131,15 +311,60 @@ mock[`mockFetch() matches with Request > fetch 1`] =
       },
     ],
     output: [
-      '<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset="utf-8" />\n    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <style type="text/css">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n</div>\n</body>\n</html>\n',
+      "<!doctype html>\n" +
+        "<html>\n" +
+        "<head>\n" +
+        "    <title>Example Domain</title>\n" +
+        "\n" +
+        '    <meta charset="utf-8" />\n' +
+        '    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n' +
+        '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+        '    <style type="text/css">\n' +
+        "    body {\n" +
+        "        background-color: #f0f0f2;\n" +
+        "        margin: 0;\n" +
+        "        padding: 0;\n" +
+        '        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+        "        \n" +
+        "    }\n" +
+        "    div {\n" +
+        "        width: 600px;\n" +
+        "        margin: 5em auto;\n" +
+        "        padding: 2em;\n" +
+        "        background-color: #fdfdff;\n" +
+        "        border-radius: 0.5em;\n" +
+        "        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n" +
+        "    }\n" +
+        "    a:link, a:visited {\n" +
+        "        color: #38488f;\n" +
+        "        text-decoration: none;\n" +
+        "    }\n" +
+        "    @media (max-width: 700px) {\n" +
+        "        div {\n" +
+        "            margin: 0 auto;\n" +
+        "            width: auto;\n" +
+        "        }\n" +
+        "    }\n" +
+        "    </style>    \n" +
+        "</head>\n" +
+        "\n" +
+        "<body>\n" +
+        "<div>\n" +
+        "    <h1>Example Domain</h1>\n" +
+        "    <p>This domain is for use in illustrative examples in documents. You may use this\n" +
+        "    domain in literature without prior coordination or asking for permission.</p>\n" +
+        '    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n' +
+        "</div>\n" +
+        "</body>\n" +
+        "</html>\n",
       {
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=3273",
+          "cache-control": "max-age=639",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 21:08:25 GMT",
+          date: "Mon, 03 Mar 2025 22:39:37 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -162,7 +387,16 @@ mock[`mockFetch() matches with Request and init > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036106&#46;3c0b3ad9\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036106&#46;3c0b3ad9</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c7643717&#46;1741041577&#46;4038bd19\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1741041577&#46;4038bd19</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -170,7 +404,7 @@ mock[`mockFetch() matches with Request and init > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:26 GMT",
+          date: "Mon, 03 Mar 2025 22:39:38 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -191,7 +425,16 @@ mock[`mockFetch() matches with URL and Request > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036106&#46;3c0b6173\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036106&#46;3c0b6173</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c7643717&#46;1741041578&#46;4038e162\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1741041578&#46;4038e162</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -199,7 +442,7 @@ mock[`mockFetch() matches with URL and Request > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:26 GMT",
+          date: "Mon, 03 Mar 2025 22:39:38 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -215,46 +458,29 @@ mock[`mockFetch() matches method > fetch 1`] =
       "https://example.com/",
       {
         headers: {},
-        method: "GET",
-        redirect: "follow",
-      },
-    ],
-    output: [
-      '<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset="utf-8" />\n    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <style type="text/css">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n</div>\n</body>\n</html>\n',
-      {
-        headers: {
-          "accept-ranges": "bytes",
-          "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=3271",
-          "content-type": "text/html",
-          "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 21:08:27 GMT",
-          etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
-          vary: "Accept-Encoding",
-        },
-        status: 200,
-        statusText: "OK",
-      },
-    ],
-  },
-  {
-    input: [
-      "https://example.com/",
-      {
-        headers: {},
         method: "POST",
         redirect: "follow",
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036107&#46;3c0b8971\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036107&#46;3c0b8971</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c4643717&#46;1741041578&#46;3b10e83e\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c4643717&#46;1741041578&#46;3b10e83e</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
+          "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
           "cache-control": "max-age=0",
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:27 GMT",
+          date: "Mon, 03 Mar 2025 22:39:38 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -271,14 +497,130 @@ mock[`mockFetch() matches method > fetch 1`] =
       },
     ],
     output: [
-      '<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset="utf-8" />\n    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <style type="text/css">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n</div>\n</body>\n</html>\n',
+      "<!doctype html>\n" +
+        "<html>\n" +
+        "<head>\n" +
+        "    <title>Example Domain</title>\n" +
+        "\n" +
+        '    <meta charset="utf-8" />\n' +
+        '    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n' +
+        '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+        '    <style type="text/css">\n' +
+        "    body {\n" +
+        "        background-color: #f0f0f2;\n" +
+        "        margin: 0;\n" +
+        "        padding: 0;\n" +
+        '        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+        "        \n" +
+        "    }\n" +
+        "    div {\n" +
+        "        width: 600px;\n" +
+        "        margin: 5em auto;\n" +
+        "        padding: 2em;\n" +
+        "        background-color: #fdfdff;\n" +
+        "        border-radius: 0.5em;\n" +
+        "        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n" +
+        "    }\n" +
+        "    a:link, a:visited {\n" +
+        "        color: #38488f;\n" +
+        "        text-decoration: none;\n" +
+        "    }\n" +
+        "    @media (max-width: 700px) {\n" +
+        "        div {\n" +
+        "            margin: 0 auto;\n" +
+        "            width: auto;\n" +
+        "        }\n" +
+        "    }\n" +
+        "    </style>    \n" +
+        "</head>\n" +
+        "\n" +
+        "<body>\n" +
+        "<div>\n" +
+        "    <h1>Example Domain</h1>\n" +
+        "    <p>This domain is for use in illustrative examples in documents. You may use this\n" +
+        "    domain in literature without prior coordination or asking for permission.</p>\n" +
+        '    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n' +
+        "</div>\n" +
+        "</body>\n" +
+        "</html>\n",
       {
         headers: {
           "accept-ranges": "bytes",
-          "cache-control": "max-age=3271",
+          "cache-control": "max-age=998",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 21:08:27 GMT",
+          date: "Mon, 03 Mar 2025 22:39:38 GMT",
+          etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
+          vary: "Accept-Encoding",
+        },
+        status: 200,
+        statusText: "OK",
+      },
+    ],
+  },
+  {
+    input: [
+      "https://example.com/",
+      {
+        headers: {},
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      "<!doctype html>\n" +
+        "<html>\n" +
+        "<head>\n" +
+        "    <title>Example Domain</title>\n" +
+        "\n" +
+        '    <meta charset="utf-8" />\n' +
+        '    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n' +
+        '    <meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+        '    <style type="text/css">\n' +
+        "    body {\n" +
+        "        background-color: #f0f0f2;\n" +
+        "        margin: 0;\n" +
+        "        padding: 0;\n" +
+        '        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+        "        \n" +
+        "    }\n" +
+        "    div {\n" +
+        "        width: 600px;\n" +
+        "        margin: 5em auto;\n" +
+        "        padding: 2em;\n" +
+        "        background-color: #fdfdff;\n" +
+        "        border-radius: 0.5em;\n" +
+        "        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n" +
+        "    }\n" +
+        "    a:link, a:visited {\n" +
+        "        color: #38488f;\n" +
+        "        text-decoration: none;\n" +
+        "    }\n" +
+        "    @media (max-width: 700px) {\n" +
+        "        div {\n" +
+        "            margin: 0 auto;\n" +
+        "            width: auto;\n" +
+        "        }\n" +
+        "    }\n" +
+        "    </style>    \n" +
+        "</head>\n" +
+        "\n" +
+        "<body>\n" +
+        "<div>\n" +
+        "    <h1>Example Domain</h1>\n" +
+        "    <p>This domain is for use in illustrative examples in documents. You may use this\n" +
+        "    domain in literature without prior coordination or asking for permission.</p>\n" +
+        '    <p><a href="https://www.iana.org/domains/example">More information...</a></p>\n' +
+        "</div>\n" +
+        "</body>\n" +
+        "</html>\n",
+      {
+        headers: {
+          "accept-ranges": "bytes",
+          "cache-control": "max-age=998",
+          "content-type": "text/html",
+          "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
+          date: "Mon, 03 Mar 2025 22:39:38 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -295,31 +637,6 @@ mock[`mockFetch() matches body > fetch 1`] =
     input: [
       "https://example.com/",
       {
-        headers: {},
-        method: "POST",
-        redirect: "follow",
-      },
-    ],
-    output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036107&#46;3c0baec4\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036107&#46;3c0baec4</P>\n</BODY>\n</HTML>\n`,
-      {
-        headers: {
-          "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=0",
-          "content-length": "361",
-          "content-type": "text/html",
-          "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:27 GMT",
-        },
-        status: 403,
-        statusText: "Forbidden",
-      },
-    ],
-  },
-  {
-    input: [
-      "https://example.com/",
-      {
         body: "body",
         headers: {
           "content-type": "text/plain;charset=UTF-8",
@@ -329,14 +646,23 @@ mock[`mockFetch() matches body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036107&#46;3c0baec6\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036107&#46;3c0baec6</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c4643717&#46;1741041579&#46;3b1104a8\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c4643717&#46;1741041579&#46;3b1104a8</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "cache-control": "max-age=0",
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:27 GMT",
+          date: "Mon, 03 Mar 2025 22:39:39 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -355,14 +681,57 @@ mock[`mockFetch() matches body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036107&#46;3c0baec7\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036107&#46;3c0baec7</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c4643717&#46;1741041579&#46;3b1104a6\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c4643717&#46;1741041579&#46;3b1104a6</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
+      {
+        headers: {
+          "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
+          "cache-control": "max-age=0",
+          "content-length": "361",
+          "content-type": "text/html",
+          "mime-version": "1.0",
+          date: "Mon, 03 Mar 2025 22:39:39 GMT",
+        },
+        status: 403,
+        statusText: "Forbidden",
+      },
+    ],
+  },
+  {
+    input: [
+      "https://example.com/",
+      {
+        headers: {},
+        method: "POST",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c4643717&#46;1741041579&#46;3b1104a7\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c4643717&#46;1741041579&#46;3b1104a7</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "cache-control": "max-age=0",
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:27 GMT",
+          date: "Mon, 03 Mar 2025 22:39:39 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -386,7 +755,16 @@ mock[`mockFetch() matches consumable request > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036107&#46;3c0bd5b4\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036107&#46;3c0bd5b4</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c7643717&#46;1741041579&#46;40395183\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1741041579&#46;40395183</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -394,7 +772,7 @@ mock[`mockFetch() matches consumable request > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:28 GMT",
+          date: "Mon, 03 Mar 2025 22:39:39 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -416,7 +794,16 @@ mock[`mockFetch() matches arraybuffer body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c7643717&#46;1741036108&#46;3a5834d4\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1741036108&#46;3a5834d4</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;d1643717&#46;1741041580&#46;4292a915\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741041580&#46;4292a915</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -424,7 +811,7 @@ mock[`mockFetch() matches arraybuffer body > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:28 GMT",
+          date: "Mon, 03 Mar 2025 22:39:40 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -448,7 +835,16 @@ mock[`mockFetch() matches blob body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c7643717&#46;1741036108&#46;3a585863\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1741036108&#46;3a585863</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;d0643717&#46;1741041580&#46;85808b6d\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d0643717&#46;1741041580&#46;85808b6d</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -456,7 +852,7 @@ mock[`mockFetch() matches blob body > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:29 GMT",
+          date: "Mon, 03 Mar 2025 22:39:40 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -471,7 +867,11 @@ mock[`mockFetch() matches form data body > fetch 1`] =
     input: [
       "https://example.com/",
       {
-        body: '--BOUNDARY\r\nContent-Disposition: form-data; name="key"\r\n\r\nvalue\r\n--BOUNDARY--',
+        body: "--BOUNDARY\r\n" +
+          'Content-Disposition: form-data; name="key"\r\n' +
+          "\r\n" +
+          "value\r\n" +
+          "--BOUNDARY--",
         headers: {
           "content-type": "multipart/form-data; boundary=BOUNDARY",
         },
@@ -480,7 +880,16 @@ mock[`mockFetch() matches form data body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;d1643717&#46;1741036109&#46;3c0c4a29\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d1643717&#46;1741036109&#46;3c0c4a29</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;d0643717&#46;1741041581&#46;8580c7a9\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;d0643717&#46;1741041581&#46;8580c7a9</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -488,7 +897,7 @@ mock[`mockFetch() matches form data body > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:29 GMT",
+          date: "Mon, 03 Mar 2025 22:39:41 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -512,7 +921,16 @@ mock[`mockFetch() matches search params body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c7643717&#46;1741036109&#46;3a589fc2\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1741036109&#46;3a589fc2</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c8643717&#46;1741041581&#46;3e7cc56b\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c8643717&#46;1741041581&#46;3e7cc56b</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -520,7 +938,7 @@ mock[`mockFetch() matches search params body > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:29 GMT",
+          date: "Mon, 03 Mar 2025 22:39:41 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -542,7 +960,16 @@ mock[`mockFetch() matches iterable body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c7643717&#46;1741036110&#46;3a58c37e\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c7643717&#46;1741036110&#46;3a58c37e</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c8643717&#46;1741041582&#46;3e7d00e4\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c8643717&#46;1741041582&#46;3e7d00e4</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -550,7 +977,7 @@ mock[`mockFetch() matches iterable body > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:30 GMT",
+          date: "Mon, 03 Mar 2025 22:39:42 GMT",
         },
         status: 403,
         statusText: "Forbidden",
@@ -572,7 +999,16 @@ mock[`mockFetch() matches async iterable body > fetch 1`] =
       },
     ],
     output: [
-      `<HTML><HEAD>\n<TITLE>Access Denied</TITLE>\n</HEAD><BODY>\n<H1>Access Denied</H1>\n \nYou don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\nReference&#32;&#35;18&#46;c4643717&#46;1741036110&#46;34fd8520\n<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c4643717&#46;1741036110&#46;34fd8520</P>\n</BODY>\n</HTML>\n`,
+      "<HTML><HEAD>\n" +
+        "<TITLE>Access Denied</TITLE>\n" +
+        "</HEAD><BODY>\n" +
+        "<H1>Access Denied</H1>\n" +
+        " \n" +
+        `You don't have permission to access "http&#58;&#47;&#47;example&#46;com&#47;" on this server.<P>\n` +
+        "Reference&#32;&#35;18&#46;c8643717&#46;1741041582&#46;3e7d6048\n" +
+        "<P>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c8643717&#46;1741041582&#46;3e7d6048</P>\n" +
+        "</BODY>\n" +
+        "</HTML>\n",
       {
         headers: {
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
@@ -580,7 +1016,7 @@ mock[`mockFetch() matches async iterable body > fetch 1`] =
           "content-length": "361",
           "content-type": "text/html",
           "mime-version": "1.0",
-          date: "Mon, 03 Mar 2025 21:08:30 GMT",
+          date: "Mon, 03 Mar 2025 22:39:43 GMT",
         },
         status: 403,
         statusText: "Forbidden",

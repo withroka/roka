@@ -222,7 +222,7 @@ Deno.test("mock() records in custom name", async (t) => {
 });
 
 Deno.test("mock() records in custom mode", async (t) => {
-  const self = { func: async () => await Promise.resolve(24) };
+  const self = { func: async () => await Promise.resolve(0) };
   using mocked = mock(t, self, "func", {
     mode: "replay",
     path: "__mocks__/custom/mock.test.mode.ts.mock",

@@ -146,5 +146,11 @@ snapshot[`client().queryPaginated() 1`] = `
     state: "CLOSED",
     title: "Test issue",
   },
+  {
+    __typename: "Issue",
+    number: 49,
+    state: "CLOSED",
+    title: "Test issue",
+  },
 ]
 `;
