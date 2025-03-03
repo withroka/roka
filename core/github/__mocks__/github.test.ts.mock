@@ -1,25 +1,24 @@
 export const mock = {};
 
-mock[`github().repos.pulls > fetch`] =
+mock[`github().repos.pulls > fetch 1`] =
 [
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/pulls",
+      {
         body: '{"head":"test-branch","base":"main","title":"Test PR","body":"Initial body"}',
-        duplex: "half",
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "POST",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/pulls",
-    },
-    response: {
-      body: '{"url":"https://api.github.com/repos/withroka/test/pulls/40","id":2349699523,"node_id":"PR_kwDON5PmBc6MDZHD","html_url":"https://github.com/withroka/test/pull/40","diff_url":"https://github.com/withroka/test/pull/40.diff","patch_url":"https://github.com/withroka/test/pull/40.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/40","number":40,"state":"open","locked":false,"title":"Test PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Initial body","created_at":"2025-02-21T13:53:02Z","updated_at":"2025-02-21T13:53:02Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/40/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/40/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/40/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/40"},"html":{"href":"https://github.com/withroka/test/pull/40"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/40"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/40/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/40/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/40/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null,"merged":false,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":1,"deletions":1,"changed_files":1}',
-      init: {
+    ],
+    output: [
+      '{"url":"https://api.github.com/repos/withroka/test/pulls/51","id":2369253433,"node_id":"PR_kwDON5PmBc6NN_A5","html_url":"https://github.com/withroka/test/pull/51","diff_url":"https://github.com/withroka/test/pull/51.diff","patch_url":"https://github.com/withroka/test/pull/51.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/51","number":51,"state":"open","locked":false,"title":"Test PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Initial body","created_at":"2025-03-03T22:39:07Z","updated_at":"2025-03-03T22:39:07Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/51/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/51/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/51/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/51"},"html":{"href":"https://github.com/withroka/test/pull/51"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/51"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/51/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/51/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/51/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null,"merged":false,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":1,"deletions":1,"changed_files":1}',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -34,41 +33,41 @@ mock[`github().repos.pulls > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81B:1F549E:771016:79F4BE:67B8853E",
+          "x-github-request-id": "EE10:34E22F:4D012F:500D10:67C62F8B",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4969",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4992",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "31",
+          "x-ratelimit-used": "8",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:03 GMT",
-          etag: '"d239e90c7b93c4de837991758e389704be97d948f2067aeb37d7d7fe40de9e2b"',
-          location: "https://api.github.com/repos/withroka/test/pulls/40",
+          date: "Mon, 03 Mar 2025 22:39:08 GMT",
+          etag: '"255cedc9c32b7682e1f79d5bdf90cb3a44e00867a734138f4db12a5aa09070fb"',
+          location: "https://api.github.com/repos/withroka/test/pulls/51",
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 201,
         statusText: "Created",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/pulls?head=test-branch&state=open",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/pulls?head=test-branch&state=open",
-    },
-    response: {
-      body: '[{"url":"https://api.github.com/repos/withroka/test/pulls/40","id":2349699523,"node_id":"PR_kwDON5PmBc6MDZHD","html_url":"https://github.com/withroka/test/pull/40","diff_url":"https://github.com/withroka/test/pull/40.diff","patch_url":"https://github.com/withroka/test/pull/40.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/40","number":40,"state":"open","locked":false,"title":"Test PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Initial body","created_at":"2025-02-21T13:53:02Z","updated_at":"2025-02-21T13:53:02Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/40/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/40/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/40/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/40"},"html":{"href":"https://github.com/withroka/test/pull/40"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/40"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/40/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/40/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/40/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null}]',
-      init: {
+    ],
+    output: [
+      '[{"url":"https://api.github.com/repos/withroka/test/pulls/51","id":2369253433,"node_id":"PR_kwDON5PmBc6NN_A5","html_url":"https://github.com/withroka/test/pull/51","diff_url":"https://github.com/withroka/test/pull/51.diff","patch_url":"https://github.com/withroka/test/pull/51.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/51","number":51,"state":"open","locked":false,"title":"Test PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Initial body","created_at":"2025-03-03T22:39:07Z","updated_at":"2025-03-03T22:39:07Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/51/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/51/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/51/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/51"},"html":{"href":"https://github.com/withroka/test/pull/51"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/51"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/51/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/51/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/51/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null}]',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -82,43 +81,42 @@ mock[`github().repos.pulls > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81B:1F549E:771482:79F94E:67B8853F",
+          "x-github-request-id": "EE10:34E22F:4D0367:500F56:67C62F8C",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4968",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4991",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "32",
+          "x-ratelimit-used": "9",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:03 GMT",
-          etag: 'W/"bd6f9d43527128150e4a96ccf6f9d0d90b816444e51198ea2454dcd3f50f0f86"',
+          date: "Mon, 03 Mar 2025 22:39:08 GMT",
+          etag: 'W/"112887ad825c3b4977d27c6bfaafd768cfc2ab3c5b599fc7c81a8a773fac1969"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/pulls/51",
+      {
         body: '{"title":"Closed PR","body":"Updated body"}',
-        duplex: "half",
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "PATCH",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/pulls/40",
-    },
-    response: {
-      body: '{"url":"https://api.github.com/repos/withroka/test/pulls/40","id":2349699523,"node_id":"PR_kwDON5PmBc6MDZHD","html_url":"https://github.com/withroka/test/pull/40","diff_url":"https://github.com/withroka/test/pull/40.diff","patch_url":"https://github.com/withroka/test/pull/40.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/40","number":40,"state":"open","locked":false,"title":"Closed PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Updated body","created_at":"2025-02-21T13:53:02Z","updated_at":"2025-02-21T13:53:03Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/40/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/40/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/40/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/40"},"html":{"href":"https://github.com/withroka/test/pull/40"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/40"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/40/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/40/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/40/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null,"merged":false,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":1,"deletions":1,"changed_files":1}',
-      init: {
+    ],
+    output: [
+      '{"url":"https://api.github.com/repos/withroka/test/pulls/51","id":2369253433,"node_id":"PR_kwDON5PmBc6NN_A5","html_url":"https://github.com/withroka/test/pull/51","diff_url":"https://github.com/withroka/test/pull/51.diff","patch_url":"https://github.com/withroka/test/pull/51.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/51","number":51,"state":"open","locked":false,"title":"Closed PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Updated body","created_at":"2025-03-03T22:39:07Z","updated_at":"2025-03-03T22:39:08Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/51/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/51/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/51/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/51"},"html":{"href":"https://github.com/withroka/test/pull/51"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/51"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/51/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/51/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/51/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null,"merged":false,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":1,"deletions":1,"changed_files":1}',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -132,43 +130,42 @@ mock[`github().repos.pulls > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81B:1F549E:7715C8:79FA98:67B8853F",
+          "x-github-request-id": "EE10:34E22F:4D0418:501032:67C62F8C",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4967",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4990",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "33",
+          "x-ratelimit-used": "10",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:04 GMT",
-          etag: 'W/"2a96ade57bae5dcead0e1f70e9dcbef6721f27e8a4384953ff6ee16d160285ea"',
+          date: "Mon, 03 Mar 2025 22:39:09 GMT",
+          etag: 'W/"9579a3483f163ae73f5a5513b893a519725cae711b5df3c0b8c3e2ab40afc784"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/pulls/51",
+      {
         body: '{"state":"closed"}',
-        duplex: "half",
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "PATCH",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/pulls/40",
-    },
-    response: {
-      body: '{"url":"https://api.github.com/repos/withroka/test/pulls/40","id":2349699523,"node_id":"PR_kwDON5PmBc6MDZHD","html_url":"https://github.com/withroka/test/pull/40","diff_url":"https://github.com/withroka/test/pull/40.diff","patch_url":"https://github.com/withroka/test/pull/40.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/40","number":40,"state":"closed","locked":false,"title":"Closed PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Updated body","created_at":"2025-02-21T13:53:02Z","updated_at":"2025-02-21T13:53:04Z","closed_at":"2025-02-21T13:53:04Z","merged_at":null,"merge_commit_sha":"39a5a4c816a17249248440118b805e2f2a8d5700","assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/40/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/40/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/40/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-02-21T12:39:27Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/40"},"html":{"href":"https://github.com/withroka/test/pull/40"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/40"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/40/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/40/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/40/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null,"merged":false,"mergeable":true,"rebaseable":true,"mergeable_state":"clean","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":1,"deletions":1,"changed_files":1}',
-      init: {
+    ],
+    output: [
+      '{"url":"https://api.github.com/repos/withroka/test/pulls/51","id":2369253433,"node_id":"PR_kwDON5PmBc6NN_A5","html_url":"https://github.com/withroka/test/pull/51","diff_url":"https://github.com/withroka/test/pull/51.diff","patch_url":"https://github.com/withroka/test/pull/51.patch","issue_url":"https://api.github.com/repos/withroka/test/issues/51","number":51,"state":"closed","locked":false,"title":"Closed PR","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"body":"Updated body","created_at":"2025-03-03T22:39:07Z","updated_at":"2025-03-03T22:39:09Z","closed_at":"2025-03-03T22:39:09Z","merged_at":null,"merge_commit_sha":"8a0ac2d121280bb377b64cc981ced17a016fb634","assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"draft":false,"commits_url":"https://api.github.com/repos/withroka/test/pulls/51/commits","review_comments_url":"https://api.github.com/repos/withroka/test/pulls/51/comments","review_comment_url":"https://api.github.com/repos/withroka/test/pulls/comments{/number}","comments_url":"https://api.github.com/repos/withroka/test/issues/51/comments","statuses_url":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3","head":{"label":"withroka:test-branch","ref":"test-branch","sha":"7f9613ef74f7b563cfe28b48cf4df1268ef785c3","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"main"}},"base":{"label":"withroka:main","ref":"main","sha":"d685e5b87c157f8cf77c5483702893a59279a9ee","user":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"repo":{"id":932439557,"node_id":"R_kgDON5PmBQ","name":"test","full_name":"withroka/test","private":true,"owner":{"login":"withroka","id":148777520,"node_id":"O_kgDOCN4qMA","avatar_url":"https://avatars.githubusercontent.com/u/148777520?v=4","gravatar_id":"","url":"https://api.github.com/users/withroka","html_url":"https://github.com/withroka","followers_url":"https://api.github.com/users/withroka/followers","following_url":"https://api.github.com/users/withroka/following{/other_user}","gists_url":"https://api.github.com/users/withroka/gists{/gist_id}","starred_url":"https://api.github.com/users/withroka/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/withroka/subscriptions","organizations_url":"https://api.github.com/users/withroka/orgs","repos_url":"https://api.github.com/users/withroka/repos","events_url":"https://api.github.com/users/withroka/events{/privacy}","received_events_url":"https://api.github.com/users/withroka/received_events","type":"Organization","user_view_type":"public","site_admin":false},"html_url":"https://github.com/withroka/test","description":"Dummy repository for E2E testing","fork":false,"url":"https://api.github.com/repos/withroka/test","forks_url":"https://api.github.com/repos/withroka/test/forks","keys_url":"https://api.github.com/repos/withroka/test/keys{/key_id}","collaborators_url":"https://api.github.com/repos/withroka/test/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/withroka/test/teams","hooks_url":"https://api.github.com/repos/withroka/test/hooks","issue_events_url":"https://api.github.com/repos/withroka/test/issues/events{/number}","events_url":"https://api.github.com/repos/withroka/test/events","assignees_url":"https://api.github.com/repos/withroka/test/assignees{/user}","branches_url":"https://api.github.com/repos/withroka/test/branches{/branch}","tags_url":"https://api.github.com/repos/withroka/test/tags","blobs_url":"https://api.github.com/repos/withroka/test/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/withroka/test/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/withroka/test/git/refs{/sha}","trees_url":"https://api.github.com/repos/withroka/test/git/trees{/sha}","statuses_url":"https://api.github.com/repos/withroka/test/statuses/{sha}","languages_url":"https://api.github.com/repos/withroka/test/languages","stargazers_url":"https://api.github.com/repos/withroka/test/stargazers","contributors_url":"https://api.github.com/repos/withroka/test/contributors","subscribers_url":"https://api.github.com/repos/withroka/test/subscribers","subscription_url":"https://api.github.com/repos/withroka/test/subscription","commits_url":"https://api.github.com/repos/withroka/test/commits{/sha}","git_commits_url":"https://api.github.com/repos/withroka/test/git/commits{/sha}","comments_url":"https://api.github.com/repos/withroka/test/comments{/number}","issue_comment_url":"https://api.github.com/repos/withroka/test/issues/comments{/number}","contents_url":"https://api.github.com/repos/withroka/test/contents/{+path}","compare_url":"https://api.github.com/repos/withroka/test/compare/{base}...{head}","merges_url":"https://api.github.com/repos/withroka/test/merges","archive_url":"https://api.github.com/repos/withroka/test/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/withroka/test/downloads","issues_url":"https://api.github.com/repos/withroka/test/issues{/number}","pulls_url":"https://api.github.com/repos/withroka/test/pulls{/number}","milestones_url":"https://api.github.com/repos/withroka/test/milestones{/number}","notifications_url":"https://api.github.com/repos/withroka/test/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/withroka/test/labels{/name}","releases_url":"https://api.github.com/repos/withroka/test/releases{/id}","deployments_url":"https://api.github.com/repos/withroka/test/deployments","created_at":"2025-02-13T23:07:25Z","updated_at":"2025-02-13T23:07:57Z","pushed_at":"2025-03-01T15:04:56Z","git_url":"git://github.com/withroka/test.git","ssh_url":"git@github.com:withroka/test.git","clone_url":"https://github.com/withroka/test.git","svn_url":"https://github.com/withroka/test","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"main"}},"_links":{"self":{"href":"https://api.github.com/repos/withroka/test/pulls/51"},"html":{"href":"https://github.com/withroka/test/pull/51"},"issue":{"href":"https://api.github.com/repos/withroka/test/issues/51"},"comments":{"href":"https://api.github.com/repos/withroka/test/issues/51/comments"},"review_comments":{"href":"https://api.github.com/repos/withroka/test/pulls/51/comments"},"review_comment":{"href":"https://api.github.com/repos/withroka/test/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/withroka/test/pulls/51/commits"},"statuses":{"href":"https://api.github.com/repos/withroka/test/statuses/7f9613ef74f7b563cfe28b48cf4df1268ef785c3"}},"author_association":"MEMBER","auto_merge":null,"active_lock_reason":null,"merged":false,"mergeable":true,"rebaseable":true,"mergeable_state":"clean","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":1,"deletions":1,"changed_files":1}',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -182,40 +179,40 @@ mock[`github().repos.pulls > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81B:1F549E:77191B:79FDEE:67B88540",
+          "x-github-request-id": "EE10:34E22F:4D0601:50121F:67C62F8D",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4966",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4989",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "34",
+          "x-ratelimit-used": "11",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:05 GMT",
-          etag: 'W/"dedb3831f3fa268f37ea825654b6bf940dc142e8d2e52716a413a8f8f7de4a75"',
+          date: "Mon, 03 Mar 2025 22:39:09 GMT",
+          etag: 'W/"ebe4a769d9b1b5897167138e6071757bee6f82c4d6f0b6c2f8b2f18a256bcce7"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/pulls?head=test-branch&state=open",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/pulls?head=test-branch&state=open",
-    },
-    response: {
-      body: "[]",
-      init: {
+    ],
+    output: [
+      "[]",
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -230,16 +227,16 @@ mock[`github().repos.pulls > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81B:1F549E:771CF3:7A01C1:67B88541",
+          "x-github-request-id": "EE10:34E22F:4D0813:501455:67C62F8E",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4965",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4988",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "35",
+          "x-ratelimit-used": "12",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:05 GMT",
+          date: "Mon, 03 Mar 2025 22:39:10 GMT",
           etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
@@ -247,30 +244,29 @@ mock[`github().repos.pulls > fetch`] =
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
 ];
 
-mock[`github().repos.releases > fetch`] =
+mock[`github().repos.releases > fetch 1`] =
 [
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases",
+      {
         body: '{"tag_name":"test-tag","name":"Test release","body":"Initial body","draft":true,"prerelease":false}',
-        duplex: "half",
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "POST",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases",
-    },
-    response: {
-      body: '{"url":"https://api.github.com/repos/withroka/test/releases/201675148","assets_url":"https://api.github.com/repos/withroka/test/releases/201675148/assets","upload_url":"https://uploads.github.com/repos/withroka/test/releases/201675148/assets{?name,label}","html_url":"https://github.com/withroka/test/releases/tag/untagged-d11060b01554521e80e1","id":201675148,"author":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"node_id":"RE_kwDON5PmBc4MBVGM","tag_name":"test-tag","target_commitish":"main","name":"Test release","draft":true,"prerelease":false,"created_at":"2025-02-13T23:07:54Z","published_at":null,"assets":[],"tarball_url":null,"zipball_url":null,"body":"Initial body"}',
-      init: {
+    ],
+    output: [
+      '{"url":"https://api.github.com/repos/withroka/test/releases/203454739","assets_url":"https://api.github.com/repos/withroka/test/releases/203454739/assets","upload_url":"https://uploads.github.com/repos/withroka/test/releases/203454739/assets{?name,label}","html_url":"https://github.com/withroka/test/releases/tag/untagged-d12bce0f3d62fdbbe486","id":203454739,"author":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"node_id":"RE_kwDON5PmBc4MIHkT","tag_name":"test-tag","target_commitish":"main","name":"Test release","draft":true,"prerelease":false,"created_at":"2025-02-13T23:07:54Z","published_at":null,"assets":[],"tarball_url":null,"zipball_url":null,"body":"Initial body"}',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -285,41 +281,41 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC021:72A399:67B88541",
+          "x-github-request-id": "EE13:5C307:912FAF9:96888D6:67C62F8E",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4964",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4987",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "36",
+          "x-ratelimit-used": "13",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:05 GMT",
-          etag: '"5ac759214671dd6e23ba344bba79625acc4d161e437488eb8bebb106c5785afb"',
-          location: "https://api.github.com/repos/withroka/test/releases/201675148",
+          date: "Mon, 03 Mar 2025 22:39:10 GMT",
+          etag: '"8ff03487af96869893e869fb13600e458a8c1cee35b744e4a00cbe81a1023ed1"',
+          location: "https://api.github.com/repos/withroka/test/releases/203454739",
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 201,
         statusText: "Created",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases?per_page=100",
-    },
-    response: {
-      body: "[]",
-      init: {
+    ],
+    output: [
+      "[]",
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -334,16 +330,16 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC15A:72A4FD:67B88541",
+          "x-github-request-id": "EE13:5C307:912FBEA:96889CD:67C62F8E",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4963",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4986",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "37",
+          "x-ratelimit-used": "14",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:05 GMT",
+          date: "Mon, 03 Mar 2025 22:39:10 GMT",
           etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
@@ -351,23 +347,23 @@ mock[`github().repos.releases > fetch`] =
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases?per_page=100",
-    },
-    response: {
-      body: "[]",
-      init: {
+    ],
+    output: [
+      "[]",
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -382,16 +378,16 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC259:72A601:67B88542",
+          "x-github-request-id": "EE13:5C307:912FCA9:9688A94:67C62F8E",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4962",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4985",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "38",
+          "x-ratelimit-used": "15",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:06 GMT",
+          date: "Mon, 03 Mar 2025 22:39:11 GMT",
           etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
@@ -399,23 +395,23 @@ mock[`github().repos.releases > fetch`] =
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases?per_page=100",
-    },
-    response: {
-      body: "[]",
-      init: {
+    ],
+    output: [
+      "[]",
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -430,16 +426,16 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC359:72A727:67B88542",
+          "x-github-request-id": "EE13:5C307:912FD57:9688B51:67C62F8F",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4961",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4984",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "39",
+          "x-ratelimit-used": "16",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:06 GMT",
+          date: "Mon, 03 Mar 2025 22:39:11 GMT",
           etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
@@ -447,23 +443,23 @@ mock[`github().repos.releases > fetch`] =
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases?per_page=100",
-    },
-    response: {
-      body: "[]",
-      init: {
+    ],
+    output: [
+      "[]",
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -478,16 +474,16 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC509:72A8B6:67B88542",
+          "x-github-request-id": "EE13:5C307:912FE25:9688C12:67C62F8F",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4960",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4983",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "40",
+          "x-ratelimit-used": "17",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:06 GMT",
+          date: "Mon, 03 Mar 2025 22:39:11 GMT",
           etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
@@ -495,23 +491,23 @@ mock[`github().repos.releases > fetch`] =
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases?per_page=100",
-    },
-    response: {
-      body: "[]",
-      init: {
+    ],
+    output: [
+      "[]",
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -526,16 +522,16 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC618:72A9CE:67B88542",
+          "x-github-request-id": "EE13:5C307:912FECC:9688CCE:67C62F8F",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4959",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4982",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "41",
+          "x-ratelimit-used": "18",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:06 GMT",
+          date: "Mon, 03 Mar 2025 22:39:11 GMT",
           etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
@@ -543,23 +539,71 @@ mock[`github().repos.releases > fetch`] =
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases?per_page=100",
-    },
-    response: {
-      body: '[{"url":"https://api.github.com/repos/withroka/test/releases/201675148","assets_url":"https://api.github.com/repos/withroka/test/releases/201675148/assets","upload_url":"https://uploads.github.com/repos/withroka/test/releases/201675148/assets{?name,label}","html_url":"https://github.com/withroka/test/releases/tag/untagged-d11060b01554521e80e1","id":201675148,"author":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"node_id":"RE_kwDON5PmBc4MBVGM","tag_name":"test-tag","target_commitish":"main","name":"Test release","draft":true,"prerelease":false,"created_at":"2025-02-13T23:07:54Z","published_at":null,"assets":[],"tarball_url":null,"zipball_url":null,"body":"Initial body"}]',
-      init: {
+    ],
+    output: [
+      "[]",
+      {
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
+          "cache-control": "private, max-age=60, s-maxage=60",
+          "content-length": "2",
+          "content-security-policy": "default-src 'none'",
+          "content-type": "application/json; charset=utf-8",
+          "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+          "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+          "x-accepted-oauth-scopes": "repo",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "deny",
+          "x-github-api-version-selected": "2022-11-28",
+          "x-github-media-type": "github.v3; format=json",
+          "x-github-request-id": "EE13:5C307:912FF6D:9688D80:67C62F8F",
+          "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+          "x-oauth-scopes": "gist, read:org, repo, workflow",
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4981",
+          "x-ratelimit-reset": "1741042172",
+          "x-ratelimit-resource": "core",
+          "x-ratelimit-used": "19",
+          "x-xss-protection": "0",
+          date: "Mon, 03 Mar 2025 22:39:11 GMT",
+          etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
+          server: "github.com",
+          vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+        },
+        status: 200,
+        statusText: "OK",
+      },
+    ],
+  },
+  {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
+        headers: {
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
+          accept: "application/vnd.github.v3+json",
+        },
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      '[{"url":"https://api.github.com/repos/withroka/test/releases/203454739","assets_url":"https://api.github.com/repos/withroka/test/releases/203454739/assets","upload_url":"https://uploads.github.com/repos/withroka/test/releases/203454739/assets{?name,label}","html_url":"https://github.com/withroka/test/releases/tag/untagged-d12bce0f3d62fdbbe486","id":203454739,"author":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"node_id":"RE_kwDON5PmBc4MIHkT","tag_name":"test-tag","target_commitish":"main","name":"Test release","draft":true,"prerelease":false,"created_at":"2025-02-13T23:07:54Z","published_at":null,"assets":[],"tarball_url":null,"zipball_url":null,"body":"Initial body"}]',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -573,43 +617,42 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC70A:72AAF0:67B88542",
+          "x-github-request-id": "EE13:5C307:913001F:9688E3C:67C62F8F",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4958",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4980",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "42",
+          "x-ratelimit-used": "20",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:07 GMT",
-          etag: 'W/"5aa3322de3ef6e2e89a9529062baf246ded6e506cd1239ceded11f80cee6b352"',
+          date: "Mon, 03 Mar 2025 22:39:12 GMT",
+          etag: 'W/"47ab85575ebe78bebc31c1edca168eb181b1b1ffac861654c21758a692514691"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases/203454739",
+      {
         body: '{"name":"Updated release","body":"Updated body","draft":false,"prerelease":true}',
-        duplex: "half",
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "PATCH",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases/201675148",
-    },
-    response: {
-      body: '{"url":"https://api.github.com/repos/withroka/test/releases/201675148","assets_url":"https://api.github.com/repos/withroka/test/releases/201675148/assets","upload_url":"https://uploads.github.com/repos/withroka/test/releases/201675148/assets{?name,label}","html_url":"https://github.com/withroka/test/releases/tag/test-tag","id":201675148,"author":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"node_id":"RE_kwDON5PmBc4MBVGM","tag_name":"test-tag","target_commitish":"main","name":"Updated release","draft":false,"prerelease":true,"created_at":"2025-02-13T23:07:54Z","published_at":"2025-02-21T13:53:07Z","assets":[],"tarball_url":"https://api.github.com/repos/withroka/test/tarball/test-tag","zipball_url":"https://api.github.com/repos/withroka/test/zipball/test-tag","body":"Updated body"}',
-      init: {
+    ],
+    output: [
+      '{"url":"https://api.github.com/repos/withroka/test/releases/203454739","assets_url":"https://api.github.com/repos/withroka/test/releases/203454739/assets","upload_url":"https://uploads.github.com/repos/withroka/test/releases/203454739/assets{?name,label}","html_url":"https://github.com/withroka/test/releases/tag/test-tag","id":203454739,"author":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"node_id":"RE_kwDON5PmBc4MIHkT","tag_name":"test-tag","target_commitish":"main","name":"Updated release","draft":false,"prerelease":true,"created_at":"2025-02-13T23:07:54Z","published_at":"2025-03-03T22:39:12Z","assets":[],"tarball_url":"https://api.github.com/repos/withroka/test/tarball/test-tag","zipball_url":"https://api.github.com/repos/withroka/test/zipball/test-tag","body":"Updated body"}',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -623,81 +666,80 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FC868:72AC30:67B88543",
+          "x-github-request-id": "EE13:5C307:91300DF:9688EF7:67C62F90",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4957",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4979",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "43",
+          "x-ratelimit-used": "21",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:07 GMT",
-          etag: 'W/"acc946b7505b622a2307f1dfa87f7cb5e91d84030a671f425b5f740b7a8f1790"',
+          date: "Mon, 03 Mar 2025 22:39:12 GMT",
+          etag: 'W/"43cf828f8786f68c6c5f3a35f8a40642f798256f42850b6de2797590f9c705fa"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://uploads.github.com/repos/withroka/test/releases/203454739/assets?name=file.txt&",
+      {
         body: "content",
-        duplex: "half",
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "POST",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://uploads.github.com/repos/withroka/test/releases/201675148/assets?name=file.txt&",
-    },
-    response: {
-      body: '{"url":"https://api.github.com/repos/withroka/test/releases/assets/231298387","id":231298387,"node_id":"RA_kwDON5PmBc4NyVVT","name":"file.txt","label":"","uploader":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"content_type":"application/json; charset=utf-8","state":"uploaded","size":7,"download_count":0,"created_at":"2025-02-21T13:53:07Z","updated_at":"2025-02-21T13:53:07Z","browser_download_url":"https://github.com/withroka/test/releases/download/test-tag/file.txt"}',
-      init: {
+    ],
+    output: [
+      '{"url":"https://api.github.com/repos/withroka/test/releases/assets/234300485","id":234300485,"node_id":"RA_kwDON5PmBc4N9yRF","name":"file.txt","label":"","uploader":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"content_type":"application/json; charset=utf-8","state":"uploaded","size":7,"download_count":0,"created_at":"2025-03-03T22:39:13Z","updated_at":"2025-03-03T22:39:13Z","browser_download_url":"https://github.com/withroka/test/releases/download/test-tag/file.txt"}',
+      {
         headers: {
           "cache-control": "no-cache",
           "content-security-policy": "default-src 'none'",
           "content-type": "application/json; charset=utf-8",
-          "last-modified": "Fri, 21 Feb 2025 13:53:07 GMT",
+          "last-modified": "Mon, 03 Mar 2025 22:39:13 GMT",
           "strict-transport-security": "max-age=31557600",
           "x-accepted-oauth-scopes": "repo",
           "x-content-type-options": "nosniff",
           "x-frame-options": "deny",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81F:83C36:1A0E01:1CE2D3:67B88543",
+          "x-github-request-id": "EE16:111C40:3361694:3A81368:67C62F90",
           "x-github-tenant": "",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-xss-protection": "1; mode=block",
-          date: "Fri, 21 Feb 2025 13:53:08 GMT",
-          etag: 'W/"86301c5b8ff23aa4a1a9953ee3dc4fcbf6c1db11711e9893d6524629090503b9"',
+          date: "Mon, 03 Mar 2025 22:39:13 GMT",
+          etag: 'W/"3bf2fb2370715b8ed3bcf7fa0a085b6d8300fee501d2b719abde268af2740564"',
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 201,
         statusText: "Created",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases/203454739/assets",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases/201675148/assets",
-    },
-    response: {
-      body: '[{"url":"https://api.github.com/repos/withroka/test/releases/assets/231298387","id":231298387,"node_id":"RA_kwDON5PmBc4NyVVT","name":"file.txt","label":"","uploader":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"content_type":"application/json; charset=utf-8","state":"uploaded","size":7,"download_count":0,"created_at":"2025-02-21T13:53:07Z","updated_at":"2025-02-21T13:53:07Z","browser_download_url":"https://github.com/withroka/test/releases/download/test-tag/file.txt"}]',
-      init: {
+    ],
+    output: [
+      '[{"url":"https://api.github.com/repos/withroka/test/releases/assets/234300485","id":234300485,"node_id":"RA_kwDON5PmBc4N9yRF","name":"file.txt","label":"","uploader":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"content_type":"application/json; charset=utf-8","state":"uploaded","size":7,"download_count":0,"created_at":"2025-03-03T22:39:13Z","updated_at":"2025-03-03T22:39:13Z","browser_download_url":"https://github.com/withroka/test/releases/download/test-tag/file.txt"}]',
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -711,39 +753,40 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FCC7C:72B07E:67B88543",
+          "x-github-request-id": "EE13:5C307:913044F:9689291:67C62F90",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4954",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4976",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "46",
+          "x-ratelimit-used": "24",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:08 GMT",
-          etag: 'W/"990df8c7ad1b710dd894771a9cbace17bb68c6e67ec34b0e8bf1d574680deca6"',
+          date: "Mon, 03 Mar 2025 22:39:13 GMT",
+          etag: 'W/"e97a4207e2628de02bd03ed832b9983a1a4b3561ea11014d4762223b5c8a8425"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases/203454739",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "DELETE",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases/201675148",
-    },
-    response: {
-      init: {
+    ],
+    output: [
+      undefined,
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -755,39 +798,39 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FCD8A:72B186:67B88544",
+          "x-github-request-id": "EE13:5C307:91304F1:9689333:67C62F91",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4953",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4975",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "47",
+          "x-ratelimit-used": "25",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:08 GMT",
+          date: "Mon, 03 Mar 2025 22:39:13 GMT",
           server: "github.com",
           vary: "Accept-Encoding, Accept, X-Requested-With",
         },
         status: 204,
         statusText: "No Content",
       },
-    },
+    ],
   },
   {
-    request: {
-      init: {
+    input: [
+      "https://api.github.com/repos/withroka/test/releases?per_page=100",
+      {
         headers: {
-          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.0",
+          "user-agent": "octokit-rest.js/21.1.1 octokit-core.js/6.1.4 Deno/2.2.2",
           accept: "application/vnd.github.v3+json",
         },
         method: "GET",
-        redirect: undefined,
+        redirect: "follow",
       },
-      input: "https://api.github.com/repos/withroka/test/releases?per_page=100",
-    },
-    response: {
-      body: "[]",
-      init: {
+    ],
+    output: [
+      "[]",
+      {
         headers: {
           "access-control-allow-origin": "*",
           "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset",
@@ -802,16 +845,16 @@ mock[`github().repos.releases > fetch`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3; format=json",
-          "x-github-request-id": "E81E:1C85C3:6FCF51:72B333:67B88544",
+          "x-github-request-id": "EE13:5C307:9130610:968945F:67C62F91",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4952",
-          "x-ratelimit-reset": "1740148529",
+          "x-ratelimit-remaining": "4974",
+          "x-ratelimit-reset": "1741042172",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "48",
+          "x-ratelimit-used": "26",
           "x-xss-protection": "0",
-          date: "Fri, 21 Feb 2025 13:53:08 GMT",
+          date: "Mon, 03 Mar 2025 22:39:14 GMT",
           etag: '"393ba7132c16bd820c84f7857f46708a607df0ef40a793a70af3fd319d3bde55"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
@@ -819,6 +862,6 @@ mock[`github().repos.releases > fetch`] =
         status: 200,
         statusText: "OK",
       },
-    },
+    ],
   },
 ];

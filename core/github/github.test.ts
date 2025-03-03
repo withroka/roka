@@ -1,6 +1,7 @@
 import { tempRepository } from "@roka/git/testing";
 import { github, type PullRequest, type Release } from "@roka/github";
-import { mockFetch, tempDirectory } from "@roka/testing";
+import { mockFetch } from "@roka/http/testing";
+import { tempDirectory } from "@roka/testing/temp";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 
