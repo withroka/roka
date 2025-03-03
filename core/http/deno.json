@@ -5,6 +5,7 @@
     ".": "./mod.ts",
     "./json": "./json.ts",
     "./graphql": "./graphql.ts",
-    "./request": "./request.ts"
+    "./request": "./request.ts",
+    "./testing": "./testing.ts"
   }
 }
