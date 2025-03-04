@@ -2,7 +2,7 @@
  * Pooling functions for async iterables.
  *
  * This modules provides the {@linkcode pool} function which can be used to
- * resolve a iterable of promises, limiting the maximum amount of concurrency.
+ * resolve a collection of promises, limiting the maximum amount of concurrency.
  *
  * The function support several variants.
  *
@@ -23,9 +23,13 @@
  * await pool(generator(), (x) => Promise.resolve(x * 2));
  * ```
  *
- * The accepted input types make sure that the async execution whose concurrency
- * is to be limited starts only when the function is called. The concurrency
- * is not limited by default, but can be set using the `concurrency` option.
+ * The accepted input types make sure that the starts only when the function
+ * is called. An iterable of promises is not accepted, as execution would have
+ * started by the time they are passed to the function.
+ *
+ * The concurrency is not limited by default, but can be set using the
+ * `concurrency` option. The promises will be executed based on the order that
+ * they are passed to the function, and the results will be in the same order.
  *
  * If an error is thrown from a function, no new executions will begin. All
  * currently executing functions are allowed to finish and still yielded on
