@@ -4,7 +4,7 @@
  * This modules provides the {@linkcode pool} function which can be used to
  * resolve a iterable of promises, limiting the maximum amount of concurrency.
  *
- * The function support sevaral variants.
+ * The function support several variants.
  *
  * @example
  * ```ts
