@@ -62,10 +62,10 @@ mock[`request() makes request > fetch 1`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=605",
+          "cache-control": "max-age=2766",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 22:39:31 GMT",
+          date: "Tue, 04 Mar 2025 16:00:10 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
@@ -76,7 +76,7 @@ mock[`request() makes request > fetch 1`] =
   },
 ];
 
-mock[`request() throws error on failing response > fetch 1`] =
+mock[`request() rejects failed response > fetch 1`] =
 [
   {
     input: [
@@ -142,9 +142,9 @@ mock[`request() throws error on failing response > fetch 1`] =
           "content-length": "1256",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 22:39:33 GMT",
+          date: "Tue, 04 Mar 2025 16:00:11 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
-          expires: "Mon, 03 Mar 2025 22:39:33 GMT",
+          expires: "Tue, 04 Mar 2025 16:00:11 GMT",
           pragma: "no-cache",
           server: "AkamaiNetStorage",
         },
@@ -221,9 +221,9 @@ mock[`request() can ignore errors > fetch 1`] =
           "content-length": "1256",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 22:39:34 GMT",
+          date: "Tue, 04 Mar 2025 16:00:12 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
-          expires: "Mon, 03 Mar 2025 22:39:34 GMT",
+          expires: "Tue, 04 Mar 2025 16:00:12 GMT",
           pragma: "no-cache",
           server: "AkamaiNetStorage",
         },
@@ -298,10 +298,10 @@ mock[`request() can pass certain headers > fetch 1`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"',
-          "cache-control": "max-age=1002",
+          "cache-control": "max-age=2399",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Mon, 03 Mar 2025 22:39:34 GMT",
+          date: "Tue, 04 Mar 2025 16:00:12 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
