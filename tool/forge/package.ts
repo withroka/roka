@@ -95,10 +95,12 @@ export interface Update {
 export interface Config {
   /** Package name. */
   name?: string;
-  /** Package version. */
-  version?: string;
   /** Workspace packages. */
   workspace?: string[];
+  /** Package version. */
+  version?: string;
+  /** Package exports. */
+  exports?: string | Record<string, string>;
   /** Configuration for compiling the package. */
   compile?: CompileConfig;
 }
