@@ -1,18 +1,17 @@
 import { tempRepository, testCommit } from "@roka/git/testing";
-import { assert } from "@std/assert/assert";
-import { assertEquals } from "@std/assert/equals";
+import { assertEquals, assertExists, assertGreater } from "@std/assert";
 
 Deno.test("testCommit() creates a commit with default data", () => {
   const commit = testCommit();
-  assert(commit.hash.length);
-  assert(commit.short.length);
-  assert(commit.summary.length);
-  assert(commit.body?.length);
-  assert(commit.trailers);
-  assert(commit.author.name.length);
-  assert(commit.author.email.length);
-  assert(commit.committer.name.length);
-  assert(commit.committer.email.length);
+  assertGreater(commit.hash.length, 0);
+  assertGreater(commit.short.length, 0);
+  assertGreater(commit.summary.length, 0);
+  assertGreater(commit.body?.length, 0);
+  assertExists(commit.trailers);
+  assertGreater(commit.author.name.length, 0);
+  assertGreater(commit.author.email.length, 0);
+  assertGreater(commit.committer.name.length, 0);
+  assertGreater(commit.committer.email.length, 0);
 });
 
 Deno.test("testCommit() creates a commit with custom data", () => {

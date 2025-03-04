@@ -2,7 +2,7 @@ import { PackageError, packageInfo } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
 import { tempRepository } from "@roka/git/testing";
 import { testRepository } from "@roka/github/testing";
-import { assert, assertEquals, assertMatch, assertRejects } from "@std/assert";
+import { assertEquals, assertMatch, assertRejects } from "@std/assert";
 
 Deno.test("release() rejects package without version", async () => {
   await using git = await tempRepository();
@@ -57,7 +57,7 @@ Deno.test("release() creates draft release", async () => {
   await git.commits.create("feat(module): introduce module");
   const pkg = await packageInfo({ directory: git.path() });
   const [rls] = await release(pkg, { repo, draft: true });
-  assert(rls.draft);
+  assertEquals(rls.draft, true);
 });
 
 Deno.test("release() updates existing release", async () => {
@@ -70,5 +70,5 @@ Deno.test("release() updates existing release", async () => {
   const pkg = await packageInfo({ directory: git.path() });
   const [rls1] = await release(pkg, { repo });
   const [rls2] = await release(pkg, { repo });
-  assert(rls1.id === rls2.id);
+  assertEquals(rls1.id, rls2.id);
 });

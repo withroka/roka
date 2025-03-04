@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertNotEquals } from "@std/assert";
+import { assertEquals, assertExists, assertNotEquals } from "@std/assert";
 import {
   testPullRequest,
   testRelease,
@@ -8,9 +8,9 @@ import {
 
 Deno.test("testRepository() creates a repository with default data", () => {
   const repo = testRepository();
-  assert(repo.url);
-  assert(repo.owner);
-  assert(repo.repo);
+  assertExists(repo.url);
+  assertExists(repo.owner);
+  assertExists(repo.repo);
 });
 
 Deno.test("testRepository() creates a repository with custom data", () => {
@@ -54,13 +54,13 @@ Deno.test("testRepository() manages releases", async () => {
 
 Deno.test("testPullRequest() creates a pull request with default data", () => {
   const pull = testPullRequest();
-  assert(pull.repo);
-  assert(pull.url);
-  assert(pull.number);
-  assert(pull.title);
-  assert(pull.body);
-  assert(pull.head);
-  assert(pull.base);
+  assertExists(pull.repo);
+  assertExists(pull.url);
+  assertExists(pull.number);
+  assertExists(pull.title);
+  assertExists(pull.body);
+  assertExists(pull.head);
+  assertExists(pull.base);
 });
 
 Deno.test("testPullRequest() creates a pull request with custom data", () => {
@@ -102,13 +102,13 @@ Deno.test("testPullRequest() can update data", async () => {
 
 Deno.test("testRelease() creates a release with default data", () => {
   const release = testRelease();
-  assert(release.repo);
-  assert(release.url);
-  assert(release.id);
-  assert(release.name);
-  assert(release.tag);
-  assert(release.commit);
-  assert(release.body);
+  assertExists(release.repo);
+  assertExists(release.url);
+  assertExists(release.id);
+  assertExists(release.name);
+  assertExists(release.tag);
+  assertExists(release.commit);
+  assertExists(release.body);
 });
 
 Deno.test("testRelease() creates a release with custom data", () => {
@@ -164,12 +164,12 @@ Deno.test("testRelease() manages assets", async () => {
 
 Deno.test("testReleaseAsset() creates asset with default values", () => {
   const asset = testReleaseAsset();
-  assert(asset.release);
-  assert(asset.url);
-  assert(asset.id);
-  assert(asset.name);
-  assert(asset.size);
-  assert(asset.downloadCount);
+  assertExists(asset.release);
+  assertExists(asset.url);
+  assertExists(asset.id);
+  assertExists(asset.name);
+  assertExists(asset.size);
+  assertExists(asset.downloadCount);
 });
 
 Deno.test("testReleaseAsset() creates asset with custom values", () => {

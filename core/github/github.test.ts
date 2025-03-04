@@ -2,8 +2,7 @@ import { tempRepository } from "@roka/git/testing";
 import { github, type PullRequest, type Release } from "@roka/github";
 import { mockFetch } from "@roka/http/testing";
 import { tempDirectory } from "@roka/testing/temp";
-import { assert } from "@std/assert/assert";
-import { assertEquals } from "@std/assert/equals";
+import { assertEquals, assertExists } from "@std/assert";
 
 const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 
@@ -45,7 +44,7 @@ Deno.test("github().repos.pulls", async (t) => {
       closed: false,
     });
     assertEquals(pulls.length, 1);
-    assert(pulls[0]);
+    assertExists(pulls[0]);
     assertEquals(pulls[0].head, "test-branch");
     assertEquals(pulls[0].base, "main");
     assertEquals(pulls[0].title, "Test PR");
@@ -94,8 +93,8 @@ Deno.test("github().repos.releases", async (t) => {
       // deno-lint-ignore no-await-in-loop
       const releases = await repo.releases.list({ tag: "test-tag" });
       if (releases.length > 0) {
-        assert(releases.length === 1);
-        assert(releases[0]);
+        assertEquals(releases.length, 1);
+        assertExists(releases[0]);
         break;
       }
     }
@@ -132,7 +131,7 @@ Deno.test("github().repos.releases", async (t) => {
   await t.step("list release asset", async () => {
     const assets = await release.assets.list();
     assertEquals(assets.length, 1);
-    assert(assets[0]);
+    assertExists(assets[0]);
     assertEquals(assets[0]?.name, "file.txt");
     assertEquals(assets[0]?.size, "content".length);
   });

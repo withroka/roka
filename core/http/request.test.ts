@@ -1,7 +1,6 @@
 import { request } from "@roka/http/request";
 import { mockFetch } from "@roka/http/testing";
-import { assertEquals } from "@std/assert/equals";
-import { assertRejects } from "@std/assert/rejects";
+import { assertEquals, assertRejects } from "@std/assert";
 import { STATUS_CODE } from "@std/http/status";
 import { assertSnapshot } from "@std/testing/snapshot";
 
