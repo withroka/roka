@@ -2,7 +2,6 @@ import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing";
 import {
-  assert,
   assertEquals,
   assertExists,
   assertNotEquals,
@@ -13,7 +12,7 @@ Deno.test("git().init() creates a repo", async () => {
   await using directory = await tempDirectory();
   const repo = git({ cwd: directory.path() });
   await repo.init();
-  assert((await Deno.stat(repo.path(".git"))).isDirectory);
+  assertEquals((await Deno.stat(repo.path(".git"))).isDirectory, true);
 });
 
 Deno.test("git().init() creates a repo with initial branch", async () => {
@@ -318,7 +317,7 @@ Deno.test("git().branches.delete() fails on current branch", async () => {
   await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const current = await repo.branches.current();
-  assert(current);
+  assertExists(current);
   await assertRejects(() => repo.branches.delete(current), GitError);
 });
 
@@ -326,7 +325,7 @@ Deno.test("git().branches.delete() can delete from detached HEAD", async () => {
   await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const current = await repo.branches.current();
-  assert(current);
+  assertExists(current);
   await repo.branches.checkout({ detach: true });
   await repo.branches.delete(current);
   assertEquals(await repo.branches.list(), []);
@@ -781,7 +780,7 @@ Deno.test("git().commits.push() pushes commits to remote", async () => {
 Deno.test("git().commits.push() pushes commits to remote with name", async () => {
   await using remote = await tempRepository({ bare: true });
   const branch = await remote.branches.current();
-  assert(branch);
+  assertExists(branch);
   await using repo = await tempRepository();
   await repo.remotes.add(remote.path(), "remote");
   const commit = await repo.commits.create("commit", { allowEmpty: true });
@@ -838,7 +837,7 @@ Deno.test("git().commits.pull() can pull from remote with name", async () => {
     allowEmpty: true,
   });
   const branch = await remote.branches.current();
-  assert(branch);
+  assertExists(branch);
   await using repo = await tempRepository();
   await repo.remotes.add(remote.path(), "remote");
   await repo.commits.pull({ remote: "remote", branch });

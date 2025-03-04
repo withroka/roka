@@ -3,10 +3,12 @@ import { bump } from "@roka/forge/bump";
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { tempRepository } from "@roka/git/testing";
 import { testRepository } from "@roka/github/testing";
-import { assertExists, assertRejects } from "@std/assert";
-import { assert } from "@std/assert/assert";
-import { assertEquals } from "@std/assert/equals";
-import { assertMatch } from "@std/assert/match";
+import {
+  assertEquals,
+  assertExists,
+  assertMatch,
+  assertRejects,
+} from "@std/assert";
 
 Deno.test("bump() rejects package without version", async () => {
   await using git = await tempRepository();
@@ -87,7 +89,7 @@ Deno.test("bump() creates pull request", async () => {
     pr: true,
     user: { name: "bump-name", email: "bump-email" },
   });
-  assert(pr);
+  assertExists(pr);
   assertEquals(pr.title, "chore: bump module version");
   assertMatch(pr.body, /## module@0.1.0 \[minor\]/);
   assertMatch(pr.body, /feat\(module\): introduce module/);
@@ -122,7 +124,7 @@ Deno.test("bump() updates pull request", async () => {
     },
     { concurrency: 1 },
   );
-  assert(pr1?.number === pr2?.number);
+  assertEquals(pr1?.number, pr2?.number);
 });
 
 Deno.test("bump() updates multiple packages", async () => {
@@ -147,7 +149,7 @@ Deno.test("bump() updates multiple packages", async () => {
   const pkg1 = await packageInfo({ directory: git.path("module1") });
   const pkg2 = await packageInfo({ directory: git.path("module2") });
   const pr = await bump([pkg1, pkg2], { repo, pr: true });
-  assert(pr);
+  assertExists(pr);
   assertEquals(pr.title, "chore: bump versions");
   assertMatch(pr.body, /## module1@0.1.0 \[minor\]/);
   assertMatch(pr.body, /## module2@0.1.0 \[minor\]/);

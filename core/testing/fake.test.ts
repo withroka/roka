@@ -1,5 +1,5 @@
 import { fakeConsole } from "@roka/testing/fake";
-import { assert, assertEquals, assertFalse } from "@std/assert";
+import { assertEquals, assertFalse } from "@std/assert";
 
 Deno.test("fakeConsole() stubs console", () => {
   using mock = fakeConsole();
@@ -35,7 +35,7 @@ Deno.test("fakeConsole() implements spy like interface", () => {
     assertFalse(console.restored);
   } finally {
     console.restore();
-    assert(console.restored);
+    assertEquals(console.restored, true);
   }
 });
 

@@ -1,9 +1,12 @@
 import { compile } from "@roka/forge/compile";
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { tempRepository } from "@roka/git/testing";
-import { assertEquals, assertExists, assertMatch } from "@std/assert";
-import { assert } from "@std/assert/assert";
-import { assertRejects } from "@std/assert/rejects";
+import {
+  assertEquals,
+  assertExists,
+  assertMatch,
+  assertRejects,
+} from "@std/assert";
 import { copy } from "@std/fs/copy";
 import { basename, dirname } from "@std/path";
 
@@ -50,8 +53,8 @@ Deno.test("compile() compiles into a binary", async () => {
   );
   const pkg = await packageInfo({ directory: repo.path() });
   const artifacts = await compile(pkg, { dist: repo.path("dist") });
-  assert(artifacts[0]);
-  assert(artifacts[0]?.endsWith("module"));
+  assertExists(artifacts[0]);
+  assertEquals(basename(artifacts[0]), "module");
   const command = new Deno.Command(artifacts[0], { stderr: "inherit" });
   const { code, stdout } = await command.output();
   assertEquals(code, 0);

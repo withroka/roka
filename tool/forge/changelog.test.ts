@@ -1,7 +1,7 @@
 import { changelog } from "@roka/forge/changelog";
 import { packageInfo } from "@roka/forge/package";
 import { tempRepository } from "@roka/git/testing";
-import { assertEquals } from "@std/assert/equals";
+import { assertEquals } from "@std/assert";
 
 Deno.test("changelog() provides package changelog", async () => {
   await using repo = await tempRepository();
