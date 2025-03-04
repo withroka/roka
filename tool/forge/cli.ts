@@ -17,8 +17,9 @@ import { version } from "@roka/forge/app";
 import { bump } from "@roka/forge/bump";
 import { changelog as changelogText } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
-import { workspace } from "@roka/forge/package";
+import { type Package, workspace } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
+import { join, relative } from "@std/path";
 
 function compileCommand(targets: string[]) {
   return new Command()
@@ -98,16 +99,15 @@ function listCommand() {
   return new Command()
     .description("List packages, versions, and changelogs.")
     .arguments("[packages...:file]")
-    .option("--changelog", "Print changelog of updated packages.", {
-      default: false,
-    })
-    .action(async ({ changelog }, ...filters) => {
+    .option("--modules", "Print exported package modules.", { default: false })
+    .option("--changelog", "Print package changelog.", { default: false })
+    .action(async ({ modules, changelog }, ...filters) => {
       const packages = await workspace({ filters });
       new Table().body(
         packages.map((pkg) => [
           "📦",
           pkg.directory,
-          pkg.config.name,
+          modules ? modulesText(pkg) : pkg.config.name,
           pkg.version,
           ...pkg.release?.version !== pkg.config.version
             ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
@@ -116,6 +116,16 @@ function listCommand() {
         ]),
       ).render();
     });
+}
+
+function modulesText(pkg: Package): string | undefined {
+  const name = pkg.config.name;
+  if (name === undefined) return undefined;
+  const exports = pkg.config.exports ?? {};
+  if (typeof exports === "string") return name;
+  return Object.keys(exports)
+    .map((key) => join(name, relative(".", key)))
+    .join("\n");
 }
 
 if (import.meta.main) {
