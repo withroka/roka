@@ -99,15 +99,15 @@ function listCommand() {
   return new Command()
     .description("List packages, versions, and changelogs.")
     .arguments("[packages...:file]")
-    .option("--submodules", "Print package submodules.", { default: false })
+    .option("--modules", "Print exported package modules.", { default: false })
     .option("--changelog", "Print package changelog.", { default: false })
-    .action(async ({ submodules, changelog }, ...filters) => {
+    .action(async ({ modules, changelog }, ...filters) => {
       const packages = await workspace({ filters });
       new Table().body(
         packages.map((pkg) => [
           "📦",
           pkg.directory,
-          submodules ? submodulesText(pkg) : pkg.config.name,
+          modules ? modulesText(pkg) : pkg.config.name,
           pkg.version,
           ...pkg.release?.version !== pkg.config.version
             ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
@@ -118,7 +118,7 @@ function listCommand() {
     });
 }
 
-function submodulesText(pkg: Package): string | undefined {
+function modulesText(pkg: Package): string | undefined {
   const name = pkg.config.name;
   if (name === undefined) return undefined;
   const exports = pkg.config.exports ?? {};
