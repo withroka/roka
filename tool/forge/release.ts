@@ -89,7 +89,7 @@ export async function upload(
 ): Promise<ReleaseAsset[]> {
   // delete existing assets first
   const assets = await release.assets.list();
-  await pool(assets.map((asset) => asset.delete()), GITHUB_CONCURRENCY);
+  await pool(assets, (asset) => asset.delete(), GITHUB_CONCURRENCY);
   const artifacts = pkg.config.compile
     ? await compile(pkg, {
       target: await targets(),
@@ -99,7 +99,8 @@ export async function upload(
     })
     : [];
   return await pool(
-    artifacts.map((artifact) => release.assets.upload(artifact)),
+    artifacts,
+    (artifact) => release.assets.upload(artifact),
     GITHUB_CONCURRENCY,
   );
 }

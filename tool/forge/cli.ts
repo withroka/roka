@@ -36,11 +36,15 @@ function compileCommand(targets: string[]) {
     .action(async (options, ...filters) => {
       const packages = (await workspace({ filters }))
         .filter((pkg) => pkg.config.compile);
-      await pool(packages.map(async (pkg) => {
-        const artifacts = await compile(pkg, options);
-        console.log(`📦 Compiled ${pkg.module}`);
-        artifacts.forEach((artifact) => console.log("🏺", artifact));
-      }, options));
+      await pool(
+        packages,
+        async (pkg) => {
+          const artifacts = await compile(pkg, options);
+          console.log(`📦 Compiled ${pkg.module}`);
+          artifacts.forEach((artifact) => console.log("🏺", artifact));
+        },
+        options,
+      );
     });
 }
 
@@ -82,11 +86,11 @@ function releaseCommand() {
     .action(async (options, ...filters) => {
       const packages = (await workspace({ filters }))
         .filter((pkg) => pkg.config.version !== pkg.release?.version);
-      await pool(packages.map(async (pkg) => {
+      await pool(packages, async (pkg) => {
         const [rls, assets] = await release(pkg, options);
         console.log(`🚀 Released ${pkg.module} [${rls.url}]`);
         assets.forEach((x) => console.log(`🏺 ${x.name} [${x.url}]`));
-      }));
+      }, { concurrency: 1 });
     });
 }
 
