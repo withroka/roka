@@ -541,7 +541,7 @@ Deno.test("git().commits.head() returns head tip", async () => {
 
 Deno.test("git().commits.log() rejects empty repo", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.commits.log()), GitError;
+  await assertRejects(() => repo.commits.log(), GitError);
 });
 
 Deno.test("git().commits.log() returns single commit", async () => {
