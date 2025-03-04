@@ -1,7 +1,7 @@
 /**
  * Helpers for concurrency.
  *
- * Currently, the only function provided is {@link pool}.
+ * Currently, the only submodule provided is `pool`.
  *
  * @example
  * ```ts
