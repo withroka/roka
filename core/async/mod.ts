@@ -9,7 +9,8 @@
  * import { assertEquals } from "jsr:@std/assert";
  *
  * const results = await pool(
- *   [Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)],
+ *   [1, 2, 3],
+ *   (x) => Promise.resolve(x),
  *   { concurrency: 2 },
  * );
  * assertEquals(results, [1, 2, 3]);

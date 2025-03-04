@@ -76,7 +76,8 @@ export async function compile(
   if (version) pkg.config.version = version;
   await Deno.writeTextFile(config, JSON.stringify(pkg.config, null, 2));
   const artifacts = await pool(
-    target.map(async (target) => {
+    target,
+    async (target) => {
       const output = join(directory, target, pkg.module);
       const args = [
         "compile",
@@ -114,7 +115,7 @@ export async function compile(
       const bundle = `${build}.${isWindows ? "zip" : "tar.gz"}`;
       await (isWindows ? zip : tar)(build, bundle);
       return bundle;
-    }),
+    },
     { concurrency },
   );
   if (options?.checksum) {

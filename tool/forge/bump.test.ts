@@ -1,3 +1,4 @@
+import { pool } from "@roka/async/pool";
 import { bump } from "@roka/forge/bump";
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { tempRepository } from "@roka/git/testing";
@@ -6,7 +7,6 @@ import { assertExists, assertRejects } from "@std/assert";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 import { assertMatch } from "@std/assert/match";
-import { pooledMap } from "@std/async/pool";
 
 Deno.test("bump() rejects package without version", async () => {
   await using git = await tempRepository();
@@ -110,14 +110,18 @@ Deno.test("bump() updates pull request", async () => {
   const defaultBranch = await git.branches.current();
   assertExists(defaultBranch);
   const pkg = await packageInfo({ directory: git.path() });
-  const [pr1, pr2] = await Array.fromAsync(pooledMap(1, [1, 2], async () => {
-    const pr = await bump([pkg], { repo, pr: true });
-    const branch = await git.branches.current();
-    assertExists(branch);
-    await git.branches.checkout({ target: defaultBranch });
-    await git.branches.delete(branch, { force: true });
-    return pr;
-  }));
+  const [pr1, pr2] = await pool(
+    [1, 2],
+    async () => {
+      const pr = await bump([pkg], { repo, pr: true });
+      const branch = await git.branches.current();
+      assertExists(branch);
+      await git.branches.checkout({ target: defaultBranch });
+      await git.branches.delete(branch, { force: true });
+      return pr;
+    },
+    { concurrency: 1 },
+  );
   assert(pr1?.number === pr2?.number);
 });
 
