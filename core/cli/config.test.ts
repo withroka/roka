@@ -1,14 +1,14 @@
 import { config } from "@roka/cli/config";
 import { assertEquals } from "@std/assert";
 
-Deno.test("Config stores values", async () => {
+Deno.test("config() stores values", async () => {
   type ConfigType = { foo: string; bar: string };
   using cfg = config<ConfigType>({ path: ":memory:" });
   await cfg.set({ foo: "value_foo", bar: "value_bar" });
   assertEquals(await cfg.get(), { foo: "value_foo", bar: "value_bar" });
 });
 
-Deno.test("Config sets values partially", async () => {
+Deno.test("config() sets values partially", async () => {
   type ConfigType = { foo: string; bar: string };
   using cfg = config<ConfigType>({ path: ":memory:" });
   await cfg.set({ foo: "value_foo" });
@@ -17,7 +17,7 @@ Deno.test("Config sets values partially", async () => {
   assertEquals(await cfg.get(), { foo: "value_foo", bar: "value_bar" });
 });
 
-Deno.test("Config isolates multiple configs", async () => {
+Deno.test("config() isolates multiple configs", async () => {
   type ConfigType = { foo: string; bar: string };
   using cfg1 = config<ConfigType>({ path: ":memory:" });
   using cfg2 = config<ConfigType>({ path: ":memory:" });
@@ -27,7 +27,7 @@ Deno.test("Config isolates multiple configs", async () => {
   assertEquals(await cfg2.get(), { bar: "value_bar" });
 });
 
-Deno.test("Config clears values", async () => {
+Deno.test("config() clears values", async () => {
   type ConfigType = { foo: string; bar: string };
   using cfg = config<ConfigType>({ path: ":memory:" });
   await cfg.set({ foo: "value_foo", bar: "value_bar" });
@@ -35,21 +35,21 @@ Deno.test("Config clears values", async () => {
   assertEquals(await cfg.get(), {});
 });
 
-Deno.test("Config stores numbers", async () => {
+Deno.test("config() stores numbers", async () => {
   type ConfigType = { foo: number };
   using cfg = config<ConfigType>({ path: ":memory:" });
   await cfg.set({ foo: 5 });
   assertEquals(await cfg.get(), { foo: 5 });
 });
 
-Deno.test("Config stores booleans", async () => {
+Deno.test("config() stores booleans", async () => {
   type ConfigType = { foo: boolean };
   using cfg = config<ConfigType>({ path: ":memory:" });
   await cfg.set({ foo: true });
   assertEquals(await cfg.get(), { foo: true });
 });
 
-Deno.test("Config stores objects", async () => {
+Deno.test("config() stores objects", async () => {
   type ConfigType = { foo: { bar: { baz: string } } };
   using cfg = config<ConfigType>({ path: ":memory:" });
   await cfg.set({ foo: { bar: { baz: "value" } } });

@@ -1,4 +1,4 @@
-import { request } from "@roka/http/request";
+import { request, RequestError } from "@roka/http/request";
 import { mockFetch } from "@roka/http/testing";
 import { assertEquals, assertRejects } from "@std/assert";
 import { STATUS_CODE } from "@std/http/status";
@@ -11,9 +11,12 @@ Deno.test("request() makes request", async (t) => {
   await assertSnapshot(t, await response.text());
 });
 
-Deno.test("request() throws error on failing response", async (t) => {
+Deno.test("request() rejects failed response", async (t) => {
   using _fetch = mockFetch(t);
-  await assertRejects(() => request("https://example.com/not-found"));
+  await assertRejects(
+    () => request("https://example.com/not-found"),
+    RequestError,
+  );
 });
 
 Deno.test("request() can ignore errors", async (t) => {

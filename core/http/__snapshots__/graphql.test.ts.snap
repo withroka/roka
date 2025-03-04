@@ -1,6 +1,6 @@
 export const snapshot = {};
 
-snapshot[`client().query() 1`] = `
+snapshot[`client().query() makes GraphQL query 1`] = `
 {
   repository: {
     __typename: "Repository",
@@ -18,7 +18,7 @@ snapshot[`client().query() 1`] = `
 }
 `;
 
-snapshot[`client().queryPaginated() 1`] = `
+snapshot[`client().queryPaginated() makes paginated GraphQL query 1`] = `
 [
   {
     __typename: "Issue",
@@ -149,6 +149,12 @@ snapshot[`client().queryPaginated() 1`] = `
   {
     __typename: "Issue",
     number: 49,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 52,
     state: "CLOSED",
     title: "Test issue",
   },
