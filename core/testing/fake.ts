@@ -39,7 +39,7 @@ export interface FakeConsole extends Disposable {
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
  *
- * Deno.test("fakeConsole", async (t) => {
+ * Deno.test("fakeConsole()", async (t) => {
  *  using console = fakeConsole();
  *  console.log("message");
  *  assertEquals(console.calls, [{ level: "log", data: ["message"] }]);

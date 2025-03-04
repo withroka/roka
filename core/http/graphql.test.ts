@@ -22,7 +22,7 @@ interface Issues {
   };
 }
 
-Deno.test("client().query()", async (t) => {
+Deno.test("client().query() makes GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
   const api = client("https://api.github.com/graphql", { token });
   const result: Issues = await api.query(
@@ -43,7 +43,7 @@ Deno.test("client().query()", async (t) => {
   await assertSnapshot(t, result);
 });
 
-Deno.test("client().queryPaginated()", async (t) => {
+Deno.test("client().queryPaginated() makes paginated GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
   const api = client("https://api.github.com/graphql", { token });
   const result = await api.queryPaginated(

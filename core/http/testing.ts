@@ -55,7 +55,7 @@ export interface MockOptionsOld {
  * import { mockFetch } from "@roka/http/testing";
  * import { assertEquals } from "@std/assert";
  *
- * Deno.test("mockFetch", async (t) => {
+ * Deno.test("mockFetch()", async (t) => {
  *   using fetch = mockFetch(t);
  *   const response = await fetch("https://example.com");
  *   assertEquals(response.status, 200);

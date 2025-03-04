@@ -64,7 +64,7 @@ Deno.test("git().clone() can do a shallow copy", async () => {
   assertEquals(await repo.commits.log(), [third]);
 });
 
-Deno.test("git().clone() local is no-op for local remote", async () => {
+Deno.test("git().clone({ local: true }) is no-op for local remote", async () => {
   await using remote = await tempRepository();
   const commit = await remote.commits.create("commit", {
     allowEmpty: true,
@@ -313,7 +313,7 @@ Deno.test("git().branches.create() creates a branch", async () => {
   assertEquals(await repo.branches.list(), ["branch", "main"]);
 });
 
-Deno.test("git().branches.delete() fails on current branch", async () => {
+Deno.test("git().branches.delete() rejects current branch", async () => {
   await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const current = await repo.branches.current();
@@ -375,12 +375,12 @@ Deno.test("git().index.add() adds files", async () => {
   assertEquals(commit?.summary, "commit");
 });
 
-Deno.test("git().index.add() fails to add non-existent file", async () => {
+Deno.test("git().index.add() rejects non-existent file", async () => {
   await using repo = await tempRepository();
   await assertRejects(() => repo.index.add("file"), GitError);
 });
 
-Deno.test("git().index.remove() fails to remove non-existent file", async () => {
+Deno.test("git().index.remove() rejects remove non-existent file", async () => {
   await using repo = await tempRepository();
   await assertRejects(() => repo.index.remove("file"), GitError);
 });
@@ -479,7 +479,7 @@ Deno.test("git().commits.create() can amend a commit", async () => {
   assertEquals(commit?.summary, "new summary");
 });
 
-Deno.test("git().commits.create() disallows empty commit", async () => {
+Deno.test("git().commits.create() rejects empty commit", async () => {
   await using repo = await tempRepository();
   await assertRejects(() => repo.commits.create("commit"), GitError);
 });
@@ -510,7 +510,7 @@ Deno.test("git().commits.create() can set committer", async () => {
   assertEquals(commit?.committer, { name: "name", email: "email@example.com" });
 });
 
-Deno.test("git().commits.create() summary cannot be empty", async () => {
+Deno.test("git().commits.create() reject empty summary", async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () => repo.commits.create("", { allowEmpty: true }),
@@ -527,7 +527,7 @@ Deno.test("git().commits.create() cannot use wrong key", async () => {
   );
 });
 
-Deno.test("git().commits.head() fails on empty repo", async () => {
+Deno.test("git().commits.head() rejects empty repo", async () => {
   await using repo = await tempRepository();
   await assertRejects(() => repo.commits.head(), GitError);
 });
@@ -539,7 +539,7 @@ Deno.test("git().commits.head() returns head tip", async () => {
   assertEquals(await repo.commits.head(), commit);
 });
 
-Deno.test("git().commits.log() fails on empty repo", async () => {
+Deno.test("git().commits.log() rejects empty repo", async () => {
   await using repo = await tempRepository();
   await assertRejects(() => repo.commits.log()), GitError;
 });
@@ -797,7 +797,7 @@ Deno.test("git().commits.push() can push tags", async () => {
   assertEquals(await remote.tags.list(), [tag]);
 });
 
-Deno.test("git().commits.push() fails on unsynced push", async () => {
+Deno.test("git().commits.push() rejects unsynced push", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo1 = await tempRepository({ clone: remote });
   await using repo2 = await tempRepository({ clone: remote });
@@ -1131,7 +1131,7 @@ Deno.test("git().remotes.get() returns remote URL", async () => {
   assertEquals(remote.pushUrl, other.path());
 });
 
-Deno.test("git().remotes.get() fails on unknown remote", async () => {
+Deno.test("git().remotes.get() rejects unknown remote", async () => {
   await using repo = await tempRepository();
   await assertRejects(() => repo.remotes.get("remote"), GitError);
 });

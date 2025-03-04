@@ -1,6 +1,7 @@
 import {
   type Config,
   type Package,
+  PackageError,
   packageInfo,
   workspace,
 } from "@roka/forge/package";
@@ -22,10 +23,10 @@ async function createPackage(
   return await packageInfo({ directory });
 }
 
-Deno.test("getPackage() fails on non-Deno package", async () => {
+Deno.test("getPackage() rejects non-Deno package", async () => {
   await using repo = await tempRepository();
   const directory = repo.path();
-  await assertRejects(() => packageInfo({ directory }));
+  await assertRejects(() => packageInfo({ directory }), PackageError);
 });
 
 Deno.test("packageInfo() returns current package", async () => {
@@ -236,13 +237,13 @@ Deno.test("packageInfo() overrides calculated update", async () => {
   });
 });
 
-Deno.test("packageInfo() returns rejects forced downgrade", async () => {
+Deno.test("packageInfo() rejects forced downgrade", async () => {
   await using repo = await tempRepository();
   const directory = repo.path();
   await createPackage(repo.path(), { name: "@scope/module", version: "1.2.0" });
   await repo.commits.create("initial", { allowEmpty: true });
   await repo.tags.create("module@1.2.4");
-  await assertRejects(() => packageInfo({ directory }));
+  await assertRejects(() => packageInfo({ directory }), PackageError);
 });
 
 Deno.test("packageInfo() returns empty release tag at initial version", async () => {
