@@ -1,7 +1,7 @@
 /**
  * Pooling functions for async iterables.
  *
- * This modules provides the {@linkcode pool} and {@linkcode pooled} functions
+ * This module provides the {@linkcode pool} and {@linkcode pooled} functions
  * which can be used to resolve a collection of promises, limiting the maximum
  * amount of concurrency. The former returns an array of results, while the
  * latter returns an async iterable.
