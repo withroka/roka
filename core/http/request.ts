@@ -4,12 +4,12 @@
  * @module
  */
 
-import { assert } from "@std/assert/assert";
+import { assert } from "@std/assert";
 import { retry, type RetryOptions } from "@std/async/retry";
-import { omit } from "@std/collections/omit";
+import { omit } from "@std/collections";
 import { STATUS_CODE } from "@std/http/status";
 
-export { type RetryOptions } from "@std/async";
+export { type RetryOptions } from "@std/async/retry";
 
 /** Predefined agent strings. */
 export const AGENT = {
