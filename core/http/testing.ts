@@ -55,10 +55,7 @@ export function mockFetch(
   return mock(context, globalThis, "fetch", {
     conversion: {
       input: {
-        async convert(
-          input: RequestInfo | URL,
-          init?: RequestInit,
-        ): Promise<[string, RequestInit]> {
+        async convert(input: RequestInfo | URL, init?: RequestInit) {
           const request = input instanceof Request
             ? input.clone()
             : new Request(input, init);

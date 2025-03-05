@@ -123,7 +123,7 @@ Deno.test("mock() can store modified input", async (t) => {
     },
   };
   using mocked = mock(t, self, "pop", {
-    conversion: { input: { convert: (a): [number[]] => [a.slice()] } },
+    conversion: { input: { convert: (a) => [a.slice()] } },
   });
   assertEquals(await mocked([1, 2, 3]), [1, 2]);
 });

@@ -62,7 +62,7 @@
  *     conversion: {
  *       input: {
  *         // strip sensitive information
- *         convert: (url: string): [string, string] => [url, "******"],
+ *         convert: (url: string) => [url, "******"],
  *       },
  *       output: {
  *         // clone a consumable, and serialize to text
