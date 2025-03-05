@@ -127,7 +127,9 @@ mock[`mock() matches arguments > func 1`] =
 mock[`mock() can convert input > func 1`] =
 [
   {
-    input: "HELLO",
+    input: [
+      "HELLO",
+    ],
     output: "hello",
   },
 ];
@@ -172,7 +174,9 @@ mock[`mock() can store modified input > pop 1`] =
 mock[`mock() can store consumable input > body 1`] =
 [
   {
-    input: "body",
+    input: [
+      "body",
+    ],
     output: "body",
   },
 ];

@@ -141,7 +141,7 @@ export interface MockOptions {
 /** Conversion options for mocks. */
 export interface MockConversion<
   T extends (...args: Parameters<T>) => ReturnType<T>,
-  Input,
+  Input extends unknown[],
   Output,
 > {
   /** Input conversions. */
@@ -237,7 +237,7 @@ export function mock<
       : never
   >,
   Prop extends keyof Self,
-  Input = Parameters<Self[Prop]>,
+  Input extends unknown[] = Parameters<Self[Prop]>,
   Output = Awaited<ReturnType<Self[Prop]>>,
 >(
   context: Deno.TestContext,
@@ -253,7 +253,7 @@ export function mock<
   const conversion = {
     input: {
       convert: options?.conversion?.input?.convert ??
-        ((...args) => args as Input),
+        ((...args: unknown[]) => args as Input),
     },
     output: {
       convert: options?.conversion?.output?.convert ??
@@ -347,7 +347,7 @@ function mockPath(
   }
 }
 
-function serialize(calls: unknown[]): string {
+function serialize(calls: unknown): string {
   return Deno.inspect(calls, {
     compact: false,
     depth: Infinity,
@@ -358,9 +358,12 @@ function serialize(calls: unknown[]): string {
   }).replaceAll("\r", "\\r");
 }
 
-function callText(property: string | symbol | number, input: unknown): string {
+function callText<Input extends unknown[]>(
+  property: string | symbol | number,
+  input: Input,
+): string {
   return `${property.toString()}(${
-    Object.values(input as object).map((v) => serialize(v)).join(", ")
+    Object.values(input).map((v) => serialize(v)).join(", ")
   })`;
 }
 
@@ -480,13 +483,13 @@ class MockContext {
     return `${base} ${index}`;
   }
 
-  replay<Input, Output>(
+  replay<Input extends unknown[], Output>(
     state: MockState<Input, Output>,
     property: string | symbol | number,
     input: Input,
   ): Output {
     const found = state.remaining.find((record) =>
-      serialize([record.input]) === serialize([input])
+      serialize(record.input) === serialize(input)
     );
     if (found === undefined) {
       throw new MockError(
