@@ -113,7 +113,7 @@ export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>>
   restore(): void;
 }
 
-/** Options for mocking functions, like {@linkcode mockFetch}. */
+/** Options for {@linkcode mock}. */
 export interface MockOptions {
   /**
    * Mock output directory.
@@ -305,7 +305,7 @@ export function mock<
         if (state.remaining.length > 0) {
           throw new MockError(
             `Unmatched calls: ${
-              state.remaining.map((c) => `${property.toString()}(${c.input})`)
+              state.remaining.map((c) => callText(property, c.input))
             }`,
           );
         }
@@ -356,6 +356,12 @@ function serialize(calls: unknown[]): string {
     strAbbreviateSize: Infinity,
     trailingComma: true,
   }).replaceAll("\r", "\\r");
+}
+
+function callText(property: string | symbol | number, input: unknown): string {
+  return `${property.toString()}(${
+    Object.values(input as object).map((v) => serialize(v)).join(", ")
+  })`;
 }
 
 interface MockCall<Input, Output> {
@@ -484,7 +490,7 @@ class MockContext {
     );
     if (found === undefined) {
       throw new MockError(
-        `No matching call found: ${property.toString()}(${input})`,
+        `No matching call found: ${callText(property, input)}`,
       );
     }
     const output = found.output;
