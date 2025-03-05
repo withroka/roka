@@ -102,10 +102,11 @@ export function mockFetch(
             ? undefined
             : await response.text();
           const headers = stripHeaders(response.headers);
-          return [body, {
+          const init = {
             ...headers && { headers },
             ...pick(response, ["status", "statusText"]),
-          }];
+          };
+          return [body, init];
         },
         revert(data) {
           return new Response(...data);
