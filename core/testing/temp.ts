@@ -16,7 +16,7 @@
  * @module
  */
 
-import { join } from "@std/path/join";
+import { join } from "@std/path";
 
 /** A temporary directory returned by {@linkcode tempDirectory}. */
 export interface TempDirectory extends AsyncDisposable {

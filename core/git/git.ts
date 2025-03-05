@@ -59,8 +59,7 @@
  */
 
 import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
-import { basename } from "@std/path/basename";
-import { join } from "@std/path/join";
+import { basename, join } from "@std/path";
 
 /** An error while running a git command. */
 export class GitError extends Error {

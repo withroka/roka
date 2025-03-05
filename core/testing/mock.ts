@@ -82,7 +82,7 @@
  * @module
  */
 
-import { assert } from "@std/assert/assert";
+import { assert } from "@std/assert";
 import { dirname, fromFileUrl, parse, resolve, toFileUrl } from "@std/path";
 import {
   type GetParametersFromProp,

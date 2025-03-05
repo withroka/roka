@@ -7,7 +7,7 @@ import {
   assertMatch,
   assertRejects,
 } from "@std/assert";
-import { copy } from "@std/fs/copy";
+import { copy } from "@std/fs";
 import { basename, dirname } from "@std/path";
 
 const IMPORT_MAP = {

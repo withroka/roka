@@ -14,7 +14,7 @@ import {
   PackageError,
   type Permissions,
 } from "@roka/forge/package";
-import { assert } from "@std/assert/assert";
+import { assert } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
 

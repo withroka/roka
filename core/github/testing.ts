@@ -26,7 +26,7 @@ import type {
   ReleaseAsset,
   Repository,
 } from "@roka/github";
-import { basename } from "@std/path/basename";
+import { basename } from "@std/path";
 
 /**
  * Creates a repository with fake data.

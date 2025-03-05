@@ -7,9 +7,9 @@ import {
 } from "@roka/forge/package";
 import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
-import { tempDirectory } from "@roka/testing";
+import { tempDirectory } from "@roka/testing/temp";
 import { assertEquals, assertRejects } from "@std/assert";
-import { join } from "@std/path/join";
+import { join } from "@std/path";
 
 async function createPackage(
   directory: string,

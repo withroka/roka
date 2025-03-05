@@ -1,6 +1,6 @@
 import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
-import { tempDirectory } from "@roka/testing";
+import { tempDirectory } from "@roka/testing/temp";
 import {
   assertEquals,
   assertExists,

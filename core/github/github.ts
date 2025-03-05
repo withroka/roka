@@ -22,7 +22,7 @@
 import type { components } from "@octokit/openapi-types/types";
 import { Octokit } from "@octokit/rest";
 import { type Git, git as gitRepo } from "@roka/git";
-import { assert } from "@std/assert/assert";
+import { assert } from "@std/assert";
 import { basename } from "@std/path";
 
 /** GitHub API client. */
