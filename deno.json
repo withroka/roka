@@ -10,7 +10,7 @@
     "./tool/forge"
   ],
   "tasks": {
-    "forge": "deno run -A tool/forge/cli.ts",
+    "forge": "deno run -A tool/forge/forge.ts",
     "test": "deno test -A --unstable-kv --doc **/*.ts",
     "coverage": "deno task test --coverage && deno coverage --html",
     "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",

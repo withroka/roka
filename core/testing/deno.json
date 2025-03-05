@@ -2,7 +2,7 @@
   "name": "@roka/testing",
   "version": "0.1.0",
   "exports": {
-    ".": "./mod.ts",
+    ".": "./testing.ts",
     "./fake": "./fake.ts",
     "./mock": "./mock.ts",
     "./temp": "./temp.ts"

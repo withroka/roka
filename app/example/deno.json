@@ -1,5 +1,5 @@
 {
   "compile": {
-    "main": "index.ts"
+    "main": "example.ts"
   }
 }
