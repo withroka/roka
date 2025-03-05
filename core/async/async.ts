@@ -18,5 +18,3 @@
  *
  * @module
  */
-
-export * from "./pool.ts";
