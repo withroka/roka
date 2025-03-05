@@ -118,3 +118,13 @@ Deno.test("mockFetch() matches async iterable body", async (t) => {
   }
   await fetch("https://example.com", { method: "POST", body: body() });
 });
+
+Deno.test("mockFetch() can ignore headers", async (t) => {
+  using fetch = mockFetch(t, { ignore: { headers: true } });
+  if (fetch.mode === "update") {
+    await fetch("https://example.com", { headers: { "User-Agent": "v1" } });
+  }
+  if (fetch.mode === "replay") {
+    await fetch("https://example.com", { headers: { "User-Agent": "v2" } });
+  }
+});
