@@ -14,5 +14,3 @@
  *
  * @module
  */
-
-export * from "./request.ts";
