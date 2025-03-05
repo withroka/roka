@@ -21,7 +21,7 @@ Deno.test("github().repos.get() can use local repository", async () => {
 });
 
 Deno.test("github().repos.pulls", async (t) => {
-  using _fetch = mockFetch(t);
+  using _fetch = mockFetch(t, { ignore: { headers: true } });
   const repo = github({ token }).repos.get("withroka", "test");
   let pull: PullRequest;
 
@@ -68,7 +68,7 @@ Deno.test("github().repos.pulls", async (t) => {
 });
 
 Deno.test("github().repos.releases", async (t) => {
-  using _fetch = mockFetch(t);
+  using _fetch = mockFetch(t, { ignore: { headers: true } });
   const repo = github({ token }).repos.get("withroka", "test");
   let release: Release;
 

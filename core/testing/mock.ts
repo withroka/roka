@@ -62,7 +62,7 @@
  *     conversion: {
  *       input: {
  *         // strip sensitive information
- *         convert: (url: string): [string, string] => [url, "******"],
+ *         convert: (url: string) => [url, "******"],
  *       },
  *       output: {
  *         // clone a consumable, and serialize to text
@@ -113,7 +113,7 @@ export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>>
   restore(): void;
 }
 
-/** Options for mocking functions, like {@linkcode mockFetch}. */
+/** Options for {@linkcode mock}. */
 export interface MockOptions {
   /**
    * Mock output directory.
@@ -141,7 +141,7 @@ export interface MockOptions {
 /** Conversion options for mocks. */
 export interface MockConversion<
   T extends (...args: Parameters<T>) => ReturnType<T>,
-  Input,
+  Input extends unknown[],
   Output,
 > {
   /** Input conversions. */
@@ -237,7 +237,7 @@ export function mock<
       : never
   >,
   Prop extends keyof Self,
-  Input = Parameters<Self[Prop]>,
+  Input extends unknown[] = Parameters<Self[Prop]>,
   Output = Awaited<ReturnType<Self[Prop]>>,
 >(
   context: Deno.TestContext,
@@ -253,7 +253,7 @@ export function mock<
   const conversion = {
     input: {
       convert: options?.conversion?.input?.convert ??
-        ((...args) => args as Input),
+        ((...args: unknown[]) => args as Input),
     },
     output: {
       convert: options?.conversion?.output?.convert ??
@@ -305,7 +305,7 @@ export function mock<
         if (state.remaining.length > 0) {
           throw new MockError(
             `Unmatched calls: ${
-              state.remaining.map((c) => `${property.toString()}(${c.input})`)
+              state.remaining.map((c) => callText(property, c.input))
             }`,
           );
         }
@@ -347,7 +347,7 @@ function mockPath(
   }
 }
 
-function serialize(calls: unknown[]): string {
+function serialize(calls: unknown): string {
   return Deno.inspect(calls, {
     compact: false,
     depth: Infinity,
@@ -356,6 +356,15 @@ function serialize(calls: unknown[]): string {
     strAbbreviateSize: Infinity,
     trailingComma: true,
   }).replaceAll("\r", "\\r");
+}
+
+function callText<Input extends unknown[]>(
+  property: string | symbol | number,
+  input: Input,
+): string {
+  return `${property.toString()}(${
+    Object.values(input).map((v) => serialize(v)).join(", ")
+  })`;
 }
 
 interface MockCall<Input, Output> {
@@ -474,17 +483,17 @@ class MockContext {
     return `${base} ${index}`;
   }
 
-  replay<Input, Output>(
+  replay<Input extends unknown[], Output>(
     state: MockState<Input, Output>,
     property: string | symbol | number,
     input: Input,
   ): Output {
     const found = state.remaining.find((record) =>
-      serialize([record.input]) === serialize([input])
+      serialize(record.input) === serialize(input)
     );
     if (found === undefined) {
       throw new MockError(
-        `No matching call found: ${property.toString()}(${input})`,
+        `No matching call found: ${callText(property, input)}`,
       );
     }
     const output = found.output;

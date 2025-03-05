@@ -93,7 +93,7 @@ Deno.test("mock() matches arguments", async (t) => {
 Deno.test("mock() can convert input", async (t) => {
   const self = { func: async (a: string) => await Promise.resolve(a) };
   using mocked = mock(t, self, "func", {
-    conversion: { input: { convert: (a: string) => a.toUpperCase() } },
+    conversion: { input: { convert: (a: string) => [a.toUpperCase()] } },
   });
   if (mocked.mode === "update") assertEquals(await mocked("hello"), "hello");
   if (mocked.mode === "replay") assertEquals(await mocked("HELLO"), "hello");
@@ -123,7 +123,7 @@ Deno.test("mock() can store modified input", async (t) => {
     },
   };
   using mocked = mock(t, self, "pop", {
-    conversion: { input: { convert: (a): [number[]] => [a.slice()] } },
+    conversion: { input: { convert: (a) => [a.slice()] } },
   });
   assertEquals(await mocked([1, 2, 3]), [1, 2]);
 });
@@ -133,7 +133,7 @@ Deno.test("mock() can store consumable input", async (t) => {
   using mocked = mock(t, self, "body", {
     conversion: {
       input: {
-        convert: async (response: Response) => await response.clone().text(),
+        convert: async (response: Response) => [await response.clone().text()],
       },
     },
   });

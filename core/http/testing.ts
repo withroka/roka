@@ -9,37 +9,23 @@
  * @module
  */
 
-import {
-  type Mock,
-  mock,
-  type MockMode,
-  type MockOptions,
-} from "@roka/testing/mock";
+import { type Mock, mock, type MockOptions } from "@roka/testing/mock";
 import { pick } from "@std/collections";
 
-/** Options for mocking functions, like {@linkcode mockFetch}. */
-export interface MockOptionsOld {
-  /**
-   * Mock output directory.
-   * @default {"__mocks__"}
-   */
-  dir?: string;
-  /**
-   * Mock mode. Defaults to `"replay"`, unless the `-u` or `--update` flag
-   * is passed, in which case this will be set to `"update"`. This option
-   * takes higher priority than the update flag.
-   */
-  mode?: MockMode;
-  /** Name of the mock to use in the mock file. */
-  name?: string;
-  /**
-   * Mock output path.
-   *
-   * If both {@linkcode MockOptions.dir} and {@linkcode MockOptions.path} are
-   * specified, the `dir` option will be ignored and the `path` option will be
-   * handled as normal.
-   */
-  path?: string;
+/** Options for {@linkcode mockFetch}. */
+export interface MockFetchOptions extends MockOptions {
+  /** Options for matching calls from the request. */
+  ignore?: {
+    /**
+     * Whether to ignore the request headers when matching `fetch` calls.
+     *
+     * Authentication headers (`Authorization`, `Cookie`, `Set-Cookie`) are
+     * never stored in mock files and matched, regardless of this option.
+     *
+     * @default {false}
+     */
+    headers?: true;
+  };
 }
 
 /**
@@ -64,15 +50,12 @@ export interface MockOptionsOld {
  */
 export function mockFetch(
   context: Deno.TestContext,
-  options?: MockOptions,
+  options?: MockFetchOptions,
 ): Mock<typeof fetch> {
   return mock(context, globalThis, "fetch", {
     conversion: {
       input: {
-        async convert(
-          input: RequestInfo | URL,
-          init?: RequestInit,
-        ): Promise<[string, RequestInit]> {
+        async convert(input: RequestInfo | URL, init?: RequestInit) {
           const request = input instanceof Request
             ? input.clone()
             : new Request(input, init);
@@ -92,10 +75,12 @@ export function mockFetch(
               ),
             );
           }
-          const headers = stripHeaders(request.headers);
+          const headers = options?.ignore?.headers
+            ? undefined
+            : stripHeaders(request.headers);
           return [request.url, {
-            ...headers && { headers },
             ...body && { body },
+            ...headers && { headers },
             ...pick(request, [
               "cache",
               "credentials",
