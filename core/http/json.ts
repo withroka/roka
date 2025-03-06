@@ -1,12 +1,25 @@
 /**
- * JSON over HTTP. Useful for building JSON based API clients.
+ * This module provides the {@linkcode jsonClient} function to make JSON requests
+ * and receive JSON responses. It is useful for building JSON based API clients.
  *
- * @module
+ * ```ts
+ * import { jsonClient } from "@roka/http/json";
+ * async function usage() {
+ *   interface Issue { number: number; state: string; };
+ *   const api = jsonClient("https://api.github.com");
+ *   await api.post<Issue>("/repos/owner/repo/issues", {
+ *     title: "Test issue",
+ *   });
+ *   const issue = await api.get<Issue>("/repos/owner/repo/issues/1");
+ * }
+ * ```
+ *
+ * @module json
  */
 
 import { request } from "@roka/http/request";
 
-/** A JSON client returned by {@linkcode client}. */
+/** A JSON client returned by {@linkcode jsonClient}. */
 export interface JsonClient {
   /** Makes a GET request. */
   get<T>(path: string): Promise<Partial<T>>;
@@ -20,7 +33,7 @@ export interface JsonClient {
   put<T>(path: string, body: object): Promise<Partial<T>>;
 }
 
-/** Options for {@linkcode client}. */
+/** Options for {@linkcode jsonClient}. */
 export interface JsonClientOptions {
   /** The bearer token to be sent with the request headers. */
   token?: string;
@@ -30,8 +43,34 @@ export interface JsonClientOptions {
   referrer?: string;
 }
 
-/** Creates an HTTP client for making JSON-based requests. */
-export function client(
+/**
+ * Creates an HTTP client for making JSON-based requests.
+ *
+ * @example Make a JSON request.
+ * ```ts
+ * import { jsonClient } from "@roka/http/json";
+ * async function usage() {
+ *   interface Issue { number: number; state: string; };
+ *   const api = jsonClient("https://api.github.com");
+ *   const issue = await api.get<Issue>("/repos/owner/repo/issues/1");
+ * }
+ * ```
+ *
+ * @example Make an authenticated JSON request.
+ * ```ts
+ * import { jsonClient } from "@roka/http/json";
+ * async function usage() {
+ *   interface Issue { number: number; state: string; };
+ *   const api = jsonClient("https://api.github.com", {
+ *     token: "TOKEN",
+ *   });
+ *   await api.post<Issue>("/repos/owner/repo/issues", {
+ *     title: "Test issue",
+ *   });
+ * }
+ * ```
+ */
+export function jsonClient(
   url: string,
   options?: JsonClientOptions,
 ): JsonClient {
