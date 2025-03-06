@@ -472,7 +472,7 @@ export interface RemoteOptions {
 }
 
 /**
- * Options commot to {@linkcode Commits.create} and {@linkcode Tags.create} for
+ * Options common to {@linkcode Commits.create} and {@linkcode Tags.create} for
  * GPG signing.
  */
 export interface SignOptions {
