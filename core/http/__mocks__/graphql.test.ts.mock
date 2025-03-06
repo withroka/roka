@@ -1,6 +1,6 @@
 export const mock = {};
 
-mock[`gqlClient().query() makes GraphQL query > fetch 1`] =
+mock[`graphqlClient().query() makes GraphQL query > fetch 1`] =
 [
   {
     input: [
@@ -29,16 +29,16 @@ mock[`gqlClient().query() makes GraphQL query > fetch 1`] =
           "x-content-type-options": "nosniff",
           "x-frame-options": "deny",
           "x-github-media-type": "unknown, github.v4",
-          "x-github-request-id": "E085:2D1105:1D60428:1E7C675:67C9691F",
+          "x-github-request-id": "E604:360DFD:113BE13:11C3CF2:67C974AB",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4751",
-          "x-ratelimit-reset": "1741253863",
+          "x-ratelimit-remaining": "4726",
+          "x-ratelimit-reset": "1741257489",
           "x-ratelimit-resource": "graphql",
-          "x-ratelimit-used": "249",
+          "x-ratelimit-used": "274",
           "x-xss-protection": "0",
-          date: "Thu, 06 Mar 2025 09:21:36 GMT",
+          date: "Thu, 06 Mar 2025 10:10:51 GMT",
           server: "github.com",
           vary: "Accept-Encoding, Accept, X-Requested-With",
         },
@@ -49,7 +49,7 @@ mock[`gqlClient().query() makes GraphQL query > fetch 1`] =
   },
 ];
 
-mock[`gqlClient().queryPaginated() makes paginated GraphQL query > fetch 1`] =
+mock[`graphqlClient().queryPaginated() makes paginated GraphQL query > fetch 1`] =
 [
   {
     input: [
@@ -78,16 +78,16 @@ mock[`gqlClient().queryPaginated() makes paginated GraphQL query > fetch 1`] =
           "x-content-type-options": "nosniff",
           "x-frame-options": "deny",
           "x-github-media-type": "unknown, github.v4",
-          "x-github-request-id": "E086:46439:1DB33EA:1ECF623:67C96920",
+          "x-github-request-id": "E605:183282:216E7E3:229DD0C:67C974AC",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4750",
-          "x-ratelimit-reset": "1741253863",
+          "x-ratelimit-remaining": "4725",
+          "x-ratelimit-reset": "1741257489",
           "x-ratelimit-resource": "graphql",
-          "x-ratelimit-used": "250",
+          "x-ratelimit-used": "275",
           "x-xss-protection": "0",
-          date: "Thu, 06 Mar 2025 09:21:36 GMT",
+          date: "Thu, 06 Mar 2025 10:10:52 GMT",
           server: "github.com",
           vary: "Accept-Encoding, Accept, X-Requested-With",
         },

@@ -1,6 +1,6 @@
 export const snapshot = {};
 
-snapshot[`gqlClient().query() makes GraphQL query 1`] = `
+snapshot[`graphqlClient().query() makes GraphQL query 1`] = `
 {
   repository: {
     __typename: "Repository",
@@ -14,7 +14,7 @@ snapshot[`gqlClient().query() makes GraphQL query 1`] = `
 }
 `;
 
-snapshot[`gqlClient().queryPaginated() makes paginated GraphQL query 1`] = `
+snapshot[`graphqlClient().queryPaginated() makes paginated GraphQL query 1`] = `
 [
   {
     __typename: "Issue",
