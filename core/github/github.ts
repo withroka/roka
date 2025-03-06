@@ -1,8 +1,24 @@
 /**
- * Objects to interact with GitHub.
+ * A library for interactions with GitHub.
  *
- * This module provides, incomplete, opininiated functionality wrapped around
+ * This package provides an incomplete and opinionated interface to the
  * {@link https://docs.github.com/en/rest | GitHub REST API}.
+ *
+ * The main module provides the {@linkcode [github]} function to create a client
+ * for the GitHub API. If a token is provided, the client will be authenticated.
+ *
+ * ```ts
+ * import { github } from "@roka/github";
+ * async function usage() {
+ *   const repo = await github().repos.get();
+ *   const releases = await repo.releases.list();
+ *   const pulls = await repo.pulls.create({ title: "New pull request" });
+ * }
+ * ```
+ *
+ * ## Submodules
+ *
+ *  -  {@link [testing]}: Write tests with fake GitHub API responses.
  *
  * @todo Support pagination.
  * @todo Provide dates.
@@ -25,19 +41,22 @@ import { type Git, git as gitRepo } from "@roka/git";
 import { assert } from "@std/assert";
 import { basename } from "@std/path";
 
-/** GitHub API client. */
+/**
+ * A GitHub API client returned by {@linkcode github}.
+ *
+ * The client will be unauthenticated if a token is not provided.
+ */
 export interface GitHub {
   /** Operations for managing repositories. */
-  repos: {
-    /** Retrieve a repository using local remote URL. */
-    get(options?: RepositoryGetOptions): Promise<Repository>;
-    /** Retrieve a repository using owner and repository name. */
-    get(
-      owner: string,
-      repo: string,
-      options?: RepositoryGetOptions,
-    ): Repository;
-  };
+  repos: Repositories;
+}
+
+/** Repository operations from {@linkcode GitHub.repos}. */
+export interface Repositories {
+  /** Retrieve a repository using local remote URL. */
+  get(options?: RepositoryGetOptions): Promise<Repository>;
+  /** Retrieve a repository using owner and repository name. */
+  get(owner: string, repo: string, options?: RepositoryGetOptions): Repository;
 }
 
 /** A GitHub repository with API operations. */
@@ -51,19 +70,17 @@ export interface Repository {
   /** Local Git repository operations. */
   git: Git;
   /** Operations for manaing pull requests. */
-  pulls: {
-    /** List pull requests. */
-    list(options?: PullRequestListOptions): Promise<PullRequest[]>;
-    /** Create a pull request. */
-    create(options?: PullRequestCreateOptions): Promise<PullRequest>;
-  };
+  pulls: PullRequests;
   /** Operations for managing releases. */
-  releases: {
-    /** List releases. */
-    list(options?: ReleaseListOptions): Promise<Release[]>;
-    /** Create a release. */
-    create(tag: string, options?: ReleaseCreateOptions): Promise<Release>;
-  };
+  releases: Releases;
+}
+
+/** Pull request operations from {@linkcode Repository.pulls}. */
+export interface PullRequests {
+  /** List pull requests. */
+  list(options?: PullRequestListOptions): Promise<PullRequest[]>;
+  /** Create a pull request. */
+  create(options?: PullRequestCreateOptions): Promise<PullRequest>;
 }
 
 /** A GitHub pull request with API operations. */
@@ -92,6 +109,14 @@ export interface PullRequest {
   update(options?: PullRequestUpdateOptions): Promise<PullRequest>;
 }
 
+/** Release operations from {@linkcode Repository.releases}. */
+export interface Releases {
+  /** List releases. */
+  list(options?: ReleaseListOptions): Promise<Release[]>;
+  /** Create a release. */
+  create(tag: string, options?: ReleaseCreateOptions): Promise<Release>;
+}
+
 /** A GitHub release with API operations. */
 export interface Release {
   /** Release repo. */
@@ -117,12 +142,15 @@ export interface Release {
   /** Delete the release. */
   delete(): Promise<void>;
   /** Operations for managing release assets. */
-  assets: {
-    /** List release assets. */
-    list(): Promise<ReleaseAsset[]>;
-    /** Upload an asset to the release. */
-    upload(file: string): Promise<ReleaseAsset>;
-  };
+  assets: ReleaseAssets;
+}
+
+/** Asset operations from {@linkcode Release.assets}. */
+export interface ReleaseAssets {
+  /** List release assets. */
+  list(): Promise<ReleaseAsset[]>;
+  /** Upload an asset to the release. */
+  upload(file: string): Promise<ReleaseAsset>;
 }
 
 /** A GitHub release asset with API operations. */
@@ -143,7 +171,7 @@ export interface ReleaseAsset {
   delete(): Promise<void>;
 }
 
-/** Options for creating a GitHub API client. */
+/** Options for {@linkcode github}. */
 export interface GitHubOptions {
   /**
    * GitHub personal access token.
@@ -153,7 +181,7 @@ export interface GitHubOptions {
   token?: string;
 }
 
-/** Options for retrieving a repository. */
+/** Options for {@linkcode Repositories.get}. */
 export interface RepositoryGetOptions {
   /**
    * Local directory for the repository.
@@ -165,17 +193,17 @@ export interface RepositoryGetOptions {
   directory?: string;
 }
 
-/** Options for listing pull requests. */
+/** Options for {@linkcode PullRequests.list}. */
 export type PullRequestListOptions = Partial<
   Pick<PullRequest, "title" | "head" | "base" | "closed">
 >;
 
-/** Options for creating a pull request. */
+/** Options for {@linkcode PullRequests.create}. */
 export type PullRequestCreateOptions = Partial<
   Pick<PullRequest, "title" | "body" | "base" | "head" | "draft">
 >;
 
-/** Options for updating a pull request. */
+/** Options for {@linkcode PullRequest.update}. */
 export type PullRequestUpdateOptions = Partial<
   Pick<PullRequest, "title" | "body" | "base" | "closed">
 >;
@@ -185,17 +213,55 @@ export type ReleaseListOptions = Partial<
   Pick<Release, "name" | "tag" | "draft">
 >;
 
-/** Options for creating a release. */
+/** Options for {@linkcode Releases.create}. */
 export type ReleaseCreateOptions = Partial<
   Pick<Release, "name" | "body" | "commit" | "draft" | "preRelease">
 >;
 
-/** Options for updating a release. */
+/** Options for {@linkcode Release.update}. */
 export type ReleaseUpdateOptions = Partial<
   Pick<Release, "name" | "body" | "tag" | "commit" | "draft" | "preRelease">
 >;
 
-/** Creates a GitHub API client. */
+/**
+ * Creates a GitHub API client.
+ *
+ * @example Create a GitHub client to work on the current repository.
+ * ```ts
+ * import { github } from "@roka/github";
+ * async function usage() {
+ *   const repo = await github().repos.get();
+ *   const pulls = await repo.pulls.list();
+ * }
+ * ```
+ *
+ * @example Create a GitHub client with a personal access token.
+ * ```ts
+ * import { github } from "@roka/github";
+ * async function usage() {
+ *   const repo = await github({ token: "TOKEN" }).repos.get();
+ *   const pulls = await repo.pulls.list();
+ * }
+ * ```
+ *
+ * @example Create a GitHub client for a specific repository.
+ * ```ts
+ * import { github } from "@roka/github";
+ * async function usage() {
+ *   const repo = github().repos.get("owner", "repo");
+ *   const releases = await repo.releases.list();
+ * }
+ * ```
+ *
+ * @example Create a pull request from the current local branch.
+ * ```ts
+ * import { github } from "@roka/github";
+ * async function usage() {
+ *   const repo = await github().repos.get();
+ *   const pr = await repo.pulls.create({ title: "New PR" });
+ * }
+ * ```
+ */
 export function github(options?: GitHubOptions): GitHub {
   const api = new Octokit({ auth: options?.token });
   return {
