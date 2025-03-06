@@ -1,24 +1,20 @@
 export const snapshot = {};
 
-snapshot[`client().query() makes GraphQL query 1`] = `
+snapshot[`gqlClient().query() makes GraphQL query 1`] = `
 {
   repository: {
     __typename: "Repository",
-    issues: {
-      __typename: "IssueConnection",
-      nodes: [
-        {
-          __typename: "Issue",
-          number: 7,
-          state: "CLOSED",
-        },
-      ],
+    description: "Dummy repository for E2E testing",
+    name: "test",
+    owner: {
+      __typename: "Organization",
+      login: "withroka",
     },
   },
 }
 `;
 
-snapshot[`client().queryPaginated() makes paginated GraphQL query 1`] = `
+snapshot[`gqlClient().queryPaginated() makes paginated GraphQL query 1`] = `
 [
   {
     __typename: "Issue",
@@ -155,6 +151,30 @@ snapshot[`client().queryPaginated() makes paginated GraphQL query 1`] = `
   {
     __typename: "Issue",
     number: 52,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 54,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 55,
+    state: "CLOSED",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 56,
+    state: "OPEN",
+    title: "Test issue",
+  },
+  {
+    __typename: "Issue",
+    number: 57,
     state: "CLOSED",
     title: "Test issue",
   },

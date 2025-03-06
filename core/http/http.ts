@@ -1,16 +1,33 @@
 /**
- * Helpers for making HTTP requests.
+ * A library with helpers for making HTTP requests.
  *
- * The `request` module provides helpers for making HTTP requests. It provides
- * the {@linkcode request} function, which is a wrapper around the Fetch API
+ * This package provides convenience utilities for making HTTP requests, and
+ * testing requests with mocks.
  *
- * The `json` module provides the basics for building JSON based API clients.
- * It provides the {@linkcode client} function, which can make authenticated
- * JSON requests.
+ * The {@linkcode [request].request | request} function is core of the package,
+ * providing a wrapper around the `fetch` API, while handling errors and
+ * retries.
  *
- * The `graphql` module provides the basics for building GraphQL clients. It
- * provides the {@linkcode client} function, which can make authenticated
- * GraphQL requests.
+ * ```ts
+ * import { request } from "@roka/http/request";
+ * async function  usage() {
+ *   const response = await request("https://www.example.com", {
+ *     method: "GET",
+ *     retry: { maxAttempts: 2 },
+ *   });
+ * }
+ * ```
+ *
+ * The {@link [json]} and {@link [graphql]} modules provide higher
+ * level abstractions for making JSON and GraphQL requests respectively.
+ *
+ * ```ts
+ * import { jsonClient } from "@roka/http/json";
+ * async function usage() {
+ *   const api = jsonClient("https://www.example.com");
+ *   const data = await api.get<{ id: number; }>("/api/path");
+ * }
+ * ```
  *
  * @module
  */

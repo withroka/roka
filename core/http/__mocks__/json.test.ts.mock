@@ -1,6 +1,6 @@
 export const mock = {};
 
-mock[`client() can make requests > fetch 1`] =
+mock[`jsonClient() can make requests > fetch 1`] =
 [
   {
     input: [
@@ -16,7 +16,7 @@ mock[`client() can make requests > fetch 1`] =
       },
     ],
     output: [
-      '{"url":"https://api.github.com/repos/withroka/test/issues/52","repository_url":"https://api.github.com/repos/withroka/test","labels_url":"https://api.github.com/repos/withroka/test/issues/52/labels{/name}","comments_url":"https://api.github.com/repos/withroka/test/issues/52/comments","events_url":"https://api.github.com/repos/withroka/test/issues/52/events","html_url":"https://github.com/withroka/test/issues/52","id":2892480717,"node_id":"I_kwDON5PmBc6sZ8DN","number":52,"title":"Test issue","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"labels":[],"state":"open","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":0,"created_at":"2025-03-03T22:39:29Z","updated_at":"2025-03-03T22:39:29Z","closed_at":null,"author_association":"MEMBER","sub_issues_summary":{"total":0,"completed":0,"percent_completed":0},"active_lock_reason":null,"body":null,"closed_by":null,"reactions":{"url":"https://api.github.com/repos/withroka/test/issues/52/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/withroka/test/issues/52/timeline","performed_via_github_app":null,"state_reason":null}',
+      '{"url":"https://api.github.com/repos/withroka/test/issues/57","repository_url":"https://api.github.com/repos/withroka/test","labels_url":"https://api.github.com/repos/withroka/test/issues/57/labels{/name}","comments_url":"https://api.github.com/repos/withroka/test/issues/57/comments","events_url":"https://api.github.com/repos/withroka/test/issues/57/events","html_url":"https://github.com/withroka/test/issues/57","id":2899824921,"node_id":"I_kwDON5PmBc6s19EZ","number":57,"title":"Test issue","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"labels":[],"state":"open","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":0,"created_at":"2025-03-06T09:16:53Z","updated_at":"2025-03-06T09:16:53Z","closed_at":null,"author_association":"MEMBER","sub_issues_summary":{"total":0,"completed":0,"percent_completed":0},"active_lock_reason":null,"body":null,"closed_by":null,"reactions":{"url":"https://api.github.com/repos/withroka/test/issues/57/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/withroka/test/issues/57/timeline","performed_via_github_app":null,"state_reason":null}',
       {
         headers: {
           "access-control-allow-origin": "*",
@@ -32,18 +32,18 @@ mock[`client() can make requests > fetch 1`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3",
-          "x-github-request-id": "EE1F:23D8F3:8AEBC36:900B08F:67C62FA0",
+          "x-github-request-id": "DFDC:106ABB:21E6960:2300E3A:67C96805",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4973",
-          "x-ratelimit-reset": "1741042172",
+          "x-ratelimit-remaining": "4981",
+          "x-ratelimit-reset": "1741254657",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "27",
+          "x-ratelimit-used": "19",
           "x-xss-protection": "0",
-          date: "Mon, 03 Mar 2025 22:39:29 GMT",
-          etag: '"4aea1ab83f1a6c67ebae7edc95fa47c24b7513f57a68ad47925adb70518d3a06"',
-          location: "https://api.github.com/repos/withroka/test/issues/52",
+          date: "Thu, 06 Mar 2025 09:16:53 GMT",
+          etag: '"dc64a150a6688ddbe403946a1e6cc6f4d1b62efa5aabf25170a63c78cd3be67c"',
+          location: "https://api.github.com/repos/withroka/test/issues/57",
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
@@ -54,7 +54,7 @@ mock[`client() can make requests > fetch 1`] =
   },
   {
     input: [
-      "https://api.github.com/repos/withroka/test/issues/52",
+      "https://api.github.com/repos/withroka/test/issues/57",
       {
         headers: {
           accept: "application/json; charset=UTF-8",
@@ -64,7 +64,7 @@ mock[`client() can make requests > fetch 1`] =
       },
     ],
     output: [
-      '{"url":"https://api.github.com/repos/withroka/test/issues/52","repository_url":"https://api.github.com/repos/withroka/test","labels_url":"https://api.github.com/repos/withroka/test/issues/52/labels{/name}","comments_url":"https://api.github.com/repos/withroka/test/issues/52/comments","events_url":"https://api.github.com/repos/withroka/test/issues/52/events","html_url":"https://github.com/withroka/test/issues/52","id":2892480717,"node_id":"I_kwDON5PmBc6sZ8DN","number":52,"title":"Test issue","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"labels":[],"state":"open","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":0,"created_at":"2025-03-03T22:39:29Z","updated_at":"2025-03-03T22:39:29Z","closed_at":null,"author_association":"MEMBER","sub_issues_summary":{"total":0,"completed":0,"percent_completed":0},"active_lock_reason":null,"body":null,"closed_by":null,"reactions":{"url":"https://api.github.com/repos/withroka/test/issues/52/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/withroka/test/issues/52/timeline","performed_via_github_app":null,"state_reason":null}',
+      '{"url":"https://api.github.com/repos/withroka/test/issues/57","repository_url":"https://api.github.com/repos/withroka/test","labels_url":"https://api.github.com/repos/withroka/test/issues/57/labels{/name}","comments_url":"https://api.github.com/repos/withroka/test/issues/57/comments","events_url":"https://api.github.com/repos/withroka/test/issues/57/events","html_url":"https://github.com/withroka/test/issues/57","id":2899824921,"node_id":"I_kwDON5PmBc6s19EZ","number":57,"title":"Test issue","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"labels":[],"state":"open","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":0,"created_at":"2025-03-06T09:16:53Z","updated_at":"2025-03-06T09:16:53Z","closed_at":null,"author_association":"MEMBER","sub_issues_summary":{"total":0,"completed":0,"percent_completed":0},"active_lock_reason":null,"body":null,"closed_by":null,"reactions":{"url":"https://api.github.com/repos/withroka/test/issues/57/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/withroka/test/issues/57/timeline","performed_via_github_app":null,"state_reason":null}',
       {
         headers: {
           "access-control-allow-origin": "*",
@@ -72,7 +72,7 @@ mock[`client() can make requests > fetch 1`] =
           "cache-control": "private, max-age=60, s-maxage=60",
           "content-security-policy": "default-src 'none'",
           "content-type": "application/json; charset=utf-8",
-          "last-modified": "Mon, 03 Mar 2025 22:39:29 GMT",
+          "last-modified": "Thu, 06 Mar 2025 09:16:53 GMT",
           "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
           "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
           "x-accepted-oauth-scopes": "repo",
@@ -80,17 +80,17 @@ mock[`client() can make requests > fetch 1`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3",
-          "x-github-request-id": "EE1F:23D8F3:8AEBD37:900B198:67C62FA1",
+          "x-github-request-id": "DFDC:106ABB:21E6B29:2301025:67C96805",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4972",
-          "x-ratelimit-reset": "1741042172",
+          "x-ratelimit-remaining": "4980",
+          "x-ratelimit-reset": "1741254657",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "28",
+          "x-ratelimit-used": "20",
           "x-xss-protection": "0",
-          date: "Mon, 03 Mar 2025 22:39:29 GMT",
-          etag: 'W/"4aea1ab83f1a6c67ebae7edc95fa47c24b7513f57a68ad47925adb70518d3a06"',
+          date: "Thu, 06 Mar 2025 09:16:53 GMT",
+          etag: 'W/"dc64a150a6688ddbe403946a1e6cc6f4d1b62efa5aabf25170a63c78cd3be67c"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
@@ -101,7 +101,7 @@ mock[`client() can make requests > fetch 1`] =
   },
   {
     input: [
-      "https://api.github.com/repos/withroka/test/issues/52/lock",
+      "https://api.github.com/repos/withroka/test/issues/57/lock",
       {
         body: '{"lock_reason":"resolved"}',
         headers: {
@@ -126,16 +126,16 @@ mock[`client() can make requests > fetch 1`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3",
-          "x-github-request-id": "EE1F:23D8F3:8AEBDD8:900B239:67C62FA1",
+          "x-github-request-id": "DFDC:106ABB:21E6C55:2301140:67C96805",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4971",
-          "x-ratelimit-reset": "1741042172",
+          "x-ratelimit-remaining": "4979",
+          "x-ratelimit-reset": "1741254657",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "29",
+          "x-ratelimit-used": "21",
           "x-xss-protection": "0",
-          date: "Mon, 03 Mar 2025 22:39:30 GMT",
+          date: "Thu, 06 Mar 2025 09:16:54 GMT",
           server: "github.com",
           vary: "Accept-Encoding, Accept, X-Requested-With",
         },
@@ -146,7 +146,7 @@ mock[`client() can make requests > fetch 1`] =
   },
   {
     input: [
-      "https://api.github.com/repos/withroka/test/issues/52/lock",
+      "https://api.github.com/repos/withroka/test/issues/57/lock",
       {
         headers: {
           accept: "application/json; charset=UTF-8",
@@ -169,16 +169,16 @@ mock[`client() can make requests > fetch 1`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3",
-          "x-github-request-id": "EE1F:23D8F3:8AEBED2:900B353:67C62FA2",
+          "x-github-request-id": "DFDC:106ABB:21E6E80:2301379:67C96806",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4970",
-          "x-ratelimit-reset": "1741042172",
+          "x-ratelimit-remaining": "4978",
+          "x-ratelimit-reset": "1741254657",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "30",
+          "x-ratelimit-used": "22",
           "x-xss-protection": "0",
-          date: "Mon, 03 Mar 2025 22:39:30 GMT",
+          date: "Thu, 06 Mar 2025 09:16:54 GMT",
           server: "github.com",
           vary: "Accept-Encoding, Accept, X-Requested-With",
         },
@@ -189,7 +189,7 @@ mock[`client() can make requests > fetch 1`] =
   },
   {
     input: [
-      "https://api.github.com/repos/withroka/test/issues/52",
+      "https://api.github.com/repos/withroka/test/issues/57",
       {
         body: '{"state":"closed"}',
         headers: {
@@ -201,7 +201,7 @@ mock[`client() can make requests > fetch 1`] =
       },
     ],
     output: [
-      '{"url":"https://api.github.com/repos/withroka/test/issues/52","repository_url":"https://api.github.com/repos/withroka/test","labels_url":"https://api.github.com/repos/withroka/test/issues/52/labels{/name}","comments_url":"https://api.github.com/repos/withroka/test/issues/52/comments","events_url":"https://api.github.com/repos/withroka/test/issues/52/events","html_url":"https://github.com/withroka/test/issues/52","id":2892480717,"node_id":"I_kwDON5PmBc6sZ8DN","number":52,"title":"Test issue","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"labels":[],"state":"closed","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":0,"created_at":"2025-03-03T22:39:29Z","updated_at":"2025-03-03T22:39:30Z","closed_at":"2025-03-03T22:39:30Z","author_association":"MEMBER","sub_issues_summary":{"total":0,"completed":0,"percent_completed":0},"active_lock_reason":null,"body":null,"closed_by":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"reactions":{"url":"https://api.github.com/repos/withroka/test/issues/52/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/withroka/test/issues/52/timeline","performed_via_github_app":null,"state_reason":"completed"}',
+      '{"url":"https://api.github.com/repos/withroka/test/issues/57","repository_url":"https://api.github.com/repos/withroka/test","labels_url":"https://api.github.com/repos/withroka/test/issues/57/labels{/name}","comments_url":"https://api.github.com/repos/withroka/test/issues/57/comments","events_url":"https://api.github.com/repos/withroka/test/issues/57/events","html_url":"https://github.com/withroka/test/issues/57","id":2899824921,"node_id":"I_kwDON5PmBc6s19EZ","number":57,"title":"Test issue","user":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"labels":[],"state":"closed","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":0,"created_at":"2025-03-06T09:16:53Z","updated_at":"2025-03-06T09:16:55Z","closed_at":"2025-03-06T09:16:55Z","author_association":"MEMBER","sub_issues_summary":{"total":0,"completed":0,"percent_completed":0},"active_lock_reason":null,"body":null,"closed_by":{"login":"tugrulates","id":5593188,"node_id":"MDQ6VXNlcjU1OTMxODg=","avatar_url":"https://avatars.githubusercontent.com/u/5593188?v=4","gravatar_id":"","url":"https://api.github.com/users/tugrulates","html_url":"https://github.com/tugrulates","followers_url":"https://api.github.com/users/tugrulates/followers","following_url":"https://api.github.com/users/tugrulates/following{/other_user}","gists_url":"https://api.github.com/users/tugrulates/gists{/gist_id}","starred_url":"https://api.github.com/users/tugrulates/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/tugrulates/subscriptions","organizations_url":"https://api.github.com/users/tugrulates/orgs","repos_url":"https://api.github.com/users/tugrulates/repos","events_url":"https://api.github.com/users/tugrulates/events{/privacy}","received_events_url":"https://api.github.com/users/tugrulates/received_events","type":"User","user_view_type":"public","site_admin":false},"reactions":{"url":"https://api.github.com/repos/withroka/test/issues/57/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"timeline_url":"https://api.github.com/repos/withroka/test/issues/57/timeline","performed_via_github_app":null,"state_reason":"completed"}',
       {
         headers: {
           "access-control-allow-origin": "*",
@@ -216,17 +216,17 @@ mock[`client() can make requests > fetch 1`] =
           "x-frame-options": "deny",
           "x-github-api-version-selected": "2022-11-28",
           "x-github-media-type": "github.v3",
-          "x-github-request-id": "EE1F:23D8F3:8AEBFCB:900B448:67C62FA2",
+          "x-github-request-id": "DFDC:106ABB:21E70DB:23015D5:67C96806",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4969",
-          "x-ratelimit-reset": "1741042172",
+          "x-ratelimit-remaining": "4977",
+          "x-ratelimit-reset": "1741254657",
           "x-ratelimit-resource": "core",
-          "x-ratelimit-used": "31",
+          "x-ratelimit-used": "23",
           "x-xss-protection": "0",
-          date: "Mon, 03 Mar 2025 22:39:31 GMT",
-          etag: 'W/"af16238be39bd1184845c30d8b749c5b7fa3da5e6c98ee65bdb29aa1eeadb711"',
+          date: "Thu, 06 Mar 2025 09:16:55 GMT",
+          etag: 'W/"6f559eedc81f94e117f5f74e9aa98ef55a55d1fa0ac6bcb3fe5f2cd5fffb347d"',
           server: "github.com",
           vary: "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
         },
