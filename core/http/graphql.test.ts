@@ -28,7 +28,7 @@ interface Issues {
   };
 }
 
-Deno.test("gqlClient().query() makes GraphQL query", async (t) => {
+Deno.test("graphqlClient().query() makes GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
   const api = graphqlClient("https://api.github.com/graphql", { token });
   const result: Repository = await api.query(
@@ -48,7 +48,7 @@ Deno.test("gqlClient().query() makes GraphQL query", async (t) => {
   await assertSnapshot(t, result);
 });
 
-Deno.test("gqlClient().queryPaginated() makes paginated GraphQL query", async (t) => {
+Deno.test("graphqlClient().queryPaginated() makes paginated GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
   const api = graphqlClient("https://api.github.com/graphql", { token });
   const result = await api.queryPaginated(
