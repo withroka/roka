@@ -183,7 +183,7 @@ export interface Tag {
   tagger?: User;
 }
 
-/** A remote tracked in a git repositoru. */
+/** A remote tracked in a git repository. */
 export interface Remote {
   /** Remote name. */
   name: string;
