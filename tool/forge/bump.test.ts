@@ -2,7 +2,7 @@ import { pool } from "@roka/async/pool";
 import { bump } from "@roka/forge/bump";
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { tempRepository } from "@roka/git/testing";
-import { testRepository } from "@roka/github/testing";
+import { fakeRepository } from "@roka/github/testing";
 import {
   assertEquals,
   assertExists,
@@ -78,7 +78,7 @@ Deno.test("bump() patch updates unreleased package", async () => {
 Deno.test("bump() creates pull request", async () => {
   await using remote = await tempRepository();
   await using git = await tempRepository({ clone: remote });
-  const repo = testRepository({ git });
+  const repo = fakeRepository({ git });
   const config = { name: "@scope/module", version: "0.0.0" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
@@ -104,7 +104,7 @@ Deno.test("bump() creates pull request", async () => {
 Deno.test("bump() updates pull request", async () => {
   await using remote = await tempRepository({ bare: true });
   await using git = await tempRepository({ clone: remote });
-  const repo = testRepository({ git });
+  const repo = fakeRepository({ git });
   const config = { name: "@scope/module", version: "0.0.0" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
@@ -130,7 +130,7 @@ Deno.test("bump() updates pull request", async () => {
 Deno.test("bump() updates multiple packages", async () => {
   await using remote = await tempRepository();
   await using git = await tempRepository({ clone: remote });
-  const repo = testRepository({ git });
+  const repo = fakeRepository({ git });
   const config1 = { name: "@scope/module1", version: "0.0.0" };
   const config2 = { name: "@scope/module2", version: "0.0.0" };
   await Deno.mkdir(git.path("module1"));
