@@ -1,47 +1,31 @@
 /**
- * Objects to interact with a local git repositories.
+ * A library for interactions with local git repositories.
  *
- * This module provides, currently incomplete, functionality to interact with
- * a local git repository. It is intended to be used for simple operations
- * like creating commits, tags, and pushing to remotes.
+ * This package provides incomplete functionality to run git commands on local
+ * repositories. It is intended to be used for simple operations like creating
+ * commits, tags, and pushing to remotes.
  *
- * @example
+ * The main module provides the {@linkcode git} function that exposes git
+ * operations, as well as the {@linkcode Commit}, {@linkcode Tag}, and similar
+ * git objects.
+ *
  * ```ts
  * import { git } from "@roka/git";
- * import { tempDirectory } from "@roka/testing/temp";
- *
- * await using directory = await tempDirectory();
- * const repo = git({
- *   cwd: directory.path(),
- *   config: {
- *     user: { name: "name", email: "email" },
- *     commit: { gpgsign: false },
- *   },
- * });
- * await repo.init();
- * await repo.commits.create("Initial commit", { allowEmpty: true });
+ * async function usage() {
+ *   const repo = git();
+ *   const branch = await repo.branches.current();
+ *   await Deno.writeTextFile(repo.path("file.txt"), "content");
+ *   await repo.index.add("file.txt");
+ *   const commit = await repo.commits.create("Initial commit");
+ *   await repo.tags.create("v1.0.0");
+ * }
  * ```
  *
- * The `@roka/git/testing` module provides utilities to help write tests.
+ * ## Submodules
  *
- * @example
- * ```ts
- * import { tempRepository } from "@roka/git/testing";
- * await using repo = await tempRepository();
- * const commit = await repo.commits.create("Initial commit", { allowEmpty: true });
- * ```
- *
- * The `@roka/git/conventional` module provides utilities to work with
- * {@link https://www.conventionalcommits.org | Conventional Commits}.
- *
- * @example
- * ```ts
- * import { conventional } from "@roka/git/conventional";
- * import { testCommit } from "@roka/git/testing";
- * const conventionalCommit = conventional(testCommit({
- *   summary: "feat(cli): add command"
- * }));
- * ```
+ *  -  {@link [conventional]}: Work with
+ *     {@link https://www.conventionalcommits.org | Conventional Commits}.
+ *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
  * @todo Extend `git().config.set()` with more configurations.
  * @todo Add `git().config.get()`
@@ -61,7 +45,12 @@
 import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
 import { basename, join } from "@std/path";
 
-/** An error while running a git command. */
+/**
+ * An error thrown by the {@link [jsr:@roka/git]} package.
+ *
+ * If the error is from running a git command, the error message will include the
+ * command and its output.
+ */
 export class GitError extends Error {
   /**
    * Construct GitError.
@@ -88,66 +77,81 @@ export interface Git {
     set: (config: Config) => Promise<void>;
   };
   /** Branch operations. */
-  branches: {
-    /** Returns the current branch name. */
-    current: () => Promise<string | undefined>;
-    /** List branches in the repository alphabetically. */
-    list: (options?: BranchListOptions) => Promise<string[]>;
-    /** Switches to a commit, or an existing or new branch. */
-    checkout: (options?: BranchCheckoutOptions) => Promise<void>;
-    /** Creates a branch. */
-    create: (name: string) => Promise<void>;
-    /** Deletes a branch. */
-    delete: (name: string, options?: BranchDeleteOptions) => Promise<void>;
-  };
+  branches: Branches;
   /** Index (staged area) operations. */
-  index: {
-    /** Stages files for commit. */
-    add: (pathspecs: string | string[]) => Promise<void>;
-    /** Removes files from the index. */
-    remove: (pathspecs: string | string[]) => Promise<void>;
-  };
+  index: Index;
   /** Commit operations. */
-  commits: {
-    /** Creates a new commit in the repository. */
-    create: (summary: string, options?: CommitCreateOptions) => Promise<Commit>;
-    /** Returns the commit at the tip of `HEAD`. */
-    head: () => Promise<Commit>;
-    /** Returns the history of commits in the repository. */
-    log: (options?: CommitLogOptions) => Promise<Commit[]>;
-    /** Pushes commits to a remote. */
-    push: (options?: CommitPushOptions) => Promise<void>;
-    /** Pulls commits and tags from a remote. */
-    pull: (options?: CommitPullOptions) => Promise<void>;
-  };
+  commits: Commits;
   /** Tag operations. */
-  tags: {
-    /** Creates a new tag in the repository. */
-    create(name: string, options?: TagCreateOptions): Promise<Tag>;
-    /** Lists all tags in the repository. */
-    list(options?: TagListOptions): Promise<Tag[]>;
-    /** Pushes a tag to a remote. */
-    push: (tag: Tag | string, options?: TagPushOptions) => Promise<void>;
-  };
-  /**
-   * Remote operations.
-   *
-   * Default remote name is `"origin"` for all remote methods.
-   */
-  remotes: {
-    /** Returns the remote repository URL. */
-    get: (name?: string) => Promise<Remote>;
-    /** Adds a remote to the repository. */
-    add: (url: string, name?: string) => Promise<Remote>;
-    /** Queries the default branch on the remote. */
-    defaultBranch: (name?: string) => Promise<string | undefined>;
-  };
+  tags: Tags;
+  /** Remote operations. */
+  remotes: Remotes;
 }
 
-/** A git ref that points to a commit. */
+/** Index operations from {@linkcode Git.index}. */
+export interface Index {
+  /** Stages files for commit. */
+  add: (pathspecs: string | string[]) => Promise<void>;
+  /** Removes files from the index. */
+  remove: (pathspecs: string | string[]) => Promise<void>;
+}
+
+/** Branch operations from {@linkcode Git.branches}. */
+export interface Branches {
+  /** Returns the current branch name. */
+  current: () => Promise<string | undefined>;
+  /** List branches in the repository alphabetically. */
+  list: (options?: BranchListOptions) => Promise<string[]>;
+  /** Switches to a commit, or an existing or new branch. */
+  checkout: (options?: BranchCheckoutOptions) => Promise<void>;
+  /** Creates a branch. */
+  create: (name: string) => Promise<void>;
+  /** Deletes a branch. */
+  delete: (name: string, options?: BranchDeleteOptions) => Promise<void>;
+}
+
+/** Commit operations from {@linkcode Git.commits}. */
+export interface Commits {
+  /** Creates a new commit in the repository. */
+  create: (summary: string, options?: CommitCreateOptions) => Promise<Commit>;
+  /** Returns the commit at the tip of `HEAD`. */
+  head: () => Promise<Commit>;
+  /** Returns the history of commits in the repository. */
+  log: (options?: CommitLogOptions) => Promise<Commit[]>;
+  /** Pushes commits to a remote. */
+  push: (options?: CommitPushOptions) => Promise<void>;
+  /** Pulls commits and tags from a remote. */
+  pull: (options?: CommitPullOptions) => Promise<void>;
+}
+
+/** Tag operations from {@linkcode Git.tags}. */
+export interface Tags {
+  /** Creates a new tag in the repository. */
+  create(name: string, options?: TagCreateOptions): Promise<Tag>;
+  /** Lists all tags in the repository. */
+  list(options?: TagListOptions): Promise<Tag[]>;
+  /** Pushes a tag to a remote. */
+  push: (tag: Tag | string, options?: TagPushOptions) => Promise<void>;
+}
+
+/**
+ * Remote operations from {@linkcode Git.remotes}.
+ *
+ * Default remote name is `"origin"` for all remote methods.
+ */
+export interface Remotes {
+  /** Returns the remote repository URL. */
+  get: (name?: string) => Promise<Remote>;
+  /** Adds a remote to the repository. */
+  add: (url: string, name?: string) => Promise<Remote>;
+  /** Queries the default branch on the remote. */
+  defaultBranch: (name?: string) => Promise<string | undefined>;
+}
+
+/** A ref that points to a commit object in a git repository. */
 export type Commitish = Commit | Tag | string;
 
-/** A single commit in the Git history. */
+/** A single commit in a git repository. */
 export interface Commit {
   /** Full hash of commit. */
   hash: string;
@@ -165,7 +169,7 @@ export interface Commit {
   committer: User;
 }
 
-/** A tag in the Git repository. */
+/** A tag in a git repository. */
 export interface Tag {
   /** Tag name. */
   name: string;
@@ -179,7 +183,7 @@ export interface Tag {
   tagger?: User;
 }
 
-/** A remote repository tracked locally. */
+/** A remote tracked in a git repository. */
 export interface Remote {
   /** Remote name. */
   name: string;
@@ -189,7 +193,7 @@ export interface Remote {
   pushUrl: string;
 }
 
-/** A revision range. */
+/** A revision range over commit history in a git repository. */
 export interface RevisionRange {
   /** Match objects that are descendants of this revision. */
   from?: Commitish;
@@ -206,7 +210,7 @@ export interface RevisionRange {
   symmetric?: boolean;
 }
 
-/** Git configuration options. */
+/** Configuration for a git repository. */
 export interface Config {
   /** Commit configuration. */
   commit?: {
@@ -243,7 +247,7 @@ export interface User {
   email: string;
 }
 
-/** Common options for running git commands. */
+/** Options for {@linkcode git}. */
 export interface GitOptions {
   /**
    * Change working directory for git commands.
@@ -258,7 +262,7 @@ export interface GitOptions {
   config?: Config;
 }
 
-/** Options for initializing repositories. */
+/** Options for {@linkcode Git.init} and {@linkcode Git.clone}. */
 export interface InitOptions {
   /**
    * Create a bare repository.
@@ -268,23 +272,23 @@ export interface InitOptions {
   /**
    * Name of the initial branch.
    *
-   * Creates a new branch with this name for {@linkcode Git.init}, and checks out
-   * this branch for {@linkcode Git.clone}.
+   * Creates a new branch with this name for {@linkcode Git.init}, and checks
+   * out this branch for {@linkcode Git.clone}.
    *
    * Default is `main`, if not overridden with git config.
    */
   branch?: string;
 }
 
-/** Options for cloning repositories. */
+/** Options for {@linkcode Git.clone}. */
 export interface CloneOptions extends InitOptions, RemoteOptions {
   /** Set config for new repository, after initialization but before fetch. */
   config?: Config;
   /**
    * Number of commits to clone at the tip.
    *
-   * Implies {@linkcode CloneOptions.singleBranch} unless it is set to
-   * `false` to fetch from the tip of all branches.
+   * Implies {@linkcode CloneOptions.singleBranch | singleBranch}, unless it is
+   * set to `false` to fetch from the tip of all branches.
    */
   depth?: number;
   /**
@@ -308,19 +312,7 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
   tags?: boolean;
 }
 
-/** Options for listing refs (branches or tags). */
-export interface RefListOptions {
-  /** Ref selection pattern. Default is all relevant refs. */
-  name?: string;
-  /** Only refs that contain the specific commit. */
-  contains?: Commitish;
-  /** Only refs that do not contain the specific commit. */
-  noContains?: Commitish;
-  /** Only refs that point to the given commit. */
-  pointsAt?: Commitish;
-}
-
-/** Options for listing branches. */
+/** Options for {@linkcode Branches.list}. */
 export interface BranchListOptions extends RefListOptions {
   /**
    * Include remote branches.
@@ -330,14 +322,14 @@ export interface BranchListOptions extends RefListOptions {
   /**
    * Only remote branches.
    *
-   * Implies {@linkcode BranchListOptions.all} to be `true`.
+   * Implies {@linkcode BranchListOptions.all | all} to be `true`.
    *
    * @default {false}
    */
   remotes?: boolean;
 }
 
-/** Options for checkout. */
+/** Options for {@linkcode Branches.checkout}. */
 export interface BranchCheckoutOptions {
   /**
    * Checkout at given commit or branch.
@@ -355,7 +347,7 @@ export interface BranchCheckoutOptions {
   detach?: boolean;
 }
 
-/** Options for deleting branches. */
+/** Options for {@linkcode Branches.delete}. */
 export interface BranchDeleteOptions {
   /**
    * Force delete the branch.
@@ -364,7 +356,7 @@ export interface BranchDeleteOptions {
   force?: boolean;
 }
 
-/** Options for creating git commits. */
+/** Options for {@linkcode Commits.create}. */
 export interface CommitCreateOptions extends SignOptions {
   /**
    * Automatically stage modified or deleted files known to git.
@@ -386,7 +378,7 @@ export interface CommitCreateOptions extends SignOptions {
   trailers?: Record<string, string>;
 }
 
-/** Options for fetching git logs. */
+/** Options for {@linkcode Commits.log}. */
 export interface CommitLogOptions {
   /** Only commits by an author. */
   author?: User;
@@ -404,7 +396,7 @@ export interface CommitLogOptions {
   text?: string;
 }
 
-/** Options for pushing to a remote. */
+/** Options for {@linkcode Git.commits.push}. */
 export interface CommitPushOptions extends TransportOptions, RemoteOptions {
   /** Remote branch to push to. Default is the current branch. */
   branch?: string;
@@ -412,14 +404,14 @@ export interface CommitPushOptions extends TransportOptions, RemoteOptions {
   force?: boolean;
 }
 
-/** Options for pulling from a remote. */
+/** Options for {@linkcode Commits.pull}. */
 export interface CommitPullOptions
   extends RemoteOptions, TransportOptions, SignOptions {
   /** Remote branch to pull from. Default is the tracked remote branch. */
   branch?: string;
 }
 
-/** Options for creating tags. */
+/** Options for {@linkcode Tags.create}. */
 export interface TagCreateOptions extends SignOptions {
   /**
    * Commit to tag.
@@ -434,7 +426,7 @@ export interface TagCreateOptions extends SignOptions {
   force?: boolean;
 }
 
-/** Options for listing tags. */
+/** Options for {@linkcode Tags.list}. */
 export interface TagListOptions extends RefListOptions {
   /**
    * Sort option.
@@ -446,13 +438,31 @@ export interface TagListOptions extends RefListOptions {
   sort?: "version";
 }
 
-/** Options for pushing a tag to a remote. */
+/** Options for {@linkcode Tags.push}. */
 export interface TagPushOptions extends RemoteOptions {
   /** Force push to remote. */
   force?: boolean;
 }
 
-/** Options for adding or querying remotes. */
+/**
+ * Options common to {@linkcode Branches.list} and {@linkcode Tags.list} for ref
+ * filtering.
+ */
+export interface RefListOptions {
+  /** Ref selection pattern. Default is all relevant refs. */
+  name?: string;
+  /** Only refs that contain the specific commit. */
+  contains?: Commitish;
+  /** Only refs that do not contain the specific commit. */
+  noContains?: Commitish;
+  /** Only refs that point to the given commit. */
+  pointsAt?: Commitish;
+}
+
+/**
+ * Options common to operations that work with remotes (e.g.
+ * {@linkcode Commits.push}).
+ */
 export interface RemoteOptions {
   /**
    * Remote name.
@@ -461,7 +471,10 @@ export interface RemoteOptions {
   remote?: string;
 }
 
-/** Options for signing commits and tags. */
+/**
+ * Options common to {@linkcode Commits.create} and {@linkcode Tags.create} for
+ * GPG signing.
+ */
 export interface SignOptions {
   /**
    * Sign the commit with GPG.
@@ -473,7 +486,10 @@ export interface SignOptions {
   sign?: boolean | string;
 }
 
-/** Options for pulling from or pushing to a remote. */
+/**
+ * Options common to {@linkcode Commits.push} and {@linkcode Commits.pull} for
+ * controlling what is updated in repositories.
+ */
 export interface TransportOptions {
   /** Either update all refs on the other side, or don't update any.*/
   atomic?: boolean;
@@ -490,27 +506,34 @@ export interface TransportOptions {
 }
 
 /**
- * Creates a new Git instance for a local repository.
+ * Creates a new {@linkcode Git} instance for a local repository for running
+ * git operations.
  *
- * @example
+ * @example Retrieve the last commit in a repository.
+ * ```ts
+ * import { git } from "@roka/git";
+ * const commit = await git().commits.head();
+ * ```
+ *
+ * @example List all tags in a repository.
+ * ```ts
+ * import { git } from "@roka/git";
+ * const tags = await git().tags.list();
+ * ```
+ *
+ * @example Create a new git repository and add a file.
  * ```ts
  * import { git } from "@roka/git";
  * import { tempDirectory } from "@roka/testing/temp";
  * import { assertEquals } from "@std/assert";
- *
  * await using directory = await tempDirectory();
  * const repo = git({ cwd: directory.path() });
  * await repo.init();
  * await repo.config.set({ user: { name: "name", email: "email" } });
- *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * const commit = await repo.commits.create("Initial commit", { sign: false });
- * assertEquals(await repo.commits.head(), commit);
  * assertEquals(await repo.commits.log(), [commit]);
- *
- * const tag = await repo.tags.create("release", { sign: false });
- * assertEquals(await repo.tags.list(), [tag]);
  * ```
  */
 export function git(options?: GitOptions): Git {
