@@ -1,22 +1,18 @@
 /**
- * Objects to write tests for GitHub.
- *
  * This module provides utilities to create fake GitHub objects for testing.
  *
- * @example
  * ```ts
- * import { testRepository, testPullRequest, testRelease } from "@roka/github/testing";
- * import { assertEquals } from "@std/assert";
- *
- * const repo = testRepository();
- * const pull = testPullRequest({ repo, title: "title" });
- * const release = testRelease({ repo, tag: "tag" });
- *
- * assertEquals(pull.repo, repo);
- * assertEquals(release.repo, repo);
+ * import {
+ *   fakeRepository,
+ *   fakePullRequest,
+ *   fakeRelease,
+ * } from "@roka/github/testing";
+ * const repo = fakeRepository();
+ * const pull = fakePullRequest({ repo, title: "title" });
+ * const release = fakeRelease({ repo, tag: "tag" });
  * ```
  *
- * @module
+ * @module testing
  */
 
 import { git } from "@roka/git";
@@ -29,27 +25,25 @@ import type {
 import { basename } from "@std/path";
 
 /**
- * Creates a repository with fake data.
+ * Creates a repository with fake data and operations.
  *
  * The created repository keeps track of its pull requests and releases.
  *
- * @example
+ * @example Create a repository with a pull request and a release.
  * ```ts
- * import { testRepository } from "@roka/github/testing";
+ * import { fakeRepository } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
  *
- * const repo = testRepository();
- *
+ * const repo = fakeRepository();
  * const pull = await repo.pulls.create({ title: "title" });
  * assertEquals(await repo.pulls.list(), [pull]);
- *
  * const release = await repo.releases.create("tag");
  * assertEquals(await repo.releases.list(), [release]);
  * await release.delete();
  * assertEquals(await repo.releases.list(), []);
  * ```
  */
-export function testRepository(data?: Partial<Repository>): Repository {
+export function fakeRepository(data?: Partial<Repository>): Repository {
   let nextPull = 1;
   let nextRelease = 1;
   const pulls: PullRequest[] = [];
@@ -62,7 +56,7 @@ export function testRepository(data?: Partial<Repository>): Repository {
     pulls: {
       list: () => Promise.resolve(pulls),
       create: (options) => {
-        const pull = testPullRequest({
+        const pull = fakePullRequest({
           repo,
           number: nextPull++,
           ...options,
@@ -74,7 +68,7 @@ export function testRepository(data?: Partial<Repository>): Repository {
     releases: {
       list: () => Promise.resolve(releases),
       create: (tag, options) => {
-        const release = testRelease({
+        const release = fakeRelease({
           repo,
           tag,
           id: nextRelease++,
@@ -94,24 +88,23 @@ export function testRepository(data?: Partial<Repository>): Repository {
 }
 
 /**
- * Creates a pull request with fake data.
+ * Creates a pull request with fake data and operations.
  *
- * @example
+ * @example Create a pull request with a title.
  * ```ts
- * import { testPullRequest } from "@roka/github/testing";
+ * import { fakePullRequest } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
  *
- * const pull = testPullRequest({ title: "title" });
+ * const pull = fakePullRequest({ title: "title" });
  * assertEquals(pull.title, "title");
- *
  * await pull.update({ title: "new title" });
  * assertEquals(pull.title, "new title");
  * ```
  */
 
-export function testPullRequest(data?: Partial<PullRequest>): PullRequest {
+export function fakePullRequest(data?: Partial<PullRequest>): PullRequest {
   const pull: PullRequest = {
-    repo: testRepository(),
+    repo: fakeRepository(),
     url: "url",
     number: 1,
     title: "title",
@@ -131,30 +124,28 @@ export function testPullRequest(data?: Partial<PullRequest>): PullRequest {
 }
 
 /**
- * Creates a release with fake data.
+ * Creates a release with fake data and operations.
  *
- * @example
+ * @example Create a release with a tag.
  * ```ts
- * import { testRelease } from "@roka/github/testing";
+ * import { fakeRelease } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
  *
- * const release = testRelease({ tag: "tag" });
+ * const release = fakeRelease({ tag: "tag" });
  * assertEquals(release.tag, "tag");
- *
  * await release.update({ tag: "new tag" });
  * assertEquals(release.tag, "new tag");
- *
  * const asset = await release.assets.upload("file.txt");
  * assertEquals(await release.assets.list(), [asset]);
  * await asset.delete();
  * assertEquals(await release.assets.list(), []);
  * ```
  */
-export function testRelease(data?: Partial<Release>): Release {
+export function fakeRelease(data?: Partial<Release>): Release {
   let nextAsset = 1;
   const assets: ReleaseAsset[] = [];
   const release: Release = {
-    repo: testRepository(),
+    repo: fakeRepository(),
     url: "url",
     id: 1,
     name: "name",
@@ -171,7 +162,7 @@ export function testRelease(data?: Partial<Release>): Release {
     assets: {
       list: () => Promise.resolve(assets),
       upload: (file) => {
-        const asset = testReleaseAsset({
+        const asset = fakeReleaseAsset({
           release,
           name: basename(file),
           id: nextAsset++,
@@ -190,20 +181,20 @@ export function testRelease(data?: Partial<Release>): Release {
 }
 
 /**
- * Creates a release asset with fake data.
+ * Creates a release asset with fake data and operations.
  *
- * @example
+ * @example Create a release asset with a name.
  * ```ts
- * import { testReleaseAsset } from "@roka/github/testing";
+ * import { fakeReleaseAsset } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
  *
- * const asset = testReleaseAsset({ name: "name" });
+ * const asset = fakeReleaseAsset({ name: "name" });
  * assertEquals(asset.name, "name");
  * ```
  */
-export function testReleaseAsset(data?: Partial<ReleaseAsset>): ReleaseAsset {
+export function fakeReleaseAsset(data?: Partial<ReleaseAsset>): ReleaseAsset {
   return {
-    release: testRelease(),
+    release: fakeRelease(),
     url: "url",
     id: 2,
     name: "name",

@@ -1,7 +1,7 @@
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
 import { tempRepository } from "@roka/git/testing";
-import { testRepository } from "@roka/github/testing";
+import { fakeRepository } from "@roka/github/testing";
 import { assertEquals, assertMatch, assertRejects } from "@std/assert";
 
 Deno.test("release() rejects package without version", async () => {
@@ -14,7 +14,7 @@ Deno.test("release() rejects package without version", async () => {
 
 Deno.test("release() creates initial release", async () => {
   await using git = await tempRepository();
-  const repo = testRepository({ git });
+  const repo = fakeRepository({ git });
   const config = { name: "@scope/module", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
@@ -31,7 +31,7 @@ Deno.test("release() creates initial release", async () => {
 
 Deno.test("release() creates bump release", async () => {
   await using git = await tempRepository();
-  const repo = testRepository({ git });
+  const repo = fakeRepository({ git });
   const config = { name: "@scope/module", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
@@ -50,7 +50,7 @@ Deno.test("release() creates bump release", async () => {
 
 Deno.test("release() creates draft release", async () => {
   await using git = await tempRepository();
-  const repo = testRepository({ git });
+  const repo = fakeRepository({ git });
   const config = { name: "@scope/module", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
@@ -62,7 +62,7 @@ Deno.test("release() creates draft release", async () => {
 
 Deno.test("release() updates existing release", async () => {
   await using git = await tempRepository();
-  const repo = testRepository({ git });
+  const repo = fakeRepository({ git });
   const config = { name: "@scope/module", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");

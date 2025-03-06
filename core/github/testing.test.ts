@@ -1,20 +1,20 @@
 import { assertEquals, assertExists, assertNotEquals } from "@std/assert";
 import {
-  testPullRequest,
-  testRelease,
-  testReleaseAsset,
-  testRepository,
+  fakePullRequest,
+  fakeRelease,
+  fakeReleaseAsset,
+  fakeRepository,
 } from "./testing.ts";
 
-Deno.test("testRepository() creates a repository with default data", () => {
-  const repo = testRepository();
+Deno.test("fakeRepository() creates a repository with default data", () => {
+  const repo = fakeRepository();
   assertExists(repo.url);
   assertExists(repo.owner);
   assertExists(repo.repo);
 });
 
-Deno.test("testRepository() creates a repository with custom data", () => {
-  const repo = testRepository({
+Deno.test("fakeRepository() creates a repository with custom data", () => {
+  const repo = fakeRepository({
     url: "custom-url",
     owner: "custom-owner",
     repo: "custom-repo",
@@ -24,8 +24,8 @@ Deno.test("testRepository() creates a repository with custom data", () => {
   assertEquals(repo.repo, "custom-repo");
 });
 
-Deno.test("testRepository() manages pull requests", async () => {
-  const repo = testRepository();
+Deno.test("fakeRepository() manages pull requests", async () => {
+  const repo = fakeRepository();
   assertEquals(await repo.pulls.list(), []);
   const pull = await repo.pulls.create({ title: "test pull" });
   assertEquals(pull.title, "test pull");
@@ -36,8 +36,8 @@ Deno.test("testRepository() manages pull requests", async () => {
   assertEquals(await repo.pulls.list(), [pull, another]);
 });
 
-Deno.test("testRepository() manages releases", async () => {
-  const repo = testRepository();
+Deno.test("fakeRepository() manages releases", async () => {
+  const repo = fakeRepository();
   assertEquals(await repo.releases.list(), []);
   const release = await repo.releases.create("1.0.0");
   assertEquals(release.tag, "1.0.0");
@@ -52,8 +52,8 @@ Deno.test("testRepository() manages releases", async () => {
   assertEquals(await repo.releases.list(), []);
 });
 
-Deno.test("testPullRequest() creates a pull request with default data", () => {
-  const pull = testPullRequest();
+Deno.test("fakePullRequest() creates a pull request with default data", () => {
+  const pull = fakePullRequest();
   assertExists(pull.repo);
   assertExists(pull.url);
   assertExists(pull.number);
@@ -63,9 +63,9 @@ Deno.test("testPullRequest() creates a pull request with default data", () => {
   assertExists(pull.base);
 });
 
-Deno.test("testPullRequest() creates a pull request with custom data", () => {
-  const repo = testRepository();
-  const pull = testPullRequest({
+Deno.test("fakePullRequest() creates a pull request with custom data", () => {
+  const repo = fakeRepository();
+  const pull = fakePullRequest({
     repo,
     url: "custom-url",
     number: 42,
@@ -89,8 +89,8 @@ Deno.test("testPullRequest() creates a pull request with custom data", () => {
   assertEquals(pull.locked, true);
 });
 
-Deno.test("testPullRequest() can update data", async () => {
-  const pull = testPullRequest({ title: "title", body: "body", closed: false });
+Deno.test("fakePullRequest() can update data", async () => {
+  const pull = fakePullRequest({ title: "title", body: "body", closed: false });
   assertEquals(pull.title, "title");
   assertEquals(pull.body, "body");
   assertEquals(pull.closed, false);
@@ -100,8 +100,8 @@ Deno.test("testPullRequest() can update data", async () => {
   assertEquals(pull.closed, true);
 });
 
-Deno.test("testRelease() creates a release with default data", () => {
-  const release = testRelease();
+Deno.test("fakeRelease() creates a release with default data", () => {
+  const release = fakeRelease();
   assertExists(release.repo);
   assertExists(release.url);
   assertExists(release.id);
@@ -111,9 +111,9 @@ Deno.test("testRelease() creates a release with default data", () => {
   assertExists(release.body);
 });
 
-Deno.test("testRelease() creates a release with custom data", () => {
-  const repo = testRepository();
-  const release = testRelease({
+Deno.test("fakeRelease() creates a release with custom data", () => {
+  const repo = fakeRepository();
+  const release = fakeRelease({
     repo,
     url: "custom-url",
     id: 42,
@@ -135,8 +135,8 @@ Deno.test("testRelease() creates a release with custom data", () => {
   assertEquals(release.preRelease, true);
 });
 
-Deno.test("testRelease() can update data", async () => {
-  const release = testRelease({ tag: "tag", name: "name", draft: true });
+Deno.test("fakeRelease() can update data", async () => {
+  const release = fakeRelease({ tag: "tag", name: "name", draft: true });
   assertEquals(release.tag, "tag");
   assertEquals(release.name, "name");
   assertEquals(release.draft, true);
@@ -146,8 +146,8 @@ Deno.test("testRelease() can update data", async () => {
   assertEquals(release.draft, false);
 });
 
-Deno.test("testRelease() manages assets", async () => {
-  const release = testRelease();
+Deno.test("fakeRelease() manages assets", async () => {
+  const release = fakeRelease();
   assertEquals(await release.assets.list(), []);
   const asset = await release.assets.upload("file.txt");
   assertEquals(asset.name, "file.txt");
@@ -162,8 +162,8 @@ Deno.test("testRelease() manages assets", async () => {
   assertEquals(await release.assets.list(), []);
 });
 
-Deno.test("testReleaseAsset() creates asset with default values", () => {
-  const asset = testReleaseAsset();
+Deno.test("fakeReleaseAsset() creates asset with default values", () => {
+  const asset = fakeReleaseAsset();
   assertExists(asset.release);
   assertExists(asset.url);
   assertExists(asset.id);
@@ -172,9 +172,9 @@ Deno.test("testReleaseAsset() creates asset with default values", () => {
   assertExists(asset.downloadCount);
 });
 
-Deno.test("testReleaseAsset() creates asset with custom values", () => {
-  const release = testRelease({ tag: "custom-tag" });
-  const asset = testReleaseAsset({
+Deno.test("fakeReleaseAsset() creates asset with custom values", () => {
+  const release = fakeRelease({ tag: "custom-tag" });
+  const asset = fakeReleaseAsset({
     release,
     url: "custom-url",
     id: 42,
