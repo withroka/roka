@@ -58,7 +58,7 @@ export async function bump(
   const { repo = await github(options).repos.get({ directory }), user } =
     options ?? {};
   const title = packages.length === 1
-    ? `chore: bump ${packages[0]?.module} version`
+    ? `chore: bump ${packages[0]?.name} version`
     : "chore: bump versions";
   const body = prBody(packages);
   await repo.git.branches.checkout({ new: BUMP_BRANCH });
@@ -97,7 +97,7 @@ async function updateVersion(pkg: Package): Promise<Package> {
 
 function prBody(packages: Package[]): string {
   return packages.map((pkg) => [
-    `## ${pkg.module}@${pkg.version} [${pkg.update?.type}]`,
+    `## ${pkg.name}@${pkg.version} [${pkg.update?.type}]`,
     changelog(pkg),
   ]).flat().join("\n\n");
 }

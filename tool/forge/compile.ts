@@ -64,8 +64,8 @@ export async function compile(
   assert(main, "Compile entrypoint is required");
   const version = options?.release ? pkg.config?.version : pkg.version;
   const directory = version
-    ? join(dist, pkg.module, version)
-    : join(dist, pkg.module);
+    ? join(dist, pkg.name, version)
+    : join(dist, pkg.name);
   try {
     await Deno.remove(directory, { recursive: true });
   } catch (e: unknown) {
@@ -78,7 +78,7 @@ export async function compile(
   const artifacts = await pool(
     target,
     async (target) => {
-      const output = join(directory, target, pkg.module);
+      const output = join(directory, target, pkg.name);
       const args = [
         "compile",
         `--target=${target}`,

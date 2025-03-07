@@ -52,10 +52,16 @@ export class PackageError extends Error {
 
 /** Core package information. */
 export interface Package {
+  /**
+   * Package name.
+   *
+   * If the package has a name in the configuration, this will be based on that
+   * but without the package scope. Otherwise, it will be the name of the
+   * package directory.
+   */
+  name: string;
   /** Package directory. */
   directory: string;
-  /** Package module name. */
-  module: string;
   /** Package config from `deno.json`. */
   config: Config;
   /** Calculated package version, might be different than config version. */
@@ -166,8 +172,8 @@ export interface WorkspaceOptions {
   /**
    * Filter package by name or directory.
    *
-   * Each filter is a glob pattern that matches the module name or the directory
-   * of the package relative to root. For example, either `"forge"` or the
+   * Each filter is a glob pattern that matches the name or the directory of
+   * the package relative to root. For example, either `"forge"` or the
    * `"tool/forge"` filters would match a package named `@roka/forge` in the
    * `tool/forge` directory.
    *
@@ -187,7 +193,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   const config = await readConfig(directory);
   const pkg: Package = {
     directory,
-    module: basename(config.name ?? directory),
+    name: basename(config.name ?? directory),
     config: config,
   };
   if (pkg.config.version === undefined) return pkg;
@@ -231,7 +237,7 @@ export async function workspace(
     .filter((pkg) =>
       patterns.length === 0 ||
       patterns.some((p) =>
-        pkg.module.match(p) ||
+        pkg.name.match(p) ||
         relative(directory, pkg.directory).match(p)
       )
     );
@@ -251,7 +257,7 @@ async function readConfig(directory: string): Promise<Config> {
 
 async function findRelease(pkg: Package): Promise<Release | undefined> {
   const repo = git({ cwd: pkg.directory });
-  const name = `${pkg.module}@*`;
+  const name = `${pkg.name}@*`;
   const sort = "version";
   const [tag] = [
     ...await repo.tags.list({ name, sort, pointsAt: "HEAD" }),
@@ -275,7 +281,7 @@ async function calculateUpdate(pkg: Package): Promise<Update | undefined> {
       : { paths: ["."] },
   });
   const changelog = log.map((c) => conventional(c)).filter((c) =>
-    c.scopes.includes(pkg.module) || c.scopes.includes("*")
+    c.scopes.includes(pkg.name) || c.scopes.includes("*")
   );
   if (pkg.release?.version !== pkg.config.version) {
     return { ...forcedUpdate(pkg), changelog };
