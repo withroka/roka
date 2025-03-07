@@ -1,19 +1,32 @@
 /**
- * Package management.
+ * This module provides functions and types to work with packages.
  *
- * Provides functions to work with packages, through the main function
- * {@linkcode packageInfo}, which returns information about a package.
+ * The {@linkcode packageInfo} function returns information for a single
+ * package.
  *
- * - Package directory and name
- * - Package config from `deno.json`
- * - Latest package release from git tags
- * - Updates since the last release
- * - Calculated package version from conventional commits since last release
+ * ```ts
+ * import { packageInfo } from "@roka/forge/package";
+ * const pkg = await packageInfo({ directory: "tool/forge" });
+ * ```
+ *
+ * The returned {@linkcode Package} object holds the following information:
+ *
+ *  - Package name and directory.
+ *  - Package configuration (`deno.json`).
+ *  - The latest package release from git tags.
+ *  - Updates using
+ *    {@link https://www.conventionalcommits.org | Conventional Commits} since
+ *    the last release.
+ *  - Calculated {@link https://semver.org | semantic version}.
  *
  * For monorepos, the {@linkcode workspace} function can be used to fetch all
  * packages in the workspace.
  *
- * @module
+ * ```ts
+ * const packages = await workspace();
+ * ```
+ *
+ * @module package
  */
 
 import { git, GitError, type Tag } from "@roka/git";
@@ -36,7 +49,7 @@ import {
   parse as parseVersion,
 } from "@std/semver";
 
-/** An error while working with packages. */
+/** An error thrown by the {@link [jsr:@roka/forge]} module. */
 export class PackageError extends Error {
   /**
    * Construct PackageError.
@@ -50,7 +63,10 @@ export class PackageError extends Error {
   }
 }
 
-/** Core package information. */
+/**
+ * A package in the repository returned by the {@linkcode packageInfo} or
+ * {@linkcode workspace} functions.
+ */
 export interface Package {
   /**
    * Package name.
@@ -64,7 +80,10 @@ export interface Package {
   directory: string;
   /** Package config from `deno.json`. */
   config: Config;
-  /** Calculated package version, might be different than config version. */
+  /**
+   * Calculated package version, which might be different from the config
+   * version.
+   */
   version?: string;
   /** Latest release of this package. */
   release?: Release;
@@ -72,7 +91,10 @@ export interface Package {
   update?: Update;
 }
 
-/** Package release information. */
+/**
+ * Release information for a package returned by the {@linkcode packageInfo} or
+ * {@linkcode workspace} functions.
+ */
 export interface Release {
   /**
    * Release version.
@@ -87,7 +109,10 @@ export interface Release {
 /** Semantic version update type. */
 export type UpdateType = "major" | "minor" | "patch";
 
-/** Package update information. */
+/**
+ * Update information for a package returned by the
+ * {@linkcode packageInfo} or {@linkcode workspace} functions.
+ */
 export interface Update {
   /** Type of the update. */
   type?: UpdateType;
@@ -97,7 +122,10 @@ export interface Update {
   changelog: ConventionalCommit[];
 }
 
-/** Package configuration from `deno.json`. */
+/**
+ * Configuration for a package from `deno.json` returned by the
+ * {@linkcode packageInfo} or {@linkcode workspace} functions.
+ */
 export interface Config {
   /** Package name. */
   name?: string;
@@ -111,7 +139,10 @@ export interface Config {
   compile?: CompileConfig;
 }
 
-/** Configuration for compiling the package. */
+/**
+ * Configuration for compiling the package with the {@linkcode compile}
+ * function.
+ */
 export interface CompileConfig {
   /** Entry module for the package. */
   main?: string;
@@ -123,7 +154,10 @@ export interface CompileConfig {
   permissions?: Permissions;
 }
 
-/** Allowed Deno runtime permissions for compiled binary. */
+/**
+ * Runtime permissions for a binary created with the {@linkcode compile}
+ * function.
+ */
 export interface Permissions {
   /** Read file system permissions. */
   read?: PermissionDescriptor<Deno.ReadPermissionDescriptor["path"]>;
@@ -152,7 +186,7 @@ export type PermissionDescriptor<T> =
   | NonNullable<T>
   | NonNullable<T[]>;
 
-/** Options for {@linkcode packageInfo}. */
+/** Options for the {@linkcode packageInfo} function. */
 export interface PackageOptions {
   /**
    * Directory to return package from.
@@ -162,7 +196,7 @@ export interface PackageOptions {
   directory?: string;
 }
 
-/** Options for {@linkcode workspace}. */
+/** Options for the {@linkcode workspace} function. */
 export interface WorkspaceOptions {
   /**
    * Directory to return packages from.
@@ -170,7 +204,7 @@ export interface WorkspaceOptions {
    */
   directory?: string;
   /**
-   * Filter package by name or directory.
+   * Filter packages by name or directory.
    *
    * Each filter is a glob pattern that matches the name or the directory of
    * the package relative to root. For example, either `"forge"` or the
@@ -185,7 +219,12 @@ export interface WorkspaceOptions {
   filters?: string[];
 }
 
-/** Returns information about a package. */
+/**
+ * Returns information about a package.
+ *
+ * @throws {PackageError} If the package configuration was malformed, release
+ *                        versions could not be parsed from git tags.
+ */
 export async function packageInfo(options?: PackageOptions): Promise<Package> {
   const directory = normalize(
     options?.directory ?? dirname(fromFileUrl(Deno.mainModule)),

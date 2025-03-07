@@ -1,16 +1,39 @@
 /**
- * Package changelogs.
+ * This module provides the {@linkcode changelog} function to generate a
+ * formatted changelog from package update information using
+ * {@link https://www.conventionalcommits.org | Conventional Commits}.
  *
- * Provides the {@linkcode changelog} function to generate formatted changelogs
- * from package update information using conventional commits. Supports both
- * plain text and markdown formats for displaying version changes.
+ * ```ts
+ * import { changelog } from "@roka/forge/changelog";
+ * import { packageInfo } from "@roka/forge/package";
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   console.log(await changelog(pkg));
+ * }
+ * ```
  *
- * @module
+ * @module changelog
  */
 
 import type { Package } from "@roka/forge/package";
 
-/** Returns the changelog summary for a package since its last release. */
+/**
+ *  Returns the changelog summary for a package since its last release.
+ *
+ * @example Generate a changelog for a package.
+ * ```ts
+ * import { changelog } from "@roka/forge/changelog";
+ * import { packageInfo } from "@roka/forge/package";
+ *
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   console.log(await changelog(pkg));
+ * }
+ * ```
+ *
+ * @param pkg Package to generate changelog for.
+ * @returns Changelog summary in Markdown.
+ */
 export function changelog(pkg: Package): string {
   return pkg.update?.changelog?.map((c) => ` * ${c.summary}`).join("\n") ?? "";
 }

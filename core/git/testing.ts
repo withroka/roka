@@ -1,23 +1,19 @@
 /**
- * Objects to write tests over git repositories.
- *
  * This module provides utilities to create fake commits and repositories for
  * testing.
  *
- * @example
  * ```ts
  * import { testCommit, tempRepository } from "@roka/git/testing";
- * import { assertEquals } from "@std/assert";
+ *
  * await using repo = await tempRepository();
  * const commit = testCommit({ summary: "feat(cli): add command" });
  * await repo.commits.create(commit.summary, {
  *   author: commit.author,
  *   allowEmpty: true,
  * });
- * assertEquals((await repo.commits.head()).author, commit.author);
  * ```
  *
- * @module
+ * @module testing
  */
 
 import { type Commit, type Config, type Git, git } from "@roka/git";
@@ -25,7 +21,7 @@ import { type Commit, type Config, type Git, git } from "@roka/git";
 /**
  * Creates a commit with fake data.
  *
- * @example
+ * @example Create a commit with a summary.
  * ```ts
  * import { testCommit } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
@@ -47,9 +43,9 @@ export function testCommit(data?: Partial<Commit>): Commit {
   };
 }
 
-/** Options for {@linkcode tempRepository}. */
-export interface TempRepoOptions {
-  /** Clone given repo, instead of creating an emtpy one. */
+/** Options for the {@linkcode tempRepository} function. */
+export interface TempRepositoryOptions {
+  /** Clone the given repo instead of creating an empty one. */
   clone?: string | Git;
   /** Create a bare repository. */
   bare?: boolean;
@@ -59,13 +55,13 @@ export interface TempRepoOptions {
 
 /** Creates a temporary repository for testing.
  *
- * @example
+ * @example Create a temporary repository.
  * ```ts
  * import { tempRepository } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
+ *
  * await using remote = await tempRepository({ bare: true });
  * await using repo = await tempRepository({ clone: remote });
- *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * const commit = await repo.commits.create("feat: add feature");
@@ -75,7 +71,7 @@ export interface TempRepoOptions {
  * ```
  */
 export async function tempRepository(
-  options?: TempRepoOptions,
+  options?: TempRepositoryOptions,
 ): Promise<Git & AsyncDisposable> {
   const { clone, bare = false } = options ?? {};
   const cwd = await Deno.makeTempDir();

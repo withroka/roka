@@ -1,9 +1,9 @@
 /**
- * A library for interactions with local git repositories.
+ * A library for interacting with local git repositories.
  *
- * This package provides incomplete functionality to run git commands on local
- * repositories. It is intended to be used for simple operations like creating
- * commits, tags, and pushing to remotes.
+ * This package provides incomplete functionality to run git commands. It is
+ * intended to be used for simple operations like creating commits, tags, and
+ * pushing to remotes.
  *
  * The main module provides the {@linkcode git} function that exposes git
  * operations, as well as the {@linkcode Commit}, {@linkcode Tag}, and similar
@@ -39,7 +39,7 @@
  * @todo Verify signatures.
  * @todo Add pruning.
  *
- * @module
+ * @module git
  */
 
 import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
@@ -48,8 +48,8 @@ import { basename, join } from "@std/path";
 /**
  * An error thrown by the {@link [jsr:@roka/git]} package.
  *
- * If the error is from running a git command, the error message will include the
- * command and its output.
+ * If the error is from running a git command, the error message will include
+ * the command and its output.
  */
 export class GitError extends Error {
   /**
@@ -63,7 +63,7 @@ export class GitError extends Error {
   }
 }
 
-/** A local repository returned by {@linkcode git}. */
+/** A local repository returned by the {@linkcode git} function. */
 export interface Git {
   /** Returns the repository directory, with optional relative children. */
   path: (...parts: string[]) => string;
@@ -165,7 +165,7 @@ export interface Commit {
   trailers: Record<string, string>;
   /** Author, who wrote the code. */
   author: User;
-  /** Committter, who created the commit. */
+  /** Committer, who created the commit. */
   committer: User;
 }
 
@@ -239,7 +239,7 @@ export interface Config {
   };
 }
 
-/** An author or commiter on git repository. */
+/** An author or committer on a git repository. */
 export interface User {
   /** Name of the user. */
   name: string;
@@ -247,10 +247,10 @@ export interface User {
   email: string;
 }
 
-/** Options for {@linkcode git}. */
+/** Options for the {@linkcode git} function. */
 export interface GitOptions {
   /**
-   * Change working directory for git commands.
+   * Change the working directory for git commands.
    * @default {"."}
    */
   cwd?: string;
@@ -262,7 +262,7 @@ export interface GitOptions {
   config?: Config;
 }
 
-/** Options for {@linkcode Git.init} and {@linkcode Git.clone}. */
+/** Options for the {@linkcode Git.init} and {@linkcode Git.clone} functions. */
 export interface InitOptions {
   /**
    * Create a bare repository.
@@ -272,7 +272,7 @@ export interface InitOptions {
   /**
    * Name of the initial branch.
    *
-   * Creates a new branch with this name for {@linkcode Git.init}, and checks
+   * Creates a new branch with this name for {@linkcode Git.init} and checks
    * out this branch for {@linkcode Git.clone}.
    *
    * Default is `main`, if not overridden with git config.
@@ -280,9 +280,12 @@ export interface InitOptions {
   branch?: string;
 }
 
-/** Options for {@linkcode Git.clone}. */
+/** Options for the {@linkcode Git.clone} function. */
 export interface CloneOptions extends InitOptions, RemoteOptions {
-  /** Set config for new repository, after initialization but before fetch. */
+  /**
+   * Set config for the new repository, after initialization, but before
+   * fetch.
+   */
   config?: Config;
   /**
    * Number of commits to clone at the tip.
@@ -294,12 +297,12 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
   /**
    * Bypasses local transport optimization when set to `false`.
    *
-   * When the remote repository is specified as a URL, this is ignored,
-   * otherwise it is implied.
+   * When the remote repository is specified as a URL, this is ignored.
+   * Otherwise, it is implied.
    */
   local?: boolean;
   /**
-   * Clone only tip of a single branch.
+   * Clone only the tip of a single branch.
    *
    * The cloned branch is either remote `HEAD` or
    * {@linkcode InitOptions.branch}.
@@ -312,7 +315,7 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
   tags?: boolean;
 }
 
-/** Options for {@linkcode Branches.list}. */
+/** Options for the {@linkcode Branches.list} function. */
 export interface BranchListOptions extends RefListOptions {
   /**
    * Include remote branches.
@@ -329,13 +332,14 @@ export interface BranchListOptions extends RefListOptions {
   remotes?: boolean;
 }
 
-/** Options for {@linkcode Branches.checkout}. */
+/** Options for the {@linkcode Branches.checkout} function. */
 export interface BranchCheckoutOptions {
   /**
-   * Checkout at given commit or branch.
+   * Checkout at the given commit or branch.
    * @default {"HEAD"}
    *
-   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be `true`.
+   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be
+   * `true`.
    */
   target?: Commitish;
   /** Branch to create and checkout during checkout. */
@@ -347,7 +351,7 @@ export interface BranchCheckoutOptions {
   detach?: boolean;
 }
 
-/** Options for {@linkcode Branches.delete}. */
+/** Options for the {@linkcode Branches.delete} function. */
 export interface BranchDeleteOptions {
   /**
    * Force delete the branch.
@@ -356,7 +360,7 @@ export interface BranchDeleteOptions {
   force?: boolean;
 }
 
-/** Options for {@linkcode Commits.create}. */
+/** Options for the {@linkcode Commits.create} function. */
 export interface CommitCreateOptions extends SignOptions {
   /**
    * Automatically stage modified or deleted files known to git.
@@ -364,13 +368,13 @@ export interface CommitCreateOptions extends SignOptions {
    */
   all?: boolean;
   /**
-   * Allow empty commit.
+   * Allow empty commits.
    * @default {false}
    */
   allowEmpty?: boolean;
   /** Amend the last commit. */
   amend?: boolean;
-  /** Author, who wrote the code. */
+  /** Author who wrote the code. */
   author?: User | undefined;
   /** Commit body to append to the message.   */
   body?: string;
@@ -378,13 +382,13 @@ export interface CommitCreateOptions extends SignOptions {
   trailers?: Record<string, string>;
 }
 
-/** Options for {@linkcode Commits.log}. */
+/** Options for the {@linkcode Commits.log} function. */
 export interface CommitLogOptions {
   /** Only commits by an author. */
   author?: User;
   /** Only commits by a committer. */
   committer?: User;
-  /** Only commts that any of the given paths. */
+  /** Only commits that modified any of the given paths. */
   paths?: string[];
   /** Only commits in a range. */
   range?: RevisionRange;
@@ -396,22 +400,22 @@ export interface CommitLogOptions {
   text?: string;
 }
 
-/** Options for {@linkcode Git.commits.push}. */
+/** Options for the {@linkcode Git.commits.push} function. */
 export interface CommitPushOptions extends TransportOptions, RemoteOptions {
-  /** Remote branch to push to. Default is the current branch. */
+  /** Remote branch to push to. The default is the current branch. */
   branch?: string;
   /** Force push to remote. */
   force?: boolean;
 }
 
-/** Options for {@linkcode Commits.pull}. */
+/** Options for the {@linkcode Commits.pull} function. */
 export interface CommitPullOptions
   extends RemoteOptions, TransportOptions, SignOptions {
-  /** Remote branch to pull from. Default is the tracked remote branch. */
+  /** Remote branch to pull from. The default is the tracked remote branch. */
   branch?: string;
 }
 
-/** Options for {@linkcode Tags.create}. */
+/** Options for the {@linkcode Tags.create} function. */
 export interface TagCreateOptions extends SignOptions {
   /**
    * Commit to tag.
@@ -426,30 +430,31 @@ export interface TagCreateOptions extends SignOptions {
   force?: boolean;
 }
 
-/** Options for {@linkcode Tags.list}. */
+/** Options for the {@linkcode Tags.list} function. */
 export interface TagListOptions extends RefListOptions {
   /**
    * Sort option.
    *
-   * Setting to `version` uses semver order, returning latest versions first.
+   * Setting to `version` uses {@link https://semver.org | semantic version}
+   * order, returning the latest versions first.
    *
    * @todo Handle pre-release versions.
    */
   sort?: "version";
 }
 
-/** Options for {@linkcode Tags.push}. */
+/** Options for the {@linkcode Tags.push} function. */
 export interface TagPushOptions extends RemoteOptions {
   /** Force push to remote. */
   force?: boolean;
 }
 
 /**
- * Options common to {@linkcode Branches.list} and {@linkcode Tags.list} for ref
- * filtering.
+ * Options common to the {@linkcode Branches.list} and {@linkcode Tags.list}
+ * functions for ref filtering.
  */
 export interface RefListOptions {
-  /** Ref selection pattern. Default is all relevant refs. */
+  /** Ref selection pattern. The default is all relevant refs. */
   name?: string;
   /** Only refs that contain the specific commit. */
   contains?: Commitish;
@@ -479,7 +484,8 @@ export interface SignOptions {
   /**
    * Sign the commit with GPG.
    *
-   * If `true` or a string, object is signed with the default or given GPG key.
+   * If `true` or a string, the object is signed with the default or given GPG
+   * key.
    *
    * If `false`, the commit is not signed.
    */
@@ -491,7 +497,7 @@ export interface SignOptions {
  * controlling what is updated in repositories.
  */
 export interface TransportOptions {
-  /** Either update all refs on the other side, or don't update any.*/
+  /** Either update all refs on the other side or don't update any.*/
   atomic?: boolean;
   /** Copy all tags.
    *

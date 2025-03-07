@@ -1,7 +1,49 @@
 /**
- * Common HTTP request functionality. Useful for making low level requests.
+ * This module provides the {@linkcode request} function for making HTTP
+ * requests. It is a wrapper around the global `fetch` function, with
+ * additional functionality for handling errors and retries.
  *
- * @module
+ * ```ts
+ * import { request, AGENT } from "@roka/http/request";
+ * async function usage() {
+ *   const response = await request("https://www.example.com", {
+ *     method: "GET",
+ *     agent: AGENT.Browser,
+ *   });
+ * }
+ * ```
+ *
+ * The function retries the fetch call on certain status codes, with
+ * exponential back off by default. The retry behavior can be customized with
+ * the {@linkcode RequestOptions.retry | retry} option.
+ *
+ * ```ts
+ * import { request } from "@roka/http/request";
+ * async function usage() {
+ *   const response = await request("https://www.example.com", {
+ *     retry: { maxAttempts: 2 },
+ *   });
+ * }
+ * ```
+ *
+ * The function throws a {@linkcode RequestError} on error responses. Some
+ * errors can be allowed to pass through with the
+ * {@linkcode RequestOptions.allowedErrors | allowedErrors} option.
+ *
+ * ```ts
+ * import { request } from "@roka/http/request";
+ * import { STATUS_CODE } from "@std/http/status";
+ * async function usage() {
+ *   const response = await request("https://www.example.com", {
+ *     allowedErrors: [STATUS_CODE.NotFound],
+ *   });
+ *   if (response.status === STATUS_CODE.NotFound) {
+ *     console.log("Not found");
+ *   }
+ * }
+ * ```
+ *
+ * @module request
  */
 
 import { assert } from "@std/assert";
@@ -23,7 +65,12 @@ const RETRYABLE_STATUSES: number[] = [
   STATUS_CODE.GatewayTimeout,
 ] as const;
 
-/** Represents an error that occurs during a request. */
+/**
+ * An error thrown by the {@link [jsr:@roka/http]} package.
+ *
+ * If the error is thrown due to a response status code, the status code is
+ * stored in the `status` property.
+ */
 export class RequestError extends Error {
   /**
    * Construct RequestError.
@@ -37,7 +84,7 @@ export class RequestError extends Error {
   }
 }
 
-/** Represents the options for an HTTP request. */
+/** Options for the {@linkcode request} function. */
 export interface RequestOptions extends RequestInit {
   /** Errors that would not cause a {@linkcode RequestError}. */
   allowedErrors?: number[];
@@ -45,40 +92,35 @@ export interface RequestOptions extends RequestInit {
   retry?: RetryOptions;
   /** The user agent to be sent with the request headers. */
   agent?: string;
-  /** The authorization to be sent with the request headers. */
+  /** The authorization token to be sent with the request headers. */
   token?: string;
 }
 
 /**
  * A wrapper around the Fetch API that handles common functionality.
  *
- * 1. Retries
+ * If the response status is retryable, for example a 429, the request will be
+ * retried. The default retry strategy is exponential back off, and it can be
+ * customized with {@linkcode RequestOptions.retry | retry}.
  *
- * If response status is retryable, for example a 429, the request will be
- * retried. Default retry strategy is exponential backoff, and it can be
- * customized with {@linkcode RequestOptions.retry}.
- *
- * 2. Error handling
- *
- * The function throws a {@linkcode RequestError} for non-retryable errors and
- * retryable errors that persist. The {@linkcode RequestOptions.allowedErrors}
- * array can be used to specify status codes that should not throw an error.
- * These are returns with the response object.
- *
- * 3. Headers
+ * A {@linkcode RequestError} is thrown for non-retryable errors and errors
+ * that persist. The {@linkcode RequestOptions.allowedErrors | allowedErrors}
+ * option can be used to specify status codes that should not throw an error.
+ * These are returned with the response object.
  *
  * A default browser agent is always sent with the request, unless overridden
- * with {@linkcode RequestOptions.agent}.
+ * with the {@linkcode RequestOptions.agent | agent} option.
  *
- * If set, the {@linkcode RequestOptions.token} is sent as a bearer token in the
- * `Authorization` header.
- *
- * @see {@linkcode RequestOptions} for further optional configuration.
+ * If the {@linkcode RequestOptions.token | token} option set, it is sent as a
+ * bearer token in the `Authorization` header.
  *
  * @param input The URL or Request object to fetch.
  * @param init Standard `fetch` init, extended with {@linkcode RequestOptions}.
+ * @returns The response object, if the request was successful, or the error is
+ *          one of {@linkcode RequestOptions.allowedErrors | allowedErrors}.
+ * @throws {RequestError} If the request failed with an unrecoverable error.
  */
-export async function request<T>(
+export async function request(
   input: Request | URL | string,
   init?: RequestOptions,
 ): Promise<Response> {

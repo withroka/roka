@@ -1,24 +1,19 @@
 /**
- * Mock objects taht live for the duration of a test scope.
+ * This module provides common temporary objects useful for testing. Currently,
+ * only the {@link tempDirectory} function is available.
  *
- * The mocking system mimicks the behavior of the `@std/testing/snapshot`
- * module. Running tests with the `--update` or `-u` flag will create a mock
- * file in the `__mocks__` directory, using real calls. The mock file will be
- * used in subsequent test runs, when these flags are not present.
- *
- * * @example
  * ```ts
  * import { tempDirectory } from "@roka/testing/temp";
  * await using directory = await tempDirectory();
  * await Deno.writeTextFile(directory.path("file.txt"), "Hello, world!");
  * ```
  *
- * @module
+ * @module temp
  */
 
 import { join } from "@std/path";
 
-/** A temporary directory returned by {@linkcode tempDirectory}. */
+/** A temporary directory returned by the {@linkcode tempDirectory} function. */
 export interface TempDirectory extends AsyncDisposable {
   /** Returns the temporary directory path, with optional relative children. */
   path(...paths: string[]): string;
@@ -27,7 +22,7 @@ export interface TempDirectory extends AsyncDisposable {
 /**
  * Returns a temporary directory as a disposable object.
  *
- * @example
+ * @example Using a temporary directory.
  * ```ts
  * import { tempDirectory } from "@roka/testing/temp";
  * import { assert } from "@std/assert";

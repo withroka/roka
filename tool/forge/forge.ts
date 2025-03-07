@@ -1,13 +1,78 @@
 /**
- * Command-line interface for the forge toolset.
+ * A monorepo tool for Deno workspaces.
  *
- * Provides a CLI for managing Deno packages and workspaces including:
- * - Listing packages and their versions
- * - Compiling packages to executables
- * - Bumping package versions
- * - Creating GitHub releases
+ * Roka "**forge**" is a tool for managing Deno packages hosted on GitHub. It
+ * can compile binaries, calculate versions, and create GitHub releases.
  *
- * @module
+ * The tool can be run with `deno run -A jsr:@roka/forge`.
+ *
+ * ## Usage
+ *
+ * List all packages.
+ *
+ * ```sh
+ * > forge list
+ * 📦 app/example
+ * 📦 core/testing @roka/testing 0.2.0
+ * 📦 tool/forge   @roka/forge   0.1.0
+ * ```
+ *
+ * Compile a package into a binary.
+ *
+ * ```sh
+ * > forge compile example
+ * 📦 Compiled example
+ * 🏺 dist/example/aarch64-apple-darwin/example
+ * ```
+ *
+ * Compile and install binary for the user.
+ *
+ * ```sh
+ * > forge compile example --install=$HOME/.local/bin
+ * 📦 Compiled example
+ * 🏺 dist/example/aarch64-apple-darwin/example
+ * 🧩 Installed example
+ * ```
+ *
+ * Compile a package into a release package.
+ *
+ * ```sh
+ * > forge compile example --release --bundle --checksum
+ * 📦 Compiled example
+ * 🏺 dist/example/aarch64-apple-darwin/example
+ * ```
+ *
+ * Bump package versions and create a pull request.
+ *
+ * ```sh
+ * > forge bump --pr
+ * 📦 Bumped package versions
+ * 🚀 Created version bump pull request
+ * ```
+ *
+ * Create a GitHub release.
+ *
+ * ```sh
+ * > forge release example --draft
+ * 🚀 Released example
+ * ```
+ *
+ * ## Modules
+ *
+ * Functionality of `forge` is also available programmatically through the
+ * following modules.
+ *
+ *  -  {@link [app]}: Introspect from compiled executables.
+ *  -  {@link [bump]}: Bump package versions using
+ *     {@link https://semver.org | semantic versioning}.
+ *  -  {@link [changelog]}: Generate changelogs.
+ *  -  {@link [compile]}: Create binary executables.
+ *  -  {@link [package]}: Diagnose packages programmatically.
+ *  -  {@link [release]}: Create GitHub releases.
+ *
+ * @todo Add documentation for GitHub workflows.
+ *
+ * @module forge
  */
 
 import { Command, EnumType } from "@cliffy/command";

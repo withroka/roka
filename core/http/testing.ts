@@ -1,20 +1,35 @@
 /**
- * Mock objects that can record and replay interactions in tests.
+ * This module provides the {@linkcode mockFetch} function to create a mock for
+ * the global `fetch` function. The mocked fetch function can record and replay
+ * all global `fetch` calls in tests.
  *
- * The mocking system mimicks the behavior of the `@std/testing/snapshot`
+ * ```ts
+ * import { mockFetch } from "@roka/http/testing";
+ * Deno.test("mockFetch()", async (t) => {
+ *   using fetch = mockFetch(t);
+ *   await fetch("https://example.com");
+ * });
+ * ```
+ *
+ * The mocking system mimics the behavior of the `@std/testing/snapshot`
  * module. Running tests with the `--update` or `-u` flag will create a mock
  * file in the `__mocks__` directory, using real calls. The mock file will be
- * used in subsequent test runs, when these flags are not present.
+ * used in subsequent test runs when these flags are not present.
  *
- * @module
+ * When using the mock, the `--allow-read` permission must be enabled, or else
+ * any calls will fail due to insufficient permissions. Additionally, when
+ * updating the mock, the `--allow-write` and `--allow-net` permissions must be
+ * enabled.
+ *
+ * @module testing
  */
 
 import { type Mock, mock, type MockOptions } from "@roka/testing/mock";
 import { pick } from "@std/collections";
 
-/** Options for {@linkcode mockFetch}. */
+/** Options for the {@linkcode mockFetch} function. */
 export interface MockFetchOptions extends MockOptions {
-  /** Options for matching calls from the request. */
+  /** Limit what gets matched with replay calls. */
   ignore?: {
     /**
      * Whether to ignore the request headers when matching `fetch` calls.
@@ -32,11 +47,15 @@ export interface MockFetchOptions extends MockOptions {
  * Create a mock for the global `fetch` function.
  *
  * The behavior of this mock follows the same for any mock created with the
- * `@roka/testing/mock` module. Running tests with `--update` flag will create
- * a mock file in the `__mocks__` directory, using real fetch calls. The mock
- * file will be used in subsequent test runs, when the flag is not present.
+ * `@roka/testing/mock` module. Running tests with the `--update` flag will
+ * create a mock file in the `__mocks__` directory, using real fetch calls. The
+ * mock file will be used in subsequent test runs when the flag is not present.
  *
- * @example
+ * In `"replay"` mode, a call to the mock will throw {@linkcode MockError} if
+ * no matching call was recorded. At the end of the test, the mock will verify
+ * that at least one call was made, and all recorded calls were replayed.
+ *
+ * @example Mock a fetch call.
  * ```ts
  * import { mockFetch } from "@roka/http/testing";
  * import { assertEquals } from "@std/assert";
@@ -47,6 +66,10 @@ export interface MockFetchOptions extends MockOptions {
  *   assertEquals(response.status, 200);
  * });
  * ```
+ *
+ * @param context The test context.
+ * @param options Options for the mock.
+ * @return A mock function that records and replays calls to the global `fetch`.
  */
 export function mockFetch(
   context: Deno.TestContext,

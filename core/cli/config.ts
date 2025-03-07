@@ -1,29 +1,38 @@
 /**
- * Config object that stores key-value pairs in the file system.
- *
- * The config system wrap the {@link https://deno.com/kv | Deno.Kv} API to
- * provide a simple key-value store for the running application.
+ * This module provides the {@linkcode config} function, which provides access
+ * to a user configuration on the file system for the running application.
  *
  * The config object is a disposable resource that should be closed when no
- * longer needed.
+ * longer needed. This can be achieved via the `using` keyword.
  *
- * @example
  * ```ts
  * import { config } from "@roka/cli/config";
- * import { assertEquals } from "@std/assert";
- * using cfg = config<{ key: string }>({ path: ":memory:" });
- * await cfg.set({ key: "value" });
- * assertEquals(await cfg.get(), { key: "value" });
+ * async function usage() {
+ *   using cfg = config<{ username: string, email: string }>();
+ *   const data = await cfg.get();
+ *   console.log(data.username);
+ *   console.log(data.email);
+ *   await cfg.set({ email: "new-email@example.com" });
+ * }
  * ```
  *
- * @module
+ * The config system wraps the {@link https://deno.com/kv | Deno.Kv} API to
+ * provide a simple key-value store for the running application. This API is
+ * still considered experimental, and code using the config module needs to
+ * have the `--unstable-kv` flag enabled.
+ *
+ * @module config
  */
 
 import { basename, dirname, join } from "@std/path";
 
-/** A key-value stored returned by {@linkcode config}. */
+/**
+ * A key-value stored returned by the {@linkcode config} function.
+ *
+ * @typeParam T The type of configuration data.
+ */
 export interface Config<T extends Record<string, unknown>> extends Disposable {
-  /** Returns all data stored for this config. */
+  /** Returns all data stored for this configuration. */
   get(): Promise<Partial<T>>;
   /** Writes data to the configuration. Prior data is not deleted. */
   set(value: Partial<T>): Promise<void>;
@@ -31,29 +40,57 @@ export interface Config<T extends Record<string, unknown>> extends Disposable {
   clear(): Promise<void>;
 }
 
-/** Options for {@linkcode config}. */
+/** Options for the {@linkcode config} function. */
 export interface ConfigOptions {
   /**
    * The path to the database file. If not provided, the file is stored in the
-   * user's home directory. The database can be made in-memory by setting this
-   * value to `":memory:"`.
-   * @default {"~/.<app>/config.db`}
+   * user's home directory, in a directory whose name is derived from the
+   * running application.
+   *
+   * The configuration can be made in-memory by setting this value to
+   * `":memory:"`.
    */
   path?: string;
 }
 
 /**
- * Creates a key-value config store for the process.
+ * Creates a user configuration store for the running application.
  *
- * @example
+ * The returned config object is a key-value store that can be used to modify
+ * or retrieve object-based data. It is a disposable resource that should be
+ * used with the `using` keyword.
+ *
+ * Setting {@linkcode ConfigOptions.path | path} to `":memory:"` will create a
+ * configuration that persists until the process ends.
+ *
+ * @example Use a file-based user configuration.
+ * ```ts
+ * import { config } from "@roka/cli/config";
+ * import { tempDirectory } from "@roka/testing/temp";
+ * import { assertEquals } from "@std/assert";
+ * await using directory = await tempDirectory();
+ * using cfg = config<{ foo: string, bar: number }>({
+ *   path: directory.path("config.db"),
+ * });
+ * await cfg.set({ foo: "value" });
+ * await cfg.set({ bar: 42});
+ * assertEquals(await cfg.get(), { foo: "value", bar: 42 });
+ * ```
+ *
+ * @example Use an in-memory configuration.
  * ```ts
  * import { config } from "@roka/cli/config";
  * import { assertEquals } from "@std/assert";
- * using cfg = config<{ foo: string, bar: string }>({ path: ":memory:" });
- * await cfg.set({ foo: "foo" });
- * await cfg.set({ bar: "bar" });
- * assertEquals(await cfg.get(), { foo: "foo", bar: "bar" });
+ * using cfg = config<{ foo: string, bar: number }>({
+ *   path: ":memory:"
+ * });
+ * await cfg.set({ foo: "value" });
+ * await cfg.set({ bar: 42});
+ * assertEquals(await cfg.get(), { foo: "value", bar: 42 });
  * ```
+ *
+ * @typeParam T The type of configuration data.
+ * @returns A configuration object that closes itself at disposal.
  *
  * @todo Add single key getters.
  * @todo Add many key getters.
