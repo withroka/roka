@@ -43,6 +43,7 @@ function compileCommand(targets: string[]) {
           const artifacts = await compile(pkg, options);
           console.log(`📦 Compiled ${pkg.module}`);
           artifacts.forEach((artifact) => console.log("🏺", artifact));
+          if (options.install) console.log(`🧩 Installed ${pkg.module}`);
         },
         options,
       );
