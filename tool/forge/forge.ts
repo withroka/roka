@@ -41,9 +41,9 @@ function compileCommand(targets: string[]) {
         packages,
         async (pkg) => {
           const artifacts = await compile(pkg, options);
-          console.log(`📦 Compiled ${pkg.module}`);
+          console.log(`📦 Compiled ${pkg.name}`);
           artifacts.forEach((artifact) => console.log("🏺", artifact));
-          if (options.install) console.log(`🧩 Installed ${pkg.module}`);
+          if (options.install) console.log(`🧩 Installed ${pkg.name}`);
         },
         options,
       );
@@ -90,7 +90,7 @@ function releaseCommand() {
         .filter((pkg) => pkg.config.version !== pkg.release?.version);
       await pool(packages, async (pkg) => {
         const [rls, assets] = await release(pkg, options);
-        console.log(`🚀 Released ${pkg.module} [${rls.url}]`);
+        console.log(`🚀 Released ${pkg.name} [${rls.url}]`);
         assets.forEach((x) => console.log(`🏺 ${x.name} [${x.url}]`));
       }, { concurrency: 1 });
     });

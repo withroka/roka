@@ -6,7 +6,7 @@ import { assertEquals, assertMatch, assertRejects } from "@std/assert";
 
 Deno.test("release() rejects package without version", async () => {
   await using git = await tempRepository();
-  const config = { name: "@scope/module" };
+  const config = { name: "@scope/name" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   const pkg = await packageInfo({ directory: git.path() });
   await assertRejects(() => release(pkg), PackageError);
@@ -15,46 +15,46 @@ Deno.test("release() rejects package without version", async () => {
 Deno.test("release() creates initial release", async () => {
   await using git = await tempRepository();
   const repo = fakeRepository({ git });
-  const config = { name: "@scope/module", version: "1.2.3" };
+  const config = { name: "@scope/name", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
-  await git.commits.create("feat(module): introduce module");
+  await git.commits.create("feat(name): introduce package");
   const pkg = await packageInfo({ directory: git.path() });
   const [rls, assets] = await release(pkg, { repo });
-  assertEquals(rls.tag, "module@1.2.3");
-  assertEquals(rls.name, "module@1.2.3");
+  assertEquals(rls.tag, "name@1.2.3");
+  assertEquals(rls.name, "name@1.2.3");
   assertMatch(rls.body, /## Initial release/);
-  assertMatch(rls.body, /module@1.2.3/);
-  assertMatch(rls.body, /feat\(module\): introduce module/);
+  assertMatch(rls.body, /name@1.2.3/);
+  assertMatch(rls.body, /feat\(name\): introduce package/);
   assertEquals(assets.length, 0);
 });
 
 Deno.test("release() creates bump release", async () => {
   await using git = await tempRepository();
   const repo = fakeRepository({ git });
-  const config = { name: "@scope/module", version: "1.2.3" };
+  const config = { name: "@scope/name", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
-  await git.commits.create("feat(module): introduce module");
-  await git.tags.create("module@1.2.3");
-  await git.commits.create("fix(module): fix module", { allowEmpty: true });
+  await git.commits.create("feat(name): introduce package");
+  await git.tags.create("name@1.2.3");
+  await git.commits.create("fix(name): fix code", { allowEmpty: true });
   const pkg = await packageInfo({ directory: git.path() });
   const [rls, assets] = await release(pkg, { repo });
-  assertEquals(rls.tag, "module@1.2.3");
-  assertEquals(rls.name, "module@1.2.3");
+  assertEquals(rls.tag, "name@1.2.3");
+  assertEquals(rls.name, "name@1.2.3");
   assertMatch(rls.body, /## Changelog/);
-  assertMatch(rls.body, /module@1.2.3/);
-  assertMatch(rls.body, /fix\(module\): fix module/);
+  assertMatch(rls.body, /name@1.2.3/);
+  assertMatch(rls.body, /fix\(name\): fix code/);
   assertEquals(assets.length, 0);
 });
 
 Deno.test("release() creates draft release", async () => {
   await using git = await tempRepository();
   const repo = fakeRepository({ git });
-  const config = { name: "@scope/module", version: "1.2.3" };
+  const config = { name: "@scope/name", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
-  await git.commits.create("feat(module): introduce module");
+  await git.commits.create("feat(name): introduce package");
   const pkg = await packageInfo({ directory: git.path() });
   const [rls] = await release(pkg, { repo, draft: true });
   assertEquals(rls.draft, true);
@@ -63,10 +63,10 @@ Deno.test("release() creates draft release", async () => {
 Deno.test("release() updates existing release", async () => {
   await using git = await tempRepository();
   const repo = fakeRepository({ git });
-  const config = { name: "@scope/module", version: "1.2.3" };
+  const config = { name: "@scope/name", version: "1.2.3" };
   await Deno.writeTextFile(git.path("deno.json"), JSON.stringify(config));
   await git.index.add("deno.json");
-  await git.commits.create("feat(module): introduce module");
+  await git.commits.create("feat(name): introduce package");
   const pkg = await packageInfo({ directory: git.path() });
   const [rls1] = await release(pkg, { repo });
   const [rls2] = await release(pkg, { repo });

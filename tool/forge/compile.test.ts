@@ -26,7 +26,7 @@ const IMPORT_MAP = {
 
 Deno.test("compile() rejects package without compile config", async () => {
   await using repo = await tempRepository();
-  const config = { name: "@scope/module", version: "0.0.0" };
+  const config = { name: "@scope/name", version: "0.0.0" };
   await Deno.writeTextFile(repo.path("deno.json"), JSON.stringify(config));
   const pkg = await packageInfo({ directory: repo.path() });
   await assertRejects(() => compile(pkg), PackageError);
@@ -37,7 +37,7 @@ Deno.test("compile() compiles into a binary", async () => {
   // make a copy of the roka repository for testing local changes
   await copy(dirname(dirname(import.meta.dirname ?? ".")), repo.path("roka"));
   const config = {
-    name: "@scope/module",
+    name: "@scope/name",
     version: "1.2.3",
     compile: { main: "./main.ts", permissions: { prompt: true } },
     exports: { ".": "./main.ts" },
@@ -54,7 +54,7 @@ Deno.test("compile() compiles into a binary", async () => {
   const pkg = await packageInfo({ directory: repo.path() });
   const artifacts = await compile(pkg, { dist: repo.path("dist") });
   assertExists(artifacts[0]);
-  assertEquals(basename(artifacts[0]), "module");
+  assertEquals(basename(artifacts[0]), "name");
   const command = new Deno.Command(artifacts[0], { stderr: "inherit" });
   const { code, stdout } = await command.output();
   assertEquals(code, 0);
@@ -66,7 +66,7 @@ Deno.test("compile() can create release bundles", async () => {
   // make a copy of the roka repository for testing local changes
   await copy(dirname(dirname(import.meta.dirname ?? ".")), repo.path("roka"));
   const config = {
-    name: "@scope/module",
+    name: "@scope/name",
     version: "1.2.3",
     compile: { main: "./main.ts", permissions: { prompt: true } },
     exports: { ".": "./main.ts" },

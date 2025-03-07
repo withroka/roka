@@ -43,7 +43,7 @@ export interface ReleaseOptions {
 /**
  * Create a GitHub release from package.
  *
- * If a release already exists for the same module and version, it will be
+ * If a release already exists for the same package and version, it will be
  * updated.
  *
  * @todo Calculate changelog from the exact commit that introduced the version.
@@ -58,7 +58,7 @@ export async function release(
   const { repo = await github(options).repos.get(), draft = false } = options ??
     {};
   const version = parseVersion(pkg.config.version);
-  const name = `${pkg.module}@${pkg.config.version}`;
+  const name = `${pkg.name}@${pkg.config.version}`;
   let [release] = await repo.releases.list({ name, draft });
   const [head] = await git().commits.log();
   if (!head) throw new PackageError("Cannot determine current commit");
@@ -105,7 +105,7 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
 function body(pkg: Package, repo: Repository): string {
   assert(pkg.version, "Cannot release a package without version");
   const title = pkg.release?.tag ? "Changelog" : "Initial release";
-  const tag = `${pkg.module}@${pkg.version}`;
+  const tag = `${pkg.name}@${pkg.version}`;
   const fullChangelogUrl = pkg?.release?.tag
     ? `compare/${pkg.release.tag.name}...${tag}`
     : `commits/${tag}/${pkg.directory}`;
