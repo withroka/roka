@@ -14,8 +14,8 @@
     "test": "deno test -A --unstable-kv --doc **/*.ts",
     "coverage": "deno task test --coverage && deno coverage --html",
     "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",
-    "doc": "deno doc --lint --html $(find . -path '**/*.ts' -type file)",
-    "ok": "deno task lint && deno task doc && deno task test && deno publish --quiet --dry-run --allow-dirty"
+    "docs": "deno doc --lint --html $(find . -path '**/*.ts' -type file)",
+    "ok": "deno task lint && deno task docs && deno task test && deno publish --quiet --dry-run --allow-dirty"
   },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,

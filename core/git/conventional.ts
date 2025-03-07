@@ -1,29 +1,28 @@
 /**
- * Provides {@link https://www.conventionalcommits.org | Conventional Commits}.
+ * This module provides the {@linkcode conventional} function to convert a
+ * {@linkcode Commit} object to a
+ * {@link https://www.conventionalcommits.org | Conventional Commit}.
  *
- * This module provides the {@link conventional} function to convert a
- * {@linkcode Commit} object to a {@linkcode ConventionalCommit} object.
- *
- * @example
  * ```ts
- * import { tempRepository } from "@roka/git/testing";
+ * import { git } from "@roka/git";
  * import { conventional } from "@roka/git/conventional";
- * import { assertEquals } from "@std/assert";
- *
- * const repo = await tempRepository();
- * await repo.commits.create("feat(cli): add new command", { allowEmpty: true });
- * await repo.commits.create("fix(cli): fix last command", { allowEmpty: true });
- *
- * const commits = (await repo.commits.log()).map(conventional);
+ * import { assert, assertEquals } from "@std/assert";
+ * async function usage() {
+ *   const repo = git();
+ *   await repo.commits.create("feat(cli): add new command");
+ *   const commit = conventional(await repo.commits.head());
+ *   assertEquals(commit.type, "feat");
+ *   assertEquals(commit.scopes, ["cli"]);
+ *   assertEquals(commit.description, "add new command");
+ *   assert(!commit.breaking);
+ * }
  * ```
  *
  * This implementation conforms to the version 1.0.0 of the specification,
  * except that it also accepts the `BREAKING-CHANGE` footer from
  * {@link https://git-scm.com/docs/git-interpret-trailers | git trailers}.
  *
- * @see {@link https://www.conventionalcommits.org/en/v1.0.0/ | Conventional Commits 1.0.0}
- *
- * @module
+ * @module conventional
  */
 
 import type { Commit } from "@roka/git";
@@ -34,23 +33,23 @@ import { assert } from "@std/assert";
  * by {@linkcode conventional}.
  */
 export interface ConventionalCommit extends Commit {
-  /** Conventional commits: Commit description. */
+  /** Commit description. */
   description: string;
-  /** Conventional commits: Commit type. */
+  /** Commit type. */
   type?: string;
-  /** Conventional commits: Scopes affected by the commit. */
+  /** Scopes affected by the commit. */
   scopes: string[];
-  /** Conventional commits: Breaking change description. */
+  /** Breaking change description. */
   breaking?: string;
-  /** Conventional commits: Footer lines. */
+  /** Footer lines. */
   footers: Record<string, string>;
 }
 
 /**
  * Creates a commit object with
- * {@link https://www.conventionalcommits.org | Conventional Commits} details.
+ * {@link https://www.conventionalcommits.org | Conventional Commit} details.
  *
- * @example
+ * @example Retrieve conventional commit details from a commit.
  * ```ts
  * import { tempRepository } from "@roka/git/testing";
  * import { conventional } from "@roka/git/conventional";
@@ -59,13 +58,16 @@ export interface ConventionalCommit extends Commit {
  * const repo = await tempRepository();
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
- * await repo.commits.create("feat(cli): add new command", { allowEmpty: true });
- *
+ * await repo.commits.create("feat(cli): add new command");
  * const commit = conventional(await repo.commits.head())
+ *
  * assertEquals(commit.type, "feat");
  * assertEquals(commit.scopes, ["cli"]);
  * assertFalse(commit.breaking);
  * ```
+ *
+ * @param commit The commit object to convert, retrieved with {@linkcode git}.
+ * @returns The commit object with conventional commit details.
  */
 export function conventional(commit: Commit): ConventionalCommit {
   const footers = extractFooters(commit);

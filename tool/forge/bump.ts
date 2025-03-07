@@ -1,10 +1,23 @@
 /**
- * Version bump for packages.
+ * This module provides the {@linkcode bump} function, which updates the
+ * version string in package configuration file (`deno.json`). The version is
+ * calculated based on the
+ * {@link https://www.conventionalcommits.org | Conventional Commits} since
+ * the last release and {@link https://semver.org | semantic versioning}.
  *
- * This module provides the {@linkcode bump} function which updates the version
- * string in `deno.json` files for packages based on semantic versioning.
+ * If the {@linkcode BumpOptions.pr | pr} option is set, a pull request is
+ * created with the updated version information on GitHub.
  *
- * @module
+ * ```ts
+ * import { bump } from "@roka/forge/bump";
+ * import { workspace } from "@roka/forge/package";
+ * async function usage() {
+ *   const packages = await workspace();
+ *   await bump(packages, { pr: true });
+ * }
+ * ```
+ *
+ * @module bump
  */
 
 import { changelog } from "@roka/forge/changelog";
@@ -16,7 +29,7 @@ import { format, parse } from "@std/semver";
 
 const BUMP_BRANCH = "automated/bump";
 
-/** Options for releasing a package. */
+/** Options for the {@linkcode bump} function. */
 export interface BumpOptions {
   /** GitHub access token. */
   token?: string;
@@ -38,13 +51,16 @@ export interface BumpOptions {
 }
 
 /**
- * Update version number of packages on `deno.json`.
+ * Updates the version numbers on package configuration files (`deno.json`).
  *
  * The calculated version is based on {@linkcode Package.update}, dropping
  * pre-release and build information.
  *
  * When working with pull requests, if there is an open one for a bump, it will
  * be updated with the new version information.
+ *
+ * @param pkg Package to bump.
+ * @throws {PackageError} If the package does not have an update.
  *
  * @todo Recalculate versions when the bump PR is rebased.
  */

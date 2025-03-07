@@ -1,11 +1,37 @@
 /**
- * Package compilation.
+ * This module provides the {@linkcode compile} function for compiling Deno
+ * packages into standalone executables for various target platforms. Supports
+ * bundling, checksums, and local installation.
  *
- * Provides the {@linkcode compile} function for compiling Deno packages into
- * standalone executables for various target platforms. Supports bundling,
- * checksums, and local installation.
+ * ```ts
+ * import { compile } from "@roka/forge/compile";
+ * import { packageInfo } from "@roka/forge/package";
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   await compile(pkg, { target: ["x86_64-unknown-linux-gnu"] });
+ * }
+ * ```
  *
- * @module
+ * The package configuration file (`deno.json`) must contain a compile entry of
+ * ype {@linkcode CompileOptions}. This configuration declares the main entry
+ * point and the permissions required for the executable compiled from the
+ * package.
+ *
+ * ```json
+ * {
+ *   "compile": {
+ *     "main": "main.ts",
+ *     "permissions": {
+ *        "env": ["HOME", "PATH"],
+ *        "read": true,
+ *        "net": "api.github.com",
+ *        "run": "git",
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @module compile
  */
 
 import { pool } from "@roka/async/pool";
@@ -18,7 +44,7 @@ import { assert } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
 
-/** Options for compiling a package. */
+/** Options for the {@linkcode compile} function. */
 export interface CompileOptions {
   /**
    * Output directory for compiled artifacts.
@@ -37,7 +63,7 @@ export interface CompileOptions {
   /** Create a checksum file. */
   checksum?: boolean;
   /**
-   * Install at given directory.
+   * Install at the given directory.
    *
    * If set to `true`, the artifacts will be installed to `$HOME/.local/bin`.
    */
@@ -46,7 +72,12 @@ export interface CompileOptions {
   concurrency?: number;
 }
 
-/** Compile a package using the given options. */
+/**
+ * Compile a package using the given options.
+ *
+ * @param pkg Package to compile.
+ * @throws {PackageError} If the package does not have a compile configuration.
+ */
 export async function compile(
   pkg: Package,
   options?: CompileOptions,

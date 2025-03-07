@@ -1,29 +1,11 @@
 /**
- * Mock objects that can record and replay interactions in tests.
- *
  * This module provides the {@linkcode mock} function, which can be used to
- * create a mock double of an async function or method. The mock can be used to
- * record and replay interactions in tests.
+ * create a mock double of an asynchronous function or method. The mock can be
+ * used to record and replay interactions in tests.
  *
- * Mocking of non-async functions is not supported. However, a wide variety of
- * async functions can be mocked.
- *
- * The mocking system mimicks the behavior of the `@std/testing/snapshot`
- * module. Running tests with the `--update` or `-u` flag will create a mock
- * file in the `__mocks__` directory, using real calls. The mock file will be
- * used in subsequent test runs, when these flags are not present.
- *
- * Much like the snapshot system, the mock system works best when the generated
- * mock files are commited to source control. This allows for changes to mocks
- * to be reviewed alongside the code changes that caused them, and ensures that
- * the tests will pass without needing to update the mocks when the code is
- * cloned.
- *
- * @example
  * ```ts
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
- *
  * Deno.test("mock() usage", async (t) => {
  *   using fetch = mock(t, globalThis, "fetch");
  *   const response = await fetch("https://www.example.com");
@@ -31,24 +13,35 @@
  * });
  * ```
  *
- * The mock system allows for altering the arguments and the result of the
- * original function before serializing and storing them in the mock file.
- * This might be needed in a variety of scenarios.
+ * Mocking of synchronous functions is not supported. However, a wide variety
+ * of asynchronous functions can be mocked.
  *
- *  - any of the arguments is a consumable, meaning it can only be read once
- *  - the result of the function is a consumable
- *  - the original function modifies its parameters
- *  - the data contains sensitive information which cannot be stored
- *  - any argument or the result is not serializable to JavaScript code
+ * The mocking system mimics the behavior of the `@std/testing/snapshot`
+ * module. Running tests with the `--update` or `-u` flag will create a mock
+ * file in the `__mocks__` directory, using real calls. The mock file will be
+ * used in subsequent test runs when these flags are not present.
  *
- * The `conversion` option can be used to define the custom conversion functions
- * from {@linkcode MockConversion}. All conversion functions can be both
- * synchronous and asynchronous.
+ * Much like the snapshot system, the mock system works best when the generated
+ * mock files are committed to source control. This allows for changes to the
+ * mock to be reviewed alongside the code changes that caused them, and ensures
+ * that the tests will pass without needing to update the mocks when the code
+ * is cloned.
  *
- * @example
+ * The mocking system allows for altering the arguments and the result of the
+ * original function before serializing and storing them in the mock file. This
+ * might be needed in various scenarios.
+ *
+ *  - Any argument or the result is consumable, where it can only be read once.
+ *  - Any argument or the result is not serializable to JavaScript code.
+ *  - The original function modifies its arguments.
+ *  - The data contains sensitive information that cannot be stored.
+ *
+ * The `conversion` option can be used to define the custom conversion
+ * functions from {@linkcode MockConversion}. All conversion functions can be
+ * synchronous or asynchronous.
+ *
  * ```ts
  * import { mock } from "@roka/testing/mock";
- *
  * Deno.test("mock() conversions", async (t) => {
  *   const _ = {
  *     async request(url: string, token: string) {
@@ -76,10 +69,10 @@
  * });
  * ```
  *
- * Note: A ready to use mock for the WEB Api `fetch` is provided by the
- * `@roka/http/testing` module.
+ * **Note**: A ready-to-use mock for the Web API `fetch` is provided by the
+ * {@link [jsr:@roka/http]} module.
  *
- * @module
+ * @module mock
  */
 
 import { assert } from "@std/assert";
@@ -92,14 +85,19 @@ import {
 } from "@std/testing/mock";
 
 /**
- * The mode of mock.
+ * The mode of mocking.
  *
  *  - `replay`: The mock will replay the recorded calls from the mock file.
  *  - `update`: The mock will store the recorded calls into the mock file.
  */
 export type MockMode = "replay" | "update";
 
-/** A mock for an async function or method returned by {@linkcode mock}. */
+/**
+ * A mock for an async function or method returned by the {@linkcode mock}
+ * function.
+ *
+ * @typeParam T The type of the original function being mocked.
+ */
 export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>>
   extends Disposable {
   (...args: Parameters<T>): ReturnType<T>;
@@ -107,13 +105,13 @@ export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>>
   mode: MockMode;
   /** The original function that is being mocked. */
   original: T;
-  /** Whether or not the original function has been restored. */
+  /** Whether the original function has been restored. */
   restored: boolean;
   /** Restores the original function instance. */
   restore(): void;
 }
 
-/** Options for {@linkcode mock}. */
+/** Options for the {@linkcode mock} function. */
 export interface MockOptions {
   /**
    * Mock output directory.
@@ -121,7 +119,7 @@ export interface MockOptions {
    */
   dir?: string;
   /**
-   * Mock mode. Defaults to `"replay"`, unless the `-u` or `--update` flag
+   * Mock mode. It defaults to `"replay"`, unless the `-u` or `--update` flag
    * is passed, in which case this will be set to `"update"`. This option
    * takes higher priority than the update flag.
    */
@@ -132,13 +130,19 @@ export interface MockOptions {
    * Mock output path.
    *
    * If both {@linkcode MockOptions.dir} and {@linkcode MockOptions.path} are
-   * specified, the `dir` option will be ignored and the `path` option will be
+   * specified, the `dir` option will be ignored, and the `path` option will be
    * handled as normal.
    */
   path?: string;
 }
 
-/** Conversion options for mocks. */
+/**
+ * Data conversions for the {@linkcode mock} function.
+ *
+ * @typeParam T The type of the original function being mocked.
+ * @typeParam Input The type of the input stored for mock calls.
+ * @typeParam Output The type of the output stored for mock calls.
+ */
 export interface MockConversion<
   T extends (...args: Parameters<T>) => ReturnType<T>,
   Input extends unknown[],
@@ -150,7 +154,7 @@ export interface MockConversion<
      * Convert input arguments to a custom value.
      *
      * This is needed when the original input arguments cannot be serialized to
-     * JavaScript code, when any argument is a consumable, or when sensitive
+     * JavaScript code, when any argument is consumable, or when sensitive
      * information needs to be stripped.
      *
      * The convert function must not consume the input arguments. They must be
@@ -164,8 +168,8 @@ export interface MockConversion<
      * Convert output to a custom value.
      *
      * This is needed when the result value cannot be serialized to JavaScript
-     * code, when the output is a consumable, or when sensitive information
-     * needs to be stripped.
+     * code, when the output is consumable, or when sensitive information needs
+     * to be stripped.
      *
      * The convert function must not consume the result. It must be left in a
      * usable state for the callers of the original function.
@@ -175,30 +179,38 @@ export interface MockConversion<
      * Revert output to the original format.
      *
      * This is needed when the output was converted to a custom value that is
-     * not compatible with the original format.
+     * incompatible with the original format.
      */
     revert?: (data: Output) => Awaited<ReturnType<T>> | ReturnType<T>;
   };
 }
 
 /**
- * Create a mock for an async function.
+ * Create a mock for an asynchronous function.
  *
- * Usage is `@std/testing/snapshot` style. Running tests with `--update`
- * or `-u` flag will create a mock file in the `__mocks__` directory, using real
- * calls to the original function. The mock file will be used in subsequent test
- * runs, when the these flags are not present.
+ * Usage is `@std/testing/snapshot` style. Running tests with the `--update`
+ * or `-u` flag will create a mock file in the `__mocks__` directory, using
+ * real calls to the original function. The mock file will be used in
+ * subsequent test runs when these flags are not present.
  *
  * When running tests with the mock, results will be returned from matching
- * calls with the same input. If no matching call is found, or, if at the end of
- * the test, there are still unhandled calls, a ` MockError` will be thrown.
+ * calls with the same input. If no matching call is found, or if at the end of
+ * the test there are still unhandled calls, a `MockError` will be thrown.
  *
- * The returned mock is a disposable object. This allows for the mock to be used
- * in a `using` block, and for the original function to be restored when the
- * block is exited. Alternatively, the `restore` method can be called manually
- * to restore the original function.
+ * The returned mock is a disposable object. This allows for the mock to be
+ * used in a `using` block, and for the original function to be restored when
+ * the block is exited. Alternatively, the `restore` method can be called
+ * manually to restore the original function.
  *
- * @example
+ * When using the mock, the `--allow-read` permission must be enabled, or else
+ * any calls will fail due to insufficient permissions. Additionally, when
+ * updating the mock, the `--allow-write` permission must be enabled.
+ *
+ * The mock file that is created under the `__mocks__` directory needs to be
+ * committed to version control. This allows for tests not needing to rely on
+ * actual network calls, and the changes in mock behavior to be peer-reviewed.
+ *
+ * @example Using the mock as a disposable.
  * ```ts
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
@@ -208,6 +220,12 @@ export interface MockConversion<
  *   using func = mock(t, _, "func");
  *   assertEquals(await _.func(), 42);
  * });
+ * ```
+ *
+ * @example Using the mock with manual restore.
+ * ```ts
+ * import { mock } from "@roka/testing/mock";
+ * import { assertEquals } from "@std/assert";
  *
  * Deno.test("mock() with manual restore", async (t) => {
  *   const _ = { func: async () => await Promise.resolve(42) };
@@ -217,17 +235,38 @@ export interface MockConversion<
  * });
  * ```
  *
- * When using the mock, the `--allow-read` permission must be enabled, or else
- * any calls will fail due to insufficient permissions. Additionally, when
- * updating the mock, the `--allow-write` and `--allow-net` permissions must be
- * enabled.
+ * @example Using the mock with custom conversions.
+ * ```ts
+ * import { mock } from "@roka/testing/mock";
+ * Deno.test("mock() with custom conversions", async (t) => {
+ *   const _ = {
+ *     async request(url: string, token: string) {
+ *       const request = new Request(url, {
+ *         headers: { Authorization: `Bearer ${token}` }
+ *       });
+ *       return await fetch(request);
+ *     },
+ *   };
+ *   using request = mock(t, _, "request", {
+ *     conversion: {
+ *       input: {
+ *         convert: (url: string) => [url, "******"],
+ *        },
+ *     },
+ *   });
+ *   await _.request("https://www.example.com", "token");
+ * });
+ * ```
  *
- * The mock file that is created under the `__mocks__` directory needs to be
- * committed to version control. This allows for tests not needing to rely on
- * actual network calls, and the changes in mock behavior to be peer-reviewed.
- *
+ * @typeParam Self The type of object containing the function to mock.
+ * @typeParam Prop The type of property symbol of the function field.
+ * @typeParam Input The type of the input stored for mock calls.
+ * @typeParam Output The type of the output stored for mock calls.
  * @param context The test context.
- * @param options Options for the mock.
+ * @param self The object containing the function to mock.
+ * @param property The property symbol of the object to mock.
+ * @param options Options and data conversions for the mock.
+ * @return A mock function that records and replays calls to the original.
  */
 export function mock<
   Self extends Record<

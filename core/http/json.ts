@@ -1,6 +1,7 @@
 /**
- * This module provides the {@linkcode jsonClient} function to make JSON requests
- * and receive JSON responses. It is useful for building JSON based API clients.
+ * This module provides the {@linkcode jsonClient} function to make JSON
+ * requests and receive JSON responses. It is useful for building JSON-based
+ * API clients.
  *
  * ```ts
  * import { jsonClient } from "@roka/http/json";
@@ -19,7 +20,7 @@
 
 import { request } from "@roka/http/request";
 
-/** A JSON client returned by {@linkcode jsonClient}. */
+/** A JSON client returned by the {@linkcode jsonClient} function. */
 export interface JsonClient {
   /** Makes a GET request. */
   get<T>(path: string): Promise<Partial<T>>;
@@ -33,7 +34,7 @@ export interface JsonClient {
   put<T>(path: string, body: object): Promise<Partial<T>>;
 }
 
-/** Options for {@linkcode jsonClient}. */
+/** Options for the {@linkcode jsonClient} function. */
 export interface JsonClientOptions {
   /** The bearer token to be sent with the request headers. */
   token?: string;

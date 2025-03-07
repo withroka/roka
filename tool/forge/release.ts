@@ -1,12 +1,18 @@
 /**
- * Package releases.
+ * This module provides the {@linkcode release} function that handles the
+ * creation of GitHub releases for packages, including tagging, release note
+ * generation, and asset uploading.
  *
- * Provides the {@linkcode release} function that handles the creation of GitHub
- * releases for packages, including tagging, release notes generation, and asset
- * uploading. Supports both standard and draft releases with configurable
- * options.
+ * ```ts
+ * import { release } from "@roka/forge/release";
+ * import { packageInfo } from "@roka/forge/package";
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   await release(pkg, { draft: true });
+ * }
+ * ```
  *
- * @module
+ * @module release
  */
 
 import { pool } from "@roka/async/pool";
@@ -26,7 +32,7 @@ import { parse as parseVersion } from "@std/semver";
 /** Max concurrent calls to GitHub. */
 const GITHUB_CONCURRENCY = { concurrency: 10 };
 
-/** Options for releasing a package. */
+/** Options for the {@linkcode release} function. */
 export interface ReleaseOptions {
   /** GitHub access token. */
   token?: string;
@@ -41,10 +47,14 @@ export interface ReleaseOptions {
 }
 
 /**
- * Create a GitHub release from package.
+ * Create a GitHub release from a package.
  *
  * If a release already exists for the same package and version, it will be
  * updated.
+ *
+ * @param pkg Package to release.
+ * @returns The created release and its assets.
+ * @throws {PackageError} If the package does not have a version.
  *
  * @todo Calculate changelog from the exact commit that introduced the version.
  */
@@ -78,11 +88,6 @@ export async function release(
   return [release, await upload(pkg, release)];
 }
 
-/**
- * Upload package compilation outputs to a release.
- *
- * Existing assets are deleted before uploading new ones.
- */
 async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
   // delete existing assets first
   const assets = await release.assets.list();

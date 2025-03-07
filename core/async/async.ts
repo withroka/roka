@@ -1,20 +1,21 @@
 /**
- * Helpers for concurrency.
+ * A library for working with asynchronous operations.
  *
- * Currently, the only submodule provided is `pool`.
+ * This package only provides the {@link [pool]} module to limit the
+ * concurrency of promises.
  *
- * @example
  * ```ts
  * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
- *
  * const results = await pool(
- *   [1, 2, 3],
- *   (x) => Promise.resolve(x),
+ *   [1, 2, 3, 4, 5, 6],
+ *   (x) => Promise.resolve(x * 2),
  *   { concurrency: 2 },
  * );
- * assertEquals(results, [1, 2, 3]);
  * ```
  *
- * @module
+ * ## Modules
+ *
+ *  -  {@link [pool]}: Limit concurrency.
+ *
+ * @module async
  */

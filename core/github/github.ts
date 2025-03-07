@@ -1,10 +1,10 @@
 /**
- * A library for interactions with GitHub.
+ * A library for interacting with GitHub.
  *
  * This package provides an incomplete and opinionated interface to the
  * {@link https://docs.github.com/en/rest | GitHub REST API}.
  *
- * The main module provides the {@linkcode [github]} function to create a client
+ * The main module provides the {@linkcode github} function to create a client
  * for the GitHub API. If a token is provided, the client will be authenticated.
  *
  * ```ts
@@ -12,7 +12,9 @@
  * async function usage() {
  *   const repo = await github().repos.get();
  *   const releases = await repo.releases.list();
- *   const pulls = await repo.pulls.create({ title: "New pull request" });
+ *   const pulls = await repo.pulls.create({
+ *     title: "New pull request",
+ *   });
  * }
  * ```
  *
@@ -26,13 +28,12 @@
  * @todo Add `github().issues`.
  * @todo Add `github().gists`.
  * @todo Add `github().projects`.
- * @todo Add `github().projects`.
  * @todo Add `github().labels`.
  * @todo Add `github().comments`.
  * @todo Add `github().teams`.
  * @todo Add `github().organizations`.
  *
- * @module
+ * @module github
  */
 
 import type { components } from "@octokit/openapi-types/types";
@@ -42,7 +43,7 @@ import { assert } from "@std/assert";
 import { basename } from "@std/path";
 
 /**
- * A GitHub API client returned by {@linkcode github}.
+ * A GitHub API client returned by the {@linkcode github} function.
  *
  * The client will be unauthenticated if a token is not provided.
  */
@@ -53,9 +54,9 @@ export interface GitHub {
 
 /** Repository operations from {@linkcode GitHub.repos}. */
 export interface Repositories {
-  /** Retrieve a repository using local remote URL. */
+  /** Retrieve a repository using a local remote URL. */
   get(options?: RepositoryGetOptions): Promise<Repository>;
-  /** Retrieve a repository using owner and repository name. */
+  /** Retrieve a repository using the owner and repository name. */
   get(owner: string, repo: string, options?: RepositoryGetOptions): Repository;
 }
 
@@ -69,7 +70,7 @@ export interface Repository {
   repo: string;
   /** Local Git repository operations. */
   git: Git;
-  /** Operations for manaing pull requests. */
+  /** Operations for managing pull requests. */
   pulls: PullRequests;
   /** Operations for managing releases. */
   releases: Releases;
@@ -101,9 +102,9 @@ export interface PullRequest {
   head: string;
   /** Whether the pull request is a draft. */
   draft: boolean;
-  /** Whether the pull requst is closed. */
+  /** Whether the pull request is closed. */
   closed: boolean;
-  /** Whether the pull request is locked */
+  /** Whether the pull request is locked. */
   locked: boolean;
   /** Update the pull request. */
   update(options?: PullRequestUpdateOptions): Promise<PullRequest>;
@@ -171,7 +172,7 @@ export interface ReleaseAsset {
   delete(): Promise<void>;
 }
 
-/** Options for {@linkcode github}. */
+/** Options for the {@linkcode github} function. */
 export interface GitHubOptions {
   /**
    * GitHub personal access token.
@@ -181,7 +182,7 @@ export interface GitHubOptions {
   token?: string;
 }
 
-/** Options for {@linkcode Repositories.get}. */
+/** Options for the {@linkcode Repositories.get} function. */
 export interface RepositoryGetOptions {
   /**
    * Local directory for the repository.
@@ -193,32 +194,32 @@ export interface RepositoryGetOptions {
   directory?: string;
 }
 
-/** Options for {@linkcode PullRequests.list}. */
+/** Options for the {@linkcode PullRequests.list} function. */
 export type PullRequestListOptions = Partial<
   Pick<PullRequest, "title" | "head" | "base" | "closed">
 >;
 
-/** Options for {@linkcode PullRequests.create}. */
+/** Options for the {@linkcode PullRequests.create} function. */
 export type PullRequestCreateOptions = Partial<
   Pick<PullRequest, "title" | "body" | "base" | "head" | "draft">
 >;
 
-/** Options for {@linkcode PullRequest.update}. */
+/** Options for the {@linkcode PullRequest.update} function. */
 export type PullRequestUpdateOptions = Partial<
   Pick<PullRequest, "title" | "body" | "base" | "closed">
 >;
 
-/** Options for listing releases. */
+/** Options for the {@linkcode Releases.list} function. */
 export type ReleaseListOptions = Partial<
   Pick<Release, "name" | "tag" | "draft">
 >;
 
-/** Options for {@linkcode Releases.create}. */
+/** Options for the {@linkcode Releases.create} function. */
 export type ReleaseCreateOptions = Partial<
   Pick<Release, "name" | "body" | "commit" | "draft" | "preRelease">
 >;
 
-/** Options for {@linkcode Release.update}. */
+/** Options for the {@linkcode Release.update} function. */
 export type ReleaseUpdateOptions = Partial<
   Pick<Release, "name" | "body" | "tag" | "commit" | "draft" | "preRelease">
 >;

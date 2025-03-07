@@ -1,12 +1,21 @@
 /**
- * Fake objects to replace real equivalents in tests.
+ * This module provides common fake objects for testing. Currently, only the
+ * {@linkcode fakeConsole} function is available.
  *
- * @module
+ * ```ts
+ * import { fakeConsole } from "@roka/testing/fake";
+ * Deno.test("fakeConsole()", async (t) => {
+ *   using console = fakeConsole();
+ *   console.log("I won't be printed");
+ * });
+ * ```
+ *
+ * @module fake
  */
 
 import { stub } from "@std/testing/mock";
 
-/** A fake console returned by {@linkcode fakeConsole}. */
+/** A fake console returned by the {@linkcode fakeConsole} function. */
 export interface FakeConsole extends Disposable {
   /** Logs a message with the `debug` level. */
   debug: (...data: unknown[]) => void;
@@ -23,30 +32,33 @@ export interface FakeConsole extends Disposable {
     level: "debug" | "log" | "info" | "warn" | "error";
     data: unknown[];
   }[];
-  /** Whether or not the original `console` instance has been restored. */
+  /** Whether the original `console` instance has been restored. */
   restored: boolean;
   /** Restores the original `console` instance. */
   restore: () => void;
 }
 
 /**
- * Create a fake for common `console` methods.
+ * Create a fake replacement for the global `console` by overriding calls to
+ * its log methods.
  *
  * Useful for verifying output from command-line tools.
  *
- * @example
+ * @example Use a fake console.
  * ```ts
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- *
- * Deno.test("fakeConsole()", async (t) => {
- *  using console = fakeConsole();
- *  console.log("message");
- *  assertEquals(console.calls, [{ level: "log", data: ["message"] }]);
- * });
+ * using console = fakeConsole();
+ * console.log("log");
+ * console.warn("warn");
+ * console.error("error");
+ * assertEquals(console.calls, [
+ *   { level: "log", data: ["log"] },
+ *   { level: "warn", data: ["warn"] },
+ *   { level: "error", data: ["error"] },
+ * ]);
  * ```
  */
-
 export function fakeConsole(): FakeConsole {
   const calls = [] as {
     level: "debug" | "log" | "info" | "warn" | "error";

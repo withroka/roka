@@ -1,6 +1,7 @@
 /**
- * This module provides the {@linkcode graphqlClient} function to create a GraphQL
- * client for making requests. Useful for building GraphQL based API clients.
+ * This module provides the {@linkcode graphqlClient} function to create a
+ * GraphQL client for making requests. Useful for building GraphQL-based API
+ * clients.
  *
  * ```ts
  * import { graphqlClient } from "@roka/http/graphql";
@@ -25,7 +26,7 @@ import {
 } from "@urql/core";
 import { retryExchange } from "@urql/exchange-retry";
 
-/** A GraphQL client returned by {@linkcode graphqlClient}. */
+/** A GraphQL client returned by the {@linkcode graphqlClient} function. */
 export interface GraphQLClient {
   /** Makes a GraphQL query. */
   query<Result>(
@@ -40,7 +41,7 @@ export interface GraphQLClient {
   ): Promise<Node[]>;
 }
 
-/** Options for {@linkcode graphqlClient}. */
+/** Options for the {@linkcode graphqlClient} function. */
 export interface GraphQLClientOptions {
   /** The bearer token to be sent with the request headers. */
   token?: string;
