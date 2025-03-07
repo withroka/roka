@@ -83,10 +83,7 @@ export async function release(
  *
  * Existing assets are deleted before uploading new ones.
  */
-export async function upload(
-  pkg: Package,
-  release: Release,
-): Promise<ReleaseAsset[]> {
+async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
   // delete existing assets first
   const assets = await release.assets.list();
   await pool(assets, (asset) => asset.delete(), GITHUB_CONCURRENCY);
