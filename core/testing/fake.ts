@@ -1,6 +1,6 @@
 /**
  * This module provides common fake objects for testing. Currently, only the
- * {@link fakeConsole} function is available.
+ * {@linkcode fakeConsole} function is available.
  *
  * ```ts
  * import { fakeConsole } from "@roka/testing/fake";

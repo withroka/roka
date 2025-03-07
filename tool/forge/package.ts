@@ -19,8 +19,7 @@
  *    the last release.
  *  - Calculated {@link https://semver.org | semantic version}.
  *
- * For monorepos, the {@linkcode workspace} function can be used to fetch all
- * packages in the workspace.
+ * Use the {@linkcode workspace} function to fetch all packages in a monorepo.
  *
  * ```ts
  * const packages = await workspace();

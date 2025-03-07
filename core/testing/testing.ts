@@ -43,10 +43,10 @@
  * });
  * ```
  *
- * The modules of this package contain only the most common utilities from
- * these groups. More specific test helpers are provided in other Roka
- * packages. For example, {@link [jsr:@roka/git]} provides temporary git
- * repositories, and {@link [jsr:@roka/github]} provides a fake GitHub API.
+ * This package contains only the most common utilities from these groups.
+ * More specific test helpers are provided in other Roka packages. For example,
+ * {@link [jsr:@roka/git]} provides temporary git repositories, and
+ * {@link [jsr:@roka/github]} provides a fake GitHub API.
  *
  * ## Modules
  *

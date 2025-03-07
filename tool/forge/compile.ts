@@ -12,10 +12,10 @@
  * }
  * ```
  *
- * The package configuration file (`deno.json`) must contain the non-standard
- * `compile` entry with the {@linkcode CompileOptions} type. This configuration
- * declares the main entry point and the permissions required for the
- * executable compiled from the package.
+ * The package configuration file (`deno.json`) must contain a compile entry of
+ * ype {@linkcode CompileOptions}. This configuration declares the main entry
+ * point and the permissions required for the executable compiled from the
+ * package.
  *
  * ```json
  * {

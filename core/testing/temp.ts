@@ -1,6 +1,6 @@
 /**
  * This module provides common temporary objects useful for testing. Currently,
- * only the {@link tempDirectory} function is available.
+ * only the {@linkcode tempDirectory} function is available.
  *
  * ```ts
  * import { tempDirectory } from "@roka/testing/temp";

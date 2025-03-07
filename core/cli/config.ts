@@ -3,7 +3,7 @@
  * to a user configuration on the file system for the running application.
  *
  * The config object is a disposable resource that should be closed when no
- * longer needed. This can be achieved via the `using` keyword.
+ * longer needed, which can be achieved via the `using` keyword.
  *
  * ```ts
  * import { config } from "@roka/cli/config";
@@ -18,8 +18,8 @@
  *
  * The config system wraps the {@link https://deno.com/kv | Deno.Kv} API to
  * provide a simple key-value store for the running application. This API is
- * still considered experimental, and code using the config module needs to
- * have the `--unstable-kv` flag enabled.
+ * still experimental, and code using the config module needs the
+ * `--unstable-kv` flag enabled.
  *
  * @module config
  */

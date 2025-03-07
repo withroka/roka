@@ -48,8 +48,8 @@ import { basename, join } from "@std/path";
 /**
  * An error thrown by the {@link [jsr:@roka/git]} package.
  *
- * If the error is from running a git command, the error message will include
- * the command and its output.
+ * If the error is from running a git command, the message will include the
+ * command and its output.
  */
 export class GitError extends Error {
   /**

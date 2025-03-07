@@ -4,7 +4,7 @@
  * Roka "**forge**" is a tool for managing Deno packages hosted on GitHub. It
  * can compile binaries, calculate versions, and create GitHub releases.
  *
- * The tool can be run with `deno run -A jsr:@roka/forge`.
+ * Run the tool with `deno run -A jsr:@roka/forge`.
  *
  * ## Usage
  *
@@ -59,8 +59,8 @@
  *
  * ## Modules
  *
- * Functionality of `forge` is also available programmatically through the
- * following modules.
+ * Functionality of `forge` is available programmatically through the following
+ * modules.
  *
  *  -  {@link [app]}: Introspect from compiled executables.
  *  -  {@link [bump]}: Bump package versions using
