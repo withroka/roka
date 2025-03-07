@@ -28,14 +28,14 @@ import { retryExchange } from "@urql/exchange-retry";
 /** A GraphQL client returned by {@linkcode graphqlClient}. */
 export interface GraphQLClient {
   /** Makes a GraphQL query. */
-  query<ResultType>(
+  query<Result>(
     query: string,
     variables?: Record<string, unknown>,
-  ): Promise<ResultType>;
+  ): Promise<Result>;
   /** Makes a paginated GraphQL query, given a {@linkcode GraphQLPaginator}. */
-  queryPaginated<ResponseType, Node, Edge, PageInfo>(
+  queryPaginated<Result, Node, Edge, PageInfo>(
     query: string,
-    paginator: GraphQLPaginator<ResponseType, Node, Edge, PageInfo>,
+    paginator: GraphQLPaginator<Result, Node, Edge, PageInfo>,
     variables?: Record<string, unknown>,
   ): Promise<Node[]>;
 }
@@ -51,13 +51,13 @@ export interface GraphQLClientOptions {
  * A custom paginator is needed by {@linkcode graphqlClient.queryPaginated} for
  * nodes it is querying.
  */
-export interface GraphQLPaginator<ResponseType, Node, Edge, PageInfo> {
+export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
   /** Extracts edges from the response data. */
-  edges(data: ResponseType): Edge[];
+  edges(data: Result): Edge[];
   /** Extracts nodes from an edge. */
   node(edge: Edge): Node;
   /** Extracts an object that contains page and cursor information. */
-  pageInfo(data: ResponseType): PageInfo;
+  pageInfo(data: Result): PageInfo;
   /**
    * Extracts the cursor for the next page from page information.
    *
@@ -162,29 +162,26 @@ export function graphqlClient(
     },
   });
   return {
-    async query<ResponseType>(
+    async query<Result>(
       query: string,
       variables: Record<string, unknown> = {},
-    ): Promise<ResponseType> {
+    ): Promise<Result> {
       const response = await client.query(query, variables);
       if (response.error) {
         throw new RequestError(response.error.message, response.data.status);
       }
-      return response.data as ResponseType;
+      return response.data as Result;
     },
-    async queryPaginated<ResponseType, Node, Edge, PageInfo>(
+    async queryPaginated<Result, Node, Edge, PageInfo>(
       query: string,
-      paginator: GraphQLPaginator<ResponseType, Node, Edge, PageInfo>,
+      paginator: GraphQLPaginator<Result, Node, Edge, PageInfo>,
       variables: AnyVariables & { cursor?: string; limit?: number } = {},
     ): Promise<Node[]> {
       const nodes: Node[] = [];
       let cursor: string | null = null;
       do {
         // deno-lint-ignore no-await-in-loop
-        const data = await this.query<ResponseType>(query, {
-          ...variables,
-          cursor,
-        });
+        const data = await this.query<Result>(query, { ...variables, cursor });
         const edges = paginator.edges(data);
         nodes.push(...edges.map(paginator.node));
         const pageInfo = paginator.pageInfo(data);
