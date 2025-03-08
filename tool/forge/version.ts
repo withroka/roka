@@ -3,7 +3,7 @@
  * runtime. Currently, only the {@linkcode version} function is available.
  *
  * ```ts
- * import { version } from "@roka/forge/app";
+ * import { version } from "@roka/forge/version";
  * const appVersion = await version();
  * ```
  *

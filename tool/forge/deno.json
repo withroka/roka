@@ -3,12 +3,12 @@
   "version": "0.0.2",
   "exports": {
     ".": "./forge.ts",
-    "./app": "./app.ts",
     "./bump": "./bump.ts",
     "./changelog": "./changelog.ts",
     "./compile": "./compile.ts",
     "./package": "./package.ts",
-    "./release": "./release.ts"
+    "./release": "./release.ts",
+    "./version": "./version.ts"
   },
   "compile": {
     "main": "forge.ts",

@@ -1,4 +1,4 @@
-import { version } from "@roka/forge/app";
+import { version } from "@roka/forge/version";
 import { assertMatch } from "@std/assert";
 
 Deno.test("version() provides version", async () => {
