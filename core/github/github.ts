@@ -265,35 +265,36 @@ export type ReleaseUpdateOptions = Partial<
  */
 export function github(options?: GitHubOptions): GitHub {
   const api = new Octokit({ auth: options?.token });
-  return {
-    repos: new class {
-      get(
-        owner: string,
-        repo: string,
-        options?: RepositoryGetOptions,
-      ): Repository;
-      get(options?: RepositoryGetOptions): Promise<Repository>;
-      get(
-        ownerOrOptions?: string | RepositoryGetOptions,
-        repo?: string,
-        options?: RepositoryGetOptions,
-      ): Repository | Promise<Repository> {
-        if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
-        const git = gitRepo(
-          options?.directory !== undefined ? { cwd: options.directory } : {},
-        );
-        if (typeof ownerOrOptions === "string") {
-          assert(repo);
-          return repository(git, api, ownerOrOptions, repo);
-        }
-        return (async () => {
-          const remote = await git.remotes.get();
-          const { owner, repo } = parseRemote(remote.pushUrl);
-          return repository(git, api, owner, repo);
-        })();
-      }
-    }(),
-  };
+  return { repos: repositories(api) };
+}
+
+function repositories(api: Octokit): Repositories {
+  function get(
+    owner: string,
+    repo: string,
+    options?: RepositoryGetOptions,
+  ): Repository;
+  async function get(options?: RepositoryGetOptions): Promise<Repository>;
+  function get(
+    ownerOrOptions?: string | RepositoryGetOptions,
+    repo?: string,
+    options?: RepositoryGetOptions,
+  ): Repository | Promise<Repository> {
+    if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
+    const git = gitRepo(
+      options?.directory !== undefined ? { cwd: options.directory } : {},
+    );
+    if (typeof ownerOrOptions === "string") {
+      assert(repo);
+      return repository(git, api, ownerOrOptions, repo);
+    }
+    return (async () => {
+      const remote = await git.remotes.get();
+      const { owner, repo } = parseRemote(remote.pushUrl);
+      return repository(git, api, owner, repo);
+    })();
+  }
+  return { get };
 }
 
 function repository(

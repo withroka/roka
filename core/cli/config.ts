@@ -139,8 +139,6 @@ export function config<T extends Record<string, unknown>>(
     },
   };
   return Object.assign(config, {
-    [Symbol.dispose]() {
-      kv?.close();
-    },
+    [Symbol.dispose]: () => kv?.close(),
   });
 }

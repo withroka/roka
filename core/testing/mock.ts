@@ -349,9 +349,7 @@ export function mock<
           );
         }
       },
-      [Symbol.dispose]() {
-        mock.restore();
-      },
+      [Symbol.dispose]: () => mock.restore(),
     },
   );
   return Object.defineProperties(mock, {
