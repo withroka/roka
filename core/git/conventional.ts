@@ -6,7 +6,7 @@
  * ```ts
  * import { git } from "@roka/git";
  * import { conventional } from "@roka/git/conventional";
- * import { assert, assertEquals } from "@std/assert";
+ * import { assertEquals, assertFalse } from "@std/assert";
  * async function usage() {
  *   const repo = git();
  *   await repo.commits.create("feat(cli): add new command");
