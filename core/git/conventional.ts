@@ -6,7 +6,7 @@
  * ```ts
  * import { git } from "@roka/git";
  * import { conventional } from "@roka/git/conventional";
- * import { assert, assertEquals } from "@std/assert";
+ * import { assertEquals, assertFalse } from "@std/assert";
  * async function usage() {
  *   const repo = git();
  *   await repo.commits.create("feat(cli): add new command");
@@ -14,7 +14,7 @@
  *   assertEquals(commit.type, "feat");
  *   assertEquals(commit.scopes, ["cli"]);
  *   assertEquals(commit.description, "add new command");
- *   assert(!commit.breaking);
+ *   assertFalse(commit.breaking);
  * }
  * ```
  *
@@ -26,7 +26,7 @@
  */
 
 import type { Commit } from "@roka/git";
-import { assert } from "@std/assert";
+import { assertExists } from "@std/assert";
 
 /**
  * A {@link https://www.conventionalcommits.org | Conventional Commit} returned
@@ -59,7 +59,7 @@ export interface ConventionalCommit extends Commit {
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * await repo.commits.create("feat(cli): add new command");
- * const commit = conventional(await repo.commits.head())
+ * const commit = conventional(await repo.commits.head());
  *
  * assertEquals(commit.type, "feat");
  * assertEquals(commit.scopes, ["cli"]);
@@ -76,7 +76,7 @@ export function conventional(commit: Commit): ConventionalCommit {
     /^(?:(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\))?(?<exclamation>!?):s*)?\s*(?<description>[^\s].*)$/,
   );
   const { type, scopes, exclamation, description } = { ...match?.groups };
-  assert(description, "Commit must have description");
+  assertExists(description, "Commit must have description");
   if (!type) return { ...commit, description, scopes: [], footers };
   const breaking = footerBreaking || (exclamation ? description : undefined);
   return {

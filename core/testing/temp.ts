@@ -25,9 +25,9 @@ export interface TempDirectory extends AsyncDisposable {
  * @example Using a temporary directory.
  * ```ts
  * import { tempDirectory } from "@roka/testing/temp";
- * import { assert } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  * await using directory = await tempDirectory();
- * assert((await Deno.stat(directory.path())).isDirectory)
+ * assertEquals((await Deno.stat(directory.path())).isDirectory, true);
  * ```
  */
 export async function tempDirectory(): Promise<TempDirectory> {

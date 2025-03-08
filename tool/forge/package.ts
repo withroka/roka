@@ -30,7 +30,7 @@
 
 import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
-import { assert } from "@std/assert";
+import { assertExists } from "@std/assert";
 import {
   basename,
   dirname,
@@ -341,8 +341,8 @@ async function calculateUpdate(pkg: Package): Promise<Update | undefined> {
 }
 
 function forcedUpdate(pkg: Package): Update {
-  assert(pkg.release?.version, "Cannot force update without prior a version");
-  assert(pkg.config.version, "Cannot force update without target a version");
+  assertExists(pkg.release?.version, "Force update without prior a version");
+  assertExists(pkg.config.version, "Force update without target a version");
   const oldVersion = parseVersion(pkg.release.version);
   const newVersion = parseVersion(pkg.config.version);
   if (lessThan(newVersion, oldVersion)) {

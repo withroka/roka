@@ -46,7 +46,7 @@
  * @module request
  */
 
-import { assert } from "@std/assert";
+import { assertExists } from "@std/assert";
 import { retry, type RetryOptions } from "@std/async/retry";
 import { omit } from "@std/collections";
 import { STATUS_CODE } from "@std/http/status";
@@ -146,7 +146,7 @@ export async function request(
     }
   }, init?.retry);
   if (caught) throw caught;
-  assert(response, "response was left undefined");
+  assertExists(response, "Response is undefined");
   if (!response.ok) {
     if (init?.allowedErrors?.includes(response.status)) return response;
     throw new RequestError(response.statusText, response.status);

@@ -39,7 +39,7 @@
 import type { components } from "@octokit/openapi-types/types";
 import { Octokit } from "@octokit/rest";
 import { type Git, git as gitRepo } from "@roka/git";
-import { assert } from "@std/assert";
+import { assertExists } from "@std/assert";
 import { basename } from "@std/path";
 
 /**
@@ -285,7 +285,7 @@ function repositories(api: Octokit): Repositories {
       options?.directory !== undefined ? { cwd: options.directory } : {},
     );
     if (typeof ownerOrOptions === "string") {
-      assert(repo);
+      assertExists(repo, "Missing repository name");
       return repository(git, api, ownerOrOptions, repo);
     }
     return (async () => {
@@ -327,9 +327,9 @@ function repository(
       },
       async create(options) {
         const head = options?.head ?? await git.branches.current();
-        assert(head, "Cannot determine current branch");
+        assertExists(head, "Cannot determine current branch");
         const base = options?.base ?? await git.remotes.defaultBranch();
-        assert(base, "Cannot determine remote base branch");
+        assertExists(base, "Cannot determine remote base branch");
         const commit = !options?.title
           ? (await git.commits.log({ range: { from: base } })).pop()
           : undefined;
@@ -395,10 +395,10 @@ function pullRequest(
     | components["schemas"]["pull-request-simple"]
   >,
 ): PullRequest {
-  assert(data.html_url, "Missing pull request URL");
-  assert(data.number, "Missing pull request number");
-  assert(data.base?.ref, "Missing pull request base branch");
-  assert(data.head?.ref, "Missing pull request head branch");
+  assertExists(data.html_url, "Missing pull request URL");
+  assertExists(data.number, "Missing pull request number");
+  assertExists(data.base?.ref, "Missing pull request base branch");
+  assertExists(data.head?.ref, "Missing pull request head branch");
   const state = data.state;
   const result: PullRequest = {
     repo,
@@ -433,10 +433,10 @@ function release(
   repo: Repository,
   data: Partial<components["schemas"]["release"]>,
 ): Release {
-  assert(data.html_url, "Missing release URL");
-  assert(data.id, "Missing release ID");
-  assert(data.tag_name, "Missing release tag");
-  assert(data.target_commitish, "Missing release target commit");
+  assertExists(data.html_url, "Missing release URL");
+  assertExists(data.id, "Missing release ID");
+  assertExists(data.tag_name, "Missing release tag");
+  assertExists(data.target_commitish, "Missing release target commit");
   const result: Release = {
     repo,
     url: data.html_url,
@@ -502,9 +502,9 @@ function releaseAsset(
   release: Release,
   data: Partial<components["schemas"]["release-asset"]>,
 ): ReleaseAsset {
-  assert(data.browser_download_url, "Missing release asset URL");
-  assert(data.id, "Missing release asset ID");
-  assert(data.size, "Missing release asset size");
+  assertExists(data.browser_download_url, "Missing release asset URL");
+  assertExists(data.id, "Missing release asset ID");
+  assertExists(data.size, "Missing release asset size");
   const result: ReleaseAsset = {
     release,
     url: data.browser_download_url,

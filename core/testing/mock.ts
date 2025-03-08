@@ -75,7 +75,7 @@
  * @module mock
  */
 
-import { assert } from "@std/assert";
+import { assertExists } from "@std/assert";
 import { dirname, fromFileUrl, parse, resolve, toFileUrl } from "@std/path";
 import { type GetParametersFromProp, MockError, stub } from "@std/testing/mock";
 
@@ -470,7 +470,7 @@ class MockContext {
       }
     }
     const mock = this.mocks.get(path);
-    assert(mock !== undefined, "Mock not loaded correctly");
+    assertExists(mock, "Mock not loaded correctly");
     const name = this.name(
       context,
       self,
@@ -492,7 +492,7 @@ class MockContext {
       });
     }
     const state = mock.states.get(name);
-    assert(state !== undefined, "State not loaded correctly");
+    assertExists(state, "State not loaded correctly");
     return state as MockState<Input, Output>;
   }
 
