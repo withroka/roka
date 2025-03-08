@@ -8,7 +8,7 @@
 Hey! 👋
 
 Welcome to our development repository! It’s a collection of tools and libraries
-that help streamline product development. It is built using
+that help streamline product development. It is built with
 [Deno](https://deno.com) and [TypeScript](https://www.typescriptlang.org).
 
 > [!WARNING]
