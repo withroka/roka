@@ -137,7 +137,7 @@ function compileCommand(targets: string[]) {
       collect: true,
     })
     .option("--release", "Use new release version.", { default: false })
-    .option("--bundle", "Zip and bundle artfifacts.", { default: false })
+    .option("--bundle", "Zip and bundle artifacts.", { default: false })
     .option("--checksum", "Create a checksum file.", { default: false })
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
