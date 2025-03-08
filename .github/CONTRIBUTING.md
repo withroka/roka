@@ -51,20 +51,18 @@ category contains development tools. As the codebase grows, new categories like
 - Write
   [inclusive](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md)
   code.
-- Prefer singular names (_`tool`, not `tools`_).
+- Prefer singular names (`tool`, not `tools`).
 
 ### Packages
 
-- Group modules around a subject into a package
-  (_[**@roka/testing**][testing]_).
+- Group modules around a subject into a package (**@roka/testing**).
 
 ### Modules
 
-- Export core functionality from the default module (_[**@roka/git**][git]_).
-- Group common functionality into submodules
-  (_[**@roka/git/conventional**][conventional]_).
-- Export a function with the same name as the module (_`conventional()`_).
-- Avoid relative imports (_`"./conventional.ts"`_).
+- Export core functionality from the default module (**@roka/git**).
+- Group common functionality into submodules (**@roka/git/conventional**).
+- Export a function with the same name as the module (`conventional()`).
+- Avoid relative imports (`"./conventional.ts"`).
 - Avoid circular imports.
 - Avoid re-exports.
 - Avoid internal modules.
@@ -73,15 +71,15 @@ category contains development tools. As the codebase grows, new categories like
 
 - Export functionality with functions.
 - Also export types used in the function interface.
-- Export data as plain objects (_`as const`_).
+- Export data as plain objects (`as const`).
 - Do not export classes, except for errors.
 
 ### Files
 
-- Name the default package file after the package (_`git.ts` and `git.test.ts`,
-  not `mod.ts`_).
-- Name the module files after the module (_`conventional.ts` and
-  `conventional.test.ts`_).
+- Name the default package file after the package (`git.ts` and `git.test.ts`,
+  not `mod.ts`).
+- Name the module files after the module (`conventional.ts` and
+  `conventional.test.ts`).
 
 ### Functions
 
@@ -89,22 +87,22 @@ category contains development tools. As the codebase grows, new categories like
 - Avoid parameter types that cannot be distinguished at runtime, except for
   options.
 - Prefer overloads for different input variants.
-- Name the options type after the function (_`GitOptions`_).
+- Name the options type after the function (`GitOptions`).
 
 ### Types
 
 - Use `interface` for both data and functionality.
 - Use `type` for type utilities and aliases
-- Prefer no definition over `undefined` or `null` (_`x?: bool`, and not
-  `x: bool | undefined`_).
-- Name the data types after their factory functions (_`Git`_).
+- Prefer no definition over `undefined` or `null` (`x?: bool`, not
+  `x: bool | undefined`).
+- Name the data types after their factory functions (`Git`).
 - Do not export classes, except for errors.
 
 ### Errors
 
-- Assert code assumptions (_throw `AssertionError`_).
+- Assert code assumptions (throw `AssertionError`).
 - Throw a specific type on runtime errors.
-- Name error classes after their package or module (_`GitError`_).
+- Name error classes after their package or module (`GitError`).
 - Provide re-thrown errors as
   [`cause`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause).
 - Write clear, concise, and consistent error messages.
@@ -114,7 +112,7 @@ category contains development tools. As the codebase grows, new categories like
 
 - Add tests for new features.
 - Add tests for fixed bugs.
-- Name tests explicitly (_`"git().clone() clones a repo"`_).
+- Name tests explicitly (`"git().clone() clones a repo"`).
 
 ### Documentation
 
@@ -123,8 +121,3 @@ category contains development tools. As the codebase grows, new categories like
 - Document every exported symbol.
 - Document missing features or known bugs with `@todo`.
 - Do not document self-explanatory parameters, returns, or throws.
-
-[git]: https://jsr.io/@roka/git
-[conventional]: https://jsr.io/@roka/git/conventional
-[forge]: https://jsr.io/@roka/forge
-[testing]: https://jsr.io/@roka/testing
