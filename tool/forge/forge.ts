@@ -86,16 +86,58 @@ import { release } from "@roka/forge/release";
 import { version } from "@roka/forge/version";
 import { join, relative } from "@std/path";
 
+function listCommand() {
+  return new Command()
+    .description("List packages, versions, and changelogs.")
+    .example("forge list", "List all packages.")
+    .example("forge list --modules", "List all modules.")
+    .example("forge list --changelog", "Display package changelogs.")
+    .arguments("[packages...:file]")
+    .option("--modules", "Print exported package modules.", { default: false })
+    .option("--changelog", "Print package changelog.", { default: false })
+    .action(async ({ modules, changelog }, ...filters) => {
+      const packages = await workspace({ filters });
+      new Table().body(
+        packages.map((pkg) => [
+          "📦",
+          pkg.directory,
+          modules ? modulesText(pkg) : pkg.config.name,
+          pkg.version,
+          ...(pkg.release?.version !== pkg.config.version)
+            ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
+            : [],
+          changelog ? changelogText(pkg) : undefined,
+        ]),
+      ).render();
+    });
+}
+
+function modulesText(pkg: Package): string | undefined {
+  const name = pkg.config.name;
+  if (name === undefined) return undefined;
+  const exports = pkg.config.exports ?? {};
+  if (typeof exports === "string") return name;
+  return Object.keys(exports)
+    .map((key) => join(name, relative(".", key)))
+    .join("\n");
+}
+
 function compileCommand(targets: string[]) {
   return new Command()
     .description("Compile packages into binary executables.")
+    .example("forge compile", "Compile packages.")
+    .example("forge compile --install", "Install binaries.")
+    .example(
+      "forge compile --release --bundle --checksum",
+      "Create release assets.",
+    )
     .arguments("[packages...:file]")
     .type("target", new EnumType(targets))
     .option("--target=<architecture:target>", "Target OS architecture.", {
       collect: true,
     })
     .option("--release", "Use new release version.", { default: false })
-    .option("--bundle", "Zip and bundle artfifacts.", { default: false })
+    .option("--bundle", "Zip and bundle artifacts.", { default: false })
     .option("--checksum", "Create a checksum file.", { default: false })
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
@@ -118,6 +160,8 @@ function compileCommand(targets: string[]) {
 function bumpCommand() {
   return new Command()
     .description("Bump versions on package config files.")
+    .example("forge bump", "Bump versions.")
+    .example("forge bump --pr", "Create a version bump PR.")
     .arguments("[packages...:file]")
     .option("--pr", "Create a pull request.", { default: false })
     .env("GIT_NAME=<name:string>", "Git user name for the bump commit.", {
@@ -143,6 +187,8 @@ function bumpCommand() {
 function releaseCommand() {
   return new Command()
     .description("Creates releases for updated packages.")
+    .example("forge release", "Create releases and tags for all updates.")
+    .example("forge release --draft", "Create draft releases for all updates.")
     .option("--draft", "Create a draft release.", { default: false })
     .arguments("[packages...:file]")
     .env(
@@ -161,43 +207,15 @@ function releaseCommand() {
     });
 }
 
-function listCommand() {
-  return new Command()
-    .description("List packages, versions, and changelogs.")
-    .arguments("[packages...:file]")
-    .option("--modules", "Print exported package modules.", { default: false })
-    .option("--changelog", "Print package changelog.", { default: false })
-    .action(async ({ modules, changelog }, ...filters) => {
-      const packages = await workspace({ filters });
-      new Table().body(
-        packages.map((pkg) => [
-          "📦",
-          pkg.directory,
-          modules ? modulesText(pkg) : pkg.config.name,
-          pkg.version,
-          ...pkg.release?.version !== pkg.config.version
-            ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
-            : [],
-          changelog ? changelogText(pkg) : undefined,
-        ]),
-      ).render();
-    });
-}
-
-function modulesText(pkg: Package): string | undefined {
-  const name = pkg.config.name;
-  if (name === undefined) return undefined;
-  const exports = pkg.config.exports ?? {};
-  if (typeof exports === "string") return name;
-  return Object.keys(exports)
-    .map((key) => join(name, relative(".", key)))
-    .join("\n");
-}
-
 if (import.meta.main) {
   await new Command()
     .name("forge")
     .description("Manage packages.")
+    .example("forge", "List all packages.")
+    .example("forge list 'core/*'", "List packages in the 'core' directory.")
+    .example("forge compile --install", "Compile and install all binaries.")
+    .example("forge bump --pr", "Bump versions and create a bump PR.")
+    .example("forge release --draft", "Create releases with compiled assets.")
     .usage("<command> [options] [packages...]")
     .version(await version({ build: true, deno: true }))
     .default("list")
