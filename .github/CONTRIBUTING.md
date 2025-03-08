@@ -93,8 +93,8 @@ category contains development tools. As the codebase grows, new categories like
 
 - Use `interface` for both data and functionality.
 - Use `type` for type utilities and aliases
-- Prefer no definition over `undefined` or `null` (`x?: bool`, not
-  `x: bool | undefined`).
+- Prefer no definition over `undefined` or `null` (`x?: string`, not
+  `x: string | undefined`).
 - Name the data types after their factory functions (`Git`).
 - Do not export classes, except for errors.
 
