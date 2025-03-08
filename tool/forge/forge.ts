@@ -78,12 +78,12 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool } from "@roka/async/pool";
-import { version } from "@roka/forge/app";
 import { bump } from "@roka/forge/bump";
 import { changelog as changelogText } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { type Package, workspace } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
+import { version } from "@roka/forge/version";
 import { join, relative } from "@std/path";
 
 function compileCommand(targets: string[]) {

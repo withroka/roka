@@ -20,8 +20,8 @@ const IMPORT_MAP = {
   "@roka/async/pool": "./roka/core/async/pool.ts",
   "@roka/git": "./roka/core/git/git.ts",
   "@roka/git/conventional": "./roka/core/git/conventional.ts",
-  "@roka/forge/app": "./roka/tool/forge/app.ts",
   "@roka/forge/package": "./roka/tool/forge/package.ts",
+  "@roka/forge/version": "./roka/tool/forge/version.ts",
 };
 
 Deno.test("compile() rejects package without compile config", async () => {
@@ -47,7 +47,7 @@ Deno.test("compile() compiles into a binary", async () => {
   await Deno.writeTextFile(
     repo.path("main.ts"),
     [
-      'import { version } from "@roka/forge/app";',
+      'import { version } from "@roka/forge/version";',
       "console.log(await version());",
     ].join("\n"),
   );
@@ -76,7 +76,7 @@ Deno.test("compile() can create release bundles", async () => {
   await Deno.writeTextFile(
     repo.path("main.ts"),
     [
-      'import { version } from "@roka/forge/app";',
+      'import { version } from "@roka/forge/version";',
       "console.log(await version());",
     ].join("\n"),
   );
