@@ -26,7 +26,7 @@ import {
   type ReleaseAsset,
   type Repository,
 } from "@roka/github";
-import { assert } from "@std/assert";
+import { assertExists } from "@std/assert";
 import { parse as parseVersion } from "@std/semver";
 
 /** Max concurrent calls to GitHub. */
@@ -108,7 +108,7 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
 }
 
 function body(pkg: Package, repo: Repository): string {
-  assert(pkg.version, "Cannot release a package without version");
+  assertExists(pkg.version, "Cannot release a package without version");
   const title = pkg.release?.tag ? "Changelog" : "Initial release";
   const tag = `${pkg.name}@${pkg.version}`;
   const fullChangelogUrl = pkg?.release?.tag

@@ -42,7 +42,12 @@
  * @module git
  */
 
-import { assert, assertEquals, assertFalse, assertGreater } from "@std/assert";
+import {
+  assertEquals,
+  assertExists,
+  assertFalse,
+  assertGreater,
+} from "@std/assert";
 import { basename, join } from "@std/path";
 
 /**
@@ -654,17 +659,17 @@ export function git(options?: GitOptions): Git {
           options?.sign !== undefined && signArg(options.sign, "commit"),
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
-        assert(hash, "Cannot find created commit");
+        assertExists(hash, "Cannot find created commit");
         const [commit] = await git.commits.log({
           maxCount: 1,
           range: { to: hash },
         });
-        assert(commit, "Cannot find created commit");
+        assertExists(commit, "Cannot find created commit");
         return commit;
       },
       async head() {
         const [commit] = await git.commits.log({ maxCount: 1 });
-        assert(commit, "No HEAD commit.");
+        assertExists(commit, "No HEAD commit.");
         return commit;
       },
       async log(options) {
@@ -719,7 +724,7 @@ export function git(options?: GitOptions): Git {
           options?.sign !== undefined && signArg(options.sign, "tag"),
         );
         const [tag] = await git.tags.list({ name });
-        assert(tag, "Cannot find created tag");
+        assertExists(tag, "Cannot find created tag");
         return tag;
       },
       async list(options?: TagListOptions) {
@@ -737,13 +742,13 @@ export function git(options?: GitOptions): Git {
         );
         const tags = parseOutput(TAG_FORMAT, output);
         return await Promise.all(tags.map(async (tag) => {
-          assert(tag.name, "Tag name not filled");
-          assert(tag.commit?.hash, "Commit hash not filled for tag");
+          assertExists(tag.name, "Tag name not filled");
+          assertExists(tag.commit?.hash, "Commit hash not filled for tag");
           const [commit] = await git.commits.log({
             maxCount: 1,
             range: { to: tag.commit.hash },
           });
-          assert(commit, "Cannot find commit for tag");
+          assertExists(commit, "Cannot find commit for tag");
           const name: string = tag.name;
           return { ...tag, name, commit };
         }));
@@ -766,7 +771,8 @@ export function git(options?: GitOptions): Git {
           /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*(\n|$)/,
         );
         const { fetchUrl, pushUrl } = { ...match?.groups };
-        assert(fetchUrl && pushUrl, "Cannot parse remote information");
+        assertExists(fetchUrl, "Cannot parse remote information");
+        assertExists(pushUrl, "Cannot parse remote information");
         return { name, fetchUrl, pushUrl };
       },
       async add(url, name = "origin") {
@@ -779,7 +785,7 @@ export function git(options?: GitOptions): Git {
           /\n\s*HEAD branch:\s*(?<defaultBranch>.+)\s*(\n|$)/,
         );
         const { defaultBranch } = { ...match?.groups };
-        assert(defaultBranch, "Cannot parse remote information");
+        assertExists(defaultBranch, "Cannot parse remote information");
         return defaultBranch === "(unknown)" ? undefined : defaultBranch;
       },
     },
@@ -822,7 +828,7 @@ async function run(
     return new TextDecoder().decode(stdout).trim();
   } catch (e: unknown) {
     if (e instanceof Deno.errors.NotCapable) {
-      throw new GitError("Permission error. Use `--allow-run=git`.");
+      throw new GitError("Permission error (use `--allow-run=git`)");
     }
     throw e;
   }
@@ -944,7 +950,7 @@ const LOG_FORMAT: FormatDescriptor<Commit> = {
       optional: true,
       transform: (bodyAndTrailers: string, parent: Record<string, string>) => {
         const hash = parent["hash"];
-        assert(hash, "Cannot parse git output");
+        assertExists(hash, "Cannot parse git output");
         let [body, trailers] = bodyAndTrailers.split(hash, 2);
         if (trailers && body && body.endsWith(trailers)) {
           body = body.slice(0, -trailers.length);
@@ -1061,7 +1067,7 @@ function formattedObject<T>(
   }
 
   const value = parts.shift();
-  assert(value !== undefined, "Cannot parse git output");
+  assertExists(value, "Cannot parse git output");
   if (format.optional && value === "\x00") {
     return [undefined, value, value.length];
   }
@@ -1084,7 +1090,7 @@ function parseOutput<T>(
     assertEquals(parts.length, fields.length, "Cannot parse git output");
     assertFalse(parts.some((p) => p === undefined), "Cannot parse git output");
     const [object, _, length] = formattedObject({}, format, parts);
-    assert(object, "Cannot parse git output");
+    assertExists(object, "Cannot parse git output");
     result.push(object);
     output = output.slice(length + (fields.length) * delimiter.length)
       .trimStart();

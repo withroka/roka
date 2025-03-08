@@ -40,7 +40,7 @@ import {
   PackageError,
   type Permissions,
 } from "@roka/forge/package";
-import { assert } from "@std/assert";
+import { assertExists, assertNotEquals } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
 
@@ -92,7 +92,7 @@ export async function compile(
   } = options ?? {};
   const { main, include = [], kv = false, permissions = {} } =
     pkg.config.compile ?? {};
-  assert(main, "Compile entrypoint is required");
+  assertExists(main, "Compile entrypoint is required");
   const version = options?.release ? pkg.config?.version : pkg.version;
   const directory = version
     ? join(dist, pkg.name, version)
@@ -164,11 +164,11 @@ export async function compile(
 export async function targets(): Promise<string[]> {
   const command = new Deno.Command("deno", { args: ["compile", "--target"] });
   const { code, stderr } = await command.output();
-  assert(code !== 0, "Expected the command to fail");
+  assertNotEquals(code, 0, "Expected the command to fail");
   const match = new TextDecoder().decode(stderr).match(
     /\[possible values: (?<targets>.+)\]/,
   );
-  assert(match?.groups?.targets, "Expected targets in stderr");
+  assertExists(match?.groups?.targets, "Expected targets in stderr");
   return match.groups.targets.split(", ");
 }
 
