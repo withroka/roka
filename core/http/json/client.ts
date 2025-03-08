@@ -1,13 +1,13 @@
 /**
- * This module provides the {@linkcode jsonClient} function to make JSON
+ * This module provides the {@linkcode client} function to make JSON
  * requests and receive JSON responses. It is useful for building JSON-based
  * API clients.
  *
  * ```ts
- * import { jsonClient } from "@roka/http/json";
+ * import { client } from "@roka/http/json/client";
  * async function usage() {
  *   interface Issue { number: number; state: string; };
- *   const api = jsonClient("https://api.github.com");
+ *   const api = client("https://api.github.com");
  *   await api.post<Issue>("/repos/owner/repo/issues", {
  *     title: "Test issue",
  *   });
@@ -20,8 +20,8 @@
 
 import { request } from "@roka/http/request";
 
-/** A JSON client returned by the {@linkcode jsonClient} function. */
-export interface JsonClient {
+/** A JSON client returned by the {@linkcode client} function. */
+export interface Client {
   /** Makes a GET request. */
   get<T>(path: string): Promise<Partial<T>>;
   /** Makes a DELETE request. */
@@ -34,8 +34,8 @@ export interface JsonClient {
   put<T>(path: string, body: object): Promise<Partial<T>>;
 }
 
-/** Options for the {@linkcode jsonClient} function. */
-export interface JsonClientOptions {
+/** Options for the {@linkcode client} function. */
+export interface ClientOptions {
   /** The bearer token to be sent with the request headers. */
   token?: string;
   /** The user agent to be sent with the request headers. */
@@ -49,20 +49,20 @@ export interface JsonClientOptions {
  *
  * @example Make a JSON request.
  * ```ts
- * import { jsonClient } from "@roka/http/json";
+ * import { client } from "@roka/http/json/client";
  * async function usage() {
  *   interface Issue { number: number; state: string; };
- *   const api = jsonClient("https://api.github.com");
+ *   const api = client("https://api.github.com");
  *   const issue = await api.get<Issue>("/repos/owner/repo/issues/1");
  * }
  * ```
  *
  * @example Make an authenticated JSON request.
  * ```ts
- * import { jsonClient } from "@roka/http/json";
+ * import { client } from "@roka/http/json/client";
  * async function usage() {
  *   interface Issue { number: number; state: string; };
- *   const api = jsonClient("https://api.github.com", {
+ *   const api = client("https://api.github.com", {
  *     token: "TOKEN",
  *   });
  *   await api.post<Issue>("/repos/owner/repo/issues", {
@@ -71,10 +71,7 @@ export interface JsonClientOptions {
  * }
  * ```
  */
-export function jsonClient(
-  url: string,
-  options?: JsonClientOptions,
-): JsonClient {
+export function client(url: string, options?: ClientOptions): Client {
   async function req<T>(
     method: string,
     path: string,
@@ -95,20 +92,10 @@ export function jsonClient(
     return await response.json();
   }
   return {
-    async get(path) {
-      return await req("GET", path);
-    },
-    async delete(path) {
-      return await req("DELETE", path);
-    },
-    async patch(path, body) {
-      return await req("PATCH", path, body);
-    },
-    async put(path, body) {
-      return await req("PUT", path, body);
-    },
-    async post(path, body) {
-      return await req("POST", path, body);
-    },
+    get: async (path) => await req("GET", path),
+    delete: async (path) => await req("DELETE", path),
+    patch: async (path, body) => await req("PATCH", path, body),
+    put: async (path, body) => await req("PUT", path, body),
+    post: async (path, body) => await req("POST", path, body),
   };
 }

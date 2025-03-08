@@ -1,6 +1,6 @@
 export const mock = {};
 
-mock[`graphqlClient().query() makes GraphQL query > fetch 1`] =
+mock[`client().query() makes GraphQL query > fetch 1`] =
 [
   {
     input: [
@@ -29,16 +29,16 @@ mock[`graphqlClient().query() makes GraphQL query > fetch 1`] =
           "x-content-type-options": "nosniff",
           "x-frame-options": "deny",
           "x-github-media-type": "unknown, github.v4",
-          "x-github-request-id": "E604:360DFD:113BE13:11C3CF2:67C974AB",
+          "x-github-request-id": "D415:3E21CC:D02747:10DE880:67CC35BF",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4726",
-          "x-ratelimit-reset": "1741257489",
+          "x-ratelimit-remaining": "4333",
+          "x-ratelimit-reset": "1741438831",
           "x-ratelimit-resource": "graphql",
-          "x-ratelimit-used": "274",
+          "x-ratelimit-used": "667",
           "x-xss-protection": "0",
-          date: "Thu, 06 Mar 2025 10:10:51 GMT",
+          date: "Sat, 08 Mar 2025 12:19:12 GMT",
           server: "github.com",
           vary: "Accept-Encoding, Accept, X-Requested-With",
         },
@@ -49,7 +49,7 @@ mock[`graphqlClient().query() makes GraphQL query > fetch 1`] =
   },
 ];
 
-mock[`graphqlClient().queryPaginated() makes paginated GraphQL query > fetch 1`] =
+mock[`client().queryPaginated() makes paginated GraphQL query > fetch 1`] =
 [
   {
     input: [
@@ -65,7 +65,7 @@ mock[`graphqlClient().queryPaginated() makes paginated GraphQL query > fetch 1`]
       },
     ],
     output: [
-      '{"data":{"repository":{"issues":{"nodes":[{"number":7,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":8,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":9,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":10,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":11,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":12,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":13,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":14,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":15,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":16,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":17,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":18,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":19,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":20,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":21,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":22,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":23,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":24,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":45,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":47,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":48,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":49,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":52,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":54,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":55,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":56,"title":"Test issue","state":"OPEN","__typename":"Issue"},{"number":57,"title":"Test issue","state":"CLOSED","__typename":"Issue"}],"pageInfo":{"endCursor":"Y3Vyc29yOnYyOpK5MjAyNS0wMy0wNlQxMDoxNjo1MyswMTowMM6s19EZ","startCursor":"Y3Vyc29yOnYyOpK5MjAyNS0wMi0xOFQyMzoxMzo1OCswMTowMM6qkspf","hasNextPage":false,"hasPreviousPage":false,"__typename":"PageInfo"},"__typename":"IssueConnection"},"__typename":"Repository"}}}',
+      '{"data":{"repository":{"issues":{"nodes":[{"number":7,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":8,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":9,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":10,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":11,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":12,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":13,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":14,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":15,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":16,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":17,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":18,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":19,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":20,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":21,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":22,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":23,"title":"Test","state":"CLOSED","__typename":"Issue"},{"number":24,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":45,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":47,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":48,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":49,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":52,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":54,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":55,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":56,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":57,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":58,"title":"Test issue","state":"CLOSED","__typename":"Issue"},{"number":59,"title":"Test issue","state":"CLOSED","__typename":"Issue"}],"pageInfo":{"endCursor":"Y3Vyc29yOnYyOpK5MjAyNS0wMy0wOFQxMzoxOTowMyswMTowMM6tIwxZ","startCursor":"Y3Vyc29yOnYyOpK5MjAyNS0wMi0xOFQyMzoxMzo1OCswMTowMM6qkspf","hasNextPage":false,"hasPreviousPage":false,"__typename":"PageInfo"},"__typename":"IssueConnection"},"__typename":"Repository"}}}',
       {
         headers: {
           "access-control-allow-origin": "*",
@@ -78,16 +78,16 @@ mock[`graphqlClient().queryPaginated() makes paginated GraphQL query > fetch 1`]
           "x-content-type-options": "nosniff",
           "x-frame-options": "deny",
           "x-github-media-type": "unknown, github.v4",
-          "x-github-request-id": "E605:183282:216E7E3:229DD0C:67C974AC",
+          "x-github-request-id": "D416:1699A:BFE9AA:FDA81A:67CC35C0",
           "x-oauth-client-id": "178c6fc778ccc68e1d6a",
           "x-oauth-scopes": "gist, read:org, repo, workflow",
           "x-ratelimit-limit": "5000",
-          "x-ratelimit-remaining": "4725",
-          "x-ratelimit-reset": "1741257489",
+          "x-ratelimit-remaining": "4332",
+          "x-ratelimit-reset": "1741438831",
           "x-ratelimit-resource": "graphql",
-          "x-ratelimit-used": "275",
+          "x-ratelimit-used": "668",
           "x-xss-protection": "0",
-          date: "Thu, 06 Mar 2025 10:10:52 GMT",
+          date: "Sat, 08 Mar 2025 12:19:12 GMT",
           server: "github.com",
           vary: "Accept-Encoding, Accept, X-Requested-With",
         },
