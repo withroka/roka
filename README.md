@@ -12,7 +12,7 @@ that help us streamline product development. It is built using
 [Deno](https://deno.com) and [TypeScript](https://www.typescriptlang.org).
 
 > [!WARNING]
-> This is still in its early stages, so everything is subject to change. 🚀
+> This is still in an early stage, so everything is subject to change. 🚀
 
 ## Components
 
@@ -30,7 +30,7 @@ hosted on GitHub. It can compile binaries, calculate versions, and create GitHub
 releases.
 
 The tool makes releasing deno packages a breeze. It calculates versions based on
-[Convensional Commits](https://www.conventionalcommits.org) and creates GitHub
+[Conventional Commits](https://www.conventionalcommits.org) and creates GitHub
 releases with compiled assets. Both single package repos and
 [workspace](https://docs.deno.com/runtime/fundamentals/workspaces/)-based
 monorepos are supported.

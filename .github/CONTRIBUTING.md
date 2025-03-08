@@ -11,18 +11,19 @@ follow.
 
 You are welcome to reach out with any questions, bugs, or feature requests. You
 can create a GitHub issue to report them. When reporting bugs, try to come up
-with a short code example that can reproduce the issue. Ideally, it should be
+with a short code example that can reproduce the issue. Ideally, this should be
 less than ten lines long.
 
 ### Pull requests
 
 If you want to make small changes, you can fork and send a pull request. For
 more significant changes, start a discussion with a new issue first. The
-documentation can be a great resource to help you navigate the code.
+[documentation](https://jsr.io/@roka) can be a great resource to help you
+navigate the code.
 
-When working on the code, you can run all checks by running deno task ok in the
-root of the repository. For coding style, try to match the surrounding code. If
-you’re unsure, see the code conventions section below.
+When working on the code, you can run all checks by running `deno task ok` in
+the root of the repository. For coding style, try to match the surrounding code.
+If you’re unsure, see the code conventions section below.
 
 Pull request titles will be checked to make sure they follow the
 [Conventional Commits](https://www.conventionalcommits.org) style.
@@ -40,11 +41,6 @@ The code is organized into **categories**, **packages**, **modules**, and
 category contains development tools. As the codebase grows, new categories like
 `ui` or `data` will be added.
 
-Each module in a package is built, versioned, and released together with a
-version number. The release name is in the format **package@version**. Every
-commit creates a pre-release version for every package in this repository, but
-these versions are usually not released.
-
 ## 👉 Coding conventions
 
 ### General
@@ -52,8 +48,9 @@ these versions are usually not released.
 - Prefer surrounding style over this guide.
 - Prefer ease of use for public interfaces.
 - Prefer simplicity to speed in implementation.
-- Write code
-  [inclusively](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md).
+- Write
+  [inclusive](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md)
+  code.
 - Prefer singular names _-_(e.g., `tool`, not `tools`)_.
 
 ### Packages
@@ -75,12 +72,12 @@ these versions are usually not released.
 
 ### Symbols
 
-- Export functions.
-- Export data as const plain objects.
-- Also export types used in the public interface.
+- Export functionality with functions.
+- Also export types used in the function interface.
+- Export data as plain objects _(use `as const`)_.
 - Do not export classes, except for errors.
 
-### File names
+### Files
 
 - Name the default package file after the package _(e.g., `git.ts`, not
   `mod.ts`)_.
@@ -97,18 +94,20 @@ these versions are usually not released.
 
 ### Types
 
-- Use interface for both data and functionality.
-- Prefer no definition over undefined or null _(e.g., `x?: bool`, and not
+- Use `interface` for both data and functionality.
+- Use `type` for type utilities and aliases
+- Prefer no definition over `undefined` or `null` _(e.g., `x?: bool`, and not
   `x: bool | undefined`)_.
 - Name the data types after their factory functions _(e.g., `Git`)_.
-- Do not export classes, except for exceptions.
+- Do not export classes, except for errors.
 
 ### Errors
 
 - Assert code assumptions _(i.e., throw an `AssertionError`)_.
-- Throw an error with a specific type on runtime failures.
+- Throw a specific type on runtime errors.
 - Name error classes after their package or module _(e.g., `GitError`)_.
-- Provide re-thrown errors as cause.
+- Provide re-thrown errors as
+  [`cause`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause).
 - Write clear, concise, and consistent error messages.
 - Sentence case error messages, but do not end with a dot
 
@@ -116,13 +115,12 @@ these versions are usually not released.
 
 - Add tests for new features.
 - Add tests for fixed bugs.
-- Name tests explicitly after what they are testing _(e.g.,
-  `"git().clone() clones a repo"`)_.
+- Name tests explicitly _(e.g., `"git().clone() clones a repo"`)_.
 
 ### Documentation
 
 - Use [JSDoc](https://jsdoc.app) for documentation.
-- Document every module with `@module` with example usage.
+- Document every module with example usage and `@module`.
 - Document every exported symbol.
 - Document missing features or known bugs with `@todo`.
 - Do not document self-explanatory parameters, returns, or throws.
