@@ -62,13 +62,13 @@
  * Functionality of `forge` is available programmatically through the following
  * modules.
  *
- *  -  {@link [app]}: Introspect from compiled executables.
  *  -  {@link [bump]}: Bump package versions using
  *     {@link https://semver.org | semantic versioning}.
  *  -  {@link [changelog]}: Generate changelogs.
  *  -  {@link [compile]}: Create binary executables.
  *  -  {@link [package]}: Diagnose packages programmatically.
  *  -  {@link [release]}: Create GitHub releases.
+ *  -  {@link [version]}: Provide version from compiled binaries.
  *
  * @todo Add documentation for GitHub workflows.
  *
