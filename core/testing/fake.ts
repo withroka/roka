@@ -60,10 +60,10 @@ export interface FakeConsole extends Disposable {
  * ```
  */
 export function fakeConsole(): FakeConsole {
-  const calls = [] as {
+  const calls: {
     level: "debug" | "log" | "info" | "warn" | "error";
     data: unknown[];
-  }[];
+  }[] = [];
 
   const [debug, log, info, warn, error] = [
     stub(
