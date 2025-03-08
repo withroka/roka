@@ -77,12 +77,7 @@
 
 import { assert } from "@std/assert";
 import { dirname, fromFileUrl, parse, resolve, toFileUrl } from "@std/path";
-import {
-  type GetParametersFromProp,
-  type GetReturnFromProp,
-  MockError,
-  stub,
-} from "@std/testing/mock";
+import { type GetParametersFromProp, MockError, stub } from "@std/testing/mock";
 
 /**
  * The mode of mocking.
@@ -181,7 +176,9 @@ export interface MockConversion<
      * This is needed when the output was converted to a custom value that is
      * incompatible with the original format.
      */
-    revert?: (data: Output) => Awaited<ReturnType<T>> | ReturnType<T>;
+    revert?: (
+      data: Output,
+    ) => Awaited<ReturnType<T>> | Promise<Awaited<ReturnType<T>>>;
   };
 }
 
@@ -301,37 +298,40 @@ export function mock<
         ((data) => data as ReturnType<Self[Prop]>),
     },
   };
+  async function fake(
+    ...args: Parameters<Self[Prop]>
+  ) {
+    try {
+      if (stubbed.restored) throw new MockError("Mock already restored");
+      state = await mockContext.load(context, self, property, options);
+      let output: Output;
+      if (mode(options) === "replay") {
+        const input = await conversion.input.convert(...args);
+        output = mockContext.replay(state, property, input);
+      } else {
+        const input = await conversion.input.convert(...args);
+        const result = await stubbed.original.call(
+          self,
+          ...args as unknown as GetParametersFromProp<Self, Prop>,
+        );
+        output = await conversion.output.convert(result);
+        mockContext.update(state, input, output);
+      }
+      return await conversion.output.revert(output);
+    } catch (e: unknown) {
+      errored = true;
+      throw e;
+    }
+  }
   const stubbed = stub(
     self,
     property,
-    async function (...args: Parameters<Self[Prop]>) {
-      try {
-        if (stubbed.restored) throw new MockError("Mock already restored");
-        state = await mockContext.load(context, self, property, options);
-        let output: Output;
-        if (mode(options) === "replay") {
-          const input = await conversion.input.convert(...args);
-          output = mockContext.replay(state, property, input);
-        } else {
-          const input = await conversion.input.convert(...args);
-          const result = await stubbed.original.call(
-            self,
-            ...args as unknown as GetParametersFromProp<Self, Prop>,
-          );
-          output = await conversion.output.convert(result);
-          mockContext.update(state, input, output);
-        }
-        return conversion.output.revert(output);
-      } catch (e: unknown) {
-        errored = true;
-        throw e;
-      }
-    } as unknown as (
+    fake as unknown as (
       ...args: GetParametersFromProp<Self, Prop>
-    ) => GetReturnFromProp<Self, Prop>,
+    ) => ReturnType<Self[Prop]>,
   );
   const mock = Object.assign(
-    stubbed.fake as unknown as Self[Prop],
+    fake as Self[Prop],
     {
       mode: mode(options),
       original: stubbed.original as unknown as Self[Prop],

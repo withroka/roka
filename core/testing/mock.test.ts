@@ -90,7 +90,7 @@ Deno.test("mock() matches arguments", async (t) => {
   );
 });
 
-Deno.test("mock() can convert input", async (t) => {
+Deno.test("mock() can convert input synchronously", async (t) => {
   const self = { func: async (a: string) => await Promise.resolve(a) };
   using mocked = mock(t, self, "func", {
     conversion: { input: { convert: (a: string) => [a.toUpperCase()] } },
@@ -99,7 +99,20 @@ Deno.test("mock() can convert input", async (t) => {
   if (mocked.mode === "replay") assertEquals(await mocked("HELLO"), "hello");
 });
 
-Deno.test("mock() can convert output", async (t) => {
+Deno.test("mock() can convert input asynchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: {
+      input: {
+        convert: async (a: string) => await Promise.resolve([a.toUpperCase()]),
+      },
+    },
+  });
+  if (mocked.mode === "update") assertEquals(await mocked("hello"), "hello");
+  if (mocked.mode === "replay") assertEquals(await mocked("HELLO"), "hello");
+});
+
+Deno.test("mock() can convert output synchronously", async (t) => {
   const self = { func: async (a: string) => await Promise.resolve(a) };
   using mocked = mock(t, self, "func", {
     conversion: { output: { convert: (a: string) => a.toUpperCase() } },
@@ -107,10 +120,34 @@ Deno.test("mock() can convert output", async (t) => {
   assertEquals(await mocked("hello"), "HELLO");
 });
 
-Deno.test("mock() can revert output", async (t) => {
+Deno.test("mock() can convert output asynchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: {
+      output: {
+        convert: async (a: string) => await Promise.resolve(a.toUpperCase()),
+      },
+    },
+  });
+  assertEquals(await mocked("hello"), "HELLO");
+});
+
+Deno.test("mock() can revert output synchronously", async (t) => {
   const self = { func: async (a: string) => await Promise.resolve(a) };
   using mocked = mock(t, self, "func", {
     conversion: { output: { revert: (a: string) => a.toLowerCase() } },
+  });
+  assertEquals(await mocked("HELLO"), "hello");
+});
+
+Deno.test("mock() can revert output asynchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: {
+      output: {
+        revert: async (a: string) => await Promise.resolve(a.toLowerCase()),
+      },
+    },
   });
   assertEquals(await mocked("HELLO"), "hello");
 });
