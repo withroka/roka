@@ -15,10 +15,9 @@ body:
       options:
         - core
         - forge
-        - New component
       default: core
     validations:
-      required: true
+      required: false
   - type: textarea
     id: description
     attributes:
