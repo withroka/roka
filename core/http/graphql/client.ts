@@ -1,12 +1,12 @@
 /**
- * This module provides the {@linkcode graphqlClient} function to create a
+ * This module provides the {@linkcode client} function to create a
  * GraphQL client for making requests. Useful for building GraphQL-based API
  * clients.
  *
  * ```ts
- * import { graphqlClient } from "@roka/http/graphql";
+ * import { client } from "@roka/http/graphql/client";
  * async function usage() {
- *   const api = graphqlClient("https://api.github.com/graphql");
+ *   const api = client("https://api.github.com/graphql");
  *   const query = await Deno.readTextFile("repo.graphql");
  *   const repo = await api.query(query, {
  *     owner: "owner", name: "name",
@@ -21,13 +21,13 @@ import { RequestError } from "@roka/http/request";
 import {
   type AnyVariables,
   cacheExchange,
-  Client,
+  Client as UrqlClient,
   fetchExchange,
 } from "@urql/core";
 import { retryExchange } from "@urql/exchange-retry";
 
-/** A GraphQL client returned by the {@linkcode graphqlClient} function. */
-export interface GraphQLClient {
+/** A GraphQL client returned by the {@linkcode client} function. */
+export interface Client {
   /** Makes a GraphQL query. */
   query<Result>(
     query: string,
@@ -41,15 +41,15 @@ export interface GraphQLClient {
   ): Promise<Node[]>;
 }
 
-/** Options for the {@linkcode graphqlClient} function. */
-export interface GraphQLClientOptions {
+/** Options for the {@linkcode client} function. */
+export interface ClientOptions {
   /** The bearer token to be sent with the request headers. */
   token?: string;
 }
 
 /** A GraphQL paginator that traverses response data to generate pages.
  *
- * A custom paginator is needed by {@linkcode graphqlClient.queryPaginated} for
+ * A custom paginator is needed by {@linkcode client.queryPaginated} for
  * nodes it is querying.
  */
 export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
@@ -72,7 +72,7 @@ export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
  *
  * @example Make a GraphQL query.
  * ```ts
- * import { graphqlClient } from "@roka/http/graphql";
+ * import { client } from "@roka/http/graphql/client";
  *
  * interface Repository {
  *   owner: string;
@@ -81,7 +81,7 @@ export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
  * }
  *
  * async function usage() {
- *   const api = graphqlClient("https://api.github.com/graphql");
+ *   const api = client("https://api.github.com/graphql");
  *   const { repository } = await api.query<{ repository: Repository }>(`
  *     query($owner: String!, $name: String!) {
  *       repository(owner: $owner, name: $name) {
@@ -96,7 +96,7 @@ export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
  *
  * @example Make a paginated GraphQL query.
  * ```ts
- * import { graphqlClient } from "@roka/http/graphql";
+ * import { client } from "@roka/http/graphql/client";
  *
  * interface Issue {
  *  number: number;
@@ -117,7 +117,7 @@ export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
  * }
  *
  * async function usage() {
- *   const api = graphqlClient("https://api.github.com/graphql");
+ *   const api = client("https://api.github.com/graphql");
  *   const issues: Issue[] = await api.queryPaginated(`
  *     query($owner: String!, $name: String!) {
  *        repository(owner: "owner", name: $name) {
@@ -147,11 +147,8 @@ export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
  * }
  * ```
  */
-export function graphqlClient(
-  url: string,
-  options?: GraphQLClientOptions,
-): GraphQLClient {
-  const client = new Client({
+export function client(url: string, options?: ClientOptions): Client {
+  const client = new UrqlClient({
     url,
     exchanges: [cacheExchange, retryExchange({}), fetchExchange],
     fetchOptions: () => {

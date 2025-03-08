@@ -1,13 +1,13 @@
-import { jsonClient } from "@roka/http/json";
+import { client } from "@roka/http/json/client";
 import { mockFetch } from "@roka/http/testing";
 import { assertSnapshot } from "@std/testing/snapshot";
 
 const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 
-Deno.test("jsonClient() can make requests", async (t) => {
+Deno.test("client() can make requests", async (t) => {
   let issue: Partial<{ number: number; state: string }>;
   using _fetch = mockFetch(t);
-  const api = jsonClient("https://api.github.com", { token });
+  const api = client("https://api.github.com", { token });
   await t.step("post", async (t) => {
     issue = await api
       .post("/repos/withroka/test/issues", { title: "Test issue" });

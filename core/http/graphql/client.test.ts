@@ -1,4 +1,4 @@
-import { graphqlClient } from "@roka/http/graphql";
+import { client } from "@roka/http/graphql/client";
 import { mockFetch } from "@roka/http/testing";
 import { assertSnapshot } from "@std/testing/snapshot";
 
@@ -28,9 +28,9 @@ interface Issues {
   };
 }
 
-Deno.test("graphqlClient().query() makes GraphQL query", async (t) => {
+Deno.test("client().query() makes GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
-  const api = graphqlClient("https://api.github.com/graphql", { token });
+  const api = client("https://api.github.com/graphql", { token });
   const result: Repository = await api.query(
     `
       query($owner: String!, $name: String!) {
@@ -48,9 +48,9 @@ Deno.test("graphqlClient().query() makes GraphQL query", async (t) => {
   await assertSnapshot(t, result);
 });
 
-Deno.test("graphqlClient().queryPaginated() makes paginated GraphQL query", async (t) => {
+Deno.test("client().queryPaginated() makes paginated GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
-  const api = graphqlClient("https://api.github.com/graphql", { token });
+  const api = client("https://api.github.com/graphql", { token });
   const result = await api.queryPaginated(
     `
       query($owner: String!, $name: String!) {
