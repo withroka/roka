@@ -1,0 +1,37 @@
+name: Feature request
+description: Request a feature.
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a feature request!
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: What component would this feature be in?
+      options:
+        - core
+        - forge
+        - New component
+      default: core
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What do you want to see?
+      description: Describe the feature you'd like to see.
+      placeholder: Tell us what you want!
+      value: "A feature request!"
+    validations:
+      required: true
+  - type: checkboxes
+    id: participation
+    attributes:
+      label: Do you want to work on this?
+      options:
+        - label: I am willing to submit a pull request for this feature.
+          required: false
