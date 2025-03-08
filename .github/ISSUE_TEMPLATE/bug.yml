@@ -15,7 +15,6 @@ body:
       options:
         - core
         - forge
-      default: core
     validations:
       required: true
   - type: textarea
