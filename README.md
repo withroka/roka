@@ -29,9 +29,9 @@ The “**forge**” tool is a command-line application for managing Deno package
 hosted on GitHub. It can compile binaries, calculate versions, and create GitHub
 releases.
 
-The tool makes releasing deno packages a breeze. It calculates versions based on
-[Conventional Commits](https://www.conventionalcommits.org) and creates GitHub
-releases with compiled assets. Both single package repos and
+The tool makes releases as smooth as stainless steel. It calculates versions
+based on [Conventional Commits](https://www.conventionalcommits.org) and creates
+GitHub releases with compiled assets. Both single package repos and
 [workspace](https://docs.deno.com/runtime/fundamentals/workspaces/)-based
 monorepos are supported.
 
