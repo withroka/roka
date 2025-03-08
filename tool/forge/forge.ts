@@ -103,7 +103,7 @@ function listCommand() {
           pkg.directory,
           modules ? modulesText(pkg) : pkg.config.name,
           pkg.version,
-          ...pkg.release?.version !== pkg.config.version
+          ...(pkg.release?.version !== pkg.config.version)
             ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
             : [],
           changelog ? changelogText(pkg) : undefined,
