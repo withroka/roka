@@ -52,12 +52,7 @@ import {
 
 /** An error thrown by the {@link [jsr:@roka/forge]} module. */
 export class PackageError extends Error {
-  /**
-   * Construct PackageError.
-   *
-   * @param message The error message to be associated with this error.
-   * @param options.cause The cause of the error.
-   */
+  /** Construct PackageError. */
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "PackageError";

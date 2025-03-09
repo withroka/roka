@@ -57,11 +57,7 @@ import { basename, join } from "@std/path";
  * command and its output.
  */
 export class GitError extends Error {
-  /**
-   * Construct GitError.
-   *
-   * @param message The error message to be associated with this error.
-   */
+  /** Construct GitError. */
   constructor(message: string) {
     super(message);
     this.name = "GitError";
