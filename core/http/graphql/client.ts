@@ -33,10 +33,10 @@ export interface Client {
     query: string,
     variables?: Record<string, unknown>,
   ): Promise<Result>;
-  /** Makes a paginated GraphQL query, given a {@linkcode GraphQLPaginator}. */
+  /** Makes a paginated GraphQL query, given a {@linkcode Paginator}. */
   queryPaginated<Result, Node, Edge, PageInfo>(
     query: string,
-    paginator: GraphQLPaginator<Result, Node, Edge, PageInfo>,
+    paginator: Paginator<Result, Node, Edge, PageInfo>,
     variables?: Record<string, unknown>,
   ): Promise<Node[]>;
 }
@@ -52,7 +52,7 @@ export interface ClientOptions {
  * A custom paginator is needed by {@linkcode client.queryPaginated} for
  * nodes it is querying.
  */
-export interface GraphQLPaginator<Result, Node, Edge, PageInfo> {
+export interface Paginator<Result, Node, Edge, PageInfo> {
   /** Extracts edges from the response data. */
   edges(data: Result): Edge[];
   /** Extracts nodes from an edge. */
@@ -175,7 +175,7 @@ export function client(url: string, options?: ClientOptions): Client {
     },
     async queryPaginated<Result, Node, Edge, PageInfo>(
       query: string,
-      paginator: GraphQLPaginator<Result, Node, Edge, PageInfo>,
+      paginator: Paginator<Result, Node, Edge, PageInfo>,
       variables: AnyVariables & { cursor?: string; limit?: number } = {},
     ): Promise<Node[]> {
       const nodes: Node[] = [];
