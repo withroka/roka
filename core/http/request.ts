@@ -88,7 +88,7 @@ export class RequestError extends Error {
   ) {
     super(message, options);
     this.name = "RequestError";
-    if (options?.status) this.status = options?.status;
+    if (options?.status !== undefined) this.status = options?.status;
   }
 }
 
