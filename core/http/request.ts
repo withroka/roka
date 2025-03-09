@@ -72,15 +72,23 @@ const RETRYABLE_STATUSES: number[] = [
  * stored in the `status` property.
  */
 export class RequestError extends Error {
+  /** The status code of the response. */
+  readonly status?: number;
+
   /**
    * Construct RequestError.
    *
    * @param message The error message to be associated with this error.
    * @param status The status code of the response.
+   * @param cause The cause of the error.
    */
-  constructor(message: string, readonly status: number) {
-    super(message);
+  constructor(
+    message: string,
+    options?: { status?: number; cause?: unknown },
+  ) {
+    super(message, options);
     this.name = "RequestError";
+    if (options?.status !== undefined) this.status = options?.status;
   }
 }
 
@@ -137,7 +145,9 @@ export async function request(
       });
       if (RETRYABLE_STATUSES.includes(response.status)) {
         await response.body?.cancel();
-        throw new RequestError(response.statusText, response.status);
+        throw new RequestError(response.statusText, {
+          status: response.status,
+        });
       }
       return response;
     } catch (e: unknown) {
@@ -149,7 +159,7 @@ export async function request(
   assertExists(response, "Response is undefined");
   if (!response.ok) {
     if (init?.allowedErrors?.includes(response.status)) return response;
-    throw new RequestError(response.statusText, response.status);
+    throw new RequestError(response.statusText, { status: response.status });
   }
   return response;
 }

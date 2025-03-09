@@ -166,7 +166,10 @@ export function client(url: string, options?: ClientOptions): Client {
     ): Promise<Result> {
       const response = await client.query(query, variables);
       if (response.error) {
-        throw new RequestError(response.error.message, response.data.status);
+        throw new RequestError(response.error.message, {
+          status: response.data?.status,
+          cause: response.error,
+        });
       }
       return response.data as Result;
     },
