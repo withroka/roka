@@ -35,5 +35,5 @@ import type { Package } from "@roka/forge/package";
  * @returns Changelog summary in Markdown.
  */
 export function changelog(pkg: Package): string {
-  return pkg.update?.changelog?.map((c) => ` * ${c.summary}`).join("\n") ?? "";
+  return pkg.changelog?.map((c) => ` * ${c.summary}`).join("\n") ?? "";
 }

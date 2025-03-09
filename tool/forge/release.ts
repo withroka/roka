@@ -62,13 +62,10 @@ export async function release(
   pkg: Package,
   options?: ReleaseOptions,
 ): Promise<[Release, ReleaseAsset[]]> {
-  if (pkg.config.version === undefined) {
-    throw new PackageError("Cannot release a package without version");
-  }
   const { repo = await github(options).repos.get(), draft = false } = options ??
     {};
-  const version = parseVersion(pkg.config.version);
-  const name = `${pkg.name}@${pkg.config.version}`;
+  const version = parseVersion(pkg.version);
+  const name = `${pkg.name}@${pkg.version}`;
   let [release] = await repo.releases.list({ name, draft });
   const [head] = await git().commits.log();
   if (!head) throw new PackageError("Cannot determine current commit");
@@ -95,7 +92,6 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
   const artifacts = pkg.config.compile
     ? await compile(pkg, {
       target: await targets(),
-      release: true,
       bundle: true,
       checksum: true,
     })
@@ -109,10 +105,10 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
 
 function body(pkg: Package, repo: Repository): string {
   assertExists(pkg.version, "Cannot release a package without version");
-  const title = pkg.release?.tag ? "Changelog" : "Initial release";
+  const title = pkg.latest?.tag ? "Changelog" : "Initial release";
   const tag = `${pkg.name}@${pkg.version}`;
-  const fullChangelogUrl = pkg?.release?.tag
-    ? `compare/${pkg.release.tag.name}...${tag}`
+  const fullChangelogUrl = pkg?.latest?.tag
+    ? `compare/${pkg.latest.tag.name}...${tag}`
     : `commits/${tag}/${pkg.directory}`;
   return [
     `## ${title}`,
