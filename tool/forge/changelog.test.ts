@@ -8,7 +8,7 @@ Deno.test("changelog() provides package changelog", async () => {
   await using repo = await tempRepository();
   await repo.commits.create("initial", { allowEmpty: true });
   await repo.tags.create("name@0.1.0");
-  testPackage(repo.path(), { name: "@scope/name", version: "0.1.0" });
+  await testPackage(repo.path(), { name: "@scope/name", version: "0.1.0" });
   await repo.commits.create("feat(name): introduce", { allowEmpty: true });
   await Deno.writeTextFile(repo.path("fix.ts"), "//fix");
   await repo.index.add("fix.ts");
