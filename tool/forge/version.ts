@@ -86,7 +86,7 @@ export async function version(options?: VersionOptions): Promise<string> {
 async function packageVersion(): Promise<string> {
   try {
     const pkg = await packageInfo();
-    if (pkg.version) return pkg.version;
+    return pkg.version;
   } catch (e: unknown) {
     if (!(e instanceof PackageError)) throw e;
   }
@@ -103,7 +103,7 @@ async function packageVersion(): Promise<string> {
   ) {
     try {
       const pkg = await packageInfo({ directory: dirname(path.path) });
-      if (pkg.version) return pkg.version;
+      return pkg.version;
     } catch (e: unknown) {
       if (!(e instanceof PackageError)) throw e;
     }

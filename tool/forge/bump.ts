@@ -93,12 +93,12 @@ export async function bump(
 }
 
 async function update(pkg: Package, version: string) {
-  pkg.version = version;
-  pkg.config.version = version;
   await Deno.writeTextFile(
     join(pkg.directory, "deno.json"),
     JSON.stringify(pkg.config, undefined, 2) + "\n",
   );
+  pkg.version = version;
+  pkg.config.version = version;
   return pkg;
 }
 
