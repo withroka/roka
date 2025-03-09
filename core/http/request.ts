@@ -75,13 +75,7 @@ export class RequestError extends Error {
   /** The status code of the response. */
   readonly status?: number;
 
-  /**
-   * Construct RequestError.
-   *
-   * @param message The error message to be associated with this error.
-   * @param status The status code of the response.
-   * @param cause The cause of the error.
-   */
+  /** Construct RequestError. */
   constructor(
     message: string,
     options?: { status?: number; cause?: unknown },
