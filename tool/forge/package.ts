@@ -6,7 +6,9 @@
  *
  * ```ts
  * import { packageInfo } from "@roka/forge/package";
- * const pkg = await packageInfo({ directory: "tool/forge" });
+ * const pkg = await packageInfo({
+ *   directory: import.meta.dirname ?? ".",
+ * });
  * ```
  *
  * The returned {@linkcode Package} object holds the following information:
