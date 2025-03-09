@@ -219,6 +219,21 @@ Deno.test("mock() checks call not recorded", async (t) => {
   await assertRejects(() => mocked(), MockError);
 });
 
+Deno.test("mock() does not record errors", async (t) => {
+  class MyError extends Error {}
+  const self = {
+    func: async () => {
+      await Promise.resolve();
+      throw new MyError();
+    },
+  };
+  using mocked = mock(t, self, "func");
+  await assertRejects(
+    () => mocked(),
+    mocked.mode === "update" ? MyError : MockError,
+  );
+});
+
 Deno.test("mock() checks call not replayed", async (t) => {
   const self = { func: async () => await Promise.resolve() };
   const mocked = mock(t, self, "func");
