@@ -59,9 +59,11 @@ Deno.test("bump() bumps to release version", async () => {
   });
   const pkg = await testPackage(git.path(), { name: "@scope/name" });
   await bump([pkg]);
-  assertEquals(pkg.config.version, `1.3.0-pre.1+${commit.short}`);
+  assertEquals(pkg.version, `1.3.0-pre.1+${commit.short}`);
+  assertEquals(pkg.config.version, pkg.version);
   await bump([pkg], { release: true });
-  assertEquals(pkg.config.version, "1.3.0");
+  assertEquals(pkg.version, "1.3.0");
+  assertEquals(pkg.config.version, pkg.version);
 });
 
 Deno.test("bump() creates a pull request", async () => {
@@ -150,4 +152,17 @@ Deno.test("bump() updates multiple packages", async () => {
   assertEquals(updated2.config, { ...pkg2.config, version: "0.1.0" });
   const commit = await git.commits.head();
   assertEquals(commit.summary, "chore: bump versions");
+});
+
+Deno.test("bump() does not mutate package on failure", async () => {
+  await using git = await tempRepository();
+  await testPackage(git.path(), { name: "@scope/name", version: "0.0.1" });
+  await git.commits.create("initial", { allowEmpty: true });
+  await git.tags.create("name@0.0.1");
+  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  const pkg = await packageInfo({ directory: git.path() });
+  await Deno.remove(git.path("deno.json"));
+  await Deno.mkdir(git.path("deno.json"));
+  await assertRejects(() => bump([pkg], { release: true }));
+  assertEquals(pkg.config.version, "0.0.1");
 });
