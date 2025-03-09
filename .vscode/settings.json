@@ -1,0 +1,7 @@
+{
+  "deno.testing.args": [
+    "--allow-all",
+    "--no-check",
+    "--unstable-kv"
+  ]
+}
