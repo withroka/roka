@@ -118,19 +118,38 @@ Deno.test("packageInfo() ignores commits for other package", async () => {
   });
 });
 
-Deno.test("packageInfo() updates for any commit type", async () => {
+Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
   await using repo = await tempRepository();
   const directory = repo.path();
   await testPackage(directory, { name: "@scope/name", version: "1.2.3" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("name@1.2.3");
-  const commit = await repo.commits.create("refactor(name): patch", {
+  await repo.commits.create("refactor(name): patch", {
     allowEmpty: true,
   });
   assertEquals(await packageInfo({ directory }), {
     directory,
     name: "name",
-    version: `1.2.4-pre.1+${commit.short}`,
+    version: "1.2.3",
+    config: { name: "@scope/name", version: "1.2.3" },
+    latest: { version: "1.2.3", tag },
+    changelog: [],
+  });
+});
+
+Deno.test("packageInfo() considers all breaking changes", async () => {
+  await using repo = await tempRepository();
+  const directory = repo.path();
+  await testPackage(directory, { name: "@scope/name", version: "1.2.3" });
+  await repo.commits.create("initial", { allowEmpty: true });
+  const tag = await repo.tags.create("name@1.2.3");
+  const commit = await repo.commits.create("refactor(name)!: patch", {
+    allowEmpty: true,
+  });
+  assertEquals(await packageInfo({ directory }), {
+    directory,
+    name: "name",
+    version: `2.0.0-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
     changelog: [conventional(commit)],

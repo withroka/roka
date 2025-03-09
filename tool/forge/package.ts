@@ -315,9 +315,9 @@ async function fetchChangelog(
         ? { range: { from: latest.tag } }
         : { paths: ["."] },
     });
-    return log.map((c) => conventional(c)).filter((c) =>
-      c.scopes.includes(name)
-    );
+    return log.map((c) => conventional(c))
+      .filter((c) => c.scopes.includes(name))
+      .filter((c) => c.breaking || c.type === "feat" || c.type === "fix");
   } catch (e: unknown) {
     // we are not in a git repository
     if (e instanceof GitError) return undefined;
