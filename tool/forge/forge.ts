@@ -37,7 +37,7 @@
  * Compile a package into a release package.
  *
  * ```sh
- * > forge compile example --release --bundle --checksum
+ * > forge compile example --bundle --checksum
  * 📦 Compiled example
  * 🏺 dist/example/aarch64-apple-darwin/example
  * ```
@@ -45,16 +45,16 @@
  * Bump package versions and create a pull request.
  *
  * ```sh
- * > forge bump --pr
+ * > forge bump --release --pr
  * 📦 Bumped package versions
- * 🚀 Created version bump pull request
+ * 🚀 Created bump PR
  * ```
  *
  * Create a GitHub release.
  *
  * ```sh
  * > forge release example --draft
- * 🚀 Released example
+ * 🚀 Created release example@1.2.3
  * ```
  *
  * ## Modules
@@ -62,13 +62,14 @@
  * Functionality of `forge` is available programmatically through the following
  * modules.
  *
- *  -  {@link [bump]}: Bump package versions using
- *     {@link https://semver.org | semantic versioning}.
+ *  -  {@link [package]}: Diagnose packages programmatically.
  *  -  {@link [changelog]}: Generate changelogs.
  *  -  {@link [compile]}: Create binary executables.
- *  -  {@link [package]}: Diagnose packages programmatically.
+ *  -  {@link [bump]}: Bump package versions using
+ *     {@link https://semver.org | semantic versioning}.
  *  -  {@link [release]}: Create GitHub releases.
  *  -  {@link [version]}: Provide version from compiled binaries.
+ *  -  {@link [testing]}: Testing utilities for the library.
  *
  * @todo Add documentation for GitHub workflows.
  *
@@ -102,9 +103,9 @@ function listCommand() {
           "📦",
           pkg.directory,
           modules ? modulesText(pkg) : pkg.config.name,
-          pkg.version,
-          ...(pkg.release?.version !== pkg.config.version)
-            ? ["🚨", pkg.release?.version, "👉", pkg.config.version]
+          pkg.config.version !== undefined ? pkg.version : undefined,
+          ...(pkg.latest?.version !== pkg.config.version)
+            ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
             : [],
           changelog ? changelogText(pkg) : undefined,
         ]),
@@ -127,16 +128,11 @@ function compileCommand(targets: string[]) {
     .description("Compile packages into binary executables.")
     .example("forge compile", "Compile packages.")
     .example("forge compile --install", "Install binaries.")
-    .example(
-      "forge compile --release --bundle --checksum",
-      "Create release assets.",
-    )
     .arguments("[packages...:file]")
     .type("target", new EnumType(targets))
     .option("--target=<architecture:target>", "Target OS architecture.", {
       collect: true,
     })
-    .option("--release", "Use new release version.", { default: false })
     .option("--bundle", "Zip and bundle artifacts.", { default: false })
     .option("--checksum", "Create a checksum file.", { default: false })
     .option("--install=[directory:file]", "Install for local user.")
@@ -161,8 +157,10 @@ function bumpCommand() {
   return new Command()
     .description("Bump versions on package config files.")
     .example("forge bump", "Bump versions.")
-    .example("forge bump --pr", "Create a version bump PR.")
+    .example("forge bump --release", "Bump to the next release version.")
+    .example("forge bump --release --pr", "Create a version bump PR.")
     .arguments("[packages...:file]")
+    .option("--release", "Bump to the next version.", { default: false })
     .option("--pr", "Create a pull request.", { default: false })
     .env("GIT_NAME=<name:string>", "Git user name for the bump commit.", {
       prefix: "GIT_",
@@ -176,10 +174,11 @@ function bumpCommand() {
       { prefix: "GITHUB_" },
     )
     .action(async (options, ...filters) => {
-      const packages = (await workspace({ filters }))
-        .filter((pkg) => pkg.update);
+      const packages = (await workspace({ filters })).filter(
+        (pkg) => pkg.config.version !== undefined,
+      );
       const pr = await bump(packages, options);
-      if (pr) console.log(`🚀 Created version bump pull request [${pr.url}]`);
+      if (pr) console.log(`🚀 Created bump PR [${pr.url}]`);
       else console.log("📦 Bumped package versions");
     });
 }
@@ -198,10 +197,12 @@ function releaseCommand() {
     )
     .action(async (options, ...filters) => {
       const packages = (await workspace({ filters }))
-        .filter((pkg) => pkg.config.version !== pkg.release?.version);
+        .filter((pkg) => pkg.version !== pkg.latest?.version);
       await pool(packages, async (pkg) => {
         const [rls, assets] = await release(pkg, options);
-        console.log(`🚀 Released ${pkg.name} [${rls.url}]`);
+        console.log(
+          `🚀 Created release ${pkg.name}@${pkg.version} [${rls.url}]`,
+        );
         assets.forEach((x) => console.log(`🏺 ${x.name} [${x.url}]`));
       }, { concurrency: 1 });
     });

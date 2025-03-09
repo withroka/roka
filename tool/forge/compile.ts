@@ -56,8 +56,6 @@ export interface CompileOptions {
    * @default {[Deno.build.target]}
    */
   target?: string[];
-  /** Use update version. */
-  release?: boolean;
   /** Bundle artifacts. */
   bundle?: boolean;
   /** Create a checksum file. */
@@ -93,10 +91,7 @@ export async function compile(
   const { main, include = [], kv = false, permissions = {} } =
     pkg.config.compile ?? {};
   assertExists(main, "Compile entrypoint is required");
-  const version = options?.release ? pkg.config?.version : pkg.version;
-  const directory = version
-    ? join(dist, pkg.name, version)
-    : join(dist, pkg.name);
+  const directory = join(dist, pkg.name, pkg.version);
   try {
     await Deno.remove(directory, { recursive: true });
   } catch (e: unknown) {
@@ -104,8 +99,10 @@ export async function compile(
   }
   await Deno.mkdir(directory, { recursive: true });
   const config = join(directory, "deno.json");
-  if (version) pkg.config.version = version;
-  await Deno.writeTextFile(config, JSON.stringify(pkg.config, null, 2));
+  await Deno.writeTextFile(
+    config,
+    JSON.stringify({ ...pkg.config, version: pkg.version }, undefined, 2),
+  );
   const artifacts = await pool(
     target,
     async (target) => {

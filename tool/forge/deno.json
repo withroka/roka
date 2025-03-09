@@ -8,6 +8,7 @@
     "./compile": "./compile.ts",
     "./package": "./package.ts",
     "./release": "./release.ts",
+    "./testing": "./testing.ts",
     "./version": "./version.ts"
   },
   "compile": {

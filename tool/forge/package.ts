@@ -16,9 +16,8 @@
  *  - Package name and directory.
  *  - Package configuration (`deno.json`).
  *  - The latest package release from git tags.
- *  - Updates using
- *    {@link https://www.conventionalcommits.org | Conventional Commits} since
- *    the last release.
+ *  - {@link https://www.conventionalcommits.org | Conventional Commits} since
+ *    the latest release.
  *  - Calculated {@link https://semver.org | semantic version}.
  *
  * Use the {@linkcode workspace} function to fetch all packages in a monorepo.
@@ -32,7 +31,6 @@
 
 import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
-import { assertExists } from "@std/assert";
 import {
   basename,
   dirname,
@@ -43,11 +41,12 @@ import {
   relative,
 } from "@std/path";
 import {
-  canParse as canParseVersion,
-  format as formatVersion,
-  increment as incrementVersion,
-  lessThan,
-  parse as parseVersion,
+  canParse,
+  format,
+  greaterThan,
+  increment,
+  parse,
+  type SemVer,
 } from "@std/semver";
 
 /** An error thrown by the {@link [jsr:@roka/forge]} module. */
@@ -77,14 +76,31 @@ export interface Package {
   /** Package config from `deno.json`. */
   config: Config;
   /**
-   * Calculated package version, which might be different from the config
-   * version.
+   * Current package version.
+   *
+   * The semantic version of the package calculated from the latest release.
+   * The release tag version is incremented based on the
+   * {@link https://www.conventionalcommits.org | Conventional Commits} for
+   * this package since the latest release. If there was no release for this
+   * package, the version will start from `0.0.0`.
+   *
+   * If the calculated version is lower than the version defined in the
+   * configuration, the package version will be the one defined in the
+   * configuration. This allows for manual versioning of the package.
    */
-  version?: string;
-  /** Latest release of this package. */
-  release?: Release;
-  /** Changes over the last release. */
-  update?: Update;
+  version: string;
+  /**
+   * Latest release of this package.
+   *
+   * This will be calculated only if the git history is available.
+   */
+  latest?: Release;
+  /**
+   * Changes for this package since the latest release.
+   *
+   * This will be calculated only if the git history is available.
+   */
+  changelog?: ConventionalCommit[];
 }
 
 /**
@@ -92,30 +108,10 @@ export interface Package {
  * {@linkcode workspace} functions.
  */
 export interface Release {
-  /**
-   * Release version.
-   *
-   * If there was no tag release, this will be "0.0.0".
-   */
+  /** Release version. */
   version: string;
-  /** Latest release tag. */
-  tag?: Tag;
-}
-
-/** Semantic version update type. */
-export type UpdateType = "major" | "minor" | "patch";
-
-/**
- * Update information for a package returned by the
- * {@linkcode packageInfo} or {@linkcode workspace} functions.
- */
-export interface Update {
-  /** Type of the update. */
-  type?: UpdateType;
-  /** Updated version, if the package would be released at this state. */
-  version: string;
-  /** Changes in this update. */
-  changelog: ConventionalCommit[];
+  /** Release tag. */
+  tag: Tag;
 }
 
 /**
@@ -226,27 +222,18 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     options?.directory ?? dirname(fromFileUrl(Deno.mainModule)),
   );
   const config = await readConfig(directory);
-  const pkg: Package = {
+  const name = basename(config.name ?? directory);
+  const latest = await findLatest(directory, name);
+  const changelog = await fetchChangelog(directory, name, latest);
+  const version = calculateVersion(config, latest, changelog);
+  return {
     directory,
-    name: basename(config.name ?? directory),
-    config: config,
+    name,
+    config,
+    version,
+    ...latest && { latest },
+    ...changelog && { changelog },
   };
-  if (pkg.config.version === undefined) return pkg;
-  try {
-    // this works if we are in a git repository
-    const release = await findRelease(pkg);
-    if (release) pkg.release = release;
-    const update = await calculateUpdate(pkg);
-    if (update) pkg.update = update;
-  } catch (e: unknown) {
-    if (!(e instanceof GitError)) throw e;
-  }
-  pkg.version = pkg.update
-    ? pkg.update.version
-    : pkg.release
-    ? pkg.release.version
-    : pkg.config.version;
-  return pkg;
 }
 
 /**
@@ -290,65 +277,75 @@ async function readConfig(directory: string): Promise<Config> {
   }
 }
 
-async function findRelease(pkg: Package): Promise<Release | undefined> {
-  const repo = git({ cwd: pkg.directory });
-  const name = `${pkg.name}@*`;
-  const sort = "version";
-  const [tag] = [
-    ...await repo.tags.list({ name, sort, pointsAt: "HEAD" }),
-    ...await repo.tags.list({ name, sort, noContains: "HEAD" }),
-  ];
-  if (tag === undefined) return { version: "0.0.0" };
-  const version = tag.name?.split("@")[1];
-  if (!version || !canParseVersion(version)) {
-    throw new PackageError(
-      `Cannot parse semantic version from tag: ${tag.name}`,
+async function findLatest(
+  directory: string,
+  name: string,
+): Promise<Release | undefined> {
+  try {
+    const repo = git({ cwd: directory });
+    const search = `${name}@*`;
+    const sort = "version";
+    const [tag] = [
+      ...await repo.tags.list({ name: search, sort, pointsAt: "HEAD" }),
+      ...await repo.tags.list({ name: search, sort, noContains: "HEAD" }),
+    ];
+    if (tag === undefined) return undefined;
+    const version = tag.name?.split("@")[1];
+    if (!version || !canParse(version)) {
+      throw new PackageError(
+        `Cannot parse semantic version from tag: ${tag.name}`,
+      );
+    }
+    return { version, tag };
+  } catch (e: unknown) {
+    // we are not in a git repository
+    if (e instanceof GitError) return undefined;
+    throw e;
+  }
+}
+
+async function fetchChangelog(
+  directory: string,
+  name: string,
+  latest: Release | undefined,
+) {
+  try {
+    const log = await git({ cwd: directory }).commits.log({
+      ...latest !== undefined
+        ? { range: { from: latest.tag } }
+        : { paths: ["."] },
+    });
+    return log.map((c) => conventional(c)).filter((c) =>
+      c.scopes.includes(name)
     );
+  } catch (e: unknown) {
+    // we are not in a git repository
+    if (e instanceof GitError) return undefined;
+    throw e;
   }
-  return { version, tag };
 }
 
-async function calculateUpdate(pkg: Package): Promise<Update | undefined> {
-  if (!pkg.release) return undefined;
-  const log = await git({ cwd: pkg.directory }).commits.log({
-    ...pkg.release?.tag !== undefined
-      ? { range: { from: pkg.release.tag } }
-      : { paths: ["."] },
-  });
-  const changelog = log.map((c) => conventional(c)).filter((c) =>
-    c.scopes.includes(pkg.name) || c.scopes.includes("*")
-  );
-  if (pkg.release?.version !== pkg.config.version) {
-    return { ...forcedUpdate(pkg), changelog };
-  }
-  if (!changelog.length) return undefined;
-  const type = (changelog.some((c) => c.breaking) &&
-      parseVersion(pkg.release.version).major > 0)
-    ? "major"
-    : (changelog.some((c) => c.type === "feat") ||
-        changelog.some((c) => c.breaking))
-    ? "minor"
-    : "patch";
-  const version = formatVersion({
-    ...incrementVersion(parseVersion(pkg.release.version), type),
-    ...changelog[0] &&
-      { prerelease: [`pre.${changelog.length}`], build: [changelog[0].short] },
-  });
-  return { type, version, changelog };
+function calculateVersion(
+  config: Config,
+  latest: Release | undefined,
+  changelog: ConventionalCommit[] | undefined,
+) {
+  const current = parse(latest ? latest.version : "0.0.0");
+  const next = changelog?.length && changelog[0]
+    ? {
+      ...increment(current, updateType(current, changelog)),
+      prerelease: [`pre.${changelog.length}`],
+      build: [changelog[0].short],
+    }
+    : current;
+  const coded = parse(config.version ?? "0.0.0");
+  return format(greaterThan(next, coded) ? next : coded);
 }
 
-function forcedUpdate(pkg: Package): Update {
-  assertExists(pkg.release?.version, "Force update without prior a version");
-  assertExists(pkg.config.version, "Force update without target a version");
-  const oldVersion = parseVersion(pkg.release.version);
-  const newVersion = parseVersion(pkg.config.version);
-  if (lessThan(newVersion, oldVersion)) {
-    throw new PackageError("Cannot force update to an older version");
-  }
-  const type = newVersion.major > oldVersion.major
-    ? "major"
-    : newVersion.minor > oldVersion.minor
-    ? "minor"
-    : "patch";
-  return { type, version: formatVersion(newVersion), changelog: [] };
+function updateType(current: SemVer, changelog: ConventionalCommit[]) {
+  const breaking = changelog.some((c) => c.breaking);
+  if (current.major > 0 && breaking) return "major";
+  const feature = changelog.some((c) => c.type === "feat");
+  if (breaking || feature) return "minor";
+  return "patch";
 }
