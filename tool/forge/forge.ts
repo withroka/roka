@@ -72,6 +72,7 @@
  *  -  {@link [testing]}: Testing utilities for the library.
  *
  * @todo Add documentation for GitHub workflows.
+ * @todo Gracefully handle errors in the CLI.
  *
  * @module forge
  */
