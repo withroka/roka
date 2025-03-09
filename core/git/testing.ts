@@ -53,7 +53,8 @@ export interface TempRepositoryOptions {
   config?: Config;
 }
 
-/** Creates a temporary repository for testing.
+/**
+ * Creates a temporary repository for testing.
  *
  * @example Create a temporary repository.
  * ```ts
