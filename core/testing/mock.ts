@@ -207,6 +207,10 @@ export interface MockConversion<
  * committed to version control. This allows for tests not needing to rely on
  * actual network calls, and the changes in mock behavior to be peer-reviewed.
  *
+ * A call to the original function will not be recorded if it is rejected with
+ * an error. During replay, the mock will fail to find a matching call, and a
+ * `MockError` will be thrown.
+ *
  * @example Using the mock as a disposable.
  * ```ts
  * import { mock } from "@roka/testing/mock";

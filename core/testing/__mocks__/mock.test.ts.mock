@@ -221,6 +221,9 @@ mock[`mock() can store consumable output > resp 1`] =
   },
 ];
 
+mock[`mock() does not record errors > func 1`] =
+[];
+
 mock[`mock() checks call not replayed > func 1`] =
 [
   {
