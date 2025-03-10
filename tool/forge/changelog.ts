@@ -20,6 +20,7 @@
 import type { Package } from "@roka/forge/package";
 import { git, GitError, type RevisionRange } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
+import { difference, parse } from "@std/semver";
 
 /** Options for the {@linkcode changelog} function. */
 export interface ChangelogOptions {
@@ -39,6 +40,23 @@ export interface ChangelogOptions {
   breaking?: boolean;
   /** Range of commits to include in the changelog. */
   range?: RevisionRange;
+}
+
+/** Options for the {@linkcode markdown} function. */
+export interface TextOptions {
+  /**
+   * Title to display at the beginning of the changelog text.
+   *
+   * If not defined, the package name and version are used.
+   */
+  title?: string;
+  /** Add a list of items to the end of the changelog text, like URLs. */
+  footer?: {
+    /** Title of the footer section */
+    title: string;
+    /** List of items to include in the footer. */
+    items: string[];
+  };
 }
 
 /**
@@ -103,4 +121,37 @@ export async function changelog(
     if (e instanceof GitError) return undefined;
     throw e;
   }
+}
+
+/**
+ * Generate Markdown text for a package changelog.
+ *
+ * @example Generate a changelog Markdown.
+ * ```ts
+ * import { markdown } from "@roka/forge/changelog";
+ * import { packageInfo } from "@roka/forge/package";
+ *
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   const text = markdown(pkg, await changelog(pkg));
+ *   console.log(text);
+ * }
+ * ```
+ */
+export function markdown(
+  pkg: Package,
+  commits: ConventionalCommit[],
+  options?: TextOptions,
+): string {
+  const type = difference(
+    parse(pkg.latest?.version ?? "0.0.0"),
+    parse(pkg.version),
+  );
+  return [
+    options?.title ?? `## ${pkg.name}@${pkg.version} [${type}]`,
+    commits.map((c) => ` * ${c.summary}`).join("\n") ?? [],
+    options?.footer
+      ? [`## ${options.footer.title}`, options.footer.items.join("\n")]
+      : [],
+  ].flat().join("\n\n");
 }

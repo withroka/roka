@@ -16,7 +16,7 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { changelog } from "@roka/forge/changelog";
+import { changelog, markdown } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { type Package, PackageError } from "@roka/forge/package";
 import { git } from "@roka/git";
@@ -115,13 +115,14 @@ async function body(pkg: Package, repo: Repository): Promise<string> {
     pkg.latest ? { range: { from: pkg.latest?.tag } } : {},
   );
   assertExists(commits, "Cannot generate changelog");
-  return [
-    `## ${title}`,
-    commits.map((c) => ` * ${c.summary}`).join("\n") ?? [],
-    "## Details",
-    [
-      ` * [Full changelog](${repo.url}/${fullChangelogUrl})`,
-      ` * [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
-    ].join("\n"),
-  ].flat().join("\n\n");
+  return markdown(pkg, commits, {
+    title,
+    footer: {
+      title: "Details",
+      items: [
+        ` * [Full changelog](${repo.url}/${fullChangelogUrl})`,
+        ` * [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
+      ],
+    },
+  });
 }

@@ -25,12 +25,12 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { changelog } from "@roka/forge/changelog";
+import { changelog, markdown } from "@roka/forge/changelog";
 import { type Package, PackageError } from "@roka/forge/package";
 import { github, type PullRequest, type Repository } from "@roka/github";
 import { assertExists } from "@std/assert";
 import { common, join } from "@std/path";
-import { difference, format, parse } from "@std/semver";
+import { format, parse } from "@std/semver";
 
 const BUMP_BRANCH = "automated/bump";
 
@@ -136,13 +136,5 @@ async function log(pkg: Package): Promise<string> {
     pkg.latest ? { range: { from: pkg.latest?.tag } } : {},
   );
   assertExists(commits, "Cannot generate changelog");
-  return [
-    `## ${pkg.name}@${pkg.version} [${
-      difference(
-        parse(pkg.latest?.version ?? "0.0.0"),
-        parse(pkg.version),
-      )
-    }]`,
-    commits.map((c) => ` * ${c.summary}`).join("\n") ?? [],
-  ].flat().join("\n\n");
+  return markdown(pkg, commits);
 }

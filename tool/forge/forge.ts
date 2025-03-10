@@ -81,7 +81,7 @@ import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
 import { bump } from "@roka/forge/bump";
-import { changelog } from "@roka/forge/changelog";
+import { changelog, markdown } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { type Package, workspace } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
@@ -133,18 +133,15 @@ function changelogCommand() {
     .action(async ({ type, breaking }, ...filters) => {
       const packages = pooled(await workspace({ filters }), async (pkg) => ({
         ...pkg,
-        changelog: await changelog(pkg, {
+        commits: await changelog(pkg, {
           ...type && { type },
           ...breaking && { breaking },
+          ...pkg.latest && { range: { from: pkg.latest.tag } },
         }),
       }));
       for await (const pkg of packages) {
-        if (!pkg.changelog?.length) continue;
-        console.log(`🏷  ${pkg.name}@${pkg.version}`);
-        console.log();
-        for (const commit of pkg.changelog) {
-          console.log(`     ${commit.summary}`);
-        }
+        if (!pkg.commits?.length) continue;
+        console.log(markdown(pkg, pkg.commits));
         console.log();
       }
     });
