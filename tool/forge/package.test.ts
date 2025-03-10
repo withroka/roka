@@ -1,6 +1,5 @@
 import { PackageError, packageInfo, workspace } from "@roka/forge/package";
 import { testPackage } from "@roka/forge/testing";
-import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing/temp";
 import { assertEquals, assertRejects } from "@std/assert";
@@ -40,7 +39,6 @@ Deno.test("packageInfo() returns release version at release commit", async () =>
     version: "1.2.3",
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [],
   });
 });
 
@@ -59,7 +57,6 @@ Deno.test("packageInfo() calculates patch version update", async () => {
     version: `1.2.4-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
   });
 });
 
@@ -78,7 +75,6 @@ Deno.test("packageInfo() calculates minor version update", async () => {
     version: `1.3.0-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
   });
 });
 
@@ -97,7 +93,6 @@ Deno.test("packageInfo() calculates major version update", async () => {
     version: `2.0.0-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
   });
 });
 
@@ -114,7 +109,6 @@ Deno.test("packageInfo() ignores commits for other package", async () => {
     version: `1.2.3`,
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [],
   });
 });
 
@@ -133,7 +127,6 @@ Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
     version: "1.2.3",
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [],
   });
 });
 
@@ -152,7 +145,6 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
     version: `2.0.0-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
   });
 });
 
@@ -162,26 +154,17 @@ Deno.test("packageInfo() handles multiple commits in changelog", async () => {
   await testPackage(directory, { name: "@scope/name", version: "1.2.3" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("name@1.2.3");
-  const commit1 = await repo.commits.create("fix(name): 1", {
-    allowEmpty: true,
-  });
-  const commit2 = await repo.commits.create("feat(name): 2", {
-    allowEmpty: true,
-  });
-  const commit3 = await repo.commits.create("fix(name): 3", {
+  await repo.commits.create("fix(name): 1", { allowEmpty: true });
+  await repo.commits.create("feat(name): 2", { allowEmpty: true });
+  const commit = await repo.commits.create("fix(name): 3", {
     allowEmpty: true,
   });
   assertEquals(await packageInfo({ directory }), {
     directory,
     name: "name",
-    version: `1.3.0-pre.3+${commit3.short}`,
+    version: `1.3.0-pre.3+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", tag },
-    changelog: [
-      conventional(commit3),
-      conventional(commit2),
-      conventional(commit1),
-    ],
   });
 });
 
@@ -197,7 +180,6 @@ Deno.test("packageInfo() handles forced patch update", async () => {
     version: "1.2.4",
     config: { name: "@scope/name", version: "1.2.4" },
     latest: { version: "1.2.3", tag },
-    changelog: [],
   });
 });
 
@@ -213,7 +195,6 @@ Deno.test("packageInfo() handles forced minor update", async () => {
     version: "1.3.0",
     config: { name: "@scope/name", version: "1.3.0" },
     latest: { version: "1.2.3", tag },
-    changelog: [],
   });
 });
 
@@ -229,7 +210,6 @@ Deno.test("packageInfo() handles forced major update", async () => {
     version: "2.0.0",
     config: { name: "@scope/name", version: "2.0.0" },
     latest: { version: "1.2.3", tag },
-    changelog: [],
   });
 });
 
@@ -239,7 +219,7 @@ Deno.test("packageInfo() overrides calculated update", async () => {
   await testPackage(directory, { name: "@scope/name", version: "2.2.2" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("name@1.2.3");
-  const commit = await repo.commits.create("fix(name): description", {
+  await repo.commits.create("fix(name): description", {
     allowEmpty: true,
   });
   assertEquals(await packageInfo({ directory }), {
@@ -248,7 +228,6 @@ Deno.test("packageInfo() overrides calculated update", async () => {
     version: "2.2.2",
     config: { name: "@scope/name", version: "2.2.2" },
     latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
   });
 });
 
@@ -264,7 +243,6 @@ Deno.test("packageInfo() uses higher config version", async () => {
     version: "1.2.3",
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.2", tag },
-    changelog: [],
   });
 });
 
@@ -280,7 +258,6 @@ Deno.test("packageInfo() ignores lower config version", async () => {
     version: "1.2.4",
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.4", tag },
-    changelog: [],
   });
 });
 
@@ -294,7 +271,6 @@ Deno.test("packageInfo() returns returns first version", async () => {
     name: "name",
     version: "0.0.0",
     config: { name: "@scope/name" },
-    changelog: [],
   });
 });
 
@@ -310,7 +286,6 @@ Deno.test("packageInfo() returns update at initial version", async () => {
     name: "name",
     version: "0.1.0",
     config: { name: "@scope/name", version: "0.1.0" },
-    changelog: [],
   });
 });
 

@@ -1,29 +1,154 @@
 import { changelog } from "@roka/forge/changelog";
-import { packageInfo } from "@roka/forge/package";
+import { testPackage } from "@roka/forge/testing";
+import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
-import { assertEquals } from "@std/assert";
-import { testPackage } from "./testing.ts";
+import { assertEquals } from "@std/assert/equals";
 
-Deno.test("changelog() provides package changelog", async () => {
-  await using repo = await tempRepository();
-  await repo.commits.create("initial", { allowEmpty: true });
-  await repo.tags.create("name@0.1.0");
-  await testPackage(repo.path(), { name: "@scope/name", version: "0.1.0" });
-  await repo.commits.create("feat(name): introduce", { allowEmpty: true });
-  await Deno.writeTextFile(repo.path("fix.ts"), "//fix");
-  await repo.index.add("fix.ts");
-  await repo.commits.create("fix(name): fix code");
-  await Deno.writeTextFile(repo.path("README.md"), "docs");
-  await repo.index.add("README.md");
-  await repo.commits.create("docs(name): add docs");
-  await repo.commits.create("refactor(name)!: rewrite", { allowEmpty: true });
-  const pkg = await packageInfo({ directory: repo.path() });
+Deno.test("changelog() generates package changelog", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("fix(other): fix other", { allowEmpty: true });
+  await git.commits.create("ci: unrelated", { allowEmpty: true });
+  const commit3 = await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
   assertEquals(
-    changelog(pkg),
-    [
-      " * refactor(name)!: rewrite",
-      " * fix(name): fix code",
-      " * feat(name): introduce",
-    ].join("\n"),
+    await changelog(pkg),
+    [conventional(commit3), conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("changelog() filters by type", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await changelog(pkg, { type: ["feat", "fix"] }),
+    [conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("changelog() includes breaking changes", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  const commit3 = await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await changelog(pkg, { type: ["feat", "fix"] }),
+    [conventional(commit3), conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("changelog() can filter breaking changes", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit = await git.commits.create("fix(name)!: fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await changelog(pkg, { type: ["feat", "fix"], breaking: true }),
+    [conventional(commit)],
+  );
+});
+
+Deno.test("changelog() can filter non-breaking changes", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await changelog(pkg, { type: ["feat", "fix"], breaking: false }),
+    [conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("changelog() can return breaking changes only", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  const commit = await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await changelog(pkg, { breaking: true }),
+    [conventional(commit)],
+  );
+});
+
+Deno.test("changelog() returns from range", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const from = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  await git.commits.create("fix(other): fix other", { allowEmpty: true });
+  await git.commits.create("ci: unrelated", { allowEmpty: true });
+  const to = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await changelog(pkg, { range: { from, to } }),
+    [conventional(to)],
   );
 });

@@ -79,9 +79,9 @@
 
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
-import { pool } from "@roka/async/pool";
+import { pool, pooled } from "@roka/async/pool";
 import { bump } from "@roka/forge/bump";
-import { changelog as changelogText } from "@roka/forge/changelog";
+import { changelog } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { type Package, workspace } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
@@ -90,14 +90,12 @@ import { join, relative } from "@std/path";
 
 function listCommand() {
   return new Command()
-    .description("List packages, versions, and changelogs.")
+    .description("List packages and versions.")
     .example("forge list", "List all packages.")
     .example("forge list --modules", "List all modules.")
-    .example("forge list --changelog", "Display package changelogs.")
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
-    .option("--changelog", "Print package changelog.", { default: false })
-    .action(async ({ modules, changelog }, ...filters) => {
+    .action(async ({ modules }, ...filters) => {
       const packages = await workspace({ filters });
       new Table().body(
         packages.map((pkg) => [
@@ -108,7 +106,6 @@ function listCommand() {
           ...(pkg.latest?.version !== pkg.config.version)
             ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
             : [],
-          changelog ? changelogText(pkg) : undefined,
         ]),
       ).render();
     });
@@ -122,6 +119,35 @@ function modulesText(pkg: Package): string | undefined {
   return Object.keys(exports)
     .map((key) => join(name, relative(".", key)))
     .join("\n");
+}
+
+function changelogCommand() {
+  return new Command()
+    .description("Generate changelogs.")
+    // .example("forge list", "List all packages.")
+    // .example("forge list --modules", "List all modules.")
+    // .example("forge list --changelog", "Display package changelogs.")
+    .option("--type=<type:string>", "Commit type.", { collect: true })
+    .option("--breaking", "Only breaking changes.")
+    .arguments("[packages...:file]")
+    .action(async ({ type, breaking }, ...filters) => {
+      const packages = pooled(await workspace({ filters }), async (pkg) => ({
+        ...pkg,
+        changelog: await changelog(pkg, {
+          ...type && { type },
+          ...breaking && { breaking },
+        }),
+      }));
+      for await (const pkg of packages) {
+        if (!pkg.changelog?.length) continue;
+        console.log(`🏷  ${pkg.name}@${pkg.version}`);
+        console.log();
+        for (const commit of pkg.changelog) {
+          console.log(`     ${commit.summary}`);
+        }
+        console.log();
+      }
+    });
 }
 
 function compileCommand(targets: string[]) {
@@ -222,6 +248,7 @@ if (import.meta.main) {
     .version(await version({ build: true, deno: true }))
     .default("list")
     .command("list", listCommand())
+    .command("changelog", changelogCommand())
     .command("compile", compileCommand(await targets()))
     .command("bump", bumpCommand())
     .command("release", releaseCommand())

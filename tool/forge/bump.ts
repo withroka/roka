@@ -28,6 +28,7 @@ import { pool } from "@roka/async/pool";
 import { changelog } from "@roka/forge/changelog";
 import { type Package, PackageError } from "@roka/forge/package";
 import { github, type PullRequest, type Repository } from "@roka/github";
+import { assertExists } from "@std/assert";
 import { common, join } from "@std/path";
 import { difference, format, parse } from "@std/semver";
 
@@ -114,7 +115,7 @@ async function createPullRequest(
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} version`
     : "chore: bump versions";
-  const body = prBody(packages);
+  const body = (await pool(packages, log)).join("\n\n");
   await repo.git.branches.checkout({ new: BUMP_BRANCH });
   await repo.git.config.set({ ...user && { user } });
   await repo.git.commits.create(title, { body, all: true });
@@ -129,14 +130,19 @@ async function createPullRequest(
   return pr;
 }
 
-function prBody(packages: Package[]): string {
-  return packages.map((pkg) => [
+async function log(pkg: Package): Promise<string> {
+  const commits = await changelog(
+    pkg,
+    pkg.latest ? { range: { from: pkg.latest?.tag } } : {},
+  );
+  assertExists(commits, "Cannot generate changelog");
+  return [
     `## ${pkg.name}@${pkg.version} [${
       difference(
         parse(pkg.latest?.version ?? "0.0.0"),
         parse(pkg.version),
       )
     }]`,
-    changelog(pkg),
-  ]).flat().join("\n\n");
+    commits.map((c) => ` * ${c.summary}`).join("\n") ?? [],
+  ].flat().join("\n\n");
 }

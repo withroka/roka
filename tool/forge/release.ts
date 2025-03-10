@@ -72,7 +72,7 @@ export async function release(
   const data = {
     name,
     tag: name,
-    body: body(pkg, repo),
+    body: await body(pkg, repo),
     draft,
     preRelease: !!version.prerelease?.length,
     commit: head.hash,
@@ -103,22 +103,25 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
   );
 }
 
-function body(pkg: Package, repo: Repository): string {
+async function body(pkg: Package, repo: Repository): Promise<string> {
   assertExists(pkg.version, "Cannot release a package without version");
   const title = pkg.latest?.tag ? "Changelog" : "Initial release";
   const tag = `${pkg.name}@${pkg.version}`;
   const fullChangelogUrl = pkg?.latest?.tag
     ? `compare/${pkg.latest.tag.name}...${tag}`
     : `commits/${tag}/${pkg.directory}`;
+  const commits = await changelog(
+    pkg,
+    pkg.latest ? { range: { from: pkg.latest?.tag } } : {},
+  );
+  assertExists(commits, "Cannot generate changelog");
   return [
     `## ${title}`,
-    "",
-    changelog(pkg),
-    "",
+    commits.map((c) => ` * ${c.summary}`).join("\n") ?? [],
     "## Details",
-    "",
-    ` * [Full changelog](${repo.url}/${fullChangelogUrl})`,
-    ` * [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
-  ]
-    .join("\n");
+    [
+      ` * [Full changelog](${repo.url}/${fullChangelogUrl})`,
+      ` * [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
+    ].join("\n"),
+  ].flat().join("\n\n");
 }

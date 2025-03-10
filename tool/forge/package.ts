@@ -29,8 +29,11 @@
  * @module package
  */
 
+import { changelog } from "@roka/forge/changelog";
 import { git, GitError, type Tag } from "@roka/git";
-import { conventional, type ConventionalCommit } from "@roka/git/conventional";
+import type { ConventionalCommit } from "@roka/git/conventional";
+import { assertExists } from "@std/assert";
+import { slidingWindows } from "@std/collections";
 import {
   basename,
   dirname,
@@ -95,12 +98,6 @@ export interface Package {
    * This will be calculated only if the git history is available.
    */
   latest?: Release;
-  /**
-   * Changes for this package since the latest release.
-   *
-   * This will be calculated only if the git history is available.
-   */
-  changelog?: ConventionalCommit[];
 }
 
 /**
@@ -112,6 +109,8 @@ export interface Release {
   version: string;
   /** Release tag. */
   tag: Tag;
+  /** Previous release tag, if it exists. */
+  previous?: Tag;
 }
 
 /**
@@ -223,17 +222,21 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   );
   const config = await readConfig(directory);
   const name = basename(config.name ?? directory);
-  const latest = await findLatest(directory, name);
-  const changelog = await fetchChangelog(directory, name, latest);
-  const version = calculateVersion(config, latest, changelog);
-  return {
+  const pkg: Package = {
     directory,
     name,
     config,
-    version,
-    ...latest && { latest },
-    ...changelog && { changelog },
+    version: config.version ?? "0.0.0",
   };
+  try {
+    const [latest] = await releases(pkg);
+    if (latest) pkg.latest = latest;
+  } catch (e: unknown) {
+    // not in a git repository
+    if (!(e instanceof GitError)) throw e;
+  }
+  pkg.version = await calculateVersion(pkg);
+  return pkg;
 }
 
 /**
@@ -265,6 +268,22 @@ export async function workspace(
     );
 }
 
+/** Returns all releases of a package based on its git tags. */
+export async function releases(pkg: Package): Promise<Release[]> {
+  const tags = await git({ cwd: pkg.directory }).tags
+    .list({ name: `${pkg.name}@*`, sort: "version" });
+  return slidingWindows(tags, 2, { partial: true }).map(([tag, previous]) => {
+    assertExists(tag, `Cannot use tag`);
+    const version = tag.name?.split("@")[1];
+    if (!version || !canParse(version)) {
+      throw new PackageError(
+        `Cannot parse semantic version from tag: ${tag.name}`,
+      );
+    }
+    return { version, tag, ...previous && { previous } };
+  });
+}
+
 async function readConfig(directory: string): Promise<Config> {
   const configFile = join(directory, "deno.json");
   try {
@@ -277,68 +296,20 @@ async function readConfig(directory: string): Promise<Config> {
   }
 }
 
-async function findLatest(
-  directory: string,
-  name: string,
-): Promise<Release | undefined> {
-  try {
-    const repo = git({ cwd: directory });
-    const search = `${name}@*`;
-    const sort = "version";
-    const [tag] = [
-      ...await repo.tags.list({ name: search, sort, pointsAt: "HEAD" }),
-      ...await repo.tags.list({ name: search, sort, noContains: "HEAD" }),
-    ];
-    if (tag === undefined) return undefined;
-    const version = tag.name?.split("@")[1];
-    if (!version || !canParse(version)) {
-      throw new PackageError(
-        `Cannot parse semantic version from tag: ${tag.name}`,
-      );
-    }
-    return { version, tag };
-  } catch (e: unknown) {
-    // we are not in a git repository
-    if (e instanceof GitError) return undefined;
-    throw e;
-  }
-}
-
-async function fetchChangelog(
-  directory: string,
-  name: string,
-  latest: Release | undefined,
-) {
-  try {
-    const log = await git({ cwd: directory }).commits.log({
-      ...latest !== undefined
-        ? { range: { from: latest.tag } }
-        : { paths: ["."] },
-    });
-    return log.map((c) => conventional(c))
-      .filter((c) => c.scopes.includes(name))
-      .filter((c) => c.breaking || c.type === "feat" || c.type === "fix");
-  } catch (e: unknown) {
-    // we are not in a git repository
-    if (e instanceof GitError) return undefined;
-    throw e;
-  }
-}
-
-function calculateVersion(
-  config: Config,
-  latest: Release | undefined,
-  changelog: ConventionalCommit[] | undefined,
-) {
-  const current = parse(latest ? latest.version : "0.0.0");
-  const next = changelog?.length && changelog[0]
+async function calculateVersion(pkg: Package) {
+  const current = parse(pkg.latest?.version ?? "0.0.0");
+  const commits = await changelog(pkg, {
+    type: ["feat", "fix"],
+    ...pkg.latest?.tag && { range: { from: pkg.latest?.tag } },
+  });
+  const next = commits?.length && commits[0]
     ? {
-      ...increment(current, updateType(current, changelog)),
-      prerelease: [`pre.${changelog.length}`],
-      build: [changelog[0].short],
+      ...increment(current, updateType(current, commits)),
+      prerelease: [`pre.${commits.length}`],
+      build: [commits[0].short],
     }
     : current;
-  const coded = parse(config.version ?? "0.0.0");
+  const coded = parse(pkg.version);
   return format(greaterThan(next, coded) ? next : coded);
 }
 
