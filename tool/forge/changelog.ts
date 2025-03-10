@@ -154,14 +154,19 @@ export function markdown(
     parse(pkg.latest?.version ?? "0.0.0"),
     parse(pkg.version),
   );
+  const title = options?.title ?? `${pkg.name}@${pkg.version} [${type}]`;
+  const footer = options?.footer
+    ? [
+      `## ${options.footer.title}`,
+      options.footer.items.map((x) => ` * ${x}`).join("\n"),
+    ]
+    : [];
   return [
-    options?.title ?? `## ${pkg.name}@${pkg.version} [${type}]`,
+    `## ${title}`,
     commits.map((c) => ` * ${options?.emoji ? emoji(c) : c.summary}`).join(
       "\n",
     ) ?? [],
-    options?.footer
-      ? [`## ${options.footer.title}`, options.footer.items.join("\n")]
-      : [],
+    footer,
   ].flat().join("\n\n");
 }
 
