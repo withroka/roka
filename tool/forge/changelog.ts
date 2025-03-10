@@ -98,7 +98,7 @@ export interface TextOptions {
  *
  * @param pkg Package to generate changelog for.
  * @param options Options for generating the changelog.
- * @returns Changelog summary in Markdown.
+ * @returns Matched commits.
  */
 export async function changelog(
   pkg: Package,
@@ -135,10 +135,15 @@ export async function changelog(
  *
  * async function usage() {
  *   const pkg = await packageInfo();
- *   const text = markdown(pkg, await changelog(pkg));
+ *   const text = markdown(pkg, await changelog(pkg) ?? []);
  *   console.log(text);
  * }
  * ```
+ *
+ * @param pkg Package to generate changelog for.
+ * @param commits Commits to include in the changelog.
+ * @param options Options for generating the changelog text.
+ * @returns Markdown text.
  */
 export function markdown(
   pkg: Package,
