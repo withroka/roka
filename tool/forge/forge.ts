@@ -81,7 +81,10 @@ import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
 import { bump } from "@roka/forge/bump";
-import { changelog, markdown } from "@roka/forge/changelog";
+import {
+  changelog,
+  markdown as changelogMarkdown,
+} from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
 import { type Package, workspace } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
@@ -129,8 +132,10 @@ function changelogCommand() {
     // .example("forge list --changelog", "Display package changelogs.")
     .option("--type=<type:string>", "Commit type.", { collect: true })
     .option("--breaking", "Only breaking changes.")
+    .option("--markdown", "Generate Markdown", { default: false })
+    .option("--emoji", "Use emoji for commit summaries.", { default: false })
     .arguments("[packages...:file]")
-    .action(async ({ type, breaking }, ...filters) => {
+    .action(async ({ type, breaking, markdown, emoji }, ...filters) => {
       const packages = pooled(await workspace({ filters }), async (pkg) => ({
         ...pkg,
         commits: await changelog(pkg, {
@@ -141,7 +146,9 @@ function changelogCommand() {
       }));
       for await (const pkg of packages) {
         if (!pkg.commits?.length) continue;
-        console.log(markdown(pkg, pkg.commits));
+        const text = changelogMarkdown(pkg, pkg.commits, { emoji });
+        if (markdown) console.log(text);
+        else console.log(text.replace(/^##/, "🏷️ ").replace(/ \* /g, "  "));
         console.log();
       }
     });
@@ -186,6 +193,7 @@ function bumpCommand() {
     .arguments("[packages...:file]")
     .option("--release", "Bump to the next version.", { default: false })
     .option("--pr", "Create a pull request.", { default: false })
+    .option("--emoji", "Use emoji for commit changelog.", { default: false })
     .env("GIT_NAME=<name:string>", "Git user name for the bump commit.", {
       prefix: "GIT_",
     })
@@ -213,6 +221,7 @@ function releaseCommand() {
     .example("forge release", "Create releases and tags for all updates.")
     .example("forge release --draft", "Create draft releases for all updates.")
     .option("--draft", "Create a draft release.", { default: false })
+    .option("--emoji", "Use emoji for commit summaries.", { default: false })
     .arguments("[packages...:file]")
     .env(
       "GITHUB_TOKEN=<token:string>",

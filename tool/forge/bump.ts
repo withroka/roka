@@ -55,6 +55,8 @@ export interface BumpOptions {
   release?: boolean;
   /** Create a pull request. */
   pr?: boolean;
+  /** Use emoji in commit summaries. */
+  emoji?: boolean;
 }
 
 /**
@@ -115,7 +117,7 @@ async function createPullRequest(
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} version`
     : "chore: bump versions";
-  const body = (await pool(packages, log)).join("\n\n");
+  const body = (await pool(packages, (pkg) => log(pkg, options))).join("\n\n");
   await repo.git.branches.checkout({ new: BUMP_BRANCH });
   await repo.git.config.set({ ...user && { user } });
   await repo.git.commits.create(title, { body, all: true });
@@ -130,11 +132,14 @@ async function createPullRequest(
   return pr;
 }
 
-async function log(pkg: Package): Promise<string> {
+async function log(
+  pkg: Package,
+  options: BumpOptions | undefined,
+): Promise<string> {
   const commits = await changelog(
     pkg,
     pkg.latest ? { range: { from: pkg.latest?.tag } } : {},
   );
   assertExists(commits, "Cannot generate changelog");
-  return markdown(pkg, commits);
+  return markdown(pkg, commits, options);
 }

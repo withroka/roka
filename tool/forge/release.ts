@@ -44,6 +44,8 @@ export interface ReleaseOptions {
   repo?: Repository;
   /** Create a draft release. */
   draft?: boolean;
+  /** Use emoji in commit summaries. */
+  emoji?: boolean;
 }
 
 /**
@@ -72,7 +74,7 @@ export async function release(
   const data = {
     name,
     tag: name,
-    body: await body(pkg, repo),
+    body: await body(pkg, repo, options),
     draft,
     preRelease: !!version.prerelease?.length,
     commit: head.hash,
@@ -103,7 +105,11 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
   );
 }
 
-async function body(pkg: Package, repo: Repository): Promise<string> {
+async function body(
+  pkg: Package,
+  repo: Repository,
+  options: ReleaseOptions | undefined,
+): Promise<string> {
   assertExists(pkg.version, "Cannot release a package without version");
   const title = pkg.latest?.tag ? "Changelog" : "Initial release";
   const tag = `${pkg.name}@${pkg.version}`;
@@ -116,6 +122,7 @@ async function body(pkg: Package, repo: Repository): Promise<string> {
   );
   assertExists(commits, "Cannot generate changelog");
   return markdown(pkg, commits, {
+    ...options,
     title,
     footer: {
       title: "Details",

@@ -57,6 +57,8 @@ export interface TextOptions {
     /** List of items to include in the footer. */
     items: string[];
   };
+  /** Use emoji in commit summaries. */
+  emoji?: boolean;
 }
 
 /**
@@ -149,9 +151,32 @@ export function markdown(
   );
   return [
     options?.title ?? `## ${pkg.name}@${pkg.version} [${type}]`,
-    commits.map((c) => ` * ${c.summary}`).join("\n") ?? [],
+    commits.map((c) => ` * ${options?.emoji ? emoji(c) : c.summary}`).join(
+      "\n",
+    ) ?? [],
     options?.footer
       ? [`## ${options.footer.title}`, options.footer.items.join("\n")]
       : [],
   ].flat().join("\n\n");
+}
+
+function emoji(commit: ConventionalCommit): string {
+  const emojis: Record<string, string> = {
+    build: "🔧",
+    chore: "🧹",
+    ci: "👷",
+    docs: "📝",
+    feat: "✨",
+    fix: "🐛",
+    perf: "⚡️",
+    refactor: "♻️ ",
+    revert: "⏪",
+    style: "🎨",
+    test: "🧪",
+  };
+  return [
+    emojis[commit.type ?? "chore"] ?? "🔖",
+    commit.description,
+    ...commit.breaking ? ["💥"] : [],
+  ].join(" ");
 }
