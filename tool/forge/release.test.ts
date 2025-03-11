@@ -1,9 +1,9 @@
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
+import { testPackage } from "@roka/forge/testing";
 import { tempRepository } from "@roka/git/testing";
 import { fakeRelease, fakeRepository } from "@roka/github/testing";
 import { assertEquals, assertRejects } from "@std/assert";
-import { testPackage } from "./testing.ts";
 
 Deno.test("release() rejects package without version", async () => {
   await using git = await tempRepository();
