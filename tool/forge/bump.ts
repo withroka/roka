@@ -123,15 +123,15 @@ async function updateChangelog(packages: Package[], options?: BumpOptions) {
       title: `${pkg.name}@${pkg.version}`,
     })
   ).join("\n");
-  let previous = "";
+  let existing = "";
   try {
-    previous = await Deno.readTextFile(options?.changelog);
+    existing = await Deno.readTextFile(options?.changelog);
   } catch (e: unknown) {
     if (!(e instanceof Deno.errors.NotFound)) throw e;
   }
   await Deno.writeTextFile(
     options?.changelog,
-    [prepend, ...previous && [previous]].join("\n"),
+    [prepend, ...existing && [existing]].join("\n"),
   );
 }
 
