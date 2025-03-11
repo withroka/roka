@@ -1,9 +1,6 @@
 core:
   - changed-files:
       - any-glob-to-any-file: core/**
-example:
-  - changed-files:
-      - any-glob-to-any-file: app/example/**
 forge:
   - changed-files:
       - any-glob-to-any-file: tool/forge/**
