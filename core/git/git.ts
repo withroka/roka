@@ -819,7 +819,7 @@ async function run(
       const escapedArgs = args.map((x) => JSON.stringify(x)).join(" ");
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout)
         .split("\n")
-        .map((l) => `  ${l}`);
+        .map((line) => `  ${line}`);
       throw new GitError(
         [
           "Error running git command",
