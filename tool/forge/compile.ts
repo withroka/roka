@@ -127,8 +127,10 @@ export async function compile(
       const command = new Deno.Command("deno", { args });
       const { code, stderr } = await command.output();
       if (code !== 0) {
-        console.error(new TextDecoder().decode(stderr));
-        throw new PackageError(`Compile failed for ${pkg.name}`);
+        const error = new TextDecoder().decode(stderr);
+        throw new PackageError(
+          `Compile failed for ${pkg.name} (deno)\n${error}`,
+        );
       }
       if (options?.install) {
         const install = options.install === true
@@ -190,8 +192,8 @@ async function tar(directory: string, output: string) {
   });
   const { code, stderr } = await command.output();
   if (code !== 0) {
-    console.error(new TextDecoder().decode(stderr));
-    throw new PackageError(`Bundle failed for ${output}`);
+    const error = new TextDecoder().decode(stderr);
+    throw new PackageError(`Bundle failed for ${output} (tar)\n${error}`);
   }
 }
 
@@ -202,8 +204,8 @@ async function zip(directory: string, output: string) {
   });
   const { code, stderr } = await command.output();
   if (code !== 0) {
-    console.error(new TextDecoder().decode(stderr));
-    throw new PackageError(`Bundle failed for ${output}`);
+    const error = new TextDecoder().decode(stderr);
+    throw new PackageError(`Bundle failed for ${output} (zip)\n${error}`);
   }
 }
 

@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-console
 import { fakeConsole } from "@roka/testing/fake";
 import { assertEquals, assertFalse } from "@std/assert";
 
