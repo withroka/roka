@@ -3,6 +3,11 @@
  * creation of GitHub releases for packages, including tagging, release note
  * generation, and asset uploading.
  *
+ * The release is created for the configuration version (`deno.json`) of the
+ * package. The {@link [bump]} module updates the configuration version using
+ * {@link https://www.conventionalcommits.org | Conventional Commits} since
+ * the last release.
+ *
  * ```ts
  * import { release } from "@roka/forge/release";
  * import { packageInfo } from "@roka/forge/package";
@@ -27,7 +32,7 @@ import {
   type Repository,
 } from "@roka/github";
 import { assertExists } from "@std/assert";
-import { parse as parseVersion } from "@std/semver";
+import { lessOrEqual, parse } from "@std/semver";
 
 /** Max concurrent calls to GitHub. */
 const GITHUB_CONCURRENCY = { concurrency: 10 };
@@ -66,8 +71,20 @@ export async function release(
 ): Promise<[Release, ReleaseAsset[]]> {
   const { repo = await github(options).repos.get(), draft = false } = options ??
     {};
-  const version = parseVersion(pkg.version);
-  const name = `${pkg.name}@${pkg.version}`;
+  if (!pkg.config.version) {
+    throw new PackageError("Cannot release without configuration version");
+  }
+  const version = parse(pkg.config.version);
+  const latest = parse(pkg.latest?.version ?? "0.0.0");
+  if (lessOrEqual(version, latest)) {
+    throw new PackageError(
+      [
+        `Cannot release version ${pkg.config.version}`,
+        `it is not newer than the latest release ${pkg.latest?.version}`,
+      ].join(" "),
+    );
+  }
+  const name = `${pkg.name}@${pkg.config.version}`;
   let [release] = await repo.releases.list({ name, draft });
   const [head] = await git().commits.log();
   if (!head) throw new PackageError("Cannot determine current commit");
@@ -76,7 +93,7 @@ export async function release(
     tag: name,
     body: body(pkg, repo, options),
     draft,
-    preRelease: !!version.prerelease?.length,
+    prerelease: !!version.prerelease?.length,
     commit: head.hash,
   };
   if (release) {
@@ -111,7 +128,7 @@ function body(
   options: ReleaseOptions | undefined,
 ): string {
   assertExists(pkg.version, "Cannot release a package without version");
-  const title = pkg.latest?.tag ? "Changelog" : "Initial release";
+  const title = pkg.latest?.tag ? "Changes" : "Initial release";
   const tag = `${pkg.name}@${pkg.version}`;
   const fullChangelogUrl = pkg?.latest?.tag
     ? `compare/${pkg.latest.tag.name}...${tag}`
@@ -122,9 +139,12 @@ function body(
     footer: {
       title: "Details",
       items: [
-        ` * [Full changelog](${repo.url}/${fullChangelogUrl})`,
-        ` * [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
+        `- [Full changelog](${repo.url}/${fullChangelogUrl})`,
+        `- [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
       ],
+    },
+    markdown: {
+      bullet: "",
     },
   });
 }

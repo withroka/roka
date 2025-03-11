@@ -122,7 +122,7 @@ Deno.test("fakeRelease() creates a release with custom data", () => {
     commit: "custom-commit",
     body: "custom-body",
     draft: true,
-    preRelease: true,
+    prerelease: true,
   });
   assertEquals(release.repo, repo);
   assertEquals(release.url, "custom-url");
@@ -132,7 +132,7 @@ Deno.test("fakeRelease() creates a release with custom data", () => {
   assertEquals(release.commit, "custom-commit");
   assertEquals(release.body, "custom-body");
   assertEquals(release.draft, true);
-  assertEquals(release.preRelease, true);
+  assertEquals(release.prerelease, true);
 });
 
 Deno.test("fakeRelease() can update data", async () => {

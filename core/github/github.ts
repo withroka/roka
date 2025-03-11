@@ -137,7 +137,7 @@ export interface Release {
   /** Whether the release is a draft. */
   draft: boolean;
   /** Whether the release is a prerelease. */
-  preRelease: boolean;
+  prerelease: boolean;
   /** Update the release. */
   update(options?: ReleaseUpdateOptions): Promise<Release>;
   /** Delete the release. */
@@ -216,12 +216,12 @@ export type ReleaseListOptions = Partial<
 
 /** Options for the {@linkcode Releases.create} function. */
 export type ReleaseCreateOptions = Partial<
-  Pick<Release, "name" | "body" | "commit" | "draft" | "preRelease">
+  Pick<Release, "name" | "body" | "commit" | "draft" | "prerelease">
 >;
 
 /** Options for the {@linkcode Release.update} function. */
 export type ReleaseUpdateOptions = Partial<
-  Pick<Release, "name" | "body" | "tag" | "commit" | "draft" | "preRelease">
+  Pick<Release, "name" | "body" | "tag" | "commit" | "draft" | "prerelease">
 >;
 
 /**
@@ -375,8 +375,8 @@ function repository(
           ...options?.name !== undefined && { name: options.name },
           ...options?.body !== undefined && { body: options.body },
           ...options?.draft !== undefined && { draft: options?.draft },
-          ...options?.preRelease !== undefined &&
-            { prerelease: options?.preRelease },
+          ...options?.prerelease !== undefined &&
+            { prerelease: options?.prerelease },
           ...options?.commit !== undefined &&
             { target_commitish: options.commit },
         });
@@ -446,7 +446,7 @@ function release(
     commit: data.target_commitish,
     body: data.body ?? "",
     draft: data.draft ?? false,
-    preRelease: data.prerelease ?? false,
+    prerelease: data.prerelease ?? false,
     async update(options) {
       const response = await api.rest.repos.updateRelease({
         owner: repo.owner,
@@ -458,8 +458,8 @@ function release(
         ...options?.commit !== undefined &&
           { target_commitish: options.commit },
         ...options?.draft !== undefined && { draft: options?.draft },
-        ...options?.preRelease !== undefined &&
-          { prerelease: options?.preRelease },
+        ...options?.prerelease !== undefined &&
+          { prerelease: options?.prerelease },
       });
       return release(api, repo, response.data);
     },

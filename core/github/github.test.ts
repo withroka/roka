@@ -77,14 +77,14 @@ Deno.test("github().repos.releases", async (t) => {
       name: "Test release",
       body: "Initial body",
       draft: true,
-      preRelease: false,
+      prerelease: false,
     });
     assertEquals(release.repo, repo);
     assertEquals(release.tag, "test-tag");
     assertEquals(release.name, "Test release");
     assertEquals(release.body, "Initial body");
     assertEquals(release.draft, true);
-    assertEquals(release.preRelease, false);
+    assertEquals(release.prerelease, false);
   });
 
   await t.step("list releases", async () => {
@@ -102,7 +102,7 @@ Deno.test("github().repos.releases", async (t) => {
     assertEquals(release.name, "Test release");
     assertEquals(release.body, "Initial body");
     assertEquals(release.draft, true);
-    assertEquals(release.preRelease, false);
+    assertEquals(release.prerelease, false);
   });
 
   await t.step("update release", async () => {
@@ -110,13 +110,13 @@ Deno.test("github().repos.releases", async (t) => {
       name: "Updated release",
       body: "Updated body",
       draft: false,
-      preRelease: true,
+      prerelease: true,
     });
     assertEquals(release.tag, "test-tag");
     assertEquals(release.name, "Updated release");
     assertEquals(release.body, "Updated body");
     assertEquals(release.draft, false);
-    assertEquals(release.preRelease, true);
+    assertEquals(release.prerelease, true);
   });
 
   await t.step("upload release asset", async () => {

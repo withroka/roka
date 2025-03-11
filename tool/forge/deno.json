@@ -25,7 +25,9 @@
       "net": "api.github.com",
       "run": [
         "deno",
-        "git"
+        "git",
+        "tar",
+        "zip"
       ],
       "prompt": true
     }

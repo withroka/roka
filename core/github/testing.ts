@@ -153,7 +153,7 @@ export function fakeRelease(data?: Partial<Release>): Release {
     commit: "commit",
     body: "body",
     draft: false,
-    preRelease: false,
+    prerelease: false,
     update: (options) => {
       Object.assign(release, options);
       return Promise.resolve(release);

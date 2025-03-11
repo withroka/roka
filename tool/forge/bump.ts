@@ -10,7 +10,9 @@
  * current pre-release version is written.
  *
  * If the {@linkcode BumpOptions.pr | pr} option is set, a pull request is
- * created with the updated version information on GitHub.
+ * created with the updated version information on GitHub. Once this pull
+ * request is merged, a release can be created using the {@linkcode [release]}
+ * module.
  *
  * ```ts
  * import { bump } from "@roka/forge/bump";
