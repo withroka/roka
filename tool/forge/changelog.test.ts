@@ -1,29 +1,112 @@
 import { changelog } from "@roka/forge/changelog";
-import { packageInfo } from "@roka/forge/package";
-import { tempRepository } from "@roka/git/testing";
-import { assertEquals } from "@std/assert";
-import { testPackage } from "./testing.ts";
+import { testCommit } from "@roka/git/testing";
+import { assertEquals } from "@std/assert/equals";
 
-Deno.test("changelog() provides package changelog", async () => {
-  await using repo = await tempRepository();
-  await repo.commits.create("initial", { allowEmpty: true });
-  await repo.tags.create("name@0.1.0");
-  await testPackage(repo.path(), { name: "@scope/name", version: "0.1.0" });
-  await repo.commits.create("feat(name): introduce", { allowEmpty: true });
-  await Deno.writeTextFile(repo.path("fix.ts"), "//fix");
-  await repo.index.add("fix.ts");
-  await repo.commits.create("fix(name): fix code");
-  await Deno.writeTextFile(repo.path("README.md"), "docs");
-  await repo.index.add("README.md");
-  await repo.commits.create("docs(name): add docs");
-  await repo.commits.create("refactor(name)!: rewrite", { allowEmpty: true });
-  const pkg = await packageInfo({ directory: repo.path() });
+Deno.test("changelog() generates Markdown changelog", () => {
+  const commits = [
+    testCommit({ summary: "feat(name): introduce" }),
+    testCommit({ summary: "build(name)!: breaking" }),
+    testCommit({ summary: "fix(name): fix code" }),
+    testCommit({ summary: "no type" }),
+  ];
   assertEquals(
-    changelog(pkg),
+    changelog(commits),
     [
-      " * refactor(name)!: rewrite",
-      " * fix(name): fix code",
-      " * feat(name): introduce",
+      "- feat(name): introduce",
+      "- build(name)!: breaking",
+      "- fix(name): fix code",
+      "- no type",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("changelog() adds title and footer", () => {
+  const commits = [
+    testCommit({ summary: "feat(name): introduce" }),
+    testCommit({ summary: "fix(name): fix code" }),
+  ];
+  assertEquals(
+    changelog(commits, {
+      title: "Title",
+      footer: { title: "Footer", items: ["item1", "item2"] },
+    }),
+    [
+      "## Title",
+      "",
+      "- feat(name): introduce",
+      "- fix(name): fix code",
+      "",
+      "### Footer",
+      "",
+      "- item1",
+      "- item2",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("changelog() allows custom Markdown", () => {
+  const commits = [
+    testCommit({ summary: "feat(name): introduce" }),
+    testCommit({ summary: "fix(name): fix code" }),
+  ];
+  assertEquals(
+    changelog(commits, {
+      title: "Title",
+      footer: { title: "Footer", items: ["item1", "item2"] },
+      markdown: { heading: "# ", subheading: "## ", bullet: "* " },
+    }),
+    [
+      "# Title",
+      "",
+      "* feat(name): introduce",
+      "* fix(name): fix code",
+      "",
+      "## Footer",
+      "",
+      "* item1",
+      "* item2",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("changelog() generates frivolous changelog with emojis", () => {
+  const commits = [
+    testCommit({ summary: "build(name)!: breaking" }),
+    testCommit({ summary: "build(name): build" }),
+    testCommit({ summary: "chore(name): chore" }),
+    testCommit({ summary: "ci(name): ci" }),
+    testCommit({ summary: "docs(name): docs" }),
+    testCommit({ summary: "feat(name): feat" }),
+    testCommit({ summary: "fix(name): fix" }),
+    testCommit({ summary: "perf(name): perf" }),
+    testCommit({ summary: "refactor(name): refactor" }),
+    testCommit({ summary: "revert(name): revert" }),
+    testCommit({ summary: "style(name): style" }),
+    testCommit({ summary: "test(name): test" }),
+    testCommit({ summary: "unknown(name): unknown" }),
+    testCommit({ summary: "no type" }),
+  ];
+  assertEquals(
+    changelog(commits, { emoji: true, markdown: { bullet: "" } }),
+    [
+      "🔧 breaking 💥",
+      "🔧 build",
+      "🧹 chore",
+      "👷 ci",
+      "📝 docs",
+      "✨ feat",
+      "🐛 fix",
+      "⚡️ perf",
+      "♻️ refactor",
+      "⏪ revert",
+      "🎨 style",
+      "🧪 test",
+      "🔖 unknown",
+      "🔖 no type",
+      "",
     ].join("\n"),
   );
 });

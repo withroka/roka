@@ -22,7 +22,7 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Bump versions
-        run: deno task forge bump --release --pr
+        run: deno task forge bump --next --changelog=CHANGELOG.md --pr --emoji
         env:
           GIT_NAME: "${{ github.actor }}"
           GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"

@@ -20,6 +20,7 @@ const IMPORT_MAP = {
   "@roka/async/pool": "./roka/core/async/pool.ts",
   "@roka/git": "./roka/core/git/git.ts",
   "@roka/git/conventional": "./roka/core/git/conventional.ts",
+  "@roka/forge/changelog": "./roka/tool/forge/changelog.ts",
   "@roka/forge/package": "./roka/tool/forge/package.ts",
   "@roka/forge/version": "./roka/tool/forge/version.ts",
 };

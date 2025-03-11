@@ -14,11 +14,19 @@
   "compile": {
     "main": "forge.ts",
     "permissions": {
-      "env": ["GIT_NAME", "GIT_EMAIL", "GITHUB_TOKEN", "HOME"],
+      "env": [
+        "GIT_NAME",
+        "GIT_EMAIL",
+        "GITHUB_TOKEN",
+        "HOME"
+      ],
       "read": true,
       "write": true,
       "net": "api.github.com",
-      "run": ["deno", "git"],
+      "run": [
+        "deno",
+        "git"
+      ],
       "prompt": true
     }
   }

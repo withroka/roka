@@ -44,6 +44,8 @@ export interface ReleaseOptions {
   repo?: Repository;
   /** Create a draft release. */
   draft?: boolean;
+  /** Use emoji in commit summaries. */
+  emoji?: boolean;
 }
 
 /**
@@ -72,7 +74,7 @@ export async function release(
   const data = {
     name,
     tag: name,
-    body: body(pkg, repo),
+    body: body(pkg, repo, options),
     draft,
     preRelease: !!version.prerelease?.length,
     commit: head.hash,
@@ -103,22 +105,26 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
   );
 }
 
-function body(pkg: Package, repo: Repository): string {
+function body(
+  pkg: Package,
+  repo: Repository,
+  options: ReleaseOptions | undefined,
+): string {
   assertExists(pkg.version, "Cannot release a package without version");
   const title = pkg.latest?.tag ? "Changelog" : "Initial release";
   const tag = `${pkg.name}@${pkg.version}`;
   const fullChangelogUrl = pkg?.latest?.tag
     ? `compare/${pkg.latest.tag.name}...${tag}`
     : `commits/${tag}/${pkg.directory}`;
-  return [
-    `## ${title}`,
-    "",
-    changelog(pkg),
-    "",
-    "## Details",
-    "",
-    ` * [Full changelog](${repo.url}/${fullChangelogUrl})`,
-    ` * [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
-  ]
-    .join("\n");
+  return changelog(pkg.changes ?? [], {
+    ...options,
+    title,
+    footer: {
+      title: "Details",
+      items: [
+        ` * [Full changelog](${repo.url}/${fullChangelogUrl})`,
+        ` * [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
+      ],
+    },
+  });
 }
