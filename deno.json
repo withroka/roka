@@ -1,6 +1,5 @@
 {
   "workspace": [
-    "./app/example",
     "./core/async",
     "./core/cli",
     "./core/git",
