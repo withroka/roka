@@ -48,7 +48,7 @@ import {
   assertFalse,
   assertGreater,
 } from "@std/assert";
-import { basename, join } from "@std/path";
+import { basename, join, normalize } from "@std/path";
 
 /**
  * An error thrown by the {@link [jsr:@roka/git]} package.
@@ -802,7 +802,7 @@ async function run(
   ...commandArgs: (string | string[] | false | undefined)[]
 ): Promise<string> {
   const args = [
-    options.cwd && ["-C", options.cwd],
+    options.cwd !== undefined ? ["-C", normalize(options.cwd)] : [],
     options.config && configArgs(options.config, "-c").flat(),
     "--no-pager",
     ...commandArgs,
