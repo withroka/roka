@@ -673,11 +673,22 @@ Deno.test("git().commits.log() returns commit descendants", async () => {
   assertEquals(await repo.commits.log({ range: { from: commit1 } }), [commit2]);
 });
 
+Deno.test("git().commits.log() returns commit ancestors", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  await repo.commits.create("third", { allowEmpty: true });
+  assertEquals(await repo.commits.log({ range: { to: commit2 } }), [
+    commit2,
+    commit1,
+  ]);
+});
+
 Deno.test("git().commits.log() returns commit range", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commits.create("first", { allowEmpty: true });
   const commit2 = await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("second", { allowEmpty: true });
+  const commit3 = await repo.commits.create("third", { allowEmpty: true });
   await repo.commits.create("third", { allowEmpty: true });
   assertEquals(
     await repo.commits.log({ range: { from: commit1, to: commit3 } }),
@@ -692,8 +703,8 @@ Deno.test("git().commits.log() returns interprets range as asymmetric", async ()
   await using repo = await tempRepository();
   const commit1 = await repo.commits.create("first", { allowEmpty: true });
   await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("second", { allowEmpty: true });
-  await repo.commits.create("third", { allowEmpty: true });
+  const commit3 = await repo.commits.create("third", { allowEmpty: true });
+  await repo.commits.create("fourth", { allowEmpty: true });
   assertEquals(
     await repo.commits.log({ range: { from: commit3, to: commit1 } }),
     [],
@@ -704,13 +715,31 @@ Deno.test("git().commits.log() returns symmetric commit range", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commits.create("first", { allowEmpty: true });
   const commit2 = await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("second", { allowEmpty: true });
+  const commit3 = await repo.commits.create("third", { allowEmpty: true });
   await repo.commits.create("third", { allowEmpty: true });
   assertEquals(
     await repo.commits.log({
       range: { from: commit3, to: commit1, symmetric: true },
     }),
-    [commit3, commit2],
+    [
+      commit3,
+      commit2,
+    ],
+  );
+});
+
+Deno.test("git().commits.log() ignores empty range", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit3 = await repo.commits.create("third", { allowEmpty: true });
+  assertEquals(
+    await repo.commits.log({ range: {} }),
+    [
+      commit3,
+      commit2,
+      commit1,
+    ],
   );
 });
 
