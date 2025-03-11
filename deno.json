@@ -29,6 +29,7 @@
         "default-param-last",
         "eqeqeq",
         "no-await-in-loop",
+        "no-console",
         "no-eval",
         "no-non-null-assertion",
         "no-self-compare",

@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-console
 /**
  * A monorepo tool for Deno workspaces.
  *

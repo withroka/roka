@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-console
 import { version } from "@roka/forge/version";
 
 if (import.meta.main) {
