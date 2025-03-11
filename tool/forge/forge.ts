@@ -175,7 +175,7 @@
  * forge --version
  * ```
  * ```
- * forge 0.1.0-pre.17+15288f0 (aarch64-apple-darwin)
+ * forge 0.1.0 (aarch64-apple-darwin)
  * deno 2.2.3
  * v8 13.4.114.11-rusty
  * typescript 5.7.3
