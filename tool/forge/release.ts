@@ -72,17 +72,16 @@ export async function release(
   const { repo = await github(options).repos.get(), draft = false } = options ??
     {};
   if (!pkg.config.version) {
-    throw new PackageError("Cannot release without configuration version");
+    throw new PackageError(
+      `Cannot release without configuration version: ${pkg.name}`,
+    );
   }
   const version = parse(pkg.config.version);
   const latest = parse(pkg.latest?.version ?? "0.0.0");
   if (lessOrEqual(version, latest)) {
-    throw new PackageError(
-      [
-        `Cannot release version ${pkg.config.version}`,
-        `it is not newer than the latest release ${pkg.latest?.version}`,
-      ].join(" "),
-    );
+    throw new PackageError(`Release version not newer: ${pkg.name}`, {
+      cause: { version: pkg.config.version, latest: pkg.latest?.version },
+    });
   }
   const name = `${pkg.name}@${pkg.config.version}`;
   let [release] = await repo.releases.list({ name, draft });

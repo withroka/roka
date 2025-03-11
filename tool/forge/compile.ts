@@ -128,9 +128,9 @@ export async function compile(
       const { code, stderr } = await command.output();
       if (code !== 0) {
         const error = new TextDecoder().decode(stderr);
-        throw new PackageError(
-          `Compile failed for ${pkg.name} (deno)\n${error}`,
-        );
+        throw new PackageError(`Compile failed for ${pkg.name}`, {
+          cause: { command: "deno", args, code, error },
+        });
       }
       if (options?.install) {
         const install = options.install === true
@@ -187,25 +187,26 @@ function permission<P extends Exclude<keyof Permissions, "prompt">>(
 }
 
 async function tar(directory: string, output: string) {
-  const command = new Deno.Command("tar", {
-    args: ["-czf", output, "-C", directory, "."],
-  });
+  const args = ["-czf", output, "-C", directory, "."];
+  const command = new Deno.Command("tar", { args });
   const { code, stderr } = await command.output();
   if (code !== 0) {
     const error = new TextDecoder().decode(stderr);
-    throw new PackageError(`Bundle failed for ${output} (tar)\n${error}`);
+    throw new PackageError(`Bundle failed for ${output}`, {
+      cause: { command: "tar", args, code, error },
+    });
   }
 }
 
-async function zip(directory: string, output: string) {
-  const command = new Deno.Command("zip", {
-    cwd: directory,
-    args: ["-r", relative(directory, output), "."],
-  });
+async function zip(cwd: string, output: string) {
+  const args = ["-r", relative(cwd, output), "."];
+  const command = new Deno.Command("zip", { cwd, args });
   const { code, stderr } = await command.output();
   if (code !== 0) {
     const error = new TextDecoder().decode(stderr);
-    throw new PackageError(`Bundle failed for ${output} (zip)\n${error}`);
+    throw new PackageError(`Bundle failed for ${output}`, {
+      cause: { command: "zip", cwd, args, code, error },
+    });
   }
 }
 

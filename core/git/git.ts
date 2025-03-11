@@ -58,8 +58,8 @@ import { basename, join, normalize } from "@std/path";
  */
 export class GitError extends Error {
   /** Construct GitError. */
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
     this.name = "GitError";
   }
 }
@@ -816,23 +816,17 @@ async function run(
   try {
     const { code, stdout, stderr } = await command.output();
     if (code !== 0) {
-      const escapedArgs = args.map((x) => JSON.stringify(x)).join(" ");
-      const error = new TextDecoder().decode(stderr.length ? stderr : stdout)
-        .split("\n")
-        .map((line) => `  ${line}`);
-      throw new GitError(
-        [
-          "Error running git command",
-          `  command: git ${escapedArgs}`,
-          `  exit code: ${code}`,
-          error,
-        ].flat().join("\n"),
-      );
+      const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
+      throw new GitError("Error running git command", {
+        cause: { command: "git", args, code, error },
+      });
     }
     return new TextDecoder().decode(stdout).trim();
   } catch (e: unknown) {
     if (e instanceof Deno.errors.NotCapable) {
-      throw new GitError("Permission error (use `--allow-run=git`)");
+      throw new GitError("Permission error (use `--allow-run=git`)", {
+        cause: e,
+      });
     }
     throw e;
   }
