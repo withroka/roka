@@ -196,9 +196,17 @@ export interface Remote {
 
 /** A revision range over commit history in a git repository. */
 export interface RevisionRange {
-  /** Match objects that are descendants of this revision. */
+  /**
+   * Match objects that are descendants of this revision.
+   *
+   * The pointed commit itself is excluded from the range.
+   */
   from?: Commitish;
-  /** Match objects that are ancestors of this revision. */
+  /**
+   * Match objects that are ancestors of this revision.
+   *
+   * The pointed commit itself is included in the range.
+   */
   to?: Commitish;
   /**
    * Match objects that are reachable from either end, but not from both.
@@ -875,11 +883,12 @@ function signArg(sign: boolean | string, type: "commit" | "tag"): string {
   return `--gpg-sign=${sign}`;
 }
 
-function rangeArg(range: RevisionRange): string {
+function rangeArg(range: RevisionRange): string | undefined {
   const from = range.from && commitArg(range.from);
-  const to = (range.to && commitArg(range.to)) ?? "HEAD";
+  const to = range.to && commitArg(range.to);
+  if (from === undefined && to === undefined) return undefined;
   if (from === undefined) return to;
-  return `${from}${range.symmetric ? "..." : ".."}${to}`;
+  return `${from}${range.symmetric ? "..." : ".."}${to ?? "HEAD"}`;
 }
 
 type FormatField = { kind: "skip" } | {
