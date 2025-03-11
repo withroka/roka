@@ -193,7 +193,7 @@ async function tar(directory: string, output: string) {
   if (code !== 0) {
     const error = new TextDecoder().decode(stderr);
     throw new PackageError(`Bundle failed for ${output}`, {
-      cause: { command: "tar", args: args, code, error },
+      cause: { command: "tar", args, code, error },
     });
   }
 }
@@ -205,7 +205,7 @@ async function zip(directory: string, output: string) {
   if (code !== 0) {
     const error = new TextDecoder().decode(stderr);
     throw new PackageError(`Bundle failed for ${output}`, {
-      cause: { command: "zip", args: ["-r", output, "."], code, error },
+      cause: { command: "zip", args, code, error },
     });
   }
 }
