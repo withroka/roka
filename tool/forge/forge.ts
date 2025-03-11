@@ -202,7 +202,7 @@
  * @module forge
  */
 
-import { Command, EnumType } from "@cliffy/command";
+import { Command, EnumType, ValidationError } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
 import { bump } from "@roka/forge/bump";
@@ -411,8 +411,10 @@ function releaseCommand() {
 }
 
 if (import.meta.main) {
+  let verbose = false;
   await new Command()
     .name("forge")
+    .version(await version({ build: true, deno: true }))
     .description("Manage packages.")
     .example("forge", "List all packages.")
     .example("forge list 'core/*'", "List packages in the 'core' directory.")
@@ -420,7 +422,28 @@ if (import.meta.main) {
     .example("forge bump --pr", "Bump versions and create a bump PR.")
     .example("forge release --draft", "Create releases with compiled assets.")
     .usage("<command> [options] [packages...]")
-    .version(await version({ build: true, deno: true }))
+    .option("--verbose", "Print additional information.", {
+      hidden: true,
+      global: true,
+      action: () => verbose = true,
+    })
+    .error((error, cmd) => {
+      if (error instanceof ValidationError) {
+        cmd.showHelp();
+        console.error(`❌ ${error.message}`);
+        Deno.exit(1);
+      }
+      const errors = (error instanceof AggregateError) ? error.errors : [error];
+      if (error instanceof AggregateError) error = error.errors[0];
+      for (const error of errors) {
+        console.error(`❌ ${error.message}`);
+        if (verbose) console.error(error);
+        else if (error["cause"] && error["cause"]["error"]) {
+          console.error(error.cause.error);
+        }
+      }
+      Deno.exit(2);
+    })
     .default("list")
     .command("list", listCommand())
     .command("changelog", changelogCommand())
