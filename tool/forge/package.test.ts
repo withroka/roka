@@ -1,9 +1,16 @@
-import { PackageError, packageInfo, workspace } from "@roka/forge/package";
-import { testPackage } from "@roka/forge/testing";
+import {
+  commits,
+  PackageError,
+  packageInfo,
+  releases,
+  workspace,
+} from "@roka/forge/package";
+import { tempPackage, testPackage } from "@roka/forge/testing";
+import { GitError } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing/temp";
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals, assertExists, assertRejects } from "@std/assert";
 
 Deno.test("packageInfo() rejects non-Deno package", async () => {
   await using repo = await tempRepository();
@@ -39,8 +46,8 @@ Deno.test("packageInfo() returns release version at release commit", async () =>
     name: "name",
     version: "1.2.3",
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -58,8 +65,8 @@ Deno.test("packageInfo() calculates patch version update", async () => {
     name: "name",
     version: `1.2.4-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [conventional(commit)],
   });
 });
 
@@ -77,8 +84,8 @@ Deno.test("packageInfo() calculates minor version update", async () => {
     name: "name",
     version: `1.3.0-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [conventional(commit)],
   });
 });
 
@@ -96,8 +103,8 @@ Deno.test("packageInfo() calculates major version update", async () => {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [conventional(commit)],
   });
 });
 
@@ -113,8 +120,8 @@ Deno.test("packageInfo() ignores commits for other package", async () => {
     name: "name",
     version: `1.2.3`,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -132,8 +139,8 @@ Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
     name: "name",
     version: "1.2.3",
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -151,8 +158,8 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [conventional(commit)],
   });
 });
 
@@ -162,13 +169,13 @@ Deno.test("packageInfo() handles multiple commits in changelog", async () => {
   await testPackage(directory, { name: "@scope/name", version: "1.2.3" });
   await repo.commits.create("initial", { allowEmpty: true });
   const tag = await repo.tags.create("name@1.2.3");
-  const commit1 = await repo.commits.create("fix(name): 1", {
+  const commit1 = await repo.commits.create("fix(name): fix", {
     allowEmpty: true,
   });
-  const commit2 = await repo.commits.create("feat(name): 2", {
+  const commit2 = await repo.commits.create("feat(name): fix", {
     allowEmpty: true,
   });
-  const commit3 = await repo.commits.create("fix(name): 3", {
+  const commit3 = await repo.commits.create("fix(name): fix", {
     allowEmpty: true,
   });
   assertEquals(await packageInfo({ directory }), {
@@ -176,8 +183,8 @@ Deno.test("packageInfo() handles multiple commits in changelog", async () => {
     name: "name",
     version: `1.3.0-pre.3+${commit3.short}`,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag },
-    changelog: [
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [
       conventional(commit3),
       conventional(commit2),
       conventional(commit1),
@@ -196,8 +203,8 @@ Deno.test("packageInfo() handles forced patch update", async () => {
     name: "name",
     version: "1.2.4",
     config: { name: "@scope/name", version: "1.2.4" },
-    latest: { version: "1.2.3", tag },
-    changelog: [],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -212,8 +219,8 @@ Deno.test("packageInfo() handles forced minor update", async () => {
     name: "name",
     version: "1.3.0",
     config: { name: "@scope/name", version: "1.3.0" },
-    latest: { version: "1.2.3", tag },
-    changelog: [],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -228,8 +235,8 @@ Deno.test("packageInfo() handles forced major update", async () => {
     name: "name",
     version: "2.0.0",
     config: { name: "@scope/name", version: "2.0.0" },
-    latest: { version: "1.2.3", tag },
-    changelog: [],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -247,8 +254,8 @@ Deno.test("packageInfo() overrides calculated update", async () => {
     name: "name",
     version: "2.2.2",
     config: { name: "@scope/name", version: "2.2.2" },
-    latest: { version: "1.2.3", tag },
-    changelog: [conventional(commit)],
+    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    changes: [conventional(commit)],
   });
 });
 
@@ -263,8 +270,8 @@ Deno.test("packageInfo() uses higher config version", async () => {
     name: "name",
     version: "1.2.3",
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.2", tag },
-    changelog: [],
+    latest: { version: "1.2.2", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -279,8 +286,8 @@ Deno.test("packageInfo() ignores lower config version", async () => {
     name: "name",
     version: "1.2.4",
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.4", tag },
-    changelog: [],
+    latest: { version: "1.2.4", tag, range: { to: tag.commit.hash } },
+    changes: [],
   });
 });
 
@@ -294,7 +301,7 @@ Deno.test("packageInfo() returns returns first version", async () => {
     name: "name",
     version: "0.0.0",
     config: { name: "@scope/name" },
-    changelog: [],
+    changes: [],
   });
 });
 
@@ -302,7 +309,7 @@ Deno.test("packageInfo() returns update at initial version", async () => {
   await using repo = await tempRepository();
   const directory = repo.path();
   await testPackage(directory, { name: "@scope/name", version: "0.1.0" });
-  await repo.commits.create("feat(name): introduce package", {
+  const commit = await repo.commits.create("feat(name): introduce package", {
     allowEmpty: true,
   });
   assertEquals(await packageInfo({ directory }), {
@@ -310,7 +317,7 @@ Deno.test("packageInfo() returns update at initial version", async () => {
     name: "name",
     version: "0.1.0",
     config: { name: "@scope/name", version: "0.1.0" },
-    changelog: [],
+    changes: [conventional(commit)],
   });
 });
 
@@ -362,4 +369,208 @@ Deno.test("workspace() filters packages", async () => {
   assertEquals(await workspace({ directory, filters: ["*/pkg2"] }), [p2]);
   assertEquals(await workspace({ directory, filters: ["none*"] }), []);
   assertEquals(await workspace({ directory, filters: ["*2", "*3"] }), [p2, p3]);
+});
+
+Deno.test("releases() returns releases for a package", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("summary", { allowEmpty: true });
+  const tag1 = await git.tags.create("name@1.2.3");
+  await git.commits.create("summary", { allowEmpty: true });
+  const tag2 = await git.tags.create("name@1.2.4");
+  await git.tags.create("other@0.1.0");
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(await releases(pkg), [
+    {
+      version: "1.2.4",
+      tag: tag2,
+      range: { from: tag1.commit.hash, to: tag2.commit.hash },
+    },
+    {
+      version: "1.2.3",
+      tag: tag1,
+      range: { to: tag1.commit.hash },
+    },
+  ]);
+});
+
+Deno.test("releases() ignores unknown tag format", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("summary", { allowEmpty: true });
+  await git.tags.create("v1.2.3");
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(await releases(pkg), []);
+});
+
+Deno.test("releases() fails on non-repository", async () => {
+  await using pkg = await tempPackage({ name: "@scope/name" });
+  await assertRejects(() => releases(pkg), GitError);
+});
+
+Deno.test("commits() generates package changelog", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("fix(other): fix other", { allowEmpty: true });
+  await git.commits.create("ci: unrelated", { allowEmpty: true });
+  const commit3 = await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await commits(pkg),
+    [conventional(commit3), conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("commits() filters by type", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await commits(pkg, { type: ["feat", "fix"] }),
+    [conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("commits() includes breaking changes", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  const commit3 = await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await commits(pkg, { type: ["feat", "fix"] }),
+    [conventional(commit3), conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("commits() can filter breaking changes", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit = await git.commits.create("fix(name)!: fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await commits(pkg, { type: ["feat", "fix"], breaking: true }),
+    [conventional(commit)],
+  );
+});
+
+Deno.test("commits() can filter non-breaking changes", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  const commit1 = await git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await commits(pkg, { type: ["feat", "fix"], breaking: false }),
+    [conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("commits() can return breaking changes only", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("initial", { allowEmpty: true });
+  git.commits.create("feat(name): introduce", {
+    allowEmpty: true,
+  });
+  await git.commits.create("fix(name): fix code", {
+    allowEmpty: true,
+  });
+  const commit = await git.commits.create("refactor(name)!: breaking", {
+    allowEmpty: true,
+  });
+  await git.commits.create("docs(name): add docs", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertEquals(
+    await commits(pkg, { breaking: true }),
+    [conventional(commit)],
+  );
+});
+
+Deno.test("commits() generates changelog since the latest release", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("fix(name): fix", { allowEmpty: true });
+  await git.tags.create("name@1.2.3");
+  const commit1 = await git.commits.create("fix(name): fix", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  assertExists(pkg.latest);
+  assertEquals(
+    await commits(pkg, { range: { from: pkg.latest.tag } }),
+    [conventional(commit2), conventional(commit1)],
+  );
+});
+
+Deno.test("commits() generates changelog for a release", async () => {
+  await using git = await tempRepository();
+  await git.commits.create("fix(name): fix", { allowEmpty: true });
+  await git.tags.create("name@1.2.3");
+  const commit1 = await git.commits.create("fix(name): fix", {
+    allowEmpty: true,
+  });
+  const commit2 = await git.commits.create("fix(name): fix", {
+    allowEmpty: true,
+  });
+  await git.tags.create("name@1.2.4");
+  await git.commits.create("fix(name): fix", {
+    allowEmpty: true,
+  });
+  const pkg = await testPackage(git.path(), { name: "@scope/name" });
+  const [latest] = await releases(pkg);
+  assertExists(latest);
+  assertEquals(
+    await commits(pkg, { range: latest.range }),
+    [conventional(commit2), conventional(commit1)],
+  );
 });

@@ -28,8 +28,9 @@ import { pool } from "@roka/async/pool";
 import { changelog } from "@roka/forge/changelog";
 import { type Package, PackageError } from "@roka/forge/package";
 import { github, type PullRequest, type Repository } from "@roka/github";
+import { assertExists } from "@std/assert";
 import { common, join } from "@std/path";
-import { difference, format, parse } from "@std/semver";
+import { format, parse } from "@std/semver";
 
 const BUMP_BRANCH = "automated/bump";
 
@@ -50,10 +51,19 @@ export interface BumpOptions {
     /** Email of the user. */
     email?: string;
   };
-  /** Bump to a release version, instead of a prerelease. */
+  /** Bump to the next release version, instead of a prerelease of it. */
   release?: boolean;
+  /**
+   * Update given file with the generated changelog.
+   *
+   * If a relative path is provided, the path will be resolved from the current
+   * working directory.
+   */
+  changelog?: string;
   /** Create a pull request. */
   pr?: boolean;
+  /** Use emoji in commit summaries. */
+  emoji?: boolean;
 }
 
 /**
@@ -62,9 +72,9 @@ export interface BumpOptions {
  * The version for the package is calculated using the latest release tag and
  * the {@link https://www.conventionalcommits.org | Conventional Commits} for
  * the package since that release. If the changelog is not empty, the version
- * will be a pre-release version. If {@linkcode BumpOptions.release} is set,
- * the version of the next release will be written, dropping prerelase and
- * build information from the version string.
+ * will be a pre-release version. If {@linkcode BumpOptions.release | release}
+ * is set, the version of the next release will be written, dropping prerelase
+ * and build information from the version string.
  *
  * When working with pull requests, if there is an open PR, it will be updated
  * with the new version information.
@@ -87,12 +97,14 @@ export async function bump(
       }),
     }))
     .filter(({ pkg, bump }) => pkg.config.version !== bump);
-  packages = await pool(bumps, ({ pkg, bump }) => update(pkg, bump));
+  packages = await pool(bumps, ({ pkg, bump }) => updateConfig(pkg, bump));
+  if (packages.length === 0) throw new PackageError("No packages to bump");
+  if (options?.changelog) await updateChangelog(packages, options);
   if (!options?.pr) return undefined;
   return createPullRequest(packages, options);
 }
 
-async function update(pkg: Package, version: string) {
+async function updateConfig(pkg: Package, version: string) {
   const config = { ...pkg.config, version };
   await Deno.writeTextFile(
     join(pkg.directory, "deno.json"),
@@ -101,6 +113,26 @@ async function update(pkg: Package, version: string) {
   pkg.version = version;
   pkg.config.version = version;
   return pkg;
+}
+
+async function updateChangelog(packages: Package[], options?: BumpOptions) {
+  assertExists(options?.changelog, "Changelog file was not passed");
+  const prepend = packages.map((pkg) =>
+    changelog(pkg.changes ?? [], {
+      ...options,
+      title: `${pkg.name}@${pkg.version}`,
+    })
+  ).join("\n");
+  let existing = "";
+  try {
+    existing = await Deno.readTextFile(options?.changelog);
+  } catch (e: unknown) {
+    if (!(e instanceof Deno.errors.NotFound)) throw e;
+  }
+  await Deno.writeTextFile(
+    options?.changelog,
+    [prepend, ...existing && [existing]].join("\n"),
+  );
 }
 
 async function createPullRequest(
@@ -114,10 +146,19 @@ async function createPullRequest(
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} version`
     : "chore: bump versions";
-  const body = prBody(packages);
+  const body = packages.map((pkg) =>
+    changelog(pkg.changes ?? [], {
+      ...options,
+      title: `${pkg.name}@${pkg.version}`,
+    })
+  ).join("\n");
   await repo.git.branches.checkout({ new: BUMP_BRANCH });
   await repo.git.config.set({ ...user && { user } });
-  await repo.git.commits.create(title, { body, all: true });
+  await repo.git.index.add([
+    ...packages.map((pkg) => join(pkg.directory, "deno.json")),
+    ...options?.changelog ? [options?.changelog] : [],
+  ]);
+  await repo.git.commits.create(title, { body });
   let [pr] = await repo.pulls.list({ title, closed: false });
   if (pr) {
     await repo.git.commits.push({ force: true, branch: BUMP_BRANCH });
@@ -127,16 +168,4 @@ async function createPullRequest(
     pr = await repo.pulls.create({ title, body, draft: true });
   }
   return pr;
-}
-
-function prBody(packages: Package[]): string {
-  return packages.map((pkg) => [
-    `## ${pkg.name}@${pkg.version} [${
-      difference(
-        parse(pkg.latest?.version ?? "0.0.0"),
-        parse(pkg.version),
-      )
-    }]`,
-    changelog(pkg),
-  ]).flat().join("\n\n");
 }

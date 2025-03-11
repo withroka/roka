@@ -29,8 +29,10 @@
  * @module package
  */
 
-import { git, GitError, type Tag } from "@roka/git";
+import { git, GitError, type RevisionRange, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
+import { assertExists } from "@std/assert";
+import { slidingWindows } from "@std/collections";
 import {
   basename,
   dirname,
@@ -96,11 +98,11 @@ export interface Package {
    */
   latest?: Release;
   /**
-   * Changes for this package since the latest release.
+   * Commits since the latest release.
    *
    * This will be calculated only if the git history is available.
    */
-  changelog?: ConventionalCommit[];
+  changes?: ConventionalCommit[];
 }
 
 /**
@@ -112,6 +114,8 @@ export interface Release {
   version: string;
   /** Release tag. */
   tag: Tag;
+  /** Commit range. */
+  range: RevisionRange;
 }
 
 /**
@@ -211,10 +215,34 @@ export interface WorkspaceOptions {
   filters?: string[];
 }
 
+/** Options for the {@linkcode commits} function. */
+export interface CommitOptions {
+  /**
+   * Range of commits to include in the changelog.
+   *
+   * If not defined, all commits for the package are returned.
+   */
+  range?: RevisionRange;
+  /**
+   * Commit types to include in the changelog.
+   *
+   * All types are returned by default.
+   *
+   * Breaking changes whose types are not included are returned by default.
+   * Setting {@linkcode breaking} to `false` will skip these commits.
+   */
+  type?: string[];
+  /**
+   * If `true`, returns only breaking changes. If `false`, breaking changes are
+   * subject to the {@linkcode type} filter.
+   */
+  breaking?: boolean;
+}
+
 /**
  * Returns information about a package.
  *
- * @throws {PackageError} If the package configuration was malformed, release
+ * @throws {PackageError} If the package configuration was malformed or release
  *                        versions could not be parsed from git tags.
  */
 export async function packageInfo(options?: PackageOptions): Promise<Package> {
@@ -223,17 +251,28 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   );
   const config = await readConfig(directory);
   const name = basename(config.name ?? directory);
-  const latest = await findLatest(directory, name);
-  const changelog = await fetchChangelog(directory, name, latest);
-  const version = calculateVersion(config, latest, changelog);
-  return {
+  const pkg: Package = {
     directory,
     name,
     config,
-    version,
-    ...latest && { latest },
-    ...changelog && { changelog },
+    version: config.version ?? "0.0.0",
   };
+  try {
+    const [latest] = await releases(pkg);
+    const changes = await commits(pkg, {
+      type: ["feat", "fix"],
+      ...latest && { range: { from: latest.tag } },
+    });
+    if (latest !== undefined) pkg.latest = latest;
+    if (changes !== undefined) {
+      pkg.changes = changes;
+      pkg.version = calculateVersion(pkg.version, latest, changes);
+    }
+  } catch (e: unknown) {
+    // git will fail on non-repository or uninitialized repository
+    if (!(e instanceof GitError)) throw e;
+  }
+  return pkg;
 }
 
 /**
@@ -265,6 +304,105 @@ export async function workspace(
     );
 }
 
+/**
+ * Returns all releases of a package based on its git tags.
+ *
+ * @example Retrieve all releases of a package.
+ * ```ts
+ * import { releases, packageInfo } from "@roka/forge/package";
+ *
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   return await releases(pkg);
+ * }
+ * ```
+ * @param pkg Package to search releases for.
+ * @returns All releases for this package from git tags.
+ * @throws {GitError} If git history is not available.
+ */
+export async function releases(pkg: Package): Promise<Release[]> {
+  const tags = (await git({ cwd: pkg.directory }).tags
+    .list({ name: `${pkg.name}@*`, sort: "version" }))
+    .filter(parseTag);
+  const windows = slidingWindows(tags, 2, { partial: true });
+  const result = windows.map(
+    ([tag, previous]) => {
+      assertExists(tag, `Cannot use tag`);
+      const version = parseTag(tag);
+      assertExists(version, `Cannot parse version from tag`);
+      return {
+        version,
+        tag,
+        range: {
+          ...previous && { from: previous.commit.hash },
+          to: tag.commit.hash,
+        },
+      };
+    },
+  );
+  return result;
+}
+
+/**
+ * Returns the commits of a particular release.
+ *
+ * By default, only changes if the next release is returned. The
+ * {@linkcode CommitOptions.release | release} option can be used to return
+ * the commits of a specific release.
+ *
+ * @example Get commits since the last release.
+ * ```ts
+ * import { commits, packageInfo } from "@roka/forge/package";
+ *
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   return await commits(pkg, { type: ["feat", "fix"] });
+ * }
+ * ```
+ *
+ * @example Get commits for a specific release.
+ * ```ts
+ * import { commits, packageInfo } from "@roka/forge/package";
+ * import { assertExists } from "@std/assert";
+ *
+ * async function usage() {
+ *   const pkg = await packageInfo();
+ *   return await commits(pkg, {
+ *     ...pkg.latest ? { range: pkg.latest.range } : {},
+ *   });
+ * }
+ * ```
+ *
+ * @param pkg Package to generate changelog for.
+ * @param options Options for generating the changelog.
+ * @returns Matched commits.
+ * @throws {GitError} If git history is not available.
+ */
+export async function commits(
+  pkg: Package,
+  options?: CommitOptions,
+): Promise<ConventionalCommit[]> {
+  const log = await git({ cwd: pkg.directory }).commits.log(
+    options?.range ? { range: options?.range } : {},
+  );
+  return log
+    .map((c) => conventional(c))
+    .filter((c) => c.scopes.includes(pkg.name))
+    .filter((c) => options?.breaking !== true || c.breaking)
+    .filter((c) =>
+      options?.type !== undefined
+        ? c.type && options.type.includes(c.type) ||
+          (options?.breaking === undefined && c.breaking)
+        : true
+    );
+}
+
+function parseTag(tag: Tag): string | undefined {
+  const version = tag.name?.split("@")[1];
+  if (!version || !canParse(version)) return undefined;
+  return version;
+}
+
 async function readConfig(directory: string): Promise<Config> {
   const configFile = join(directory, "deno.json");
   try {
@@ -277,68 +415,20 @@ async function readConfig(directory: string): Promise<Config> {
   }
 }
 
-async function findLatest(
-  directory: string,
-  name: string,
-): Promise<Release | undefined> {
-  try {
-    const repo = git({ cwd: directory });
-    const search = `${name}@*`;
-    const sort = "version";
-    const [tag] = [
-      ...await repo.tags.list({ name: search, sort, pointsAt: "HEAD" }),
-      ...await repo.tags.list({ name: search, sort, noContains: "HEAD" }),
-    ];
-    if (tag === undefined) return undefined;
-    const version = tag.name?.split("@")[1];
-    if (!version || !canParse(version)) {
-      throw new PackageError(
-        `Cannot parse semantic version from tag: ${tag.name}`,
-      );
-    }
-    return { version, tag };
-  } catch (e: unknown) {
-    // we are not in a git repository
-    if (e instanceof GitError) return undefined;
-    throw e;
-  }
-}
-
-async function fetchChangelog(
-  directory: string,
-  name: string,
-  latest: Release | undefined,
-) {
-  try {
-    const log = await git({ cwd: directory }).commits.log({
-      ...latest !== undefined
-        ? { range: { from: latest.tag } }
-        : { paths: ["."] },
-    });
-    return log.map((c) => conventional(c))
-      .filter((c) => c.scopes.includes(name))
-      .filter((c) => c.breaking || c.type === "feat" || c.type === "fix");
-  } catch (e: unknown) {
-    // we are not in a git repository
-    if (e instanceof GitError) return undefined;
-    throw e;
-  }
-}
-
 function calculateVersion(
-  config: Config,
+  version: string,
   latest: Release | undefined,
-  changelog: ConventionalCommit[] | undefined,
+  log: ConventionalCommit[],
 ) {
-  const current = parse(latest ? latest.version : "0.0.0");
-  const next = changelog?.length && changelog[0]
+  const current = parse(latest?.version ?? "0.0.0");
+  const next = log?.length && log[0]
     ? {
-      ...increment(current, updateType(current, changelog)),
-      prerelease: [`pre.${changelog.length}`],
-      build: [changelog[0].short],
+      ...increment(current, updateType(current, log)),
+      prerelease: [`pre.${log.length}`],
+      build: [log[0].short],
     }
     : current;
-  const coded = parse(config.version ?? "0.0.0");
+  const coded = parse(version);
   return format(greaterThan(next, coded) ? next : coded);
 }
 

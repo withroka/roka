@@ -63,8 +63,6 @@ export interface VersionOptions {
  * // v8
  * // typescript 5.7.3
  * ```
- *
- * @throws {PackageError} If package information was inconsistent.
  */
 export async function version(options?: VersionOptions): Promise<string> {
   return [

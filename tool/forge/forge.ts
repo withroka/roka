@@ -12,9 +12,22 @@
  *
  * ```sh
  * > forge list
- * 📦 app/example
- * 📦 core/testing @roka/testing 0.2.0
- * 📦 tool/forge   @roka/forge   0.1.0
+ * 📦 example      @roka/example 1.2.3+pre.3+fedcba9
+ * 📦 testing      @roka/testing 0.1.0
+ * ```
+ *
+ * Generate changelogs.
+ *
+ * ```sh
+ * > forge changelog --emoji
+ * 🏷️ example@1.2.3+pre.3+fedcba9
+ *
+ *  🧪 forgot unit-testing (#6)
+ *  🎨 nicer code style (#5)
+ *  🐛 really fix bug with breaking change (#4) 💥
+ *  ⏪ revert bug fix, it broke something (#3)
+ *  🐛 fix bug (#2)
+ *  ✨ introduce new feature (#1)
  * ```
  *
  * Compile a package into a binary.
@@ -45,7 +58,7 @@
  * Bump package versions and create a pull request.
  *
  * ```sh
- * > forge bump --release --pr
+ * > forge bump --release --changelog=CHANGELOG.md --pr
  * 📦 Bumped package versions
  * 🚀 Created bump PR
  * ```
@@ -79,25 +92,28 @@
 
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
-import { pool } from "@roka/async/pool";
+import { pool, pooled } from "@roka/async/pool";
 import { bump } from "@roka/forge/bump";
-import { changelog as changelogText } from "@roka/forge/changelog";
+import { changelog } from "@roka/forge/changelog";
 import { compile, targets } from "@roka/forge/compile";
-import { type Package, workspace } from "@roka/forge/package";
+import {
+  commits,
+  type Package,
+  releases,
+  workspace,
+} from "@roka/forge/package";
 import { release } from "@roka/forge/release";
 import { version } from "@roka/forge/version";
 import { join, relative } from "@std/path";
 
 function listCommand() {
   return new Command()
-    .description("List packages, versions, and changelogs.")
+    .description("List packages and versions.")
     .example("forge list", "List all packages.")
     .example("forge list --modules", "List all modules.")
-    .example("forge list --changelog", "Display package changelogs.")
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
-    .option("--changelog", "Print package changelog.", { default: false })
-    .action(async ({ modules, changelog }, ...filters) => {
+    .action(async ({ modules }, ...filters) => {
       const packages = await workspace({ filters });
       new Table().body(
         packages.map((pkg) => [
@@ -108,7 +124,6 @@ function listCommand() {
           ...(pkg.latest?.version !== pkg.config.version)
             ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
             : [],
-          changelog ? changelogText(pkg) : undefined,
         ]),
       ).render();
     });
@@ -122,6 +137,63 @@ function modulesText(pkg: Package): string | undefined {
   return Object.keys(exports)
     .map((key) => join(name, relative(".", key)))
     .join("\n");
+}
+
+function changelogCommand() {
+  return new Command()
+    .description("Generate changelogs.")
+    .example("forge changelog", "List unreleased changes.")
+    .example("forge changelog --type feat --no-breaking", "List new features.")
+    .example("forge changelog --markdown --all", "All releases in Markdown.")
+    .option("--all", "Generate changelog for all releases.")
+    .option("--type=<type:string>", "Commit type.", { collect: true })
+    .option("--breaking", "Only breaking changes.")
+    .option("--no-breaking", "Skip breaking changes of filtered types.")
+    .option("--emoji", "Use emoji for commit summaries.", { default: false })
+    .option("--markdown", "Generate Markdown.", { default: false })
+    .arguments("[packages...:file]")
+    .action(async ({ all, type, breaking, emoji, markdown }, ...filters) => {
+      const packages = await workspace({ filters });
+      const options = {
+        ...type && { type },
+        ...breaking !== undefined && { breaking },
+        ...markdown ? {} : { markdown: { heading: "🏷️  ", bullet: " " } },
+        emoji,
+      };
+      async function* changelogs(pkg: Package) {
+        const log = await commits(pkg, {
+          ...options,
+          ...pkg.latest && { range: { from: pkg.latest.tag } },
+        });
+        if (log.length) {
+          yield changelog(log, {
+            ...options,
+            title: `${pkg.name}@${pkg.version}`,
+          });
+        }
+        if (!all) return;
+        const releasesWithCommits = pooled(
+          await releases(pkg),
+          async (release) => ({
+            ...release,
+            commits: await commits(pkg, { ...options, ...release }),
+          }),
+        );
+        for await (const release of releasesWithCommits) {
+          if (release.commits.length) {
+            yield changelog(release.commits, {
+              ...options,
+              title: `${pkg.name}@${release.tag.name}`,
+            });
+          }
+        }
+      }
+      for (const pkg of packages) {
+        for await (const log of changelogs(pkg)) {
+          console.log(log.replace(/ ♻️ /g, " ♻️  "));
+        }
+      }
+    });
 }
 
 function compileCommand(targets: string[]) {
@@ -160,9 +232,12 @@ function bumpCommand() {
     .example("forge bump", "Bump versions.")
     .example("forge bump --release", "Bump to the next release version.")
     .example("forge bump --release --pr", "Create a version bump PR.")
+    .example("forge bump --changelog=CHANGELOG.md", "Update changelog file.")
     .arguments("[packages...:file]")
-    .option("--release", "Bump to the next version.", { default: false })
+    .option("--release", "Bump to the next release.", { default: false })
+    .option("--changelog=<file:string>", "Update changelog file.")
     .option("--pr", "Create a pull request.", { default: false })
+    .option("--emoji", "Use emoji for commit changelog.", { default: false })
     .env("GIT_NAME=<name:string>", "Git user name for the bump commit.", {
       prefix: "GIT_",
     })
@@ -190,6 +265,7 @@ function releaseCommand() {
     .example("forge release", "Create releases and tags for all updates.")
     .example("forge release --draft", "Create draft releases for all updates.")
     .option("--draft", "Create a draft release.", { default: false })
+    .option("--emoji", "Use emoji for commit summaries.", { default: false })
     .arguments("[packages...:file]")
     .env(
       "GITHUB_TOKEN=<token:string>",
@@ -222,6 +298,7 @@ if (import.meta.main) {
     .version(await version({ build: true, deno: true }))
     .default("list")
     .command("list", listCommand())
+    .command("changelog", changelogCommand())
     .command("compile", compileCommand(await targets()))
     .command("bump", bumpCommand())
     .command("release", releaseCommand())

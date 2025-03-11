@@ -3,12 +3,7 @@ import { PackageError, packageInfo } from "@roka/forge/package";
 import { testPackage } from "@roka/forge/testing";
 import { tempRepository } from "@roka/git/testing";
 import { fakePullRequest, fakeRepository } from "@roka/github/testing";
-import {
-  assertEquals,
-  assertExists,
-  assertMatch,
-  assertRejects,
-} from "@std/assert";
+import { assertEquals, assertExists, assertRejects } from "@std/assert";
 
 Deno.test("bump() bumps config version", async () => {
   await using git = await tempRepository();
@@ -66,6 +61,72 @@ Deno.test("bump() bumps to release version", async () => {
   assertEquals(pkg.config.version, pkg.version);
 });
 
+Deno.test("bump() creates a changelog file", async () => {
+  await using git = await tempRepository();
+  await testPackage(git.path("name1"), { name: "@scope/name1" });
+  await testPackage(git.path("name2"), { name: "@scope/name2" });
+  await git.commits.create("fix(name1): fix bug", { allowEmpty: true });
+  await git.commits.create("fix(name2): fix bug", { allowEmpty: true });
+  const pkg1 = await packageInfo({ directory: git.path("name1") });
+  const pkg2 = await packageInfo({ directory: git.path("name2") });
+  await bump([pkg1, pkg2], {
+    release: true,
+    changelog: git.path("changelog.txt"),
+  });
+  const changelog = await Deno.readTextFile(git.path("changelog.txt"));
+  assertEquals(
+    changelog,
+    [
+      "## name1@0.0.1",
+      "",
+      "- fix(name1): fix bug",
+      "",
+      "## name2@0.0.1",
+      "",
+      "- fix(name2): fix bug",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("bump() updates changelog file", async () => {
+  await using git = await tempRepository();
+  await Deno.writeTextFile(
+    git.path("changelog.txt"),
+    [
+      "## previous release",
+      "",
+      "- old feature",
+      "",
+    ].join("\n"),
+  );
+  await testPackage(git.path(), { name: "@scope/name" });
+  await git.commits.create("feat(name): introduce package", {
+    allowEmpty: true,
+  });
+  await git.commits.create("fix(name): fix bug", { allowEmpty: true });
+  const pkg = await packageInfo({ directory: git.path() });
+  await bump([pkg], {
+    release: true,
+    changelog: git.path("changelog.txt"),
+  });
+  const changelog = await Deno.readTextFile(git.path("changelog.txt"));
+  assertEquals(
+    changelog,
+    [
+      "## name@0.1.0",
+      "",
+      "- fix(name): fix bug",
+      "- feat(name): introduce package",
+      "",
+      "## previous release",
+      "",
+      "- old feature",
+      "",
+    ].join("\n"),
+  );
+});
+
 Deno.test("bump() creates a pull request", async () => {
   await using remote = await tempRepository();
   await using git = await tempRepository({ clone: remote });
@@ -84,8 +145,15 @@ Deno.test("bump() creates a pull request", async () => {
   });
   assertExists(pr);
   assertEquals(pr.title, "chore: bump name version");
-  assertMatch(pr.body, /## name@1.3.0 \[minor\]/);
-  assertMatch(pr.body, /feat\(name\): new feature/);
+  assertEquals(
+    pr.body,
+    [
+      "## name@1.3.0",
+      "",
+      "- feat(name): new feature",
+      "",
+    ].join("\n"),
+  );
   const commit = await git.commits.head();
   assertEquals(commit.summary, "chore: bump name version");
   assertEquals(commit.author.name, "bump-name");
@@ -125,8 +193,16 @@ Deno.test("bump() updates pull request", async () => {
   });
   assertExists(pr);
   assertEquals(pr.number, 42);
-  assertMatch(pr.body, /## name@1.3.0 \[minor\]/);
-  assertMatch(pr.body, /feat\(name\): new feature/);
+  assertEquals(pr.title, "chore: bump name version");
+  assertEquals(
+    pr.body,
+    [
+      "## name@1.3.0",
+      "",
+      "- feat(name): new feature",
+      "",
+    ].join("\n"),
+  );
 });
 
 Deno.test("bump() updates multiple packages", async () => {
@@ -143,9 +219,19 @@ Deno.test("bump() updates multiple packages", async () => {
   const pr = await bump([pkg1, pkg2], { repo, release: true, pr: true });
   assertExists(pr);
   assertEquals(pr.title, "chore: bump versions");
-  assertMatch(pr.body, /## name1@0.1.0 \[minor\]/);
-  assertMatch(pr.body, /## name2@0.1.0 \[minor\]/);
-  assertMatch(pr.body, /feat\(name1,name2\): introduce packages/);
+  assertEquals(
+    pr.body,
+    [
+      "## name1@0.1.0",
+      "",
+      "- feat(name1,name2): introduce packages",
+      "",
+      "## name2@0.1.0",
+      "",
+      "- feat(name1,name2): introduce packages",
+      "",
+    ].join("\n"),
+  );
   const updated1 = await packageInfo({ directory: git.path("name1") });
   const updated2 = await packageInfo({ directory: git.path("name2") });
   assertEquals(updated1.config, { ...pkg1.config, version: "0.1.0" });
