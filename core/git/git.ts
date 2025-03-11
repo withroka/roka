@@ -802,7 +802,7 @@ async function run(
   ...commandArgs: (string | string[] | false | undefined)[]
 ): Promise<string> {
   const args = [
-    options.cwd && ["-C", options.cwd],
+    options.cwd ? ["-C", options.cwd] : [],
     options.config && configArgs(options.config, "-c").flat(),
     "--no-pager",
     ...commandArgs,
