@@ -127,9 +127,9 @@ function body(
   repo: Repository,
   options: ReleaseOptions | undefined,
 ): string {
-  assertExists(pkg.version, "Cannot release a package without version");
+  assertExists(pkg.config.version, "Cannot release a package without version");
   const title = pkg.latest?.tag ? "Changes" : "Initial release";
-  const tag = `${pkg.name}@${pkg.version}`;
+  const tag = `${pkg.name}@${pkg.config.version}`;
   const fullChangelogUrl = pkg?.latest?.tag
     ? `compare/${pkg.latest.tag.name}...${tag}`
     : `commits/${tag}/${pkg.directory}`;
@@ -140,7 +140,7 @@ function body(
       title: "Details",
       items: [
         `- [Full changelog](${repo.url}/${fullChangelogUrl})`,
-        `- [Documentation](https://jsr.io/${pkg.config.name}@${pkg.version})`,
+        `- [Documentation](https://jsr.io/${pkg.config.name}@${pkg.config.version})`,
       ],
     },
     markdown: {
