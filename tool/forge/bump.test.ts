@@ -3,12 +3,7 @@ import { PackageError, packageInfo } from "@roka/forge/package";
 import { testPackage } from "@roka/forge/testing";
 import { tempRepository } from "@roka/git/testing";
 import { fakePullRequest, fakeRepository } from "@roka/github/testing";
-import {
-  assertEquals,
-  assertExists,
-  assertMatch,
-  assertRejects,
-} from "@std/assert";
+import { assertEquals, assertExists, assertRejects } from "@std/assert";
 
 Deno.test("bump() bumps config version", async () => {
   await using git = await tempRepository();
@@ -61,7 +56,7 @@ Deno.test("bump() bumps to release version", async () => {
   await bump([pkg]);
   assertEquals(pkg.version, `1.3.0-pre.1+${commit.short}`);
   assertEquals(pkg.config.version, pkg.version);
-  await bump([pkg], { next: true });
+  await bump([pkg], { release: true });
   assertEquals(pkg.version, "1.3.0");
   assertEquals(pkg.config.version, pkg.version);
 });
@@ -75,7 +70,7 @@ Deno.test("bump() creates a changelog file", async () => {
   const pkg1 = await packageInfo({ directory: git.path("name1") });
   const pkg2 = await packageInfo({ directory: git.path("name2") });
   await bump([pkg1, pkg2], {
-    next: true,
+    release: true,
     changelog: git.path("changelog.txt"),
   });
   const changelog = await Deno.readTextFile(git.path("changelog.txt"));
@@ -112,7 +107,7 @@ Deno.test("bump() updates changelog file", async () => {
   await git.commits.create("fix(name): fix bug", { allowEmpty: true });
   const pkg = await packageInfo({ directory: git.path() });
   await bump([pkg], {
-    next: true,
+    release: true,
     changelog: git.path("changelog.txt"),
   });
   const changelog = await Deno.readTextFile(git.path("changelog.txt"));
@@ -144,56 +139,23 @@ Deno.test("bump() creates a pull request", async () => {
   const pkg = await packageInfo({ directory: git.path() });
   const pr = await bump([pkg], {
     repo,
-    next: true,
+    release: true,
     pr: true,
     user: { name: "bump-name", email: "bump-email" },
   });
   assertExists(pr);
   assertEquals(pr.title, "chore: bump name version");
-  assertMatch(pr.body, /## name@1.3.0/);
-  assertMatch(pr.body, /feat\(name\): new feature/);
-  const commit = await git.commits.head();
-  assertEquals(commit.summary, "chore: bump name version");
-  assertEquals(commit.author.name, "bump-name");
-  assertEquals(commit.author.email, "bump-email");
-});
-
-Deno.test("bump() creates a pull request for multiple packages", async () => {
-  await using remote = await tempRepository();
-  await using git = await tempRepository({ clone: remote });
-  await testPackage(git.path("name1"), { name: "@scope/name1" });
-  await testPackage(git.path("name2"), { name: "@scope/name2" });
-  const repo = fakeRepository({ git });
-  await git.commits.create("initial", { allowEmpty: true });
-  await git.tags.create("name1@1.2.3");
-  await git.tags.create("name2@0.1.0");
-  await git.commits.create("feat(name1): new feature", { allowEmpty: true });
-  await git.commits.create("feat(name2): new feature", { allowEmpty: true });
-  const pkg1 = await packageInfo({ directory: git.path("name1") });
-  const pkg2 = await packageInfo({ directory: git.path("name2") });
-  const pr = await bump([pkg1, pkg2], {
-    repo,
-    next: true,
-    pr: true,
-    user: { name: "bump-name", email: "bump-email" },
-  });
-  assertExists(pr);
-  assertEquals(pr.title, "chore: bump versions");
   assertEquals(
     pr.body,
     [
-      "## name1@1.3.0",
+      "## name@1.3.0",
       "",
-      "- feat(name1): new feature",
-      "",
-      "## name2@0.2.0",
-      "",
-      "- feat(name2): new feature",
+      "- feat(name): new feature",
       "",
     ].join("\n"),
   );
   const commit = await git.commits.head();
-  assertEquals(commit.summary, "chore: bump versions");
+  assertEquals(commit.summary, "chore: bump name version");
   assertEquals(commit.author.name, "bump-name");
   assertEquals(commit.author.email, "bump-email");
 });
@@ -225,14 +187,22 @@ Deno.test("bump() updates pull request", async () => {
   const pkg = await packageInfo({ directory: git.path() });
   const pr = await bump([pkg], {
     repo,
-    next: true,
+    release: true,
     pr: true,
     user: { name: "bump-name", email: "bump-email" },
   });
   assertExists(pr);
   assertEquals(pr.number, 42);
-  assertMatch(pr.body, /## name@1.3.0/);
-  assertMatch(pr.body, /feat\(name\): new feature/);
+  assertEquals(pr.title, "chore: bump name version");
+  assertEquals(
+    pr.body,
+    [
+      "## name@1.3.0",
+      "",
+      "- feat(name): new feature",
+      "",
+    ].join("\n"),
+  );
 });
 
 Deno.test("bump() updates multiple packages", async () => {
@@ -246,12 +216,22 @@ Deno.test("bump() updates multiple packages", async () => {
   await git.commits.create("feat(name1,name2): introduce packages");
   const pkg1 = await packageInfo({ directory: git.path("name1") });
   const pkg2 = await packageInfo({ directory: git.path("name2") });
-  const pr = await bump([pkg1, pkg2], { repo, next: true, pr: true });
+  const pr = await bump([pkg1, pkg2], { repo, release: true, pr: true });
   assertExists(pr);
   assertEquals(pr.title, "chore: bump versions");
-  assertMatch(pr.body, /## name1@0.1.0/);
-  assertMatch(pr.body, /## name2@0.1.0/);
-  assertMatch(pr.body, /feat\(name1,name2\): introduce packages/);
+  assertEquals(
+    pr.body,
+    [
+      "## name1@0.1.0",
+      "",
+      "- feat(name1,name2): introduce packages",
+      "",
+      "## name2@0.1.0",
+      "",
+      "- feat(name1,name2): introduce packages",
+      "",
+    ].join("\n"),
+  );
   const updated1 = await packageInfo({ directory: git.path("name1") });
   const updated2 = await packageInfo({ directory: git.path("name2") });
   assertEquals(updated1.config, { ...pkg1.config, version: "0.1.0" });
@@ -269,6 +249,6 @@ Deno.test("bump() does not mutate package on failure", async () => {
   const pkg = await packageInfo({ directory: git.path() });
   await Deno.remove(git.path("deno.json"));
   await Deno.mkdir(git.path("deno.json"));
-  await assertRejects(() => bump([pkg], { next: true }));
+  await assertRejects(() => bump([pkg], { release: true }));
   assertEquals(pkg.config.version, "0.0.1");
 });

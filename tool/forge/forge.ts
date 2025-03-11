@@ -58,7 +58,7 @@
  * Bump package versions and create a pull request.
  *
  * ```sh
- * > forge bump --next --changelog=CHANGELOG.md --pr
+ * > forge bump --release --changelog=CHANGELOG.md --pr
  * 📦 Bumped package versions
  * 🚀 Created bump PR
  * ```
@@ -230,11 +230,11 @@ function bumpCommand() {
   return new Command()
     .description("Bump versions on package config files.")
     .example("forge bump", "Bump versions.")
-    .example("forge bump --next", "Bump to the next release version.")
-    .example("forge bump --next --pr", "Create a version bump PR.")
+    .example("forge bump --release", "Bump to the next release version.")
+    .example("forge bump --release --pr", "Create a version bump PR.")
     .example("forge bump --changelog=CHANGELOG.md", "Update changelog file.")
     .arguments("[packages...:file]")
-    .option("--next", "Bump to the next release version.", { default: false })
+    .option("--release", "Bump to the next release.", { default: false })
     .option("--changelog=<file:string>", "Update changelog file.")
     .option("--pr", "Create a pull request.", { default: false })
     .option("--emoji", "Use emoji for commit changelog.", { default: false })
