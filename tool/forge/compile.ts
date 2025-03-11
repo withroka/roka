@@ -198,14 +198,14 @@ async function tar(directory: string, output: string) {
   }
 }
 
-async function zip(directory: string, output: string) {
-  const args = ["-r", relative(directory, output), "."];
-  const command = new Deno.Command("zip", { cwd: directory, args });
+async function zip(cwd: string, output: string) {
+  const args = ["-r", relative(cwd, output), "."];
+  const command = new Deno.Command("zip", { cwd, args });
   const { code, stderr } = await command.output();
   if (code !== 0) {
     const error = new TextDecoder().decode(stderr);
     throw new PackageError(`Bundle failed for ${output}`, {
-      cause: { command: "zip", args, code, error },
+      cause: { command: "zip", cwd, args, code, error },
     });
   }
 }
