@@ -257,7 +257,7 @@ export interface Config {
      *
      * For multiple suffixes, the order defined here defines the tag order.
      * For example `["-pre", "-rc"]` will cause `v1.0.0-pre` the release to be
-     * before `v1.0.0-rc`.
+     * earlier than `v1.0.0-rc`.
      */
     suffix: string[];
   };
