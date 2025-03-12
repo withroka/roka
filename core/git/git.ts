@@ -468,17 +468,16 @@ export interface TagListOptions extends RefListOptions {
    * option to the pre-release suffixes.
    *
    * ```ts
-   * import { tempDirectory } from "@roka/testing/temp";
+   * import { tempRepository } from "@roka/git/testing";
    * import { git } from "@roka/git";
    * import { assertEquals } from "@std/assert";
    *
-   * const directory = await tempDirectory();
+   * const directory = await tempRepository();
    * const repo = git({
    *   cwd: directory.path(),
    *   config: { versionsort: { suffix: ["-pre", "-rc"] } },
    * });
    *
-   * await repo.init();
    * await repo.commits.create("summary", { allowEmpty: true });
    * await repo.tags.create("v1.0.0");
    * await repo.tags.create("v2.0.0");
