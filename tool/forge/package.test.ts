@@ -38,7 +38,7 @@ Deno.test("packageInfo() returns package from directory", async () => {
   });
 });
 
-Deno.test("releases() rejects invalid version", async () => {
+Deno.test("packageInfo() rejects invalid version", async () => {
   await using directory = await tempDirectory();
   await Deno.writeTextFile(
     directory.path("deno.json"),
