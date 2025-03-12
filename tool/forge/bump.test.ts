@@ -83,7 +83,7 @@ Deno.test("bump() updates workspace", async () => {
     ],
     commits: [
       {
-        summary: "inital",
+        summary: "initial",
         tags: ["name1@1.2.3", "name2@1.2.3", "name3@1.2.3"],
       },
       { summary: "fix(name1): fix bug" },
