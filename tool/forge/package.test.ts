@@ -209,7 +209,7 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
   });
 });
 
-Deno.test("packageInfo() skips over pre-relase versions", async () => {
+Deno.test("packageInfo() skips over pre-release versions", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
     commits: [
