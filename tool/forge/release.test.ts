@@ -11,7 +11,7 @@ Deno.test("release() rejects package without version", async () => {
   await git.commits.create("initial", { allowEmpty: true });
   await testPackage(git.path(), { name: "@scope/name" });
   await git.index.add("deno.json");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   const pkg = await packageInfo({ directory: git.path() });
   await assertRejects(() => release(pkg, { repo }), PackageError);
 });
@@ -22,7 +22,7 @@ Deno.test("release() rejects version downgrade", async () => {
   await git.commits.create("initial", { allowEmpty: true });
   await testPackage(git.path(), { name: "@scope/name", version: "0.1.0" });
   await git.index.add("deno.json");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   await git.tags.create("name@0.1.1");
   const pkg = await packageInfo({ directory: git.path() });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -34,7 +34,7 @@ Deno.test("release() rejects no change", async () => {
   await git.commits.create("initial", { allowEmpty: true });
   await testPackage(git.path(), { name: "@scope/name", version: "0.1.0" });
   await git.index.add("deno.json");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   await git.tags.create("name@0.1.0");
   const pkg = await packageInfo({ directory: git.path() });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -46,7 +46,7 @@ Deno.test("release() rejects 0.0.0", async () => {
   await git.commits.create("initial", { allowEmpty: true });
   await testPackage(git.path(), { name: "@scope/name", version: "0.0.0" });
   await git.index.add("deno.json");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   const pkg = await packageInfo({ directory: git.path() });
   await assertRejects(() => release(pkg, { repo }), PackageError);
 });
@@ -60,7 +60,7 @@ Deno.test("release() creates initial release", async () => {
     version: "0.1.0",
   });
   await git.index.add("deno.json");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   const pkg = await packageInfo({ directory: git.path() });
   const [rls, assets] = await release(pkg, { repo });
   assertEquals(rls.tag, "name@0.1.0");
@@ -70,7 +70,7 @@ Deno.test("release() creates initial release", async () => {
     [
       "## Initial release",
       "",
-      "feat(name): new feature",
+      "feat: new feature",
       "",
       "### Details",
       "",
@@ -89,7 +89,7 @@ Deno.test("release() creates update release", async () => {
   const repo = fakeRepository({ git });
   await git.commits.create("previous", { allowEmpty: true });
   await git.tags.create("name@1.2.3");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   const pkg = await testPackage(git.path(), {
     name: "@scope/name",
     version: "1.3.0",
@@ -102,7 +102,7 @@ Deno.test("release() creates update release", async () => {
     [
       "## Changes",
       "",
-      "feat(name): new feature",
+      "feat: new feature",
       "",
       "### Details",
       "",
@@ -119,7 +119,7 @@ Deno.test("release() creates draft release", async () => {
   const repo = fakeRepository({ git });
   await git.commits.create("previous", { allowEmpty: true });
   await git.tags.create("name@1.2.3");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   const pkg = await testPackage(git.path(), {
     name: "@scope/name",
     version: "1.3.0",
@@ -133,7 +133,7 @@ Deno.test("release() creates pre-release", async () => {
   const repo = fakeRepository({ git });
   await git.commits.create("previous", { allowEmpty: true });
   await git.tags.create("name@1.2.3");
-  const commit = await git.commits.create("feat(name): new feature", {
+  const commit = await git.commits.create("feat: new feature", {
     allowEmpty: true,
   });
   const pkg = await testPackage(git.path(), {
@@ -152,7 +152,7 @@ Deno.test("release() updates existing release", async () => {
   repo.releases.list = async () => await Promise.resolve([existing]);
   await git.commits.create("previous", { allowEmpty: true });
   await git.tags.create("name@1.2.3");
-  await git.commits.create("feat(name): new feature", { allowEmpty: true });
+  await git.commits.create("feat: new feature", { allowEmpty: true });
   const pkg = await testPackage(git.path(), {
     name: "@scope/name",
     version: "1.3.0",
@@ -164,7 +164,7 @@ Deno.test("release() updates existing release", async () => {
     [
       "## Changes",
       "",
-      "feat(name): new feature",
+      "feat: new feature",
       "",
       "### Details",
       "",

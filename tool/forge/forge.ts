@@ -45,7 +45,7 @@
  * since that release.
  *
  * ```sh
- * deno run -A jsr:@roka/forge changelog --emoji
+ * deno run -A jsr:@roka/forge changelog
  * ```
  * ```
  * 🏷️ example@2.0.0-pre.3+fedcba9
@@ -63,11 +63,15 @@
  * Additionally, the version will have a commit hash appended to it, which is
  * derived from the last commit that updated the package.
  *
- * _**WARNING**: Simple repositories with a single package still need to
- * specify a scope for every commit for that package. For example, a commit
- * summary like “feat: feature” does not automatically lead to a version
- * change. Instead, it should be formatted as “feat(example): feature” to
- * indicate that the feature was added to the package._
+ * If you’re working on just one package, you can skip the scopes altogether.
+ * In this case, a commit summary like “_feat: feature_” will also trigger a
+ * version change. But if you’re in a workspace with multiple packages, the
+ * scope is needed to figure out which packages will update.
+ *
+ * You can update multiple packages with a single commit by listing their names
+ * with a comma in between. But before you do that, maybe it’s time to think
+ * about whether your pull requests can be smaller. 🤓
+
  *
  * ## Releases
  *

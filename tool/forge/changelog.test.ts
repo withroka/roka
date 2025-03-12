@@ -6,7 +6,7 @@ Deno.test("changelog() generates Markdown changelog", () => {
   const commits = [
     testCommit({ summary: "feat(name): introduce" }),
     testCommit({ summary: "build(name)!: breaking" }),
-    testCommit({ summary: "fix(name): fix code" }),
+    testCommit({ summary: "fix: fix code" }),
     testCommit({ summary: "no type" }),
   ];
   assertEquals(
@@ -14,7 +14,7 @@ Deno.test("changelog() generates Markdown changelog", () => {
     [
       "- feat(name): introduce",
       "- build(name)!: breaking",
-      "- fix(name): fix code",
+      "- fix: fix code",
       "- no type",
       "",
     ].join("\n"),
@@ -23,8 +23,8 @@ Deno.test("changelog() generates Markdown changelog", () => {
 
 Deno.test("changelog() adds title and footer", () => {
   const commits = [
-    testCommit({ summary: "feat(name): introduce" }),
-    testCommit({ summary: "fix(name): fix code" }),
+    testCommit({ summary: "feat: introduce" }),
+    testCommit({ summary: "fix: fix code" }),
   ];
   assertEquals(
     changelog(commits, {
@@ -34,8 +34,8 @@ Deno.test("changelog() adds title and footer", () => {
     [
       "## Title",
       "",
-      "- feat(name): introduce",
-      "- fix(name): fix code",
+      "- feat: introduce",
+      "- fix: fix code",
       "",
       "### Footer",
       "",
@@ -48,8 +48,8 @@ Deno.test("changelog() adds title and footer", () => {
 
 Deno.test("changelog() allows custom Markdown", () => {
   const commits = [
-    testCommit({ summary: "feat(name): introduce" }),
-    testCommit({ summary: "fix(name): fix code" }),
+    testCommit({ summary: "feat: introduce" }),
+    testCommit({ summary: "fix: fix code" }),
   ];
   assertEquals(
     changelog(commits, {
@@ -60,8 +60,8 @@ Deno.test("changelog() allows custom Markdown", () => {
     [
       "# Title",
       "",
-      "* feat(name): introduce",
-      "* fix(name): fix code",
+      "* feat: introduce",
+      "* fix: fix code",
       "",
       "## Footer",
       "",
@@ -75,17 +75,17 @@ Deno.test("changelog() allows custom Markdown", () => {
 Deno.test("changelog() generates frivolous changelog with emojis", () => {
   const commits = [
     testCommit({ summary: "build(name)!: breaking" }),
-    testCommit({ summary: "build(name): build" }),
+    testCommit({ summary: "build: build" }),
     testCommit({ summary: "chore(name): chore" }),
-    testCommit({ summary: "ci(name): ci" }),
+    testCommit({ summary: "ci: ci" }),
     testCommit({ summary: "docs(name): docs" }),
-    testCommit({ summary: "feat(name): feat" }),
-    testCommit({ summary: "fix(name): fix" }),
-    testCommit({ summary: "perf(name): perf" }),
-    testCommit({ summary: "refactor(name): refactor" }),
-    testCommit({ summary: "revert(name): revert" }),
+    testCommit({ summary: "feat: feat" }),
+    testCommit({ summary: "fix(module): fix" }),
+    testCommit({ summary: "perf: perf" }),
+    testCommit({ summary: "refactor(name/unstable): refactor" }),
+    testCommit({ summary: "revert: revert" }),
     testCommit({ summary: "style(name): style" }),
-    testCommit({ summary: "test(name): test" }),
+    testCommit({ summary: "test: test" }),
     testCommit({ summary: "unknown(name): unknown" }),
     testCommit({ summary: "no type" }),
   ];

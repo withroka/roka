@@ -34,14 +34,16 @@ import { join } from "@std/path";
  */
 export async function testPackage(
   directory: string,
-  config: Config,
+  config: Config & { root?: string },
 ): Promise<Package> {
   await Deno.mkdir(directory, { recursive: true });
   await Deno.writeTextFile(
     join(directory, "deno.json"),
     JSON.stringify(config, undefined, 2),
   );
-  return await packageInfo({ directory });
+  const pkg = await packageInfo({ directory });
+  if (config.root) pkg.root = config.root;
+  return pkg;
 }
 
 /**
