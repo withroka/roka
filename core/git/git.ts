@@ -478,6 +478,7 @@ export interface TagListOptions extends RefListOptions {
    *   config: { versionsort: { suffix: ["-pre", "-rc"] } },
    * });
    *
+   * await repo.init();
    * await repo.commits.create("summary", { allowEmpty: true });
    * await repo.tags.create("v1.0.0");
    * await repo.tags.create("v2.0.0");
