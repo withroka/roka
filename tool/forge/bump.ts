@@ -53,7 +53,7 @@ export interface BumpOptions {
     /** Email of the user. */
     email?: string;
   };
-  /** Bump to the next release version, instead of a prerelease of it. */
+  /** Bump to the next release version, instead of a pre-release of it. */
   release?: boolean;
   /**
    * Update given file with the generated changelog.

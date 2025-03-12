@@ -42,7 +42,6 @@
 import { git, GitError, type RevisionRange, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { assertExists } from "@std/assert";
-import { slidingWindows } from "@std/collections";
 import {
   basename,
   dirname,
@@ -250,6 +249,15 @@ export interface WorkspaceOptions {
   filters?: string[];
 }
 
+/** Options for the {@linkcode releases} function. */
+export interface ReleaseOptions {
+  /**
+   * Include pre-release versions.
+   * @default {false}
+   */
+  prerelease?: boolean;
+}
+
 /** Options for the {@linkcode commits} function. */
 export interface CommitOptions {
   /**
@@ -349,7 +357,10 @@ export async function workspace(
 }
 
 /**
- * Returns all releases of a package based on its git tags.
+ * Returns releases of a package based on its git tags.
+ *
+ * Pre-release versions are not included by default. Use the
+ * {@linkcode ReleaseOptions.prerelease | prerelease} option to include them.
  *
  * @example Retrieve all releases of a package.
  * ```ts
@@ -357,34 +368,46 @@ export async function workspace(
  *
  * async function usage() {
  *   const pkg = await packageInfo();
- *   return await releases(pkg);
+ *   return await releases(pkg, { prerelease: true });
  * }
  * ```
+ *
  * @param pkg Package to search releases for.
+ * @param options Options for fetching releases.
  * @returns All releases for this package from git tags.
  * @throws {GitError} If git history is not available.
  */
-export async function releases(pkg: Package): Promise<Release[]> {
-  const tags = (await git({ cwd: pkg.directory }).tags
+export async function releases(
+  pkg: Package,
+  options?: ReleaseOptions,
+): Promise<Release[]> {
+  const versions = (await git({
+    cwd: pkg.directory,
+    config: { versionsort: { suffix: ["-pre"] } },
+  }).tags
     .list({ name: `${pkg.name}@*`, sort: "version" }))
-    .filter(parseTag);
-  const windows = slidingWindows(tags, 2, { partial: true });
-  const result = windows.map(
-    ([tag, previous]) => {
-      assertExists(tag, `Cannot use tag`);
+    .filter(parseTag)
+    .map((tag) => {
       const version = parseTag(tag);
       assertExists(version, `Cannot parse version from tag`);
-      return {
-        version,
-        tag,
-        range: {
-          ...previous && { from: previous.commit.hash },
-          to: tag.commit.hash,
-        },
-      };
-    },
-  );
-  return result;
+      const semver = parse(version);
+      return { version: parseTag(tag), semver, tag };
+    })
+    .filter((v) => options?.prerelease || !v.semver.prerelease?.length);
+  return versions.map(({ version, tag }, index) => {
+    assertExists(version, `Cannot parse version from tag`);
+    const previous = versions.slice(index + 1).find((v) =>
+      !v.semver.prerelease?.length
+    );
+    return {
+      version,
+      tag,
+      range: {
+        ...previous && { from: previous.tag.commit.hash },
+        to: tag.commit.hash,
+      },
+    };
+  });
 }
 
 /**
@@ -469,7 +492,7 @@ function calculateVersion(
   const next = log?.length && log[0]
     ? {
       ...increment(current, updateType(current, log)),
-      prerelease: [`pre.${log.length}`],
+      prerelease: ["pre", log.length],
       build: [log[0].short],
     }
     : current;
