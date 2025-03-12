@@ -127,11 +127,12 @@ function body(
   options: ReleaseOptions | undefined,
 ): string {
   assertExists(pkg.config.version, "Cannot release a package without version");
-  const title = pkg.latest?.tag ? "Changes" : "Initial release";
-  const tag = `${pkg.name}@${pkg.config.version}`;
-  const fullChangelogUrl = pkg?.latest?.tag
-    ? `compare/${pkg.latest.tag.name}...${tag}`
-    : `commits/${tag}/${pkg.directory}`;
+  const title = pkg.latest ? "Changes" : "Initial release";
+  const currentTag = `${pkg.name}@${pkg.config.version}`;
+  const latestTag = pkg.latest && `${pkg.name}@${pkg.latest?.version}`;
+  const fullChangelogUrl = latestTag
+    ? `compare/${latestTag}...${currentTag}`
+    : `commits/${currentTag}/${pkg.directory}`;
   return changelog(pkg.changes ?? [], {
     ...options,
     title,

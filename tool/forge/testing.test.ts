@@ -32,8 +32,6 @@ Deno.test("tempPackage() creates package in a repository", async () => {
     ],
   });
   const repo = git({ cwd: pkg.directory });
-  const [tag] = await repo.tags.list();
-  assertExists(tag);
   const commit = await git({ cwd: pkg.directory }).commits.head();
   assertExists(commit);
   assertEquals(omit(pkg, [Symbol.asyncDispose]), {
@@ -42,7 +40,7 @@ Deno.test("tempPackage() creates package in a repository", async () => {
     directory: repo.path(),
     root: repo.path(),
     config: { name: "@scope/name" },
-    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
