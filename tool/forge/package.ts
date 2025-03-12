@@ -14,17 +14,27 @@
  * The returned {@linkcode Package} object holds the following information:
  *
  *  - Package name and directory.
+ *  - Whether the package is a
+ *    [Deno workspace](https://docs.deno.com/runtime/fundamentals/workspaces/)
+ *    member.
  *  - Package configuration (`deno.json`).
  *  - The latest package release from git tags.
  *  - {@link https://www.conventionalcommits.org | Conventional Commits} since
  *    the latest release.
  *  - Calculated {@link https://semver.org | semantic version}.
  *
- * Use the {@linkcode workspace} function to fetch all packages in a monorepo.
+ * Use the {@linkcode workspace} function to fetch all the workspace packages
+ * in a monorepo.
  *
  * ```ts
  * const packages = await workspace();
  * ```
+ *
+ * Commits are only attributed to a workspace member if they explicitly list
+ * the package name. For example, a commit with a summary of "_feat: new_" will
+ * not be in included in a workspace package changelog, but "_feat(pkg): new_"
+ * will be. However, both will be attributed to a simple (non-workspace)
+ * package.
  *
  * @module package
  */
@@ -75,6 +85,19 @@ export interface Package {
   name: string;
   /** Package directory. */
   directory: string;
+  /**
+   * Root directory of the package.
+   *
+   * This will be the workspace directory, if the package is a workspace
+   * member, otherwise it will be the package directory.
+   *
+   * When the package is retrieved with the {@linkcode packageInfo} function,
+   * this will be the package directory, unless it is set with the
+   * {@linkcode PackageOptions.root} option.
+   *
+   * The {@linkcode workspace} function will set this to the workspace root.
+   */
+  root: string;
   /** Package config from `deno.json`. */
   config: Config;
   /**
@@ -187,9 +210,19 @@ export interface PackageOptions {
   /**
    * Directory to return package from.
    *
-   * If a directory is not defined, the package of the main module is returned.
+   * If a directory is not defined, the package of the main module is used.
    */
   directory?: string;
+  /**
+   * Root directory of the package.
+   *
+   * If this is different than the package directory, the package is considered
+   * a workspace member.
+   *
+   * If not set, the root defaults to the value of
+   * {@linkcode Package.directory | directory}.
+   */
+  root?: string;
 }
 
 /** Options for the {@linkcode workspace} function. */
@@ -252,8 +285,9 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   const config = await readConfig(directory);
   const name = basename(config.name ?? directory);
   const pkg: Package = {
-    directory,
     name,
+    directory,
+    root: options?.root ?? directory,
     config,
     version: config.version ?? "0.0.0",
   };
@@ -292,7 +326,10 @@ export async function workspace(
   const packages = pkg.config.workspace === undefined
     ? [pkg]
     : await Promise.all(pkg.config.workspace.map(async (child) => {
-      return await packageInfo({ directory: join(pkg.directory, child) });
+      return await packageInfo({
+        directory: join(pkg.directory, child),
+        root: pkg.directory,
+      });
     }));
   return packages
     .filter((pkg) =>
@@ -344,9 +381,9 @@ export async function releases(pkg: Package): Promise<Release[]> {
 }
 
 /**
- * Returns the commits of a particular release.
+ * Returns the commits for a particular release.
  *
- * By default, only changes if the next release is returned. The
+ * By default, only changes of the next release are returned. The
  * {@linkcode CommitOptions.release | release} option can be used to return
  * the commits of a specific release.
  *
@@ -387,7 +424,8 @@ export async function commits(
   );
   return log
     .map((c) => conventional(c))
-    .filter((c) => c.scopes.includes(pkg.name))
+    // match scope only on workspaces
+    .filter((c) => pkg.root === pkg.directory || c.scopes.includes(pkg.name))
     .filter((c) => options?.breaking !== true || c.breaking)
     .filter((c) =>
       options?.type !== undefined
