@@ -83,6 +83,20 @@ export interface Package {
    * package directory.
    */
   name: string;
+  /**
+   * Current package version.
+   *
+   * The semantic version of the package calculated from the latest release.
+   * The release tag version is incremented based on the
+   * {@link https://www.conventionalcommits.org | Conventional Commits} for
+   * this package since the latest release. If there was no release for this
+   * package, the version will start from `0.0.0`.
+   *
+   * If the calculated version is lower than the version defined in the
+   * configuration, the package version will be the one defined in the
+   * configuration. This allows for manual versioning of the package.
+   */
+  version: string;
   /** Package directory. */
   directory: string;
   /**
@@ -100,20 +114,6 @@ export interface Package {
   root: string;
   /** Package config from `deno.json`. */
   config: Config;
-  /**
-   * Current package version.
-   *
-   * The semantic version of the package calculated from the latest release.
-   * The release tag version is incremented based on the
-   * {@link https://www.conventionalcommits.org | Conventional Commits} for
-   * this package since the latest release. If there was no release for this
-   * package, the version will start from `0.0.0`.
-   *
-   * If the calculated version is lower than the version defined in the
-   * configuration, the package version will be the one defined in the
-   * configuration. This allows for manual versioning of the package.
-   */
-  version: string;
   /**
    * Latest release of this package.
    *
@@ -152,6 +152,8 @@ export interface Config {
   workspace?: string[];
   /** Package version. */
   version?: string;
+  /** Package imports. */
+  imports?: Record<string, string>;
   /** Package exports. */
   exports?: string | Record<string, string>;
   /** Configuration for compiling the package. */
@@ -286,10 +288,10 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   const name = basename(config.name ?? directory);
   const pkg: Package = {
     name,
+    version: config.version ?? "0.0.0",
     directory,
     root: options?.root ?? directory,
     config,
-    version: config.version ?? "0.0.0",
   };
   try {
     const [latest] = await releases(pkg);
@@ -383,9 +385,9 @@ export async function releases(pkg: Package): Promise<Release[]> {
 /**
  * Returns the commits for a particular release.
  *
- * By default, only changes of the next release are returned. The
- * {@linkcode CommitOptions.release | release} option can be used to return
- * the commits of a specific release.
+ * By default, commits from the entire git history are returned. The
+ * {@linkcode CommitOptions.range | range} option can be used to return
+ * the commits of a specific range.
  *
  * @example Get commits since the last release.
  * ```ts
