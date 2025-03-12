@@ -279,7 +279,7 @@ function changelogCommand() {
       async function* changelogs(pkg: Package) {
         const log = await commits(pkg, {
           ...options,
-          ...pkg.latest && { range: { from: pkg.latest.tag } },
+          ...pkg.latest?.range.to && { range: { from: pkg.latest.range.to } },
         });
         if (log.length) {
           yield changelog(log, {
@@ -299,7 +299,7 @@ function changelogCommand() {
           if (release.commits.length) {
             yield changelog(release.commits, {
               ...options,
-              title: `${pkg.name}@${release.tag.name}`,
+              title: `${pkg.name}@${release.version}`,
             });
           }
         }

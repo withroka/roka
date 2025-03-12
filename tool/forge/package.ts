@@ -134,8 +134,6 @@ export interface Package {
 export interface Release {
   /** Release version. */
   version: string;
-  /** Release tag. */
-  tag: Tag;
   /** Commit range. */
   range: RevisionRange;
 }
@@ -310,7 +308,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     const [latest] = await releases(pkg);
     const changes = await commits(pkg, {
       type: ["feat", "fix"],
-      ...latest && { range: { from: latest.tag } },
+      ...latest?.range.to && { range: { from: latest.range.to } },
     });
     if (latest !== undefined) pkg.latest = latest;
     if (changes !== undefined) {
@@ -401,10 +399,9 @@ export async function releases(
     );
     return {
       version,
-      tag,
       range: {
-        ...previous && { from: previous.tag.commit.hash },
-        to: tag.commit.hash,
+        ...previous && { from: previous.tag.name },
+        to: tag.name,
       },
     };
   });

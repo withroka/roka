@@ -56,15 +56,13 @@ Deno.test("packageInfo() returns release version at release commit", async () =>
     commits: [{ summary: "initial", tags: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
-  const [tag] = await git({ cwd: directory }).tags.list();
-  assertExists(tag);
   assertEquals(await packageInfo({ directory }), {
     name: "name",
     version: "1.2.3",
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [],
   });
 });
@@ -80,15 +78,13 @@ Deno.test("packageInfo() calculates patch version update", async () => {
   const directory = temp.directory;
   const repo = git({ cwd: directory });
   const commit = await repo.commits.head();
-  const [tag] = await repo.tags.list();
-  assertExists(tag);
   assertEquals(await packageInfo({ directory }), {
     name: "name",
     version: `1.2.4-pre.1+${commit.short}`,
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
@@ -104,15 +100,13 @@ Deno.test("packageInfo() calculates minor version update", async () => {
   const directory = temp.directory;
   const repo = git({ cwd: directory });
   const commit = await repo.commits.head();
-  const [tag] = await repo.tags.list();
-  assertExists(tag);
   assertEquals(await packageInfo({ directory }), {
     name: "name",
     version: `1.3.0-pre.1+${commit.short}`,
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
@@ -128,15 +122,13 @@ Deno.test("packageInfo() calculates major version update", async () => {
   const directory = temp.directory;
   const repo = git({ cwd: directory });
   const commit = await repo.commits.head();
-  const [tag] = await repo.tags.list();
-  assertExists(tag);
   assertEquals(await packageInfo({ directory }), {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
@@ -209,7 +201,7 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
   });
 });
 
-Deno.test("packageInfo() skips over pre-release versions", async () => {
+Deno.test("packageInfo() skips over pre-relase versions", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
     commits: [
@@ -222,21 +214,18 @@ Deno.test("packageInfo() skips over pre-release versions", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [feat2, docs, fix, feat1, initial] = await repo.commits.log();
+  const [feat2, docs, fix, feat1] = await repo.commits.log();
   assertExists(feat2);
   assertExists(docs);
   assertExists(fix);
   assertExists(feat1);
-  assertExists(initial);
-  const [tag123] = await repo.tags.list({ name: "name@1.2.3" });
-  assertExists(tag123);
   assertEquals(await packageInfo({ directory }), {
     name: "name",
     version: `1.3.0-pre.3+${feat2.short}`,
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", tag: tag123, range: { to: initial.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(feat2), conventional(fix), conventional(feat1)],
   });
 });
@@ -263,15 +252,13 @@ Deno.test("packageInfo() uses forced version for released package", async () => 
     commits: [{ summary: "initial", tags: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
-  const [tag] = await git({ cwd: directory }).tags.list();
-  assertExists(tag);
   assertEquals(await packageInfo({ directory }), {
     name: "name",
     version: "1.2.4",
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.4" },
-    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [],
   });
 });
@@ -282,15 +269,13 @@ Deno.test("packageInfo() ignores forced lower version", async () => {
     commits: [{ summary: "initial", tags: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
-  const [tag] = await git({ cwd: directory }).tags.list();
-  assertExists(tag);
   assertEquals(await packageInfo({ directory }), {
     name: "name",
     version: "1.2.3",
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.2" },
-    latest: { version: "1.2.3", tag, range: { to: tag.commit.hash } },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [],
   });
 });
@@ -429,33 +414,11 @@ Deno.test("releases() returns releases for a package", async () => {
       { summary: "third", tags: ["name@1.2.3"] },
     ],
   });
-  const [tag123, tag122, tag121, tag120] = await git({ cwd: pkg.directory })
-    .tags.list({ sort: "version" });
-  assertExists(tag123);
-  assertExists(tag122);
-  assertExists(tag121);
-  assertExists(tag120);
   assertEquals(await releases(pkg), [
-    {
-      version: "1.2.3",
-      tag: tag123,
-      range: { from: tag122.commit.hash, to: tag123.commit.hash },
-    },
-    {
-      version: "1.2.2",
-      tag: tag122,
-      range: { from: tag121.commit.hash, to: tag122.commit.hash },
-    },
-    {
-      version: "1.2.1",
-      tag: tag121,
-      range: { from: tag120.commit.hash, to: tag121.commit.hash },
-    },
-    {
-      version: "1.2.0",
-      tag: tag120,
-      range: { to: tag120.commit.hash },
-    },
+    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
+    { version: "1.2.2", range: { from: "name@1.2.1", to: "name@1.2.2" } },
+    { version: "1.2.1", range: { from: "name@1.2.0", to: "name@1.2.1" } },
+    { version: "1.2.0", range: { to: "name@1.2.0" } },
   ]);
 });
 
@@ -468,22 +431,9 @@ Deno.test("releases() excludes pre-releases", async () => {
       { summary: "2.0.0", tags: ["name@2.0.0"] },
     ],
   });
-  const repo = git({ cwd: pkg.directory });
-  const [tag200] = await repo.tags.list({ name: "name@2.0.0" });
-  const [tag123] = await repo.tags.list({ name: "name@1.2.3" });
-  assertExists(tag200);
-  assertExists(tag123);
   assertEquals(await releases(pkg), [
-    {
-      version: "2.0.0",
-      tag: tag200,
-      range: { from: tag123.commit.hash, to: tag200.commit.hash },
-    },
-    {
-      version: "1.2.3",
-      tag: tag123,
-      range: { to: tag123.commit.hash },
-    },
+    { version: "2.0.0", range: { from: "name@1.2.3", to: "name@2.0.0" } },
+    { version: "1.2.3", range: { to: "name@1.2.3" } },
   ]);
 });
 
@@ -496,31 +446,13 @@ Deno.test("releases() can include pre-releases", async () => {
       { summary: "2.0.0", tags: ["name@2.0.0"] },
     ],
   });
-  const repo = git({ cwd: pkg.directory });
-  const [tag200] = await repo.tags.list({ name: "name@2.0.0" });
-  const [tag200pre] = await repo.tags.list({
-    name: "name@2.0.0-pre.42+fedcba9",
-  });
-  const [tag123] = await repo.tags.list({ name: "name@1.2.3" });
-  assertExists(tag200);
-  assertExists(tag200pre);
-  assertExists(tag123);
   assertEquals(await releases(pkg, { prerelease: true }), [
-    {
-      version: "2.0.0",
-      tag: tag200,
-      range: { from: tag123.commit.hash, to: tag200.commit.hash },
-    },
+    { version: "2.0.0", range: { from: "name@1.2.3", to: "name@2.0.0" } },
     {
       version: "2.0.0-pre.42+fedcba9",
-      tag: tag200pre,
-      range: { from: tag123.commit.hash, to: tag200pre.commit.hash },
+      range: { from: "name@1.2.3", to: "name@2.0.0-pre.42+fedcba9" },
     },
-    {
-      version: "1.2.3",
-      tag: tag123,
-      range: { to: tag123.commit.hash },
-    },
+    { version: "1.2.3", range: { to: "name@1.2.3" } },
   ]);
 });
 
