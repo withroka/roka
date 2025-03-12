@@ -252,7 +252,7 @@ export interface WorkspaceOptions {
 /** Options for the {@linkcode releases} function. */
 export interface ReleaseOptions {
   /**
-   * Include prerelease versions.
+   * Include pre-release versions.
    * @default {false}
    */
   prerelease?: boolean;
