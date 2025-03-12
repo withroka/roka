@@ -19,8 +19,11 @@
  * ```
  *
  * This implementation conforms to the version 1.0.0 of the specification,
- * except that it also accepts the `BREAKING-CHANGE` footer from
- * {@link https://git-scm.com/docs/git-interpret-trailers | git trailers}.
+ * with the following addition:
+ *
+ * - `BREAKING-CHANGE` footer from any
+ *   {@link https://git-scm.com/docs/git-interpret-trailers | git trailer}
+ *   is accepted.
  *
  * @module conventional
  */
@@ -73,7 +76,7 @@ export function conventional(commit: Commit): ConventionalCommit {
   const footers = extractFooters(commit);
   const footerBreaking = footers["BREAKING-CHANGE"];
   const match = commit.summary?.match(
-    /^(?:(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\))?(?<exclamation>!?):s*)?\s*(?<description>[^\s].*)$/,
+    /^(?:\s*?(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\s*?\))?(?<exclamation>!?):s*)?\s*?(?<description>[^\s].*)$/,
   );
   const { type, scopes, exclamation, description } = { ...match?.groups };
   assertExists(description, "Commit must have description");
@@ -83,7 +86,9 @@ export function conventional(commit: Commit): ConventionalCommit {
     ...commit,
     description,
     type: type.toLowerCase(),
-    scopes: scopes?.split(",").map((m) => m.trim().toLowerCase()) ?? [],
+    scopes: (scopes?.split(",") ?? [])
+      .map((scope) => scope.trim().toLowerCase())
+      .filter((scope) => scope),
     ...breaking && { breaking },
     footers,
   };

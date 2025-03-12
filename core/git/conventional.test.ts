@@ -16,10 +16,43 @@ Deno.test("conventional() creates conventional commits", () => {
   });
 });
 
-Deno.test("conventional() accepts be simple commits", () => {
+Deno.test("conventional() accepts simple commits", () => {
   const commit = testCommit({ summary: "description", trailers: {} });
   assertEquals(conventional(commit), {
     ...commit,
+    description: "description",
+    scopes: [],
+    footers: {},
+  });
+});
+
+Deno.test("conventional() accepts commits without scope", () => {
+  const commit = testCommit({ summary: "feat: description", trailers: {} });
+  assertEquals(conventional(commit), {
+    ...commit,
+    description: "description",
+    type: "feat",
+    scopes: [],
+    footers: {},
+  });
+});
+
+Deno.test("conventional() accepts empty scope", () => {
+  const commit = testCommit({ summary: "feat(): description", trailers: {} });
+  assertEquals(conventional(commit), {
+    ...commit,
+    description: "description",
+    type: "feat",
+    scopes: [],
+    footers: {},
+  });
+});
+
+Deno.test("conventional() accepts empty scopes", () => {
+  const commit = testCommit({ summary: "feat(,): description", trailers: {} });
+  assertEquals(conventional(commit), {
+    ...commit,
+    type: "feat",
     description: "description",
     scopes: [],
     footers: {},
@@ -50,6 +83,34 @@ Deno.test("conventional() accepts uppercase type and scopes", () => {
     description: "description",
     type: "feat",
     scopes: ["scope"],
+    footers: {},
+  });
+});
+
+Deno.test("conventional() accepts wild summary formatting", () => {
+  const commit = testCommit({
+    summary: " feat(  scoPE1, SCOPe2  ):  description ",
+    trailers: {},
+  });
+  assertEquals(conventional(commit), {
+    ...commit,
+    description: "description ",
+    type: "feat",
+    scopes: ["scope1", "scope2"],
+    footers: {},
+  });
+});
+
+Deno.test("conventional() accepts scope with backticks", () => {
+  const commit = testCommit({
+    summary: "feat(`scope`): description",
+    trailers: {},
+  });
+  assertEquals(conventional(commit), {
+    ...commit,
+    type: "feat",
+    description: "description",
+    scopes: ["`scope`"],
     footers: {},
   });
 });
