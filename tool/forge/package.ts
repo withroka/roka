@@ -393,11 +393,11 @@ export async function releases(
       const semver = parse(version);
       return { version: parseTag(tag), semver, tag };
     })
-    .filter((v) => options?.prerelease || v.semver.prerelease?.length === 0);
+    .filter((v) => options?.prerelease || !v.semver.prerelease?.length);
   return versions.map(({ version, tag }, index) => {
     assertExists(version, `Cannot parse version from tag`);
     const previous = versions.slice(index + 1).find((v) =>
-      v.semver.prerelease?.length === 0
+      !v.semver.prerelease?.length
     );
     return {
       version,
@@ -492,7 +492,7 @@ function calculateVersion(
   const next = log?.length && log[0]
     ? {
       ...increment(current, updateType(current, log)),
-      prerelease: [`pre.${log.length}`],
+      prerelease: ["pre", log.length],
       build: [log[0].short],
     }
     : current;
