@@ -246,6 +246,21 @@ export interface Config {
     /** GPG key for signing commits. */
     signingkey?: string;
   };
+  /** Configuration for 'version' sort for tags. */
+  versionsort?: {
+    /**
+     * Pre-release suffixes.
+     *
+     * If a suffix defined here is found in a tag, it is considered a
+     * pre-release version. For example, if `["-pre"]` is defined, `v1.0.0-pre`
+     * is considered a pre-release version.
+     *
+     * For multiple suffixes, the order defined here defines the tag order.
+     * For example `["-pre", "-rc"]` will cause `v1.0.0-pre` the release to be
+     * before `v1.0.0-rc`.
+     */
+    suffix: string[];
+  };
 }
 
 /** An author or committer on a git repository. */
@@ -447,7 +462,36 @@ export interface TagListOptions extends RefListOptions {
    * Setting to `version` uses {@link https://semver.org | semantic version}
    * order, returning the latest versions first.
    *
-   * @todo Handle pre-release versions.
+   * By default, pre-release versions are sorted lexically, and they are
+   * considered newer than the release versions. To change this behavior, set
+   * the {@linkcode Config.versionsort.suffix | versionsort.suffix} config
+   * option to the pre-release suffixes.
+   *
+   * ```ts
+   * import { tempDirectory } from "@roka/testing/temp";
+   * import { git } from "@roka/git";
+   * import { assertEquals } from "@std/assert";
+   *
+   * const directory = await tempDirectory();
+   * const repo = git({
+   *   cwd: directory.path(),
+   *   config: { versionsort: { suffix: ["-pre", "-rc"] } },
+   * });
+   *
+   * await repo.commits.create("summary", { allowEmpty: true });
+   * await repo.tags.create("v1.0.0");
+   * await repo.tags.create("v2.0.0");
+   * await repo.tags.create("v2.0.0-pre");
+   * await repo.tags.create("v2.0.0-rc");
+   * const tags = await repo.tags.list({ sort: "version" });
+   *
+   * assertEquals(tags.map((x) => x.name), [
+   *   "v2.0.0",
+   *   "v2.0.0-rc",
+   *   "v2.0.0-pre",
+   *   "v1.0.0",
+   * ]);
+   * ```
    */
   sort?: "version";
 }
@@ -832,17 +876,30 @@ async function run(
   }
 }
 
-function configArgs(
-  config: Config,
-  flag?: string,
-): string[][] {
-  return Object.entries(config).map(([group, cfg]) =>
-    Object.entries(cfg).map(([key, value]) =>
-      flag
-        ? [flag, `${group}.${key}=${value}`]
-        : [`${group}.${key}`, `${value}`]
-    )
-  ).flat();
+function configArgs(config: Config, flag?: string): string[][] {
+  function args(
+    cfg: object,
+  ): { key: string; value: string; opt: string | undefined }[] {
+    return Object.entries(cfg).map(([key, value]) => {
+      if (Array.isArray(value)) {
+        return value.map((value, index) => ({
+          key,
+          value,
+          opt: index > 0 ? "--add" : undefined,
+        }));
+      }
+      if (typeof value === "object") {
+        const parent = key;
+        return args(value).map(({ key, value, opt }) => (
+          { key: `${parent}.${key}`, value, opt }
+        ));
+      }
+      return [{ key, value: `${value}`, opt: undefined }];
+    }).flat();
+  }
+  return args(config).map(({ key, value, opt }) => {
+    return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
+  });
 }
 
 function userArg(user: User): string {

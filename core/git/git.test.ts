@@ -8,6 +8,29 @@ import {
   assertRejects,
 } from "@std/assert";
 
+Deno.test("git() configures for each command", async () => {
+  await using directory = await tempDirectory();
+  const repo = git({
+    cwd: directory.path(),
+    config: {
+      user: { name: "name", email: "email" },
+      commit: { gpgsign: false },
+      tag: { gpgsign: false },
+      versionsort: { suffix: ["-alpha", "-beta", "-rc"] },
+    },
+  });
+  await repo.init();
+  await repo.commits.create("summary", { allowEmpty: true });
+  await repo.tags.create("1.2.3");
+  await repo.tags.create("1.2.3-alpha");
+  await repo.tags.create("1.2.3-beta");
+  await repo.tags.create("1.2.3-rc");
+  assertEquals(
+    (await repo.tags.list({ sort: "version" })).map((tag) => tag.name),
+    ["1.2.3", "1.2.3-rc", "1.2.3-beta", "1.2.3-alpha"],
+  );
+});
+
 Deno.test("git().init() creates a repo", async () => {
   await using directory = await tempDirectory();
   const repo = git({ cwd: directory.path() });
@@ -117,16 +140,30 @@ Deno.test("git().clone() can copy a single branch", async () => {
   );
 });
 
-Deno.test("git().config.set configures user", async () => {
-  await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path() });
-  await repo.init();
+Deno.test("git().config.set() configures single values", async () => {
+  await using repo = await tempRepository();
   await repo.config.set({ user: { name: "name", email: "email" } });
   const commit = await repo.commits.create("commit", {
     sign: false,
     allowEmpty: true,
   });
   assertEquals(commit?.author, { name: "name", email: "email" });
+});
+
+Deno.test("git().config.set() configures multi values", async () => {
+  await using repo = await tempRepository();
+  await repo.commits.create("summary", { allowEmpty: true });
+  await repo.tags.create("1.2.3");
+  await repo.tags.create("1.2.3-alpha");
+  await repo.tags.create("1.2.3-beta");
+  await repo.tags.create("1.2.3-rc");
+  await repo.config.set({
+    versionsort: { suffix: ["-alpha", "-beta", "-rc"] },
+  });
+  assertEquals(
+    (await repo.tags.list({ sort: "version" })).map((tag) => tag.name),
+    ["1.2.3", "1.2.3-rc", "1.2.3-beta", "1.2.3-alpha"],
+  );
 });
 
 Deno.test("git().branches.get() returns current branch", async () => {
@@ -1033,11 +1070,40 @@ Deno.test("git().tags.list() returns single tag", async () => {
 
 Deno.test("git().tags.list() can sort by version", async () => {
   await using repo = await tempRepository();
-  await repo.commits.create("first", { allowEmpty: true });
-  const tag1 = await repo.tags.create("v1.0.0");
-  await repo.commits.create("second", { allowEmpty: true });
-  const tag2 = await repo.tags.create("v2.0.0");
-  assertEquals(await repo.tags.list({ sort: "version" }), [tag2, tag1]);
+  await repo.commits.create("commit", { allowEmpty: true });
+  const tag100 = await repo.tags.create("v1.0.0");
+  const tag201 = await repo.tags.create("v2.0.1");
+  const tag200 = await repo.tags.create("v2.0.0");
+  assertEquals(await repo.tags.list({ sort: "version" }), [
+    tag201,
+    tag200,
+    tag100,
+  ]);
+});
+
+Deno.test("git().tags.list() can sort by pre-release version", async () => {
+  await using repo = await tempRepository({
+    config: { versionsort: { suffix: ["-pre", "-beta", "-rc"] } },
+  });
+  await repo.commits.create("summary", { allowEmpty: true });
+  const tag100 = await repo.tags.create("v1.0.0");
+  const tag200 = await repo.tags.create("v2.0.0");
+  const tag200beta = await repo.tags.create("v2.0.0-beta");
+  const tag200pre1 = await repo.tags.create("v2.0.0-pre.1");
+  const tag200pre2 = await repo.tags.create("v2.0.0-pre.2");
+  const tag200pre3 = await repo.tags.create("v2.0.0-pre.3");
+  const tag200rc1 = await repo.tags.create("v2.0.0-rc.1");
+  const tag200rc2 = await repo.tags.create("v2.0.0-rc.2");
+  assertEquals(await repo.tags.list({ sort: "version" }), [
+    tag200,
+    tag200rc2,
+    tag200rc1,
+    tag200beta,
+    tag200pre3,
+    tag200pre2,
+    tag200pre1,
+    tag100,
+  ]);
 });
 
 Deno.test("git().tags.list() matches tag name", async () => {
