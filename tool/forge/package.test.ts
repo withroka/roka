@@ -209,6 +209,38 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
   });
 });
 
+Deno.test("packageInfo() skips over pre-relase versions", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commits: [
+      { summary: "initial", tags: ["name@1.2.3"] },
+      { summary: "feat: new feature" },
+      { summary: "fix: bug fix", tags: ["name@1.3.0-pre.2+fedcba9"] },
+      { summary: "docs: fix typo" },
+      { summary: "feat: another feature" },
+    ],
+  });
+  const directory = temp.directory;
+  const repo = git({ cwd: directory });
+  const [feat2, docs, fix, feat1, initial] = await repo.commits.log();
+  assertExists(feat2);
+  assertExists(docs);
+  assertExists(fix);
+  assertExists(feat1);
+  assertExists(initial);
+  const [tag123] = await repo.tags.list({ name: "name@1.2.3" });
+  assertExists(tag123);
+  assertEquals(await packageInfo({ directory }), {
+    name: "name",
+    version: `1.3.0-pre.3+${feat2.short}`,
+    directory,
+    root: directory,
+    config: { name: "@scope/name", version: "1.2.3" },
+    latest: { version: "1.2.3", tag: tag123, range: { to: initial.hash } },
+    changes: [conventional(feat2), conventional(fix), conventional(feat1)],
+  });
+});
+
 Deno.test("packageInfo() uses forced version for unreleased package", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
@@ -397,8 +429,8 @@ Deno.test("releases() returns releases for a package", async () => {
       { summary: "third", tags: ["name@1.2.3"] },
     ],
   });
-  const tags = await git({ cwd: pkg.directory }).tags.list({ sort: "version" });
-  const [tag123, tag122, tag121, tag120] = tags;
+  const [tag123, tag122, tag121, tag120] = await git({ cwd: pkg.directory })
+    .tags.list({ sort: "version" });
   assertExists(tag123);
   assertExists(tag122);
   assertExists(tag121);
@@ -423,6 +455,71 @@ Deno.test("releases() returns releases for a package", async () => {
       version: "1.2.0",
       tag: tag120,
       range: { to: tag120.commit.hash },
+    },
+  ]);
+});
+
+Deno.test("releases() excludes pre-releases", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "1.2.3", tags: ["name@1.2.3"] },
+      { summary: "2.0.0-pre", tags: ["name@2.0.0-pre.42+fedcba9"] },
+      { summary: "2.0.0", tags: ["name@2.0.0"] },
+    ],
+  });
+  const repo = git({ cwd: pkg.directory });
+  const [tag200] = await repo.tags.list({ name: "name@2.0.0" });
+  const [tag123] = await repo.tags.list({ name: "name@1.2.3" });
+  assertExists(tag200);
+  assertExists(tag123);
+  assertEquals(await releases(pkg), [
+    {
+      version: "2.0.0",
+      tag: tag200,
+      range: { from: tag123.commit.hash, to: tag200.commit.hash },
+    },
+    {
+      version: "1.2.3",
+      tag: tag123,
+      range: { to: tag123.commit.hash },
+    },
+  ]);
+});
+
+Deno.test("releases() can include pre-releases", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "1.2.3", tags: ["name@1.2.3"] },
+      { summary: "2.0.0-pre", tags: ["name@2.0.0-pre.42+fedcba9"] },
+      { summary: "2.0.0", tags: ["name@2.0.0"] },
+    ],
+  });
+  const repo = git({ cwd: pkg.directory });
+  const [tag200] = await repo.tags.list({ name: "name@2.0.0" });
+  const [tag200pre] = await repo.tags.list({
+    name: "name@2.0.0-pre.42+fedcba9",
+  });
+  const [tag123] = await repo.tags.list({ name: "name@1.2.3" });
+  assertExists(tag200);
+  assertExists(tag200pre);
+  assertExists(tag123);
+  assertEquals(await releases(pkg, { prerelease: true }), [
+    {
+      version: "2.0.0",
+      tag: tag200,
+      range: { from: tag123.commit.hash, to: tag200.commit.hash },
+    },
+    {
+      version: "2.0.0-pre.42+fedcba9",
+      tag: tag200pre,
+      range: { from: tag123.commit.hash, to: tag200pre.commit.hash },
+    },
+    {
+      version: "1.2.3",
+      tag: tag123,
+      range: { to: tag123.commit.hash },
     },
   ]);
 });
