@@ -136,7 +136,7 @@ export interface Release {
   body: string;
   /** Whether the release is a draft. */
   draft: boolean;
-  /** Whether the release is a prerelease. */
+  /** Whether the release is a pre-release. */
   prerelease: boolean;
   /** Update the release. */
   update(options?: ReleaseUpdateOptions): Promise<Release>;
