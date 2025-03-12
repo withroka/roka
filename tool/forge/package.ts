@@ -293,6 +293,11 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     root: options?.root ?? directory,
     config,
   };
+  if (!canParse(pkg.version)) {
+    throw new PackageError(`Cannot parse version: ${pkg.version}`, {
+      cause: pkg,
+    });
+  }
   try {
     const [latest] = await releases(pkg);
     const changes = await commits(pkg, {

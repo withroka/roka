@@ -38,6 +38,18 @@ Deno.test("packageInfo() returns package from directory", async () => {
   });
 });
 
+Deno.test("packageInfo() rejects invalid version", async () => {
+  await using directory = await tempDirectory();
+  await Deno.writeTextFile(
+    directory.path("deno.json"),
+    JSON.stringify({ name: "name", version: "beta" }),
+  );
+  await assertRejects(
+    () => packageInfo({ directory: directory.path() }),
+    PackageError,
+  );
+});
+
 Deno.test("packageInfo() returns release version at release commit", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
