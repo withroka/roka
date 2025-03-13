@@ -86,9 +86,9 @@ Deno.test("bump() updates workspace", async () => {
         summary: "initial",
         tags: ["name1@1.2.3", "name2@1.2.3", "name3@1.2.3"],
       },
-      { summary: "fix(name1): fix bug" },
-      { summary: "feat(name2): new feature" },
-      { summary: "feat(name3)!: breaking changes" },
+      { summary: "fix(name1): fix bug (#1)" },
+      { summary: "feat(name2): new feature (#2)" },
+      { summary: "feat(name3)!: breaking changes (#3)" },
     ],
   });
   await bump(packages, { release: true });
@@ -104,8 +104,8 @@ Deno.test("bump() creates a changelog file", async () => {
       { name: "@scope/name2" },
     ],
     commits: [
-      { summary: "fix(name1): fix bug" },
-      { summary: "fix(name2): fix bug" },
+      { summary: "fix(name1): fix bug (#1)" },
+      { summary: "fix(name2): fix bug (#2)" },
     ],
   });
   const root = packages[0]?.root;
@@ -117,11 +117,11 @@ Deno.test("bump() creates a changelog file", async () => {
     [
       "## name1@0.0.1",
       "",
-      "- fix(name1): fix bug",
+      "- fix(name1): fix bug (#1)",
       "",
       "## name2@0.0.1",
       "",
-      "- fix(name2): fix bug",
+      "- fix(name2): fix bug (#2)",
       "",
     ].join("\n"),
   );
@@ -130,7 +130,7 @@ Deno.test("bump() creates a changelog file", async () => {
 Deno.test("bump() updates changelog file", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [{ summary: "fix: bug" }],
+    commits: [{ summary: "fix: bug (#42)" }],
   });
   const changelog = join(pkg.directory, "changelog.txt");
   await Deno.writeTextFile(
@@ -148,7 +148,7 @@ Deno.test("bump() updates changelog file", async () => {
     [
       "## name@0.0.1",
       "",
-      "- fix: bug",
+      "- fix: bug (#42)",
       "",
       "## previous release",
       "",
@@ -169,11 +169,12 @@ Deno.test("bump() rejects pull request without update", async () => {
 Deno.test("bump() creates a pull request", async () => {
   await using remote = await tempRepository({ bare: true });
   await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: `1.2.3` },
+    config: { name: "@scope/name", version: "1.2.3" },
     repo: { clone: remote },
     commits: [
       { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
+      { summary: "feat: new feature (#42)" },
+      { summary: "fix: force pushed" },
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
@@ -181,7 +182,8 @@ Deno.test("bump() creates a pull request", async () => {
     release: true,
     pr: true,
     repo,
-    user: { name: "bump-name", email: "bump-email" },
+    name: "bump-name",
+    email: "bump-email",
   });
   assertExists(pr);
   assertEquals(pr.title, "chore: bump name version");
@@ -190,7 +192,8 @@ Deno.test("bump() creates a pull request", async () => {
     [
       "## name@1.3.0",
       "",
-      "- feat: new feature",
+      "- fix: force pushed",
+      "- #42",
       "",
     ].join("\n"),
   );
@@ -206,11 +209,11 @@ Deno.test("bump() creates a pull request", async () => {
 Deno.test("bump() updates pull request", async () => {
   await using remote = await tempRepository({ bare: true });
   await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: `1.2.3` },
+    config: { name: "@scope/name", version: "1.2.3" },
     repo: { clone: remote },
     commits: [
       { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
+      { summary: "feat: new feature (#42)" },
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
@@ -224,7 +227,8 @@ Deno.test("bump() updates pull request", async () => {
     release: true,
     pr: true,
     repo,
-    user: { name: "bump-name", email: "bump-email" },
+    name: "bump-name",
+    email: "bump-email",
   });
   assertExists(pr);
   assertEquals(pr.number, 42);
@@ -234,8 +238,28 @@ Deno.test("bump() updates pull request", async () => {
     [
       "## name@1.3.0",
       "",
-      "- feat: new feature",
+      "- #42",
       "",
     ].join("\n"),
   );
+});
+
+Deno.test("bump() creates a pull request against the current branch", async () => {
+  await using remote = await tempRepository();
+  await remote.branches.checkout({ new: "release" });
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    repo: { clone: remote },
+    commits: [{ summary: "feat: new feature" }],
+  });
+  const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
+  const pr = await bump([pkg], {
+    release: true,
+    pr: true,
+    repo,
+    name: "bump-name",
+    email: "bump-email",
+  });
+  assertExists(pr);
+  assertEquals(pr.base, "release");
 });

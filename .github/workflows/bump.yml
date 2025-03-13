@@ -2,6 +2,11 @@ name: Bump
 
 on:
   workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Pre-release'
+        required: false
+        type: boolean
 
 permissions:
   contents: write
@@ -22,7 +27,12 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Bump versions
-        run: deno task forge bump --release --changelog=CHANGELOG.md --pr --emoji
+        run: |
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            deno task forge bump --pr --emoji
+          else
+            deno task forge bump --pr --emoji --release --changelog=CHANGELOG.md
+          fi
         env:
           GIT_NAME: "${{ github.actor }}"
           GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
