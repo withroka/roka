@@ -3,6 +3,19 @@ name: Bump
 on:
   workflow_dispatch:
     inputs:
+      package:
+        description: 'Package'
+        required: false
+        type: choice
+        options:
+          - async
+          - cli
+          - forge
+          - git
+          - github
+          - git
+          - http
+          - testing
       prerelease:
         description: 'Pre-release'
         required: false

@@ -34,7 +34,6 @@ jobs:
           scopes: |
             async
             cli
-            example
             forge
             git
             github
