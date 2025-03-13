@@ -22,7 +22,7 @@ on:
         type: boolean
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -41,8 +41,6 @@ jobs:
 
       - name: Setup git
         run: gh auth setup-git
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Bump versions
         run: |
@@ -54,4 +52,5 @@ jobs:
           fi
           deno task forge bump $PACKAGE $ARGS --pr --emoji --verbose
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GIT_NAME: "${{ github.actor }}"
+          GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
