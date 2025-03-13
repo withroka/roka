@@ -324,7 +324,6 @@ function listCommand(context?: ForgeOptions | undefined) {
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
-      console.log();
       Table
         .from(
           packages.map((pkg) => {
@@ -340,8 +339,7 @@ function listCommand(context?: ForgeOptions | undefined) {
               ...modules.map((module) => [`   ${module}`]),
             ];
           }).flat(),
-        ).indent(1).render();
-      console.log();
+        ).render();
     });
 }
 
