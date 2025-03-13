@@ -148,18 +148,19 @@ export async function tempPackage(
 export async function tempWorkspace(
   options?: TempWorkspaceOptions,
 ): Promise<AsyncDisposable & Package[]> {
+  function memberDirectory(config: Config, index: number) {
+    if (!config.name) return `package${index}`;
+    return config.name.replace(/^@[^/]+\//, "");
+  }
   const repo = await createRepository(options);
   await Promise.all(
     (options?.configs ?? []).map((config, index) =>
-      createPackage(
-        repo.path(config.name ?? `package${index}`),
-        config,
-      )
+      createPackage(repo.path(memberDirectory(config, index)), config)
     ),
   );
   await createPackage(repo.path(), {
     workspace: (options?.configs ?? [])?.map((config, index) =>
-      config.name ?? `package${index}`
+      memberDirectory(config, index)
     ),
   });
   const packages = await workspace({ directory: repo.path() });

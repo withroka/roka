@@ -69,7 +69,10 @@ export async function release(
   pkg: Package,
   options?: ReleaseOptions,
 ): Promise<[Release, ReleaseAsset[]]> {
-  const { repo = await github(options).repos.get(), draft = false } = options ??
+  const {
+    repo = await github(options).repos.get({ directory: pkg.root }),
+    draft = false,
+  } = options ??
     {};
   if (!pkg.config.version) {
     throw new PackageError(

@@ -248,22 +248,87 @@ import {
 } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
 import { version } from "@roka/forge/version";
+import type { Repository } from "@roka/github";
 import { join, relative } from "@std/path";
 
-function listCommand() {
+/**
+ * Options for the {@link forge} function.
+ *
+ * These are used for testing.
+ */
+export interface ForgeOptions {
+  /** GitHub repository to use. */
+  repo: Repository;
+}
+
+/**
+ * Run the `forge` tool with the given command-line arguments.
+ *
+ * @param args Command-line arguments.
+ * @returns The exit code of the command.
+ */
+export async function forge(
+  args: string[],
+  options?: ForgeOptions,
+): Promise<number> {
+  let verbose = false;
+  const cmd = new Command()
+    .name("forge")
+    .version(await version({ build: true, deno: true }))
+    .description("Manage packages.")
+    .example("forge", "List all packages.")
+    .example("forge list 'core/*'", "List packages in the 'core' directory.")
+    .example("forge compile --install", "Compile and install all binaries.")
+    .example("forge bump --pr", "Bump versions and create a bump PR.")
+    .example("forge release --draft", "Create releases with compiled assets.")
+    .usage("<command> [options] [packages...]")
+    .option("--verbose", "Print additional information.", {
+      hidden: true,
+      global: true,
+      action: () => verbose = true,
+    })
+    .noExit()
+    .default("list")
+    .command("list", listCommand(options))
+    .command("changelog", changelogCommand(options))
+    .command("compile", compileCommand(await targets(), options))
+    .command("bump", bumpCommand(options))
+    .command("release", releaseCommand(options));
+  try {
+    await cmd.parse(args);
+  } catch (e: unknown) {
+    if (e instanceof ValidationError) {
+      cmd.showHelp();
+      console.error(`❌ ${e.message}`);
+      return 1;
+    }
+    const errors = (e instanceof AggregateError) ? e.errors : [e];
+    for (const error of errors) {
+      console.error(`❌ ${error.message}`);
+      if (verbose) console.error(error);
+      else if (error["cause"] && error["cause"]["error"]) {
+        console.error(error.cause.error);
+      }
+    }
+    return 2;
+  }
+  return 0;
+}
+
+function listCommand(context?: ForgeOptions | undefined) {
   return new Command()
     .description("List packages and versions.")
     .example("forge list", "List all packages.")
     .example("forge list --modules", "List all modules.")
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
-    .action(async ({ modules }, ...filters) => {
-      const packages = await workspace({ filters });
+    .action(async (options, ...filters) => {
+      const packages = await filter(filters, context);
       new Table().body(
         packages.map((pkg) => [
           "📦",
           pkg.directory,
-          modules ? modulesText(pkg) : pkg.config.name,
+          options.modules ? modulesText(pkg) : pkg.config.name,
           pkg.config.version !== undefined ? pkg.version : undefined,
           ...(pkg.latest?.version !== pkg.config.version)
             ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
@@ -283,7 +348,7 @@ function modulesText(pkg: Package): string | undefined {
     .join("\n");
 }
 
-function changelogCommand() {
+function changelogCommand(context?: ForgeOptions | undefined) {
   return new Command()
     .description("Generate changelogs.")
     .example("forge changelog", "List unreleased changes.")
@@ -296,37 +361,41 @@ function changelogCommand() {
     .option("--emoji", "Use emoji for commit summaries.", { default: false })
     .option("--markdown", "Generate Markdown.", { default: false })
     .arguments("[packages...:file]")
-    .action(async ({ all, type, breaking, emoji, markdown }, ...filters) => {
-      const packages = await workspace({ filters });
-      const options = {
-        ...type && { type },
-        ...breaking !== undefined && { breaking },
-        ...markdown ? {} : { markdown: { heading: "🏷️  ", bullet: "  " } },
-        emoji,
+    .action(async (options, ...filters) => {
+      const packages = await filter(filters, context);
+      const commitOptions = {
+        ...options.type !== undefined && { type: options.type },
+        ...options.breaking !== undefined && { breaking: options.breaking },
+      };
+      const changelogOptions = {
+        ...options.markdown
+          ? {}
+          : { markdown: { heading: "🏷️  ", bullet: "  " } },
+        emoji: options.emoji,
       };
       async function* changelogs(pkg: Package) {
         const log = await commits(pkg, {
-          ...options,
+          ...commitOptions,
           ...pkg.latest?.range.to && { range: { from: pkg.latest.range.to } },
         });
         if (log.length) {
           yield changelog(log, {
-            ...options,
+            ...changelogOptions,
             title: `${pkg.name}@${pkg.version}`,
           });
         }
-        if (!all) return;
+        if (!options.all) return;
         const releasesWithCommits = pooled(
           await releases(pkg),
           async (release) => ({
             ...release,
-            commits: await commits(pkg, { ...options, ...release }),
+            commits: await commits(pkg, { ...changelogOptions, ...release }),
           }),
         );
         for await (const release of releasesWithCommits) {
           if (release.commits.length) {
             yield changelog(release.commits, {
-              ...options,
+              ...changelogOptions,
               title: `${pkg.name}@${release.version}`,
             });
           }
@@ -340,7 +409,7 @@ function changelogCommand() {
     });
 }
 
-function compileCommand(targets: string[]) {
+function compileCommand(targets: string[], context?: ForgeOptions | undefined) {
   return new Command()
     .description("Compile packages into binary executables.")
     .example("forge compile", "Compile packages.")
@@ -355,7 +424,7 @@ function compileCommand(targets: string[]) {
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
     .action(async (options, ...filters) => {
-      const packages = (await workspace({ filters }))
+      const packages = (await filter(filters, context))
         .filter((pkg) => pkg.config.compile);
       await pool(
         packages,
@@ -372,7 +441,7 @@ function compileCommand(targets: string[]) {
     });
 }
 
-function bumpCommand() {
+function bumpCommand(context?: ForgeOptions | undefined) {
   return new Command()
     .description("Bump versions on package config files.")
     .example("forge bump", "Bump versions.")
@@ -396,10 +465,13 @@ function bumpCommand() {
       { prefix: "GITHUB_" },
     )
     .action(async (options, ...filters) => {
-      const packages = (await workspace({ filters }))
+      const packages = (await filter(filters, context))
         .filter((pkg) => pkg.config.version !== undefined);
       if (!packages.length) console.log("📦 No packages to release");
-      const pr = await bump(packages, options);
+      const pr = await bump(packages, {
+        ...options,
+        ...context?.repo && { repo: context.repo },
+      });
       if (pr) {
         console.log(`🚀 Created bump pull request`);
         console.log();
@@ -411,7 +483,7 @@ function bumpCommand() {
     });
 }
 
-function releaseCommand() {
+function releaseCommand(context?: ForgeOptions | undefined) {
   return new Command()
     .description("Creates releases for updated packages.")
     .example("forge release", "Create releases and tags for all updates.")
@@ -425,11 +497,14 @@ function releaseCommand() {
       { prefix: "GITHUB_", required: true },
     )
     .action(async (options, ...filters) => {
-      const packages = (await workspace({ filters }))
+      const packages = (await filter(filters, context))
         .filter((pkg) => pkg.config.version !== pkg.latest?.version);
       if (!packages.length) console.log("📦 No packages to release");
       await pool(packages, async (pkg) => {
-        const [rls, assets] = await release(pkg, options);
+        const [rls, assets] = await release(pkg, {
+          ...options,
+          ...context?.repo && { repo: context.repo },
+        });
         console.log(`🚀 Created release ${pkg.name}@${pkg.version}`);
         console.log();
         console.log(`  [${rls.url}]`);
@@ -442,45 +517,14 @@ function releaseCommand() {
     });
 }
 
-if (import.meta.main) {
-  let verbose = false;
-  await new Command()
-    .name("forge")
-    .version(await version({ build: true, deno: true }))
-    .description("Manage packages.")
-    .example("forge", "List all packages.")
-    .example("forge list 'core/*'", "List packages in the 'core' directory.")
-    .example("forge compile --install", "Compile and install all binaries.")
-    .example("forge bump --pr", "Bump versions and create a bump PR.")
-    .example("forge release --draft", "Create releases with compiled assets.")
-    .usage("<command> [options] [packages...]")
-    .option("--verbose", "Print additional information.", {
-      hidden: true,
-      global: true,
-      action: () => verbose = true,
-    })
-    .error((error, cmd) => {
-      if (error instanceof ValidationError) {
-        cmd.showHelp();
-        console.error(`❌ ${error.message}`);
-        Deno.exit(1);
-      }
-      const errors = (error instanceof AggregateError) ? error.errors : [error];
-      if (error instanceof AggregateError) error = error.errors[0];
-      for (const error of errors) {
-        console.error(`❌ ${error.message}`);
-        if (verbose) console.error(error);
-        else if (error["cause"] && error["cause"]["error"]) {
-          console.error(error.cause.error);
-        }
-      }
-      Deno.exit(2);
-    })
-    .default("list")
-    .command("list", listCommand())
-    .command("changelog", changelogCommand())
-    .command("compile", compileCommand(await targets()))
-    .command("bump", bumpCommand())
-    .command("release", releaseCommand())
-    .parse();
+async function filter(
+  filters: string[],
+  options: ForgeOptions | undefined,
+): Promise<Package[]> {
+  return await workspace({
+    ...options?.repo && { directory: options?.repo.git.path() },
+    filters,
+  });
 }
+
+if (import.meta.main) Deno.exit(await forge(Deno.args));

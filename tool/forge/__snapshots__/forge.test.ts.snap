@@ -1,0 +1,658 @@
+export const snapshot = {};
+
+snapshot[`forge list 1`] = `
+[
+  {
+    data: [
+      "📦 <root>/name1           @scope/name1           1.0.0               🚨       👉 1.0.0
+📦 <root>/name2           @scope/name2           2.1.0-pre.1+<hash>                  
+📦 <root>/name3           @scope/name3           3.0.0               🚨 2.0.0 👉 3.0.0
+📦 <root>/name4           @scope/name4           4.0.0                                
+📦 <root>/directory/name5 @scope/directory/name5                                      ",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge list name1 1`] = `
+[
+  {
+    data: [
+      "📦 <root>/name1 @scope/name1 1.0.0 🚨  👉 1.0.0",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge list name1 name2 1`] = `
+[
+  {
+    data: [
+      "📦 <root>/name1 @scope/name1 1.0.0               🚨  👉 1.0.0
+📦 <root>/name2 @scope/name2 2.1.0-pre.1+<hash>             ",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge list name* 1`] = `
+[
+  {
+    data: [
+      "📦 <root>/name1           @scope/name1           1.0.0               🚨       👉 1.0.0
+📦 <root>/name2           @scope/name2           2.1.0-pre.1+<hash>                  
+📦 <root>/name3           @scope/name3           3.0.0               🚨 2.0.0 👉 3.0.0
+📦 <root>/name4           @scope/name4           4.0.0                                
+📦 <root>/directory/name5 @scope/directory/name5                                      ",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge list directory/* 1`] = `
+[
+  {
+    data: [
+      "📦 <root>/directory/name5 @scope/directory/name5 ",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge list --modules 1`] = `
+[
+  {
+    data: [
+      "📦 <root>/name1           @scope/name1      1.0.0               🚨       👉 1.0.0
+                                                                                     @scope/name1/main                                      
+📦 <root>/name2           @scope/name2      2.1.0-pre.1+<hash>                  
+📦 <root>/name3                             3.0.0               🚨 2.0.0 👉 3.0.0
+📦 <root>/name4                             4.0.0                                
+📦 <root>/directory/name5                                                        ",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge changelog 1`] = `
+[
+  {
+    data: [
+      "🏷️  name1@1.0.0
+
+  fix(name1): bug
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name2@2.1.0-pre.1+<hash>
+
+  feat(name2): feature
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name3@3.0.0
+
+  style(name3)!:tabs over spaces
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name4@4.0.0
+
+  docs(name4): fix typo
+",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge changelog --all 1`] = `
+[
+  {
+    data: [
+      "🏷️  name1@1.0.0
+
+  fix(name1): bug
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name2@2.1.0-pre.1+<hash>
+
+  feat(name2): feature
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name3@3.0.0
+
+  style(name3)!:tabs over spaces
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name4@4.0.0
+
+  docs(name4): fix typo
+",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge changelog --type docs 1`] = `
+[
+  {
+    data: [
+      "🏷️  name3@3.0.0
+
+  style(name3)!:tabs over spaces
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name4@4.0.0
+
+  docs(name4): fix typo
+",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge changelog --type docs --no-breaking 1`] = `
+[
+  {
+    data: [
+      "🏷️  name4@4.0.0
+
+  docs(name4): fix typo
+",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge changelog --breaking 1`] = `
+[
+  {
+    data: [
+      "🏷️  name3@3.0.0
+
+  style(name3)!:tabs over spaces
+",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge changelog --emoji 1`] = `
+[
+  {
+    data: [
+      "🏷️  name1@1.0.0
+
+  🐛 bug
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name2@2.1.0-pre.1+<hash>
+
+  ✨ feature
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name3@3.0.0
+
+  🎨 tabs over spaces 💥
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "🏷️  name4@4.0.0
+
+  📝 fix typo
+",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge changelog --markdown 1`] = `
+[
+  {
+    data: [
+      "## name1@1.0.0
+
+- fix(name1): bug
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "## name2@2.1.0-pre.1+<hash>
+
+- feat(name2): feature
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "## name3@3.0.0
+
+- style(name3)!:tabs over spaces
+",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "## name4@4.0.0
+
+- docs(name4): fix typo
+",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge compile --target aarch64-unknown-linux-gnu 1`] = `
+[
+  {
+    data: [
+      "📦 Compiled name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺",
+      "<root>/dist/name1/1.0.0/aarch64-unknown-linux-gnu/name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge compile --target aarch64-unknown-linux-gnu --bundle 1`] = `
+[
+  {
+    data: [
+      "📦 Compiled name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺",
+      "<root>/dist/name1/1.0.0/aarch64-unknown-linux-gnu.tar.gz",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge compile --target aarch64-unknown-linux-gnu --install=<root>/install 1`] = `
+[
+  {
+    data: [
+      "📦 Compiled name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺",
+      "<root>/dist/name1/1.0.0/aarch64-unknown-linux-gnu/name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "  🧩 Installed name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge compile --target aarch64-unknown-linux-gnu --concurrency=1 1`] = `
+[
+  {
+    data: [
+      "📦 Compiled name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺",
+      "<root>/dist/name1/1.0.0/aarch64-unknown-linux-gnu/name1",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge bump 1`] = `
+[
+  {
+    data: [
+      "📦 Bumped package versions",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge bump --release 1`] = `
+[
+  {
+    data: [
+      "📦 Bumped package versions",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge bump --changelog=<root>/CHANGELOG.md 1`] = `
+[
+  {
+    data: [
+      "📦 Bumped package versions",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge bump --changelog=<root>/CHANGELOG.md --emoji 1`] = `
+[
+  {
+    data: [
+      "📦 Bumped package versions",
+    ],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge bump --pr 1`] = `
+[
+  {
+    data: [
+      "🚀 Created bump pull request",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  [<url>/pulls/1]",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge release 1`] = `
+[
+  {
+    data: [
+      "🚀 Created release name1@1.0.0",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  [<url>/releases/name1@1.0.0]",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺 aarch64-unknown-linux-gnu.tar.gz",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺 sha256.txt",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "🚀 Created release name3@3.0.0",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  [<url>/releases/name1@1.0.0]",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge release --draft 1`] = `
+[
+  {
+    data: [
+      "🚀 Created release name1@1.0.0",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  [<url>/releases/name1@1.0.0]",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺 aarch64-unknown-linux-gnu.tar.gz",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺 sha256.txt",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "🚀 Created release name3@3.0.0",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  [<url>/releases/name1@1.0.0]",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;
+
+snapshot[`forge release --emoji 1`] = `
+[
+  {
+    data: [
+      "🚀 Created release name1@1.0.0",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  [<url>/releases/name1@1.0.0]",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺 aarch64-unknown-linux-gnu.tar.gz",
+    ],
+    level: "log",
+  },
+  {
+    data: [
+      "  🏺 sha256.txt",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "🚀 Created release name3@3.0.0",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+  {
+    data: [
+      "  [<url>/releases/name1@1.0.0]",
+    ],
+    level: "log",
+  },
+  {
+    data: [],
+    level: "log",
+  },
+]
+`;

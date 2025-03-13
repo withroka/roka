@@ -84,7 +84,7 @@ export async function compile(
     throw new PackageError("Compile configuration is required");
   }
   const {
-    dist = "dist",
+    dist = join(pkg.root, "dist"),
     target = [Deno.build.target],
     concurrency = navigator.hardwareConcurrency,
   } = options ?? {};
