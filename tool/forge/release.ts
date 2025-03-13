@@ -109,7 +109,7 @@ async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {
   await pool(assets, (asset) => asset.delete(), GITHUB_CONCURRENCY);
   const artifacts = pkg.config.compile
     ? await compile(pkg, {
-      target: pkg.config.compile.targets ?? await targets(),
+      target: pkg.config.compile.target ?? await targets(),
       bundle: true,
       checksum: true,
     })
