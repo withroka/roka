@@ -149,7 +149,7 @@ async function createPullRequest(
     {};
   const base = await repo.git.branches.current();
   const branch = packages.length === 1
-    ? join(BUMP_BRANCH, packages[0]?.name ?? "")
+    ? `${BUMP_BRANCH}-${packages[0]?.name}`
     : BUMP_BRANCH;
   if (!base) throw new PackageError("Cannot determine base branch");
   const title = packages.length === 1

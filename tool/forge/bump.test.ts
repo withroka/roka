@@ -198,7 +198,7 @@ Deno.test("bump() creates a pull request", async () => {
     ].join("\n"),
   );
   const [commit] = await remote.commits.log({
-    range: { to: "automated/bump/name" },
+    range: { to: "automated/bump-name" },
   });
   assertExists(commit);
   assertEquals(commit.summary, "chore: bump name version");
