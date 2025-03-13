@@ -324,28 +324,36 @@ function listCommand(context?: ForgeOptions | undefined) {
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
-      new Table().body(
-        packages.map((pkg) => [
-          "📦",
-          pkg.directory,
-          options.modules ? modulesText(pkg) : pkg.config.name,
-          pkg.config.version !== undefined ? pkg.version : undefined,
-          ...(pkg.latest?.version !== pkg.config.version)
-            ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
-            : [],
-        ]),
-      ).render();
+      console.log();
+      Table
+        .from(
+          packages.map((pkg) => {
+            const modules = packageModules(pkg, options);
+            return [
+              [
+                `📦 ${pkg.config.name ?? pkg.name}`,
+                pkg.config.version !== undefined ? pkg.version : undefined,
+                ...(pkg.latest?.version !== pkg.config.version)
+                  ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
+                  : [],
+              ],
+              ...modules.map((module) => [`   ${module}`]),
+            ];
+          }).flat(),
+        ).indent(1).render();
+      console.log();
     });
 }
 
-function modulesText(pkg: Package): string | undefined {
+function packageModules(pkg: Package, { modules = false }): string[] {
+  if (!pkg.config.name) return [];
   const name = pkg.config.name;
-  if (name === undefined) return undefined;
+  if (!modules) return [];
   const exports = pkg.config.exports ?? {};
-  if (typeof exports === "string") return name;
+  if (typeof exports === "string") return [];
   return Object.keys(exports)
     .map((key) => join(name, relative(".", key)))
-    .join("\n");
+    .filter((module) => module !== name);
 }
 
 function changelogCommand(context?: ForgeOptions | undefined) {

@@ -32,7 +32,7 @@ const WORKSPACE: TempWorkspaceOptions = {
       version: "4.0.0",
     },
     {
-      name: "@scope/directory/name5",
+      name: "@scope/dir/name5",
     },
   ],
   commits: [
@@ -49,8 +49,8 @@ const TESTS = [
   "list name1",
   "list name1 name2",
   "list name*",
-  "list directory/*",
-  "list --modules",
+  "list dir/*",
+  "list --modules name1",
   "changelog",
   "changelog --all",
   "changelog --type docs",
