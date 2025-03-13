@@ -48,7 +48,7 @@ jobs:
           if [ "${{ inputs.prerelease }}" != "true" ]; then
             ARGS="--release --changelog=CHANGELOG.md"
           fi
-          deno task forge bump $PACKAGE $ARGS --pr --emoji
+          deno task forge bump $PACKAGE $ARGS --pr --emoji --verbose
         env:
           GIT_NAME: "${{ github.actor }}"
           GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
