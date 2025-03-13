@@ -1,5 +1,6 @@
 import { compile } from "@roka/forge/compile";
 import { PackageError } from "@roka/forge/package";
+import { tempPackage, unstableTestImports } from "@roka/forge/testing";
 import {
   assertEquals,
   assertExists,
@@ -7,22 +8,6 @@ import {
   assertRejects,
 } from "@std/assert";
 import { basename, dirname, join } from "@std/path";
-import { tempPackage } from "./testing.ts";
-
-const IMPORT_MAP = {
-  "@std/assert": "jsr:@std/assert",
-  "@std/async": "jsr:@std/async",
-  "@std/collections": "jsr:@std/collections",
-  "@std/fs": "jsr:@std/fs",
-  "@std/path": "jsr:@std/path",
-  "@std/semver": "jsr:@std/semver",
-  "@roka/async/pool": "./core/async/pool.ts",
-  "@roka/git": "./core/git/git.ts",
-  "@roka/git/conventional": "./core/git/conventional.ts",
-  "@roka/forge/changelog": "./tool/forge/changelog.ts",
-  "@roka/forge/package": "./tool/forge/package.ts",
-  "@roka/forge/version": "./tool/forge/version.ts",
-};
 
 Deno.test("compile() rejects package without compile config", async () => {
   await using pkg = await tempPackage({
@@ -41,7 +26,7 @@ Deno.test("compile() compiles into a binary", async () => {
       version: "1.2.3",
       compile: { main: "./main.ts", permissions: { prompt: true } },
       exports: { ".": "./main.ts" },
-      imports: IMPORT_MAP,
+      imports: await unstableTestImports(),
     },
     repo: {
       // run this test inside a clone of roka repository
@@ -72,7 +57,7 @@ Deno.test("compile() can create release bundles", async () => {
       version: "1.2.3",
       compile: { main: "./main.ts", permissions: { prompt: true } },
       exports: { ".": "./main.ts" },
-      imports: IMPORT_MAP,
+      imports: await unstableTestImports(),
     },
     repo: {
       // run this test inside a clone of roka repository

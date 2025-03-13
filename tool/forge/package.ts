@@ -170,6 +170,8 @@ export interface CompileConfig {
   kv?: boolean;
   /** Allowed Deno runtime permissions. */
   permissions?: Permissions;
+  /** List of target OS architectures. */
+  target?: string[];
 }
 
 /**
