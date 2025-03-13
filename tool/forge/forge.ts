@@ -82,8 +82,15 @@
  * If you change this version, it means a new release is coming, and **forge**
  * can help you with that.
  *
+ * Let’s create a pull request on GitHub to bump the version of the `example`
+ * package. Here, we are asking the [GitHub CLI](https://cli.github.com), to
+ * provide us a token, and we are using it to tell GitHub who the PR creator
+ * is. When our releases are automated with workflows, authentication will be
+ * handled differently. More on that later.
+ *
  * ```sh
- * deno run -A jsr:@roka/forge bump --release --pr
+ * GITHUB_TOKEN=$(gh auth token) \
+ * deno run -A jsr:@roka/forge bump example --release --pr
  * ```
  *
  * The `--release` flag drops the pre-release and build
@@ -94,9 +101,8 @@
  * configuration and changelog files. Review and merge these changes, and the
  * release will be ready to roll at the merged commit.
  *
- * At this point, we are ready to publish the packages to [JSR](http://jsr.io).
- * However, before that, let’s proceed to create a release on GitHub, which is
- * the second step.
+ * At this point, we are ready to publish the packages to JSR. However, before
+ * that, let’s proceed to create a release on GitHub, which is the second step.
  *
  * ### Release on GitHub
  *
@@ -125,6 +131,15 @@
  * executed using a workflow with GitHub actions.
  *
  * ### Automate with Actions
+ *
+ * The release steps we have covered so far, _bump_, _release_, and _publish_,
+ * can be automated with GitHub workflows. In fact, this is the prefered
+ * approach so we can avoid mistakes.
+ *
+ * For authentication, we can use a GitHub personal access token, store it in
+ * your repository secrets and use it in the workflow. The convenient
+ * `GITHUB_TOKEN` token does not have the necessary permissions to create
+ * releases.
  *
  * Check out the workflows in the [roka](https://github.com/withroka/roka)
  * repository to see how we can automate all three steps: _bump_, _release_,
