@@ -46,7 +46,7 @@ jobs:
             PACKAGE="${{ inputs.package }}"
           fi
           if [ "${{ inputs.prerelease }}" != "true" ]; then
-            ARGS="${ARGS} --release --changelog=CHANGELOG.md"
+            ARGS="--release --changelog=CHANGELOG.md"
           fi
           deno task forge bump $PACKAGE $ARGS --pr --emoji
         env:
