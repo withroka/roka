@@ -5,7 +5,7 @@ import { git } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakePullRequest, fakeRepository } from "@roka/github/testing";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
-import { join } from "@std/path/join";
+import { join } from "@std/path";
 
 Deno.test("bump() minor updates released package", async () => {
   await using pkg = await tempPackage({
