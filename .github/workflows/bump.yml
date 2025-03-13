@@ -35,11 +35,8 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup deno
+      - name: Setup
         uses: denoland/setup-deno@v2
-
-      - name: Setup git
-        run: gh auth setup-git
 
       - name: Bump versions
         run: |
