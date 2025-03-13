@@ -124,7 +124,7 @@ async function updateChangelog(
   const prepend = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
       title: `${pkg.name}@${pkg.version}`,
-      ...options?.emoji && { eemoji: options?.emoji },
+      ...options?.emoji && { emoji: options?.emoji },
     })
   ).join("\n");
   let existing = "";
