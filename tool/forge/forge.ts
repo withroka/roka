@@ -82,11 +82,11 @@
  * If you change this version, it means a new release is coming, and **forge**
  * can help you with that.
  *
- * Let’s create a pull request on GitHub to bump the version of the `example`
- * package. Here, we are asking the [GitHub CLI](https://cli.github.com), to
- * provide us a token, and we are using it to tell GitHub who the pull request
- * creator is. When our releases are automated with workflows, authentication
- * will be handled differently. More on that later.
+ * Let’s create a pull request on GitHub to increment our package version.
+ * Here, we are asking the [GitHub CLI](https://cli.github.com), to provide us
+ * a token, and we are using it to tell GitHub who the pull request creator is.
+ * When our releases are automated with workflows, authentication will be
+ * handled differently. More on that later.
  *
  * Let’s create a pull request on GitHub to increment our package version.
  * We’ll use the [GitHub CLI](https://cli.github.com) to get a token and pass
@@ -95,7 +95,8 @@
  * to that later.
  *
  * ```sh
- * GITHUB_TOKEN=$(gh auth token) \
+ * git checkout main
+ * export GITHUB_TOKEN=$(gh auth token)
  * deno run -A jsr:@roka/forge bump example --release --pr
  * ```
  *
@@ -116,7 +117,7 @@
  * hash. Let’s create a release right here!
  *
  * ```sh
- * GITHUB_TOKEN=$(gh auth token) \
+ * git pull
  * deno run -A jsr:@roka/forge release example --draft
  * ```
  *
