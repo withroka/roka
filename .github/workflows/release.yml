@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: 'Package'
+        description: "Package"
         required: false
         type: choice
         options:
