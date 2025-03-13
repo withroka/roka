@@ -861,7 +861,9 @@ async function run(
     const { code, stdout, stderr } = await command.output();
     if (code !== 0) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
-      throw new GitError("Error running git command", {
+      const args = commandArgs.filter((x) => x !== false && x !== undefined)
+        .flat().map((x) => x.match(/\s/) ? `"${x}"` : x).join(" ");
+      throw new GitError(`Error running git command: git ${args}`, {
         cause: { command: "git", args, code, error },
       });
     }
