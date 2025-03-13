@@ -31,11 +31,4 @@ jobs:
             revert
             style
             test
-          scopes: |
-            async
-            cli
-            forge
-            git
-            github
-            http
-            testing
+          scopes: ${{ vars.PACKAGES }}
