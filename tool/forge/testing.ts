@@ -168,6 +168,39 @@ export async function tempWorkspace(
   });
 }
 
+/**
+ * Creates an import map to use when compiling packages in tests.
+ *
+ * The import map includes all dependencies of the current workspace,
+ * as well as its exports as a local file import map. The latter enables the
+ * tests to compile packages against the local changes in the workspace.
+ *
+ * This is mainly useful for testing `forge` itself, and will be removed
+ * in the future.
+ */
+export async function unstableTestImports(): Promise<Record<string, string>> {
+  await Promise.resolve();
+  const root = await packageInfo({ directory: "." });
+  const packages = await workspace({ directory: root.directory });
+  const imports: Record<string, string> = {};
+  packages.forEach((pkg) => {
+    const exports = pkg.config.exports === undefined
+      ? {}
+      : typeof pkg.config.exports === "string"
+      ? { ".": pkg.config.exports }
+      : pkg.config.exports;
+    Object.entries(exports).forEach(([name, path]) => {
+      imports[join(pkg.config.name ?? pkg.name, name)] = `./${
+        join(pkg.directory, path)
+      }`;
+    });
+  });
+  return {
+    ...root.config.imports,
+    ...imports,
+  };
+}
+
 async function createRepository(
   options: TempPackageOptions | TempWorkspaceOptions | undefined,
 ) {

@@ -1,9 +1,10 @@
 import { PackageError } from "@roka/forge/package";
 import { release } from "@roka/forge/release";
-import { tempPackage } from "@roka/forge/testing";
+import { tempPackage, unstableTestImports } from "@roka/forge/testing";
+import { git } from "@roka/git";
 import { fakeRelease, fakeRepository } from "@roka/github/testing";
 import { assertEquals, assertRejects } from "@std/assert";
-import { git } from "../../core/git/git.ts";
+import { dirname, join } from "@std/path";
 
 Deno.test("release() rejects package without version", async () => {
   await using pkg = await tempPackage({
@@ -152,4 +153,43 @@ Deno.test("release() updates existing release", async () => {
       "",
     ].join("\n"),
   );
+});
+
+Deno.test("release() can compile and upload release assets", async () => {
+  await using pkg = await tempPackage({
+    config: {
+      name: "@scope/name",
+      version: "1.2.3",
+      compile: {
+        main: "./main.ts",
+        targets: ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"],
+      },
+      exports: { ".": "./main.ts" },
+      imports: await unstableTestImports(),
+    },
+    repo: {
+      // run this test inside a clone of roka repository
+      // so we can test local changes to the version import below
+      clone: dirname(dirname(import.meta.dirname ?? ".")),
+    },
+  });
+  await Deno.writeTextFile(
+    join(pkg.directory, "main.ts"),
+    [
+      'import { version } from "@roka/forge/version";',
+      "console.log(await version());",
+    ].join("\n"),
+  );
+  const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
+  const existing = fakeRelease({ repo, id: 42, tag: "name@1.2.3" });
+  repo.releases.list = async () => await Promise.resolve([existing]);
+  const [rls, assets] = await release(pkg, { repo });
+  assertEquals(rls.id, 42);
+  assertEquals(assets.length, 3);
+  assertEquals(assets.map((x) => x.release), [rls, rls, rls]);
+  assertEquals(assets.map((x) => x.name), [
+    "x86_64-unknown-linux-gnu.tar.gz",
+    "x86_64-pc-windows-msvc.zip",
+    "sha256.txt",
+  ]);
 });
