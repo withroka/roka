@@ -1,7 +1,7 @@
 import { bump } from "@roka/forge/bump";
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { tempPackage, tempWorkspace } from "@roka/forge/testing";
-import { git } from "@roka/git";
+import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakePullRequest, fakeRepository } from "@roka/github/testing";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
@@ -166,6 +166,22 @@ Deno.test("bump() rejects pull request without update", async () => {
   await assertRejects(() => bump([pkg], { pr: true }), PackageError);
 });
 
+Deno.test("bump() rejects if pull request branch exists locally", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    repo: { clone: remote },
+    commits: [
+      { summary: "initial", tags: ["name@1.2.3"] },
+      { summary: "feat: new feature (#42)" },
+      { summary: "fix: force pushed" },
+    ],
+  });
+  const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
+  await repo.git.branches.create(`automated/bump-${pkg.name}`);
+  await assertRejects(() => bump([pkg], { repo, pr: true }), GitError);
+});
+
 Deno.test("bump() creates a pull request", async () => {
   await using remote = await tempRepository({ bare: true });
   await using pkg = await tempPackage({
@@ -178,6 +194,7 @@ Deno.test("bump() creates a pull request", async () => {
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
+  const current = await repo.git.branches.current();
   const pr = await bump([pkg], {
     release: true,
     pr: true,
@@ -186,6 +203,8 @@ Deno.test("bump() creates a pull request", async () => {
     email: "bump-email",
   });
   assertExists(pr);
+  assertEquals(pr.base, current);
+  assertEquals(pr.head, `automated/bump-${pkg.name}`);
   assertEquals(pr.title, "chore: bump name version");
   assertEquals(
     pr.body,
@@ -197,13 +216,8 @@ Deno.test("bump() creates a pull request", async () => {
       "",
     ].join("\n"),
   );
-  const [commit] = await remote.commits.log({
-    range: { to: "automated/bump-name" },
-  });
-  assertExists(commit);
-  assertEquals(commit.summary, "chore: bump name version");
-  assertEquals(commit.author.name, "bump-name");
-  assertEquals(commit.author.email, "bump-email");
+  assertEquals(await repo.git.branches.current(), current);
+  assertEquals(await repo.git.branches.list(), [current]);
 });
 
 Deno.test("bump() updates pull request", async () => {
