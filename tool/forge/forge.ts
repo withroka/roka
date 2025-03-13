@@ -84,14 +84,15 @@
  *
  * Let’s create a pull request on GitHub to bump the version of the `example`
  * package. Here, we are asking the [GitHub CLI](https://cli.github.com), to
- * provide us a token, and we are using it to tell GitHub who the PR creator
- * is. When our releases are automated with workflows, authentication will be
- * handled differently. More on that later.
+ * provide us a token, and we are using it to tell GitHub who the pull request
+ * creator is. When our releases are automated with workflows, authentication
+ * will be handled differently. More on that later.
  *
  * Let’s create a pull request on GitHub to increment our package version.
  * We’ll use the [GitHub CLI](https://cli.github.com) to get a token and pass
- * it to forge to identify the PR creator. When our releases are automated with
- * workflows, authentication will be handled differently. More to that later.
+ * it to forge to identify the pull request creator. When our releases are
+ * automated with workflows, authentication will be handled differently. More
+ * to that later.
  *
  * ```sh
  * GITHUB_TOKEN=$(gh auth token) \
@@ -115,6 +116,7 @@
  * hash. Let’s create a release right here!
  *
  * ```sh
+ * GITHUB_TOKEN=$(gh auth token) \
  * deno run -A jsr:@roka/forge release example --draft
  * ```
  *
