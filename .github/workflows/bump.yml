@@ -6,9 +6,9 @@ on:
       package:
         description: 'Package'
         required: false
-        default: ""
         type: choice
         options:
+          - all
           - async
           - cli
           - forge
@@ -42,11 +42,13 @@ jobs:
 
       - name: Bump versions
         run: |
-          if [ "${{ inputs.prerelease }}" = "true" ]; then
-            deno task forge bump --pr --emoji
-          else
-            deno task forge bump --pr --emoji --release --changelog=CHANGELOG.md
+          if [ "${{ inputs.package }}" != "all" ]; then
+            PACKAGE="${{ inputs.package }}"
           fi
+          if [ "${{ inputs.prerelease }}" != "true" ]; then
+            ARGS="${ARGS} --release --changelog=CHANGELOG.md"
+          fi
+          deno task forge bump $PACKAGE $ARGS --pr --emoji
         env:
           GIT_NAME: "${{ github.actor }}"
           GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
