@@ -14,7 +14,6 @@ on:
           - forge
           - git
           - github
-          - git
           - http
           - testing
       prerelease:
