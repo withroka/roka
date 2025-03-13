@@ -148,6 +148,9 @@ async function createPullRequest(
   const { repo = await github(options).repos.get({ directory }) } = options ??
     {};
   const base = await repo.git.branches.current();
+  const branch = packages.length === 1
+    ? join(BUMP_BRANCH, packages[0]?.name ?? "")
+    : BUMP_BRANCH;
   if (!base) throw new PackageError("Cannot determine base branch");
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} version`
@@ -159,7 +162,7 @@ async function createPullRequest(
       ...options?.emoji && { emoji: options?.emoji },
     })
   ).join("\n");
-  await repo.git.branches.checkout({ new: BUMP_BRANCH });
+  await repo.git.branches.checkout({ new: branch });
   await repo.git.config.set({ user: pick(options ?? {}, ["name", "email"]) });
   await repo.git.index.add([
     ...packages.map((pkg) => join(pkg.directory, "deno.json")),
@@ -168,10 +171,10 @@ async function createPullRequest(
   await repo.git.commits.create(title, { body });
   let [pr] = await repo.pulls.list({ base, title, closed: false });
   if (pr) {
-    await repo.git.commits.push({ force: true, branch: BUMP_BRANCH });
+    await repo.git.commits.push({ force: true, branch });
     pr.update({ body });
   } else {
-    await repo.git.commits.push({ branch: BUMP_BRANCH });
+    await repo.git.commits.push({ branch });
     pr = await repo.pulls.create({ base, title, body, draft: true });
   }
   return pr;
