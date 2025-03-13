@@ -8,7 +8,7 @@ on:
         required: false
         type: choice
         options:
-          - all
+          - All packages
           - async
           - cli
           - forge
@@ -42,7 +42,7 @@ jobs:
 
       - name: Bump versions
         run: |
-          if [ "${{ inputs.package }}" != "all" ]; then
+          if [ "${{ inputs.package }}" != "All packages" ]; then
             PACKAGE="${{ inputs.package }}"
           fi
           if [ "${{ inputs.prerelease }}" != "true" ]; then
