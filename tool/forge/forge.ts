@@ -150,8 +150,8 @@
  *
  * The personal access token is linked to your personal account, and PRs will
  * be created by you. If this suits your needs, you’re all set. However, you
- * won’t be able to approve the bump PRs. For teams, it may be preferable to
- * create a bot account and use its personal access token instead.
+ * won’t be able to approve the bump requests yourself. For teams, it may be
+ * preferable to create a bot account and use its personal access token instead.
  *
  * Check out the workflows in the [roka](https://github.com/withroka/roka)
  * repository to see how we can automate all steps. With **forge** taking care
