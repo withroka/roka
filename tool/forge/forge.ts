@@ -137,9 +137,9 @@
  *
  * ### Automate with Actions
  *
- * The release steps we have covered so far, _bump_, _release_, and _publish_,
- * can be automated with GitHub workflows. In fact, this is the prefered
- * approach so we can avoid mistakes.
+ * We’ve covered the three steps, _bump_, _release_, and _publish_, all of
+ * which can be automated using GitHub workflows. In fact, it’s the recommended
+ * way to release, so we are not slowed down by mistakes.
  *
  * For authentication, the convenient `GITHUB_TOKEN` works. However, this token
  * lacks the ability to initiate CI checks for newly created pull requests.
