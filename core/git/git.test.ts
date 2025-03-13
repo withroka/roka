@@ -8,6 +8,15 @@ import {
   assertRejects,
 } from "@std/assert";
 
+Deno.test("git() mentions failed command on error", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.tags.create("no commit"),
+    GitError,
+    'Error running git command: git tag "no commit"',
+  );
+});
+
 Deno.test("git() configures for each command", async () => {
   await using directory = await tempDirectory();
   const repo = git({
