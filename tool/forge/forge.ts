@@ -83,12 +83,6 @@
  * can help you with that.
  *
  * Let’s create a pull request on GitHub to increment our package version.
- * Here, we are asking the [GitHub CLI](https://cli.github.com), to provide us
- * a token, and we are using it to tell GitHub who the pull request creator is.
- * When our releases are automated with workflows, authentication will be
- * handled differently. More on that later.
- *
- * Let’s create a pull request on GitHub to increment our package version.
  * We’ll use the [GitHub CLI](https://cli.github.com) to get a token and pass
  * it to forge to identify the pull request creator. When our releases are
  * automated with workflows, authentication will be handled differently. More
@@ -135,8 +129,13 @@
  * ```
  *
  * Simply running this command will work, because the `deno.json` file is
- * up-to-date, and all our changes are committed. Ideally, this step should be
- * executed using a workflow with GitHub actions.
+ * up-to-date, and all our changes are committed.
+ *
+ * The command will guide you to authenticate with JSR and create any new
+ * packages if necessary. Ideally, we link our packages to their GitHub
+ * repositories and automate the publishing process with GitHub actions. See
+ * [JSR documentation for publishing](https://jsr.io/docs/publishing-packages)
+ * for this.
  *
  * ### Automate with Actions
  *
