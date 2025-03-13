@@ -23,24 +23,30 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
+      - name: test
+        run: echo ${{ vars.PACKAGES }}
+  # release:
+  #   runs-on: ubuntu-latest
 
-      - name: Setup
-        uses: denoland/setup-deno@v2
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #         fetch-tags: true
 
-      - name: Release packages
-        run: |
-          if [ "${{ inputs.package }}" != "All packages" ]; then
-            PACKAGE="${{ inputs.package }}"
-          fi
-          deno task forge release $PACKAGE --draft --emoji
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+  #     - name: Setup
+  #       uses: denoland/setup-deno@v2
+
+  #     - name: Release packages
+  #       run: |
+  #         if [ "${{ inputs.package }}" != "All packages" ]; then
+  #           PACKAGE="${{ inputs.package }}"
+  #         fi
+  #         deno task forge release $PACKAGE --draft --emoji
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
