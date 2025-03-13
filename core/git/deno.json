@@ -1,6 +1,6 @@
 {
   "name": "@roka/git",
-  "version": "0.1.0",
+  "version": "0.2.0-pre.15+99120c9",
   "exports": {
     ".": "./git.ts",
     "./conventional": "./conventional.ts",
