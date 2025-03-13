@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: test
-        run: echo ${{ vars.PACKAGES }}
+        run: echo "${{ vars.PACKAGES }}"
   # release:
   #   runs-on: ubuntu-latest
 
