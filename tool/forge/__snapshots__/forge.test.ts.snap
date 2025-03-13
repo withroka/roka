@@ -3,21 +3,13 @@ export const snapshot = {};
 snapshot[`forge list 1`] = `
 [
   {
-    data: [],
-    level: "log",
-  },
-  {
     data: [
-      " 📦 @scope/name1     1.0.0               🚨       👉 1.0.0
- 📦 @scope/name2     2.1.0-pre.1+<hash>                  
- 📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
- 📦 @scope/name4     4.0.0                                
- 📦 @scope/dir/name5                                      ",
+      "📦 @scope/name1     1.0.0               🚨       👉 1.0.0
+📦 @scope/name2     2.1.0-pre.1+<hash>                  
+📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
+📦 @scope/name4     4.0.0                                
+📦 @scope/dir/name5                                      ",
     ],
-    level: "log",
-  },
-  {
-    data: [],
     level: "log",
   },
 ]
@@ -26,17 +18,9 @@ snapshot[`forge list 1`] = `
 snapshot[`forge list name1 1`] = `
 [
   {
-    data: [],
-    level: "log",
-  },
-  {
     data: [
-      " 📦 @scope/name1 1.0.0 🚨  👉 1.0.0",
+      "📦 @scope/name1 1.0.0 🚨  👉 1.0.0",
     ],
-    level: "log",
-  },
-  {
-    data: [],
     level: "log",
   },
 ]
@@ -45,18 +29,10 @@ snapshot[`forge list name1 1`] = `
 snapshot[`forge list name1 name2 1`] = `
 [
   {
-    data: [],
-    level: "log",
-  },
-  {
     data: [
-      " 📦 @scope/name1 1.0.0               🚨  👉 1.0.0
- 📦 @scope/name2 2.1.0-pre.1+<hash>             ",
+      "📦 @scope/name1 1.0.0               🚨  👉 1.0.0
+📦 @scope/name2 2.1.0-pre.1+<hash>             ",
     ],
-    level: "log",
-  },
-  {
-    data: [],
     level: "log",
   },
 ]
@@ -65,21 +41,13 @@ snapshot[`forge list name1 name2 1`] = `
 snapshot[`forge list name* 1`] = `
 [
   {
-    data: [],
-    level: "log",
-  },
-  {
     data: [
-      " 📦 @scope/name1     1.0.0               🚨       👉 1.0.0
- 📦 @scope/name2     2.1.0-pre.1+<hash>                  
- 📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
- 📦 @scope/name4     4.0.0                                
- 📦 @scope/dir/name5                                      ",
+      "📦 @scope/name1     1.0.0               🚨       👉 1.0.0
+📦 @scope/name2     2.1.0-pre.1+<hash>                  
+📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
+📦 @scope/name4     4.0.0                                
+📦 @scope/dir/name5                                      ",
     ],
-    level: "log",
-  },
-  {
-    data: [],
     level: "log",
   },
 ]
@@ -88,17 +56,9 @@ snapshot[`forge list name* 1`] = `
 snapshot[`forge list dir/* 1`] = `
 [
   {
-    data: [],
-    level: "log",
-  },
-  {
     data: [
-      " 📦 @scope/dir/name5 ",
+      "📦 @scope/dir/name5 ",
     ],
-    level: "log",
-  },
-  {
-    data: [],
     level: "log",
   },
 ]
@@ -107,18 +67,10 @@ snapshot[`forge list dir/* 1`] = `
 snapshot[`forge list --modules name1 1`] = `
 [
   {
-    data: [],
-    level: "log",
-  },
-  {
     data: [
-      " 📦 @scope/name1      1.0.0 🚨  👉 1.0.0
-    @scope/name1/main                   ",
+      "📦 @scope/name1      1.0.0 🚨  👉 1.0.0
+   @scope/name1/main                   ",
     ],
-    level: "log",
-  },
-  {
-    data: [],
     level: "log",
   },
 ]
