@@ -144,7 +144,7 @@ async function createPullRequest(
   options: BumpOptions | undefined,
 ): Promise<PullRequest> {
   if (packages.length === 0) throw new PackageError("No packages to bump");
-  const directory = common(packages.map((pkg) => pkg.directory));
+  const directory = common(packages.map((pkg) => pkg.root));
   const { repo = await github(options).repos.get({ directory }) } = options ??
     {};
   const base = await repo.git.branches.current();
