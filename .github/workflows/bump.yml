@@ -51,4 +51,3 @@ jobs:
         env:
           GIT_NAME: "${{ github.actor }}"
           GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

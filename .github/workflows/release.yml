@@ -42,3 +42,5 @@ jobs:
             PACKAGE="${{ inputs.package }}"
           fi
           deno task forge release $PACKAGE --draft --emoji
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
