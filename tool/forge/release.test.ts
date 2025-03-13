@@ -47,7 +47,7 @@ Deno.test("release() creates initial release", async () => {
     config: { name: "@scope/name", version: "0.1.0" },
     commits: [{ summary: "feat: new feature" }],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
+  const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.directory }) });
   const [rls, assets] = await release(pkg, { repo });
   assertEquals(rls.tag, "name@0.1.0");
   assertEquals(rls.name, "name@0.1.0");
@@ -78,7 +78,7 @@ Deno.test("release() creates update release", async () => {
       { summary: "feat: new feature" },
     ],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
+  const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.directory }) });
   const [rls, assets] = await release(pkg, { repo });
   assertEquals(rls.tag, "name@1.3.0");
   assertEquals(rls.name, "name@1.3.0");
@@ -134,7 +134,7 @@ Deno.test("release() updates existing release", async () => {
       { summary: "feat: new feature" },
     ],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.directory }) });
+  const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.directory }) });
   const existing = fakeRelease({ repo, id: 42, tag: "name@1.2.3" });
   repo.releases.list = async () => await Promise.resolve([existing]);
   const [rls] = await release(pkg, { repo });

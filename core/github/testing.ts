@@ -49,7 +49,7 @@ export function fakeRepository(data?: Partial<Repository>): Repository {
   const pulls: PullRequest[] = [];
   const releases: Release[] = [];
   const repo: Repository = {
-    url: "url",
+    url: "repo-url",
     owner: "owner",
     repo: "repo",
     git: git(),
@@ -103,10 +103,12 @@ export function fakeRepository(data?: Partial<Repository>): Repository {
  */
 
 export function fakePullRequest(data?: Partial<PullRequest>): PullRequest {
+  const repo = data?.repo ?? fakeRepository();
+  const number = data?.number ?? 1;
   const pull: PullRequest = {
-    repo: fakeRepository(),
-    url: "url",
-    number: 1,
+    repo,
+    url: `${repo.url}/pulls/${number}`,
+    number,
     title: "title",
     body: "body",
     head: "head",
@@ -142,14 +144,16 @@ export function fakePullRequest(data?: Partial<PullRequest>): PullRequest {
  * ```
  */
 export function fakeRelease(data?: Partial<Release>): Release {
+  const repo = data?.repo ?? fakeRepository();
+  const tag = data?.tag ?? "tag";
   let nextAsset = 1;
   const assets: ReleaseAsset[] = [];
   const release: Release = {
-    repo: fakeRepository(),
-    url: "url",
+    repo,
+    url: `${repo.url}/releases/${tag}`,
     id: 1,
     name: "name",
-    tag: "tag",
+    tag,
     commit: "commit",
     body: "body",
     draft: false,
@@ -193,9 +197,12 @@ export function fakeRelease(data?: Partial<Release>): Release {
  * ```
  */
 export function fakeReleaseAsset(data?: Partial<ReleaseAsset>): ReleaseAsset {
+  const release = data?.release ?? fakeRelease();
+  const repo = data?.release?.repo ?? fakeRepository();
+  const name = data?.name ?? "name";
   return {
     release: fakeRelease(),
-    url: "url",
+    url: `${repo.url}/releases/download/${release.tag}/${name}`,
     id: 2,
     name: "name",
     size: 3,
