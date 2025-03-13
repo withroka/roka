@@ -34,10 +34,8 @@ jobs:
           scopes: |
             async
             cli
-            example
             forge
             git
             github
-            git
             http
             testing

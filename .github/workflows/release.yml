@@ -4,6 +4,20 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      package:
+        description: "Package"
+        required: false
+        type: choice
+        options:
+          - All packages
+          - async
+          - cli
+          - forge
+          - git
+          - github
+          - http
+          - testing
 
 permissions:
   contents: write
@@ -23,6 +37,10 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Release packages
-        run: deno task forge release --draft --emoji
+        run: |
+          if [ "${{ inputs.package }}" != "All packages" ]; then
+            PACKAGE="${{ inputs.package }}"
+          fi
+          deno task forge release $PACKAGE --draft --emoji
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

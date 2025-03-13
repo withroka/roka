@@ -2,6 +2,24 @@ name: Bump
 
 on:
   workflow_dispatch:
+    inputs:
+      package:
+        description: "Package"
+        required: false
+        type: choice
+        options:
+          - All packages
+          - async
+          - cli
+          - forge
+          - git
+          - github
+          - http
+          - testing
+      prerelease:
+        description: "Pre-release"
+        required: false
+        type: boolean
 
 permissions:
   contents: write
@@ -22,7 +40,14 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Bump versions
-        run: deno task forge bump --release --changelog=CHANGELOG.md --pr --emoji
+        run: |
+          if [ "${{ inputs.package }}" != "All packages" ]; then
+            PACKAGE="${{ inputs.package }}"
+          fi
+          if [ "${{ inputs.prerelease }}" != "true" ]; then
+            ARGS="--release --changelog=CHANGELOG.md"
+          fi
+          deno task forge bump $PACKAGE $ARGS --pr --emoji --verbose
         env:
           GIT_NAME: "${{ github.actor }}"
           GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
