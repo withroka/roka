@@ -22,8 +22,7 @@ on:
         type: boolean
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   bump:
@@ -36,8 +35,11 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup
+      - name: Setup deno
         uses: denoland/setup-deno@v2
+
+      - name: Setup git
+        run: gh auth setup-git
 
       - name: Bump versions
         run: |
@@ -51,3 +53,4 @@ jobs:
         env:
           GIT_NAME: "${{ github.actor }}"
           GIT_EMAIL: "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
