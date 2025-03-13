@@ -6,6 +6,7 @@ on:
       package:
         description: 'Package'
         required: false
+        default: ""
         type: choice
         options:
           - async
