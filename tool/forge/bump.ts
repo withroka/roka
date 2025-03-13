@@ -31,6 +31,7 @@ import { changelog } from "@roka/forge/changelog";
 import { type Package, PackageError } from "@roka/forge/package";
 import { github, type PullRequest, type Repository } from "@roka/github";
 import { assertExists } from "@std/assert";
+import { pick } from "@std/collections/pick";
 import { common, join } from "@std/path";
 import { format, parse } from "@std/semver";
 
@@ -47,12 +48,10 @@ export interface BumpOptions {
    */
   repo?: Repository;
   /** Git user for the bump commit. */
-  user?: {
-    /** Name of the user. */
-    name?: string;
-    /** Email of the user. */
-    email?: string;
-  };
+  /** Name of the git user. */
+  name?: string;
+  /** Email of the git user. */
+  email?: string;
   /** Bump to the next release version, instead of a pre-release of it. */
   release?: boolean;
   /**
@@ -117,12 +116,15 @@ async function updateConfig(pkg: Package, version: string) {
   return pkg;
 }
 
-async function updateChangelog(packages: Package[], options?: BumpOptions) {
+async function updateChangelog(
+  packages: Package[],
+  options: BumpOptions | undefined,
+) {
   assertExists(options?.changelog, "Changelog file was not passed");
   const prepend = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
-      ...options,
       title: `${pkg.name}@${pkg.version}`,
+      ...options?.emoji && { emoji: options?.emoji },
     })
   ).join("\n");
   let existing = "";
@@ -139,35 +141,41 @@ async function updateChangelog(packages: Package[], options?: BumpOptions) {
 
 async function createPullRequest(
   packages: Package[],
-  options?: BumpOptions,
+  options: BumpOptions | undefined,
 ): Promise<PullRequest> {
   if (packages.length === 0) throw new PackageError("No packages to bump");
-  const directory = common(packages.map((pkg) => pkg.directory));
-  const { repo = await github(options).repos.get({ directory }), user } =
-    options ?? {};
+  const directory = common(packages.map((pkg) => pkg.root));
+  const { repo = await github(options).repos.get({ directory }) } = options ??
+    {};
+  const base = await repo.git.branches.current();
+  const branch = packages.length === 1
+    ? `${BUMP_BRANCH}-${packages[0]?.name}`
+    : BUMP_BRANCH;
+  if (!base) throw new PackageError("Cannot determine base branch");
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} version`
     : "chore: bump versions";
   const body = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
-      ...options,
       title: `${pkg.name}@${pkg.version}`,
+      github: true,
+      ...options?.emoji && { emoji: options?.emoji },
     })
   ).join("\n");
-  await repo.git.branches.checkout({ new: BUMP_BRANCH });
-  await repo.git.config.set({ ...user && { user } });
+  await repo.git.branches.checkout({ new: branch });
+  await repo.git.config.set({ user: pick(options ?? {}, ["name", "email"]) });
   await repo.git.index.add([
     ...packages.map((pkg) => join(pkg.directory, "deno.json")),
     ...options?.changelog ? [options?.changelog] : [],
   ]);
   await repo.git.commits.create(title, { body });
-  let [pr] = await repo.pulls.list({ title, closed: false });
+  let [pr] = await repo.pulls.list({ base, title, closed: false });
   if (pr) {
-    await repo.git.commits.push({ force: true, branch: BUMP_BRANCH });
+    await repo.git.commits.push({ force: true, branch });
     pr.update({ body });
   } else {
-    await repo.git.commits.push({ branch: BUMP_BRANCH });
-    pr = await repo.pulls.create({ title, body, draft: true });
+    await repo.git.commits.push({ branch });
+    pr = await repo.pulls.create({ base, title, body, draft: true });
   }
   return pr;
 }

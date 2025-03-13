@@ -110,3 +110,45 @@ Deno.test("changelog() generates frivolous changelog with emojis", () => {
     ].join("\n"),
   );
 });
+
+Deno.test("changelog() generates pull request numbers", () => {
+  const commits = [
+    testCommit({ summary: "feat(name): introduce (#3)" }),
+    testCommit({ summary: "build(name)!: breaking (#2)" }),
+    testCommit({ summary: "fix: fix code (#1)" }),
+    testCommit({ summary: "fix: not a number (#this is not)" }),
+    testCommit({ summary: "no number" }),
+  ];
+  assertEquals(
+    changelog(commits, { github: true }),
+    [
+      "- #3",
+      "- #2",
+      "- #1",
+      "- fix: not a number (#this is not)",
+      "- no number",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("changelog() generates pull request numbers with emojis", () => {
+  const commits = [
+    testCommit({ summary: "feat(name): introduce (#3)" }),
+    testCommit({ summary: "build(name)!: breaking (#2)" }),
+    testCommit({ summary: "fix: fix code (#1)" }),
+    testCommit({ summary: "fix: not a number (#this is not)" }),
+    testCommit({ summary: "no number" }),
+  ];
+  assertEquals(
+    changelog(commits, { emoji: true, github: true }),
+    [
+      "- ✨ #3",
+      "- 🔧 #2 💥",
+      "- 🐛 #1",
+      "- 🐛 not a number (#this is not)",
+      "- 🔖 no number",
+      "",
+    ].join("\n"),
+  );
+});

@@ -53,6 +53,16 @@ export interface ChangelogOptions {
   };
   /** Use emoji in commit summaries. */
   emoji?: boolean;
+  /**
+   * List only pull request numbers as commit summaries.
+   *
+   * This provides a nicely formatted changelog for GitHub pull requests, and
+   * avoids listing commit titles twice.
+   *
+   * Changelogs for releases and markdown files should not use this option,
+   * because GitHub does not provide the pull request title in those contexts.
+   */
+  github?: boolean;
 }
 
 /**
@@ -95,21 +105,29 @@ export function changelog(
       options.footer.items.map((x) => `${markdown.bullet}${x}`).join("\n"),
     ]
     : [];
-  const commit: (c: ConventionalCommit) => string = options?.emoji
-    ? emoji
-    : (c) => c.summary;
   const blocks = [
     ...title ? [`${markdown.heading}${title}`] : [],
     commits
       .map(conventional)
-      .map((c) => `${markdown.bullet}${commit(c)}`)
+      .map((c) => `${markdown.bullet}${summary(c, options)}`)
       .join("\n") ?? [],
     footer,
   ].flat();
   return `${blocks.join("\n\n")}\n`;
 }
 
-function emoji(commit: ConventionalCommit): string {
+function summary(
+  commit: ConventionalCommit,
+  options: ChangelogOptions | undefined,
+): string {
+  const summary = options?.emoji ? commit.description : commit.summary;
+  const result = options?.github
+    ? summary.replace(/^.*\((#\d+)\)$/, "$1")
+    : summary;
+  return options?.emoji ? emoji(commit, result) : result;
+}
+
+function emoji(commit: ConventionalCommit, summary: string): string {
   const emojis: Record<string, string> = {
     build: "🔧",
     chore: "🧹",
@@ -126,7 +144,7 @@ function emoji(commit: ConventionalCommit): string {
   };
   return [
     emojis[commit.type ?? "unknown"] ?? emojis["unknown"],
-    commit.description,
+    summary,
     ...commit.breaking ? ["💥"] : [],
   ].join(" ");
 }
