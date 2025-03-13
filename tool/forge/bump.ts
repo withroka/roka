@@ -23,6 +23,8 @@
  * }
  * ```
  *
+ * @todo Check if configuration files are dirty before modifying them.
+ *
  * @module bump
  */
 
@@ -162,20 +164,31 @@ async function createPullRequest(
       ...options?.emoji && { emoji: options?.emoji },
     })
   ).join("\n");
-  await repo.git.branches.checkout({ new: branch });
-  await repo.git.config.set({ user: pick(options ?? {}, ["name", "email"]) });
-  await repo.git.index.add([
-    ...packages.map((pkg) => join(pkg.directory, "deno.json")),
-    ...options?.changelog ? [options?.changelog] : [],
-  ]);
-  await repo.git.commits.create(title, { body });
-  let [pr] = await repo.pulls.list({ base, title, closed: false });
-  if (pr) {
-    await repo.git.commits.push({ force: true, branch });
-    pr.update({ body });
-  } else {
-    await repo.git.commits.push({ branch });
-    pr = await repo.pulls.create({ base, title, body, draft: true });
+  try {
+    await repo.git.branches.checkout({ new: branch });
+    await repo.git.config.set({ user: pick(options ?? {}, ["name", "email"]) });
+    await repo.git.index.add([
+      ...packages.map((pkg) => join(pkg.directory, "deno.json")),
+      ...options?.changelog ? [options?.changelog] : [],
+    ]);
+    await repo.git.commits.create(title, { body });
+    let [pr] = await repo.pulls.list({ base, title, closed: false });
+    if (pr) {
+      await repo.git.commits.push({ force: true, branch });
+      pr.update({ body });
+    } else {
+      await repo.git.commits.push({ branch });
+      pr = await repo.pulls.create({
+        base,
+        head: branch,
+        title,
+        body,
+        draft: true,
+      });
+    }
+    return pr;
+  } finally {
+    await repo.git.branches.checkout({ target: base });
+    await repo.git.branches.delete(branch, { force: true });
   }
-  return pr;
 }
