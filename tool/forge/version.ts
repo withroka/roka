@@ -7,7 +7,7 @@
  * const appVersion = await version();
  * ```
  *
- * @module app
+ * @module version
  */
 
 import { PackageError, packageInfo } from "@roka/forge/package";
