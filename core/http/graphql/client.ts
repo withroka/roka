@@ -49,7 +49,7 @@ export interface ClientOptions {
 
 /** A GraphQL paginator that traverses response data to generate pages.
  *
- * A custom paginator is needed by {@linkcode client.queryPaginated} for
+ * A custom paginator is needed by {@linkcode Client.queryPaginated} for
  * nodes it is querying.
  */
 export interface Paginator<Result, Node, Edge, PageInfo> {

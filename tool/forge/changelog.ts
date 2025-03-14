@@ -1,5 +1,5 @@
 /**
- * This module provides the {@linkcode commits} function to generate a
+ * This module provides the {@linkcode changelog} function to generate a
  * changelog for a package using
  * {@link https://www.conventionalcommits.org | Conventional Commits}.
  *

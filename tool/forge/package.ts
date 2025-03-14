@@ -106,7 +106,7 @@ export interface Package {
    *
    * When the package is retrieved with the {@linkcode packageInfo} function,
    * this will be the package directory, unless it is set with the
-   * {@linkcode PackageOptions.root} option.
+   * {@linkcode PackageOptions.root | root} option.
    *
    * The {@linkcode workspace} function will set this to the workspace root.
    */
@@ -272,12 +272,13 @@ export interface CommitOptions {
    * All types are returned by default.
    *
    * Breaking changes whose types are not included are returned by default.
-   * Setting {@linkcode breaking} to `false` will skip these commits.
+   * Setting {@linkcode CommitOptions.breaking | breaking} to `false` will skip
+   * these commits.
    */
   type?: string[];
   /**
    * If `true`, returns only breaking changes. If `false`, breaking changes are
-   * subject to the {@linkcode type} filter.
+   * subject to the {@linkcode CommitOptions.type | type} filter.
    */
   breaking?: boolean;
 }

@@ -32,9 +32,9 @@
  * });
  * ```
  *
- * Finally, "**temp**" objects are real objects that are created and disposed
- * of during the lifetime of a test. The {@linkcode [temp].tempDirectory}
- * function is an example.
+ * Finally, "**temp**" objects are real objects that are disposed automatically
+ * at the end of a test. The {@linkcode [temp].tempDirectory | tempDirectory}
+ * is an example.
  *
  * ```ts
  * import { tempDirectory } from "@roka/testing/temp";
