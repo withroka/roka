@@ -183,7 +183,7 @@ Deno.test("bump() rejects if pull request branch exists locally", async () => {
 });
 
 Deno.test("bump() creates a pull request", async () => {
-  await using remote = await tempRepository({ bare: true });
+  await using remote = await tempRepository();
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
     repo: { clone: remote },
@@ -219,6 +219,21 @@ Deno.test("bump() creates a pull request", async () => {
   );
   assertEquals(await repo.git.branches.current(), current);
   assertEquals(await repo.git.branches.list(), [current]);
+  await remote.branches.checkout({ target: pr.head });
+  const commit = await remote.commits.head();
+  assertExists(commit);
+  assertEquals(commit.author?.name, "bump-name");
+  assertEquals(commit.author?.email, "bump-email");
+  assertEquals(commit.summary, "chore: bump name version");
+  assertEquals(
+    commit.body,
+    [
+      "## name@1.3.0",
+      "",
+      "- fix: force pushed",
+      "- feat: new feature (#42)",
+    ].join("\n"),
+  );
 });
 
 Deno.test("bump() updates pull request", async () => {
