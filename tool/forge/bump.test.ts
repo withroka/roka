@@ -250,7 +250,7 @@ Deno.test("bump() updates pull request", async () => {
   const existing = fakePullRequest({
     repo,
     number: 42,
-    title: "chore: bump name version",
+    title: "chore: bump name to 1.3.0-pre.1+hash",
   });
   repo.pulls.list = async () => await Promise.resolve([existing]);
   const pr = await bump([pkg], {
@@ -262,7 +262,7 @@ Deno.test("bump() updates pull request", async () => {
   });
   assertExists(pr);
   assertEquals(pr.number, 42);
-  assertEquals(pr.title, "chore: bump name version");
+  assertEquals(pr.title, "chore: bump name to 1.3.0");
   assertEquals(
     pr.body,
     [
