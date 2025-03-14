@@ -159,12 +159,12 @@ async function createPullRequest(
   const { repo = await github(options).repos.get({ directory }) } = options ??
     {};
   const base = await repo.git.branches.current();
-  const branch = packages.length === 1
+  const head = packages.length === 1
     ? `${BUMP_BRANCH}-${packages[0]?.name}`
     : BUMP_BRANCH;
   if (!base) throw new PackageError("Cannot determine base branch");
   const title = packages.length === 1
-    ? `chore: bump ${packages[0]?.name} version`
+    ? `chore: bump ${packages[0]?.name} to ${packages[0]?.version}`
     : "chore: bump versions";
   const commitBody = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
@@ -180,22 +180,22 @@ async function createPullRequest(
     })
   ).join("\n");
   try {
-    await repo.git.branches.checkout({ new: branch });
+    await repo.git.branches.checkout({ new: head });
     await repo.git.config.set({ user: pick(options ?? {}, ["name", "email"]) });
     await repo.git.index.add([
       ...packages.map((pkg) => join(pkg.directory, "deno.json")),
       ...options?.changelog ? [options?.changelog] : [],
     ]);
     await repo.git.commits.create(title, { body: commitBody });
-    let [pr] = await repo.pulls.list({ base, title, closed: false });
+    let [pr] = await repo.pulls.list({ base, head, closed: false });
     if (pr) {
-      await repo.git.commits.push({ force: true, branch });
-      pr.update({ body: prBody });
+      await repo.git.commits.push({ force: true, branch: head });
+      pr.update({ title, body: prBody });
     } else {
-      await repo.git.commits.push({ branch });
+      await repo.git.commits.push({ branch: head });
       pr = await repo.pulls.create({
         base,
-        head: branch,
+        head,
         title,
         body: prBody,
         draft: options?.draft ?? false,
@@ -204,6 +204,6 @@ async function createPullRequest(
     return pr;
   } finally {
     await repo.git.branches.checkout({ target: base });
-    await repo.git.branches.delete(branch, { force: true });
+    await repo.git.branches.delete(head, { force: true });
   }
 }

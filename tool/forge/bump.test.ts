@@ -206,7 +206,7 @@ Deno.test("bump() creates a pull request", async () => {
   assertEquals(pr.base, current);
   assertEquals(pr.head, `automated/bump-${pkg.name}`);
   assertEquals(pr.draft, false);
-  assertEquals(pr.title, "chore: bump name version");
+  assertEquals(pr.title, "chore: bump name to 1.3.0");
   assertEquals(
     pr.body,
     [
@@ -224,7 +224,7 @@ Deno.test("bump() creates a pull request", async () => {
   assertExists(commit);
   assertEquals(commit.author?.name, "bump-name");
   assertEquals(commit.author?.email, "bump-email");
-  assertEquals(commit.summary, "chore: bump name version");
+  assertEquals(commit.summary, "chore: bump name to 1.3.0");
   assertEquals(
     commit.body,
     [
@@ -250,7 +250,7 @@ Deno.test("bump() updates pull request", async () => {
   const existing = fakePullRequest({
     repo,
     number: 42,
-    title: "chore: bump name version",
+    title: "chore: bump name to 1.3.0-pre.1+hash",
   });
   repo.pulls.list = async () => await Promise.resolve([existing]);
   const pr = await bump([pkg], {
@@ -262,7 +262,7 @@ Deno.test("bump() updates pull request", async () => {
   });
   assertExists(pr);
   assertEquals(pr.number, 42);
-  assertEquals(pr.title, "chore: bump name version");
+  assertEquals(pr.title, "chore: bump name to 1.3.0");
   assertEquals(
     pr.body,
     [
