@@ -1,3 +1,14 @@
+## http@0.2.0
+
+- 🐛 try re-exporting `request` from default module (#184)
+- 🐛 simpler http export map (#182)
+- 🐛 make `RequestError.status` optional (#119)
+- ♻️ move exported symbols for json and graphql clients their respective submodule paths (#108) 💥
+- ♻️ rename json and graphql client methods (#97) 💥
+- 🐛 never re-export symbols (#95) 💥
+- ✨ option to ignore headers in `fetchMock` (#90)
+- ✨ improved interfaces (#42)
+
 ## async@0.2.0
 
 - ✨ add `pooled` function to `pool` module (#83)
