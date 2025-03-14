@@ -18,7 +18,7 @@
  * }
  * ```
  *
- * This implementation conforms to the version 1.0.0 of the specification.
+ * This implementation adheres to the version 1.0.0 of the specification.
  *
  * @module conventional
  */
