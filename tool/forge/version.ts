@@ -1,6 +1,6 @@
 /**
  * This module provides functionality for applications compiled by `forge` at
- * runtime. Currently, only the {@linkcode version} function is available.
+ * runtime.
  *
  * ```ts
  * import { version } from "@roka/forge/version";
@@ -13,19 +13,20 @@
 import { PackageError, packageInfo } from "@roka/forge/package";
 import { expandGlob } from "@std/fs";
 import { basename, dirname, fromFileUrl } from "@std/path";
+import { parse } from "@std/semver";
 
 /** Options for the {@linkcode version} function. */
 export interface VersionOptions {
   /**
+   * Add release information to the version.
+   * @default {false}
+   */
+  release?: boolean;
+  /**
    * Add build information to the version.
    * @default {false}
    */
-  build?: boolean;
-  /**
-   * Add Deno, v8 and TypeScript versions to the output.
-   * @default {false}
-   */
-  deno?: boolean;
+  target?: boolean;
 }
 
 /**
@@ -49,39 +50,24 @@ export interface VersionOptions {
  * // 1.0.0
  * ```
  *
- * @example Retrieve the version with build information.
+ * @example Retrieve the version with meta information.
  * ```ts
- * await version({ build: true });
- * // 1.0.0 (aarch64-apple-darwin)
- * ```
- *
- * @example Retrieve the Deno version information.
- * ```ts
- * await version({ deno: true });
- * // 1.0.0
- * // deno 2.2.2
- * // v8
- * // typescript 5.7.3
+ * await version({ release: true, target: true });
+ * // 1.0.0 (release, aarch64-apple-darwin)
  * ```
  */
 export async function version(options?: VersionOptions): Promise<string> {
-  return [
-    [
-      await packageVersion(),
-      ...options?.build ? [`(${Deno.build.target})`] : [],
-    ]
-      .join(" "),
-    ...options?.deno
-      ? [
-        `deno ${Deno.version.deno}`,
-        `v8 ${Deno.version.v8}`,
-        `typescript ${Deno.version.typescript}`,
-      ]
+  const version = await versionString();
+  const meta = [
+    ...options?.release
+      ? [parse(version).prerelease?.length ? "pre-release" : "release"]
       : [],
-  ].join("\n");
+    ...options?.target ? [Deno.build.target] : [],
+  ];
+  return `${version}${meta.length ? ` (${meta.join(", ")})` : ""}`;
 }
 
-async function packageVersion(): Promise<string> {
+async function versionString(): Promise<string> {
   try {
     const pkg = await packageInfo();
     return pkg.version;
