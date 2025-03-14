@@ -470,6 +470,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
     .option("--release", "Bump to the next release.", { default: false })
     .option("--changelog=<file:string>", "Update changelog file.")
     .option("--pr", "Create a pull request.", { default: false })
+    .option("--draft", "Create a draft pull request.", { default: false })
     .option("--emoji", "Use emoji for commit changelog.", { default: false })
     .env("GIT_NAME=<name:string>", "Git user name for the bump commit.", {
       prefix: "GIT_",
