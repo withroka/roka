@@ -105,12 +105,17 @@ Deno.test("bump() creates a changelog file", async () => {
     ],
     commits: [
       { summary: "fix(name1): fix bug (#1)" },
-      { summary: "fix(name2): fix bug (#2)" },
+      {
+        summary: [
+          "fix(name2): fix bug, but for some reason use a very",
+          "very long summary that doesn't fit in one line (#2)",
+        ].join(" "),
+      },
     ],
   });
   const root = packages[0]?.root;
   assertExists(root);
-  const changelog = join(root, "changelog.txt");
+  const changelog = join(root, "changelog.md");
   await bump(packages, { release: true, changelog });
   assertEquals(
     await Deno.readTextFile(changelog),
@@ -121,7 +126,8 @@ Deno.test("bump() creates a changelog file", async () => {
       "",
       "## name2@0.0.1",
       "",
-      "- fix(name2): fix bug (#2)",
+      "- fix(name2): fix bug, but for some reason use a very very long summary that",
+      "  doesn't fit in one line (#2)",
       "",
     ].join("\n"),
   );
