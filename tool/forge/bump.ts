@@ -166,11 +166,17 @@ async function createPullRequest(
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} version`
     : "chore: bump versions";
-  const body = packages.map((pkg) =>
+  const commitBody = packages.map((pkg) =>
+    changelog(pkg.changes ?? [], {
+      title: `${pkg.name}@${pkg.version}`,
+      emoji: options?.emoji ?? false,
+    })
+  ).join("\n");
+  const prBody = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
       title: `${pkg.name}@${pkg.version}`,
       github: true,
-      ...options?.emoji && { emoji: options?.emoji },
+      emoji: options?.emoji ?? false,
     })
   ).join("\n");
   try {
@@ -180,18 +186,18 @@ async function createPullRequest(
       ...packages.map((pkg) => join(pkg.directory, "deno.json")),
       ...options?.changelog ? [options?.changelog] : [],
     ]);
-    await repo.git.commits.create(title, { body });
+    await repo.git.commits.create(title, { body: commitBody });
     let [pr] = await repo.pulls.list({ base, title, closed: false });
     if (pr) {
       await repo.git.commits.push({ force: true, branch });
-      pr.update({ body });
+      pr.update({ body: prBody });
     } else {
       await repo.git.commits.push({ branch });
       pr = await repo.pulls.create({
         base,
         head: branch,
         title,
-        body,
+        body: prBody,
         draft: options?.draft ?? false,
       });
     }
