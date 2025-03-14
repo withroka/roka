@@ -38,3 +38,5 @@
  *
  * @module http
  */
+
+export * from "./request.ts";
