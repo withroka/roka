@@ -206,7 +206,7 @@ Deno.test("bump() creates a pull request", async () => {
   assertEquals(pr.base, current);
   assertEquals(pr.head, `automated/bump-${pkg.name}`);
   assertEquals(pr.draft, false);
-  assertEquals(pr.title, "chore: bump name version");
+  assertEquals(pr.title, "chore: bump name to 1.3.0");
   assertEquals(
     pr.body,
     [
@@ -224,7 +224,7 @@ Deno.test("bump() creates a pull request", async () => {
   assertExists(commit);
   assertEquals(commit.author?.name, "bump-name");
   assertEquals(commit.author?.email, "bump-email");
-  assertEquals(commit.summary, "chore: bump name version");
+  assertEquals(commit.summary, "chore: bump name to 1.3.0");
   assertEquals(
     commit.body,
     [
