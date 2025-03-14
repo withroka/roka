@@ -21,9 +21,6 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { changelog } from "@roka/forge/changelog";
-import { compile, targets } from "@roka/forge/compile";
-import { type Package, PackageError } from "@roka/forge/package";
 import { git } from "@roka/git";
 import {
   github,
@@ -33,6 +30,9 @@ import {
 } from "@roka/github";
 import { assertExists } from "@std/assert";
 import { lessOrEqual, parse } from "@std/semver";
+import { changelog } from "./changelog.ts";
+import { compile, targets } from "./compile.ts";
+import { type Package, PackageError } from "./package.ts";
 
 /** Max concurrent calls to GitHub. */
 const GITHUB_CONCURRENCY = { concurrency: 10 };

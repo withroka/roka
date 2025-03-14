@@ -240,19 +240,14 @@ import { colors } from "@cliffy/ansi/colors";
 import { Command, EnumType, ValidationError } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
-import { bump } from "@roka/forge/bump";
-import { changelog } from "@roka/forge/changelog";
-import { compile, targets } from "@roka/forge/compile";
-import {
-  commits,
-  type Package,
-  releases,
-  workspace,
-} from "@roka/forge/package";
-import { release } from "@roka/forge/release";
-import { version } from "@roka/forge/version";
 import type { Repository } from "@roka/github";
 import { join, relative } from "@std/path";
+import { bump } from "./bump.ts";
+import { changelog } from "./changelog.ts";
+import { compile, targets } from "./compile.ts";
+import { commits, type Package, releases, workspace } from "./package.ts";
+import { release } from "./release.ts";
+import { version } from "./version.ts";
 
 const DESCRIPTION = `
   ${colors.bold("🛠️ forge")}

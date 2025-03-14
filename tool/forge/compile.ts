@@ -35,14 +35,10 @@
  */
 
 import { pool } from "@roka/async/pool";
-import {
-  type Package,
-  PackageError,
-  type Permissions,
-} from "@roka/forge/package";
 import { assertExists, assertNotEquals } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
+import { type Package, PackageError, type Permissions } from "./package.ts";
 
 /** Options for the {@linkcode compile} function. */
 export interface CompileOptions {

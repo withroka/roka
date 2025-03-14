@@ -1,6 +1,6 @@
 {
   "name": "@roka/forge",
-  "version": "0.1.0",
+  "version": "0.1.0-pre.33+b4a6a52",
   "exports": {
     ".": "./forge.ts",
     "./bump": "./bump.ts",
