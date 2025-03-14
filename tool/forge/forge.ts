@@ -336,50 +336,37 @@ function listCommand(context: ForgeOptions | undefined) {
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
-      Table.from(
-        packages.map((pkg) => {
-          return [
-            packageRow(pkg),
-            ...releaseRows(pkg, options),
-            ...moduleRows(pkg, options),
-          ];
+      Table.from([
+        ...packages.map((pkg) => {
+          return [packageRow(pkg), ...moduleRows(pkg, options)];
         }).flat(),
-      ).render();
+      ]).render();
     });
 }
 
 function packageRow(pkg: Package): string[] {
+  const releasing = pkg.config.version &&
+    pkg.config.version !== pkg.latest?.version;
   return [
-    `📦 ${pkg.config.name ?? pkg.name}`,
-    ...pkg.config.version !== undefined ? [pkg.version] : [],
+    `${releasing ? "🚨" : "📦"} ${pkg.config.name ?? pkg.name}`,
+    pkg.config.version !== undefined
+      ? (releasing
+        ? `${pkg.latest?.version ?? "0.0.0"} 👉 ${pkg.config.version}`
+        : pkg.version)
+      : "",
   ];
-}
-
-function releaseRows(pkg: Package, { modules = false }): string[][] {
-  if (!pkg.config.version) return [];
-  if (pkg.latest?.version !== pkg.config.version) {
-    const line = pkg.latest
-      ? `  🚨 ${pkg.latest?.version} 👉 ${pkg.config.version}`
-      : `  🚨 ${pkg.config.version}`;
-    return [[], [line], ...modules ? [] : [[]]];
-  }
-  return [];
 }
 
 function moduleRows(pkg: Package, { modules = false }): string[][] {
   if (!modules) return [];
-  const rows = packageModules(pkg)
-    .map(([name, path]) => [`  🧩 ${name}`, path]);
-  return [[], ...rows, []];
-}
-
-function packageModules(pkg: Package): [string, string][] {
   const exports = pkg.config.exports ?? {};
-  const modules = (typeof exports === "string") ? { ".": exports } : exports;
-  return Object.entries(modules)
-    .map((
-      [name, path],
-    ) => [relative(".", name) || "[default]", join(pkg.directory, path)]);
+  const mapping = (typeof exports === "string") ? { ".": exports } : exports;
+  const rows = Object.entries(mapping)
+    .map(([name, path]) => [
+      `  🧩 ${relative(".", name) || "[default]"}`,
+      join(pkg.directory, path),
+    ]);
+  return [[], ...rows, []];
 }
 
 function changelogCommand(context: ForgeOptions | undefined) {
