@@ -1,4 +1,4 @@
-# Roka
+# 🌱 Roka
 
 [![JSR @roka](https://jsr.io/badges/@roka)](https://jsr.io/@roka)
 [![codecov](https://codecov.io/gh/withroka/roka/branch/main/graph/badge.svg)](https://codecov.io/gh/withroka/roka)
@@ -16,24 +16,23 @@ that help streamline product development. It is built with
 
 ## Components
 
-### 🌱 `core`
+### 🧩 core
 
 This is a collection of libraries for common tasks like network requests and
-testing. It’s the backbone of the Roka project. You can use the published
+testing. It’s the backbone of the **Roka** project. You can use the published
 packages independently with Deno. Take a look at the
 [documentation](https://jsr.io/@roka) on JSR for more details.
 
-### ⚒️ `forge`
+### ⚒️ forge
 
-The “**forge**” tool is a command-line application for managing Deno packages
-hosted on GitHub. It can compile binaries, calculate versions, and create GitHub
-releases.
+This is a command-line application for managing Deno packages hosted on GitHub.
+It can compile binaries, calculate versions, and create GitHub releases from
+[Conventional Commits](https://www.conventionalcommits.org). It supports both
+single package repositories and monorepos using
+[workspaces](https://docs.deno.com/runtime/fundamentals/workspaces/). See the
+[documentation](https://jsr.io/@roka/forge) for more details.
 
-The tool makes releases as smooth as stainless steel. It calculates versions
-based on [Conventional Commits](https://www.conventionalcommits.org) and creates
-GitHub releases with compiled assets. Both single package repos and
-[workspace](https://docs.deno.com/runtime/fundamentals/workspaces/)-based
-monorepos are supported.
+## Contributing
 
-See the [documentation](https://jsr.io/@roka/forge) on how to use **forge**, and
-the CI pipelines of this repository for a real-world example.
+Would you like to contribute? That’s wonderful! Please take a look at the
+[contribution guide](.github/CONTRIBUTING.md).
