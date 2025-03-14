@@ -1,3 +1,10 @@
+## forge@0.1.1
+
+- 🐛 `deno fmt` changelog files (#197)
+- 🐛 mention version number in title if bumping a single package (#196)
+- 🐛 use full commit summaries in bump commits (#194)
+- 🐛 create pull requests published by default (#193)
+
 ## http@0.2.1
 
 - 🐛 revert back to the intended export map (#190)
