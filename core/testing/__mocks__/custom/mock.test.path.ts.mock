@@ -1,6 +1,14 @@
 export const mock = {};
 
-mock[`mock() records in custom path > func 1`] =
+mock[`mock() records in relative custom path > func 1`] =
+[
+  {
+    input: [],
+    output: 42,
+  },
+];
+
+mock[`mock() records in absolute custom path > func 1`] =
 [
   {
     input: [],
