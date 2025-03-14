@@ -230,6 +230,7 @@
  *
  * @todo Add documentation for GitHub workflows.
  * @todo Gracefully handle errors in the CLI.
+ * @todo Better output when we are on a pre-release tag.
  *
  * @module forge
  */
