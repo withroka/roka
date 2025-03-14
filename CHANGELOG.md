@@ -1,3 +1,7 @@
+## http@0.2.1
+
+- 🐛 revert back to the intended export map (#190)
+
 ## forge@0.1.0
 
 - 🐛 relative imports for peer dependencies (#187)
