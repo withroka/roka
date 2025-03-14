@@ -234,6 +234,7 @@
  * @module forge
  */
 
+import { colors } from "@cliffy/ansi/colors";
 import { Command, EnumType, ValidationError } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
@@ -250,6 +251,14 @@ import { release } from "@roka/forge/release";
 import { version } from "@roka/forge/version";
 import type { Repository } from "@roka/github";
 import { join, relative } from "@std/path";
+
+const DESCRIPTION = `
+  ${colors.bold("🛠️ forge")}
+
+  A Deno monorepo tool that manages packages on GitHub and JSR, including
+  versioning, releases, and compilation. It works on a git repository using
+  Conventional Commits.
+`;
 
 /**
  * Options for the {@link forge} function.
@@ -275,7 +284,7 @@ export async function forge(
   const cmd = new Command()
     .name("forge")
     .version(await version({ build: true, deno: true }))
-    .description("Manage packages.")
+    .description(DESCRIPTION)
     .example("forge", "List all packages.")
     .example("forge list 'core/*'", "List packages in the 'core' directory.")
     .example("forge compile --install", "Compile and install all binaries.")
