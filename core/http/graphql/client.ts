@@ -4,7 +4,7 @@
  * clients.
  *
  * ```ts
- * import { client } from "@roka/http/graphql/client";
+ * import { client } from "@roka/http/graphql";
  * async function usage() {
  *   const api = client("https://api.github.com/graphql");
  *   const query = await Deno.readTextFile("repo.graphql");
@@ -72,7 +72,7 @@ export interface Paginator<Result, Node, Edge, PageInfo> {
  *
  * @example Make a GraphQL query.
  * ```ts
- * import { client } from "@roka/http/graphql/client";
+ * import { client } from "@roka/http/graphql";
  *
  * interface Repository {
  *   owner: string;
@@ -96,7 +96,7 @@ export interface Paginator<Result, Node, Edge, PageInfo> {
  *
  * @example Make a paginated GraphQL query.
  * ```ts
- * import { client } from "@roka/http/graphql/client";
+ * import { client } from "@roka/http/graphql";
  *
  * interface Issue {
  *  number: number;

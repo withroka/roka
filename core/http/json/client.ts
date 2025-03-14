@@ -4,7 +4,7 @@
  * API clients.
  *
  * ```ts
- * import { client } from "@roka/http/json/client";
+ * import { client } from "@roka/http/json";
  * async function usage() {
  *   interface Issue { number: number; state: string; };
  *   const api = client("https://api.github.com");
@@ -49,7 +49,7 @@ export interface ClientOptions {
  *
  * @example Make a JSON request.
  * ```ts
- * import { client } from "@roka/http/json/client";
+ * import { client } from "@roka/http/json";
  * async function usage() {
  *   interface Issue { number: number; state: string; };
  *   const api = client("https://api.github.com");
@@ -59,7 +59,7 @@ export interface ClientOptions {
  *
  * @example Make an authenticated JSON request.
  * ```ts
- * import { client } from "@roka/http/json/client";
+ * import { client } from "@roka/http/json";
  * async function usage() {
  *   interface Issue { number: number; state: string; };
  *   const api = client("https://api.github.com", {
