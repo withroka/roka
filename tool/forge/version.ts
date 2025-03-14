@@ -10,10 +10,10 @@
  * @module version
  */
 
-import { PackageError, packageInfo } from "@roka/forge/package";
 import { expandGlob } from "@std/fs";
 import { basename, dirname, fromFileUrl } from "@std/path";
 import { parse } from "@std/semver";
+import { PackageError, packageInfo } from "./package.ts";
 
 /** Options for the {@linkcode version} function. */
 export interface VersionOptions {

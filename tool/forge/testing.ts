@@ -21,14 +21,14 @@
  * @module testing
  */
 
+import { tempRepository, type TempRepositoryOptions } from "@roka/git/testing";
+import { join } from "@std/path";
 import {
   type Config,
   type Package,
   packageInfo,
   workspace,
-} from "@roka/forge/package";
-import { tempRepository, type TempRepositoryOptions } from "@roka/git/testing";
-import { join } from "@std/path";
+} from "./package.ts";
 
 /** Options for the {@linkcode tempPackage} function. */
 export interface TempPackageOptions {

@@ -29,13 +29,13 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { changelog } from "@roka/forge/changelog";
-import { type Package, PackageError } from "@roka/forge/package";
 import { github, type PullRequest, type Repository } from "@roka/github";
 import { assertExists } from "@std/assert";
 import { pick } from "@std/collections";
 import { common, join } from "@std/path";
 import { format, parse } from "@std/semver";
+import { changelog } from "./changelog.ts";
+import { type Package, PackageError } from "./package.ts";
 
 const BUMP_BRANCH = "automated/bump";
 
