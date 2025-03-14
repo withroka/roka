@@ -232,7 +232,7 @@ export interface WorkspaceOptions {
    * Directory to return packages from.
    * @default {["."]}
    */
-  directory?: string;
+  root?: string;
   /**
    * Filter packages by name or directory.
    *
@@ -335,23 +335,19 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
-  const { directory = ".", filters = [] } = options ?? {};
+  const { root = ".", filters = [] } = options ?? {};
   const patterns = filters.map((f) => globToRegExp(f));
-  const pkg = await packageInfo({ directory, ...options });
-  const packages = pkg.config.workspace === undefined
-    ? [pkg]
-    : await Promise.all(pkg.config.workspace.map(async (child) => {
-      return await packageInfo({
-        directory: join(pkg.directory, child),
-        root: pkg.directory,
-      });
+  const rootPackage = await packageInfo({ directory: root, ...options });
+  const packages = rootPackage.config.workspace === undefined
+    ? [rootPackage]
+    : await Promise.all(rootPackage.config.workspace.map(async (child) => {
+      return await packageInfo({ directory: join(root, child), root });
     }));
   return packages
     .filter((pkg) =>
       patterns.length === 0 ||
       patterns.some((p) =>
-        pkg.name.match(p) ||
-        relative(directory, pkg.directory).match(p)
+        pkg.name.match(p) || relative(root, pkg.directory).match(p)
       )
     );
 }
@@ -448,7 +444,7 @@ export async function commits(
   pkg: Package,
   options?: CommitOptions,
 ): Promise<ConventionalCommit[]> {
-  const log = await git({ cwd: pkg.directory }).commits.log(
+  const log = await git({ cwd: pkg.root }).commits.log(
     options?.range ? { range: options?.range } : {},
   );
   return log

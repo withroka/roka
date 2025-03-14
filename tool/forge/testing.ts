@@ -163,7 +163,7 @@ export async function tempWorkspace(
       memberDirectory(config, index)
     ),
   });
-  const packages = await workspace({ directory: repo.path() });
+  const packages = await workspace({ root: repo.path() });
   return Object.assign(packages, {
     [Symbol.asyncDispose]: repo[Symbol.asyncDispose],
   });
@@ -182,7 +182,7 @@ export async function tempWorkspace(
 export async function unstableTestImports(): Promise<Record<string, string>> {
   await Promise.resolve();
   const root = await packageInfo({ directory: "." });
-  const packages = await workspace({ directory: root.directory });
+  const packages = await workspace({ root: root.directory });
   const imports: Record<string, string> = {};
   packages.forEach((pkg) => {
     const exports = pkg.config.exports === undefined
