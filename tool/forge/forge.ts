@@ -207,7 +207,7 @@
  * forge --version
  * ```
  * ```
- * forge 0.1.0 (aarch64-apple-darwin)
+ * forge 0.1.0 (release, aarch64-apple-darwin)
  * deno 2.2.3
  * v8 13.4.114.11-rusty
  * typescript 5.7.3
@@ -283,7 +283,10 @@ export async function forge(
   let verbose = false;
   const cmd = new Command()
     .name("forge")
-    .version(await version({ build: true, deno: true }))
+    .version(await version({ release: true, target: true }))
+    .meta("deno", Deno.version.deno)
+    .meta("v8", Deno.version.v8)
+    .meta("typescript", Deno.version.typescript)
     .description(DESCRIPTION)
     .example("forge", "List all packages.")
     .example("forge list 'core/*'", "List packages in the 'core' directory.")
