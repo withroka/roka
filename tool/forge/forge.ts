@@ -360,7 +360,7 @@ function moduleRows(pkg: Package, { modules = false }): string[][] {
   const mapping = (typeof exports === "string") ? { ".": exports } : exports;
   const rows = Object.entries(mapping)
     .map(([name, path]) => [
-      `  🧩 ${relative(".", name) || "[default]"}`,
+      `  🧩 ${relative(".", name) || "(default)"}`,
       join(pkg.directory, path),
     ]);
   return [[], ...rows, []];
