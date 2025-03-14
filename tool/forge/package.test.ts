@@ -12,6 +12,7 @@ import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing/temp";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
+import { join } from "@std/path/join";
 
 Deno.test("packageInfo() rejects non-Deno package", async () => {
   await using repo = await tempRepository();
@@ -286,12 +287,12 @@ Deno.test("workspace() returns simple package", async () => {
   });
   const [pkg] = temp;
   assertExists(pkg);
-  const directory = pkg.root;
-  assertEquals(await workspace({ directory }), [{
+  const root = pkg.root;
+  assertEquals(await workspace({ root }), [{
     name: "pkg",
     version: "0.0.0",
-    directory: pkg.directory,
-    root: directory,
+    directory: join(root, "pkg"),
+    root,
     config: { name: "pkg" },
   }]);
 });
@@ -308,24 +309,24 @@ Deno.test("workspace() returns monorepo packages", async () => {
   assertExists(pkg1);
   assertExists(pkg2);
   assertExists(pkg3);
-  const directory = pkg1.root;
-  assertEquals(await workspace({ directory }), [{
+  const root = pkg1.root;
+  assertEquals(await workspace({ root }), [{
     name: "pkg1",
     version: "0.1.0",
-    directory: pkg1.directory,
-    root: directory,
+    directory: join(root, "pkg1"),
+    root,
     config: { name: "pkg1", version: "0.1.0" },
   }, {
     name: "pkg2",
     version: "0.0.0",
-    directory: pkg2.directory,
-    root: directory,
+    directory: join(root, "pkg2"),
+    root,
     config: { name: "pkg2" },
   }, {
     name: "pkg3",
     version: "0.0.0",
-    directory: pkg3.directory,
-    root: directory,
+    directory: join(root, "pkg2/pkg3"),
+    root,
     config: { name: "pkg2/pkg3" },
   }]);
 });
@@ -339,8 +340,8 @@ Deno.test("workspace() does not return nested workspace packages", async () => {
   });
   const [pkg1, pkg2] = temp;
   assertExists(pkg1);
-  const directory = pkg1.root;
-  assertEquals(await workspace({ directory }), [pkg1, pkg2]);
+  const root = pkg1.root;
+  assertEquals(await workspace({ root }), [pkg1, pkg2]);
 });
 
 Deno.test("workspace() filters packages", async () => {
@@ -351,22 +352,22 @@ Deno.test("workspace() filters packages", async () => {
       { name: "dir2/pkg3" },
     ],
   });
-  const [p1, p2, p3] = temp;
-  assertExists(p1);
-  assertExists(p2);
-  assertExists(p3);
-  const directory = p1.root;
-  assertEquals(await workspace({ directory, filters: ["pkg1"] }), [p1]);
-  assertEquals(await workspace({ directory, filters: ["pkg2"] }), [p2]);
-  assertEquals(await workspace({ directory, filters: ["*1"] }), [p1]);
-  assertEquals(await workspace({ directory, filters: ["pkg*"] }), [p1, p2, p3]);
-  assertEquals(await workspace({ directory, filters: ["dir1/pkg1"] }), [p1]);
-  assertEquals(await workspace({ directory, filters: ["*1/*"] }), [p1]);
-  assertEquals(await workspace({ directory, filters: ["*2/pkg?"] }), [p2, p3]);
-  assertEquals(await workspace({ directory, filters: ["dir2/*"] }), [p2, p3]);
-  assertEquals(await workspace({ directory, filters: ["*/pkg2"] }), [p2]);
-  assertEquals(await workspace({ directory, filters: ["none*"] }), []);
-  assertEquals(await workspace({ directory, filters: ["*2", "*3"] }), [p2, p3]);
+  const [pkg1, pkg2, pkg3] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  assertExists(pkg3);
+  const root = pkg1.root;
+  assertEquals(await workspace({ root, filters: ["pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filters: ["*1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["pk*"] }), [pkg1, pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["dir1/pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["*1/*"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["*2/pkg?"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["dir2/*"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["*/pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filters: ["none*"] }), []);
+  assertEquals(await workspace({ root, filters: ["*2", "*3"] }), [pkg2, pkg3]);
 });
 
 Deno.test("workspace() matches commit scope", async () => {
@@ -384,22 +385,22 @@ Deno.test("workspace() matches commit scope", async () => {
   const [pkg1, pkg2] = temp;
   assertExists(pkg1);
   assertExists(pkg2);
-  const directory = pkg1.root;
-  const [commit2, commit1] = await git({ cwd: pkg1.directory }).commits.log();
+  const root = pkg1.root;
+  const [commit2, commit1] = await git({ cwd: root }).commits.log();
   assertExists(commit1);
   assertExists(commit2);
-  assertEquals(await workspace({ directory }), [{
+  assertEquals(await workspace({ root }), [{
     name: "pkg1",
     version: `0.0.1-pre.1+${commit1.short}`,
-    directory: pkg1.directory,
-    root: directory,
+    directory: join(root, "pkg1"),
+    root,
     config: { name: "pkg1" },
     changes: [conventional(commit1)],
   }, {
     name: "pkg2",
     version: `0.0.1-pre.1+${commit2.short}`,
-    directory: pkg2.directory,
-    root: directory,
+    directory: join(root, "pkg2"),
+    root,
     config: { name: "pkg2" },
     changes: [conventional(commit2)],
   }]);
@@ -488,7 +489,7 @@ Deno.test("commits() returns all history", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [docs, fix, feat] = await git({ cwd: pkg.directory }).commits.log();
+  const [docs, fix, feat] = await git({ cwd: pkg.root }).commits.log();
   assertExists(docs);
   assertExists(fix);
   assertExists(feat);
@@ -508,7 +509,7 @@ Deno.test("commits() can return from a range", async () => {
     ],
   });
   assertExists(pkg.latest);
-  const [_, fix, feat] = await git({ cwd: pkg.directory }).commits.log();
+  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
   assertExists(fix);
   assertExists(feat);
   assertEquals(
@@ -526,7 +527,7 @@ Deno.test("commits() filters by type", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [_, fix, feat] = await git({ cwd: pkg.directory }).commits.log();
+  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
   assertExists(fix);
   assertExists(feat);
   assertEquals(
@@ -544,7 +545,7 @@ Deno.test("commits() includes breaking changes", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [docs, fix] = await git({ cwd: pkg.directory }).commits.log();
+  const [docs, fix] = await git({ cwd: pkg.root }).commits.log();
   assertExists(docs);
   assertExists(fix);
   assertEquals(
@@ -562,7 +563,7 @@ Deno.test("commits() can filter breaking changes", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [_, fix] = await git({ cwd: pkg.directory }).commits.log();
+  const [_, fix] = await git({ cwd: pkg.root }).commits.log();
   assertExists(fix);
   assertEquals(
     await commits(pkg, { breaking: true }),
@@ -579,7 +580,7 @@ Deno.test("commits() can filter non-breaking changes", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [docs] = await git({ cwd: pkg.directory }).commits.log();
+  const [docs] = await git({ cwd: pkg.root }).commits.log();
   assertExists(docs);
   assertEquals(
     await commits(pkg, { type: ["docs"], breaking: false }),

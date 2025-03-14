@@ -528,7 +528,7 @@ async function filter(
   options: ForgeOptions | undefined,
 ): Promise<Package[]> {
   return await workspace({
-    ...options?.repo && { directory: options?.repo.git.path() },
+    ...options?.repo && { root: options?.repo.git.path() },
     filters,
   });
 }

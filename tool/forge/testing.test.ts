@@ -3,6 +3,7 @@ import { git } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
 import { omit } from "@std/collections";
+import { join } from "@std/path/join";
 
 Deno.test("tempPackage() creates a disposable package", async () => {
   let directory: string;
@@ -31,8 +32,8 @@ Deno.test("tempPackage() creates package in a repository", async () => {
       { summary: "fix: bug" },
     ],
   });
-  const repo = git({ cwd: pkg.directory });
-  const commit = await git({ cwd: pkg.directory }).commits.head();
+  const repo = git({ cwd: pkg.root });
+  const commit = await git({ cwd: pkg.root }).commits.head();
   assertExists(commit);
   assertEquals(omit(pkg, [Symbol.asyncDispose]), {
     name: "name",
@@ -46,24 +47,24 @@ Deno.test("tempPackage() creates package in a repository", async () => {
 });
 
 Deno.test("tempWorkspace() creates a disposable workspace", async () => {
-  let directory: string;
+  let root: string;
   {
     await using packages = await tempWorkspace({
       configs: [{ name: "@scope/name", version: "1.2.3" }],
     });
     const [pkg] = packages;
     assertExists(pkg);
-    directory = pkg.root;
+    root = pkg.root;
     assertEquals([...packages], [{
       name: "name",
       version: `1.2.3`,
-      directory: pkg.directory,
-      root: directory,
+      directory: join(root, "name"),
+      root,
       config: { name: "@scope/name", version: "1.2.3" },
     }]);
-    await Deno.stat(directory);
+    await Deno.stat(root);
   }
-  await assertRejects(() => Deno.stat(directory));
+  await assertRejects(() => Deno.stat(root));
 });
 
 Deno.test("tempWorkspace() creates workspace in a repository", async () => {
@@ -83,7 +84,7 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
   assertExists(pkg1);
   assertExists(pkg2);
   assertExists(pkg3);
-  const directory = pkg1.root;
+  const root = pkg1.root;
   const repo = git({ cwd: pkg1.root });
   const [commit3, commit2, commit1] = await repo.commits.log();
   assertExists(commit1);
@@ -92,22 +93,22 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
   assertEquals([...packages], [{
     name: "name1",
     version: `0.0.1-pre.1+${commit1.short}`,
-    directory: pkg1.directory,
-    root: directory,
+    directory: join(root, "name1"),
+    root,
     config: { name: "@scope/name1" },
     changes: [conventional(commit1)],
   }, {
     name: "name2",
     version: `0.1.0-pre.1+${commit2.short}`,
-    directory: pkg2.directory,
-    root: directory,
+    directory: join(root, "name2"),
+    root,
     config: { name: "@scope/name2" },
     changes: [conventional(commit2)],
   }, {
     name: "name3",
     version: `0.1.0-pre.1+${commit3.short}`,
-    directory: pkg3.directory,
-    root: directory,
+    directory: join(root, "name3"),
+    root,
     config: { name: "@scope/name3" },
     changes: [conventional(commit3)],
   }]);
