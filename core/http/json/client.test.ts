@@ -1,4 +1,4 @@
-import { client } from "@roka/http/json";
+import { client } from "@roka/http/json/client";
 import { mockFetch } from "@roka/http/testing";
 import { assertSnapshot } from "@std/testing/snapshot";
 

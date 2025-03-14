@@ -4,7 +4,7 @@
  * clients.
  *
  * ```ts
- * import { client } from "@roka/http/graphql";
+ * import { client } from "@roka/http/graphql/client";
  * async function usage() {
  *   const api = client("https://api.github.com/graphql");
  *   const query = await Deno.readTextFile("repo.graphql");
@@ -17,7 +17,6 @@
  * @module graphql
  */
 
-import { RequestError } from "@roka/http";
 import {
   type AnyVariables,
   cacheExchange,
@@ -25,6 +24,7 @@ import {
   fetchExchange,
 } from "@urql/core";
 import { retryExchange } from "@urql/exchange-retry";
+import { RequestError } from "../request.ts";
 
 /** A GraphQL client returned by the {@linkcode client} function. */
 export interface Client {
@@ -72,7 +72,7 @@ export interface Paginator<Result, Node, Edge, PageInfo> {
  *
  * @example Make a GraphQL query.
  * ```ts
- * import { client } from "@roka/http/graphql";
+ * import { client } from "@roka/http/graphql/client";
  *
  * interface Repository {
  *   owner: string;
@@ -96,7 +96,7 @@ export interface Paginator<Result, Node, Edge, PageInfo> {
  *
  * @example Make a paginated GraphQL query.
  * ```ts
- * import { client } from "@roka/http/graphql";
+ * import { client } from "@roka/http/graphql/client";
  *
  * interface Issue {
  *  number: number;

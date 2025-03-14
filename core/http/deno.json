@@ -3,8 +3,8 @@
   "version": "0.2.0",
   "exports": {
     ".": "./http.ts",
-    "./json": "./json.ts",
-    "./graphql": "./graphql.ts",
+    "./json/client": "./json/client.ts",
+    "./graphql/client": "./graphql/client.ts",
     "./request": "./request.ts",
     "./testing": "./testing.ts"
   }

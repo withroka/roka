@@ -22,7 +22,7 @@
  * abstractions for making JSON and GraphQL requests, respectively.
  *
  * ```ts
- * import { client } from "@roka/http/json";
+ * import { client } from "@roka/http/json/client";
  * async function usage() {
  *   const api = client("https://www.example.com");
  *   const data = await api.get<{ id: number; }>("/api/path");
@@ -32,11 +32,9 @@
  * ## Modules
  *
  *  -  {@link [request]}: Make simple HTTP requests.
- *  -  {@link [json]}: Make JSON requests.
- *  -  {@link [graphql]}: Make GraphQL requests.
+ *  -  {@link [json/client]}: Make JSON requests.
+ *  -  {@link [graphql/client]}: Make GraphQL requests.
  *  -  {@link [testing]}: Test with mock requests.
  *
  * @module http
  */
-
-export * from "./request.ts";
