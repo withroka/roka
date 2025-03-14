@@ -220,13 +220,13 @@
  * This library also offers programmatic functionality through the following
  * modules:
  *
- *  -  {@link [package]}: Retrieve package information.
+ *  -  {@link [bump]}: Bump package versions.
  *  -  {@link [changelog]}: Generate changelogs.
  *  -  {@link [compile]}: Create binary executables.
- *  -  {@link [bump]}: Bump package versions.
+ *  -  {@link [package]}: Retrieve package information.
  *  -  {@link [release]}: Create GitHub releases.
- *  -  {@link [version]}: Provide version from compiled binaries.
  *  -  {@link [testing]}: Write tests for **forge**.
+ *  -  {@link [version]}: Provide version from compiled binaries.
  *
  * @todo Add documentation for GitHub workflows.
  * @todo Gracefully handle errors in the CLI.
@@ -339,31 +339,35 @@ function listCommand(context?: ForgeOptions | undefined) {
       Table
         .from(
           packages.map((pkg) => {
-            const modules = packageModules(pkg, options);
             return [
               [
-                `📦 ${pkg.config.name ?? pkg.name}`,
+                "📦",
+                pkg.config.name ?? pkg.name,
                 pkg.config.version !== undefined ? pkg.version : undefined,
                 ...(pkg.latest?.version !== pkg.config.version)
                   ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
                   : [],
               ],
-              ...modules.map((module) => [`   ${module}`]),
+              ...options?.modules
+                ? [
+                  [],
+                  ...modules(pkg).map((x) => [undefined, `🧩 ${x[0]}`, x[1]]),
+                  [],
+                ]
+                : [],
             ];
           }).flat(),
         ).render();
     });
 }
 
-function packageModules(pkg: Package, { modules = false }): string[] {
-  if (!pkg.config.name) return [];
-  const name = pkg.config.name;
-  if (!modules) return [];
+function modules(pkg: Package): [string, string][] {
   const exports = pkg.config.exports ?? {};
-  if (typeof exports === "string") return [];
-  return Object.keys(exports)
-    .map((key) => join(name, relative(".", key)))
-    .filter((module) => module !== name);
+  const modules = (typeof exports === "string") ? { ".": exports } : exports;
+  return Object.entries(modules)
+    .map((
+      [name, path],
+    ) => [relative(".", name) || "[default]", join(pkg.directory, path)]);
 }
 
 function changelogCommand(context?: ForgeOptions | undefined) {
@@ -451,7 +455,7 @@ function compileCommand(targets: string[], context?: ForgeOptions | undefined) {
           console.log(`📦 Compiled ${pkg.name}`);
           console.log();
           artifacts.forEach((artifact) => console.log("  🏺", artifact));
-          if (options.install) console.log(`  🧩 Installed ${pkg.name}`);
+          if (options.install) console.log(`  💾 Installed ${pkg.name}`);
           console.log();
         },
         options,
