@@ -1,4 +1,4 @@
-import { client } from "@roka/http/graphql/client";
+import { client } from "@roka/http/graphql";
 import { mockFetch } from "@roka/http/testing";
 import { assertSnapshot } from "@std/testing/snapshot";
 
