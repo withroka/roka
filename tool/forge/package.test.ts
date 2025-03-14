@@ -12,7 +12,7 @@ import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing/temp";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
-import { join } from "@std/path/join";
+import { join } from "@std/path";
 
 Deno.test("packageInfo() rejects non-Deno package", async () => {
   await using repo = await tempRepository();

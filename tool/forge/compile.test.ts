@@ -1,6 +1,7 @@
 import { compile } from "@roka/forge/compile";
 import { PackageError } from "@roka/forge/package";
 import { tempPackage, unstableTestImports } from "@roka/forge/testing";
+import { tempDirectory } from "@roka/testing/temp";
 import {
   assertEquals,
   assertExists,
@@ -8,7 +9,6 @@ import {
   assertRejects,
 } from "@std/assert";
 import { basename, dirname, join } from "@std/path";
-import { tempDirectory } from "../../core/testing/temp.ts";
 
 Deno.test("compile() rejects package without compile config", async () => {
   await using pkg = await tempPackage({

@@ -6,8 +6,7 @@ import { tempRepository } from "@roka/git/testing";
 import { fakeRepository } from "@roka/github/testing";
 import { fakeConsole } from "@roka/testing/fake";
 import { assertEquals, assertExists } from "@std/assert";
-import { join } from "@std/path";
-import { common } from "@std/path/common";
+import { common, join } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
 
 const WORKSPACE: TempWorkspaceOptions = {
