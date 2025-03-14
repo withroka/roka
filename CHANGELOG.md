@@ -1,3 +1,39 @@
+## forge@0.1.0
+
+- 🐛 relative imports for peer dependencies (#187)
+- 🐛 fix module name in docs (#186)
+- ✨ cleaner release warning (#172)
+- 🐛 nicer output for `forge list` (#167)
+- 🐛 `version()` returns single line string (#165)
+- ✨ add description text to `forge --help` (#163)
+- 🐛 branch hygiene for bump (#155)
+- ✨ refined workflows (#150)
+- ✨ add support for target architectures in compile config (#146)
+- 🐛 handle pre-releases (#144)
+- 🐛 fail early for invalid package version (#142)
+- ✨ `testing` objects can initialize their git repositories (#141)
+- ✨ better support for simple repos (#140)
+- ✨ cleaner error output (#138)
+- 🐛 simpler error messages with `cause` (#136)
+- ✨ prune release flow (#131)
+- ✨ changelog generation (#130)
+- 🐛 skip commit types that are not fixes or features (#127)
+- ✨ simplify `forge` interfaces (#126)
+- ✨ add examples to CLI help (#109)
+- ♻️ rename `app` module to `version` to match its exported symbol (#105) 💥
+- 🐛 rename `Package.module` to `Package.name` (#103) 💥
+- ✨ install message (#102)
+- 🐛 do not export the upload symbol (#101) 💥
+- ✨ `forge list --modules` (#87)
+- ✨ add filtering to `workspace()` (#78)
+- 🐛 simplify `workspace()` options to use a single directory parameter (#77)
+- 🐛 `workspace()` returns leaf packages only (#76)
+- ✨ options for `version` (#67)
+- ✨ allow permission prompts (#66)
+- ✨ expose listing as a separate command (#65)
+- 🐛 filter packages to release (#63)
+- ✨ combine all scripts into one (#29)
+
 ## http@0.2.0
 
 - 🐛 try re-exporting `request` from default module (#184)
