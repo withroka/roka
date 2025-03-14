@@ -42,18 +42,48 @@ Deno.test("fakeConsole() implements spy like interface", () => {
 
 Deno.test("fakeConsole() captures multiple calls", () => {
   using console = fakeConsole();
-  console.debug("First!");
-  console.debug("Second!");
+  console.debug("first");
+  console.debug("second");
   assertEquals(console.calls, [
-    { level: "debug", data: ["First!"] },
-    { level: "debug", data: ["Second!"] },
+    { level: "debug", data: ["first"] },
+    { level: "debug", data: ["second"] },
   ]);
 });
 
 Deno.test("fakeConsole() captures multiple arguments", () => {
   using console = fakeConsole();
-  console.debug("First!", "Second!");
+  console.debug("first", "second");
   assertEquals(console.calls, [
-    { level: "debug", data: ["First!", "Second!"] },
+    { level: "debug", data: ["first", "second"] },
   ]);
+});
+
+Deno.test("fakeConsole().output() formats captured arguments", () => {
+  using console = fakeConsole();
+  console.debug("first", "second");
+  assertEquals(console.output(), "first second");
+});
+
+Deno.test("fakeConsole().output() can filter by level", () => {
+  using console = fakeConsole();
+  console.info("first");
+  console.debug("second");
+  assertEquals(console.output({ level: "info" }), "first");
+  assertEquals(console.output({ level: "debug" }), "second");
+  assertEquals(console.output({ level: "error" }), "");
+});
+
+Deno.test("fakeConsole().output() can trim line ends", () => {
+  using console = fakeConsole();
+  console.debug("first", "second", " ");
+  assertEquals(console.output({ trimEnd: false }), "first second  ");
+  assertEquals(console.output({ trimEnd: true }), "first second");
+});
+
+Deno.test("fakeConsole().output() can wrap output", () => {
+  using console = fakeConsole();
+  console.info("first");
+  console.debug("second");
+  assertEquals(console.output({ wrap: "\n" }), "\nfirst\nsecond\n");
+  assertEquals(console.output({ wrap: "'" }), "'first\nsecond'");
 });
