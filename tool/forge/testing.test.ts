@@ -46,6 +46,12 @@ Deno.test("tempPackage() creates package in a repository", async () => {
   });
 });
 
+Deno.test("tempPackage() creates a package with no config", async () => {
+  await using pkg = await tempPackage();
+  assertEquals(pkg.version, "0.0.0");
+  assertEquals(pkg.config, {});
+});
+
 Deno.test("tempWorkspace() creates a disposable workspace", async () => {
   let root: string;
   {
@@ -112,4 +118,17 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
     config: { name: "@scope/name3" },
     changes: [conventional(commit3)],
   }]);
+});
+
+Deno.test("tempWorkspace() creates workspace a nameless package", async () => {
+  await using packages = await tempWorkspace({ configs: [{}] });
+  const [pkg] = packages;
+  assertExists(pkg);
+  assertEquals(pkg.version, "0.0.0");
+  assertEquals(pkg.config, {});
+});
+
+Deno.test("tempWorkspace() creates workspace with no packages", async () => {
+  await using packages = await tempWorkspace({});
+  assertEquals([...packages], []);
 });
