@@ -87,6 +87,6 @@ for (const test of TESTS) {
         return line;
       });
     });
-    await assertSnapshot(t, console.calls);
+    await assertSnapshot(t, console.output({ trimEnd: true, wrap: "\n" }));
   });
 }
