@@ -18,12 +18,7 @@
  * }
  * ```
  *
- * This implementation conforms to the version 1.0.0 of the specification,
- * with the following addition:
- *
- * - `BREAKING-CHANGE` footer from any
- *   {@link https://git-scm.com/docs/git-interpret-trailers | git trailer}
- *   is accepted.
+ * This implementation adheres to the version 1.0.0 of the specification.
  *
  * @module conventional
  */
