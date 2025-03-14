@@ -75,9 +75,11 @@ Deno.test("fakeConsole().output() can filter by level", () => {
 
 Deno.test("fakeConsole().output() can trim line ends", () => {
   using console = fakeConsole();
-  console.debug("first", "second", " ");
-  assertEquals(console.output({ trimEnd: false }), "first second  ");
-  assertEquals(console.output({ trimEnd: true }), "first second");
+  console.info("first ");
+  console.debug("second  \n ");
+  console.log();
+  assertEquals(console.output({ trimEnd: false }), "first \nsecond  \n \n");
+  assertEquals(console.output({ trimEnd: true }), "first\nsecond\n\n");
 });
 
 Deno.test("fakeConsole().output() can wrap output", () => {

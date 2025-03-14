@@ -44,7 +44,7 @@ export interface FakeConsole extends Disposable {
 export interface FakeConsoleOutputOptions {
   /** Filter for the log level of the output. */
   level?: "debug" | "log" | "info" | "warn" | "error";
-  /** Trim the output on the right side before returning it. */
+  /** Trim horizontal whitespace from output lines. */
   trimEnd?: boolean;
   /** Wrap the output with a string on both sides before returning it. */
   wrap?: string;
@@ -135,7 +135,9 @@ export function fakeConsole(): FakeConsole {
       const output = calls
         .filter((call) => !options?.level || call.level === options?.level)
         .map((call) => call.data.map((x) => `${x}`).join(" "))
-        .map((line) => options?.trimEnd ? line.trimEnd() : line)
+        .join("\n").split("\n").map((line) =>
+          options?.trimEnd ? line.replace(/[^\S\r\n]+$/, "") : line
+        )
         .join("\n");
       return options?.wrap ? `${options.wrap}${output}${options.wrap}` : output;
     },

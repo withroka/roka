@@ -3,9 +3,9 @@ export const snapshot = {};
 snapshot[`forge list 1`] = `
 "
 📦 @scope/name1     1.0.0               🚨       👉 1.0.0
-📦 @scope/name2     2.1.0-pre.1+<hash>                  
+📦 @scope/name2     2.1.0-pre.1+<hash>
 📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
-📦 @scope/name4     4.0.0                                
+📦 @scope/name4     4.0.0
 📦 @scope/dir/name5
 "
 `;
@@ -13,7 +13,7 @@ snapshot[`forge list 1`] = `
 snapshot[`forge list --modules name1 name2 1`] = `
 "
 📦 @scope/name1      1.0.0               🚨  👉 1.0.0
-   @scope/name1/main                                 
+   @scope/name1/main
 📦 @scope/name2      2.1.0-pre.1+<hash>
 "
 `;
@@ -21,9 +21,9 @@ snapshot[`forge list --modules name1 name2 1`] = `
 snapshot[`forge list name* 1`] = `
 "
 📦 @scope/name1     1.0.0               🚨       👉 1.0.0
-📦 @scope/name2     2.1.0-pre.1+<hash>                  
+📦 @scope/name2     2.1.0-pre.1+<hash>
 📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
-📦 @scope/name4     4.0.0                                
+📦 @scope/name4     4.0.0
 📦 @scope/dir/name5
 "
 `;
@@ -39,15 +39,19 @@ snapshot[`forge changelog 1`] = `
 🏷️  name1@1.0.0
 
   fix(name1): bug
+
 🏷️  name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
+
 🏷️  name3@3.0.0
 
   style(name3)!:tabs over spaces
+
 🏷️  name4@4.0.0
 
   docs(name4): fix typo
+
 "
 `;
 
@@ -56,15 +60,19 @@ snapshot[`forge changelog --all --emoji 1`] = `
 🏷️  name1@1.0.0
 
   🐛 bug
+
 🏷️  name2@2.1.0-pre.1+<hash>
 
   ✨ feature
+
 🏷️  name3@3.0.0
 
   🎨 tabs over spaces 💥
+
 🏷️  name4@4.0.0
 
   📝 fix typo
+
 "
 `;
 
@@ -73,6 +81,7 @@ snapshot[`forge changelog --type docs --no-breaking 1`] = `
 🏷️  name4@4.0.0
 
   docs(name4): fix typo
+
 "
 `;
 
@@ -81,6 +90,7 @@ snapshot[`forge changelog --breaking --markdown 1`] = `
 ## name3@3.0.0
 
 - style(name3)!:tabs over spaces
+
 "
 `;
 
