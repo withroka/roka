@@ -83,19 +83,19 @@ category contains development tools. As the codebase grows, new categories like
 
 ### Functions
 
-- Accept at most two required arguments and an optional options object.
+- Accept at most two required arguments and an optional `options` object.
 - Avoid parameter types that cannot be distinguished at runtime, except for
-  options.
+  `options`.
 - Prefer overloads for different input variants.
 - Name the options type after the function (`GitOptions`).
 
 ### Types
 
 - Use `interface` for both data and functionality.
-- Use `type` for type utilities and aliases
-- Prefer no definition over `undefined` or `null` (`x?: string`, not
-  `x: string | undefined`).
+- Use `type` for type utilities and aliases.
 - Name the data types after their factory functions (`Git`).
+- Use optional definition for fields (`x?: string`, not
+  `x: string | undefined`).
 - Do not export classes, except for errors.
 
 ### Errors
@@ -112,6 +112,7 @@ category contains development tools. As the codebase grows, new categories like
 
 - Add tests for new features.
 - Add tests for fixed bugs.
+- Add tests for `testing` modules.
 - Name tests explicitly (`"git().clone() clones a repo"`).
 
 ### Documentation
