@@ -39,7 +39,8 @@
 ## http@0.2.0
 
 - 🐛 make `RequestError.status` optional (#119)
-- ♻️ move exported symbols for json and graphql clients their respective submodule paths (#108) 💥
+- ♻️ move exported symbols for json and graphql clients their respective
+  submodule paths (#108) 💥
 - ♻️ rename json and graphql client methods (#97) 💥
 - 🐛 never re-export symbols (#95) 💥
 - ✨ option to ignore headers in `fetchMock` (#90)
