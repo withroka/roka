@@ -65,6 +65,15 @@ export interface BumpOptions {
   changelog?: string;
   /** Create a pull request. */
   pr?: boolean;
+  /**
+   * Make the newly created pull request a draft.
+   *
+   * Requires {@linkcode BumpOptions.pr | pr} to be set.
+   *
+   * If a pull request already exists, this flag won't affect it.
+   * @default {false}
+   */
+  draft?: boolean;
   /** Use emoji in commit summaries. */
   emoji?: boolean;
 }
@@ -183,7 +192,7 @@ async function createPullRequest(
         head: branch,
         title,
         body,
-        draft: true,
+        draft: options?.draft ?? false,
       });
     }
     return pr;

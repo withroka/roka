@@ -205,6 +205,7 @@ Deno.test("bump() creates a pull request", async () => {
   assertExists(pr);
   assertEquals(pr.base, current);
   assertEquals(pr.head, `automated/bump-${pkg.name}`);
+  assertEquals(pr.draft, false);
   assertEquals(pr.title, "chore: bump name version");
   assertEquals(
     pr.body,
@@ -256,6 +257,27 @@ Deno.test("bump() updates pull request", async () => {
       "",
     ].join("\n"),
   );
+});
+
+Deno.test("bump() can create a draft pull request", async () => {
+  await using remote = await tempRepository();
+  await remote.branches.checkout({ new: "release" });
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    repo: { clone: remote },
+    commits: [{ summary: "feat: new feature" }],
+  });
+  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const pr = await bump([pkg], {
+    release: true,
+    pr: true,
+    draft: true,
+    repo,
+    name: "bump-name",
+    email: "bump-email",
+  });
+  assertExists(pr);
+  assertEquals(pr.draft, true);
 });
 
 Deno.test("bump() creates a pull request against the current branch", async () => {
