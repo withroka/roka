@@ -2,9 +2,15 @@ export const snapshot = {};
 
 snapshot[`forge list 1`] = `
 "
-📦 @scope/name1     1.0.0               🚨       👉 1.0.0
+📦 @scope/name1     1.0.0
+
+  🚨 1.0.0
+
 📦 @scope/name2     2.1.0-pre.1+<hash>
-📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
+📦 @scope/name3     3.0.0
+
+  🚨 2.0.0 👉 3.0.0
+
 📦 @scope/name4     4.0.0
 📦 @scope/dir/name5
 "
@@ -12,17 +18,31 @@ snapshot[`forge list 1`] = `
 
 snapshot[`forge list --modules name1 name2 1`] = `
 "
-📦 @scope/name1      1.0.0               🚨  👉 1.0.0
-   @scope/name1/main
-📦 @scope/name2      2.1.0-pre.1+<hash>
+📦 @scope/name1 1.0.0
+
+  🚨 1.0.0
+
+  🧩 [default]  <root>/name1/name2.ts
+  🧩 main       <root>/name1/main.ts
+
+📦 @scope/name2 2.1.0-pre.1+<hash>
+
+  🧩 [default]  <root>/name2/name1
+
 "
 `;
 
 snapshot[`forge list name* 1`] = `
 "
-📦 @scope/name1     1.0.0               🚨       👉 1.0.0
+📦 @scope/name1     1.0.0
+
+  🚨 1.0.0
+
 📦 @scope/name2     2.1.0-pre.1+<hash>
-📦 @scope/name3     3.0.0               🚨 2.0.0 👉 3.0.0
+📦 @scope/name3     3.0.0
+
+  🚨 2.0.0 👉 3.0.0
+
 📦 @scope/name4     4.0.0
 📦 @scope/dir/name5
 "
@@ -99,7 +119,7 @@ snapshot[`forge compile --target aarch64-unknown-linux-gnu --bundle --install=<r
 📦 Compiled name1
 
   🏺 <root>/dist/name1/1.0.0/aarch64-unknown-linux-gnu.tar.gz
-  🧩 Installed name1
+  💾 Installed name1
 
 "
 `;

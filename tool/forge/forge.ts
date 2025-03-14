@@ -220,13 +220,13 @@
  * This library also offers programmatic functionality through the following
  * modules:
  *
- *  -  {@link [package]}: Retrieve package information.
+ *  -  {@link [bump]}: Bump package versions.
  *  -  {@link [changelog]}: Generate changelogs.
  *  -  {@link [compile]}: Create binary executables.
- *  -  {@link [bump]}: Bump package versions.
+ *  -  {@link [package]}: Retrieve package information.
  *  -  {@link [release]}: Create GitHub releases.
- *  -  {@link [version]}: Provide version from compiled binaries.
  *  -  {@link [testing]}: Write tests for **forge**.
+ *  -  {@link [version]}: Provide version from compiled binaries.
  *
  * @todo Add documentation for GitHub workflows.
  * @todo Gracefully handle errors in the CLI.
@@ -327,7 +327,7 @@ export async function forge(
   return 0;
 }
 
-function listCommand(context?: ForgeOptions | undefined) {
+function listCommand(context: ForgeOptions | undefined) {
   return new Command()
     .description("List packages and versions.")
     .example("forge list", "List all packages.")
@@ -336,37 +336,53 @@ function listCommand(context?: ForgeOptions | undefined) {
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
-      Table
-        .from(
-          packages.map((pkg) => {
-            const modules = packageModules(pkg, options);
-            return [
-              [
-                `📦 ${pkg.config.name ?? pkg.name}`,
-                pkg.config.version !== undefined ? pkg.version : undefined,
-                ...(pkg.latest?.version !== pkg.config.version)
-                  ? ["🚨", pkg.latest?.version, "👉", pkg.config.version]
-                  : [],
-              ],
-              ...modules.map((module) => [`   ${module}`]),
-            ];
-          }).flat(),
-        ).render();
+      Table.from(
+        packages.map((pkg) => {
+          return [
+            packageRow(pkg),
+            ...releaseRows(pkg, options),
+            ...moduleRows(pkg, options),
+          ];
+        }).flat(),
+      ).render();
     });
 }
 
-function packageModules(pkg: Package, { modules = false }): string[] {
-  if (!pkg.config.name) return [];
-  const name = pkg.config.name;
-  if (!modules) return [];
-  const exports = pkg.config.exports ?? {};
-  if (typeof exports === "string") return [];
-  return Object.keys(exports)
-    .map((key) => join(name, relative(".", key)))
-    .filter((module) => module !== name);
+function packageRow(pkg: Package): string[] {
+  return [
+    `📦 ${pkg.config.name ?? pkg.name}`,
+    ...pkg.config.version !== undefined ? [pkg.version] : [],
+  ];
 }
 
-function changelogCommand(context?: ForgeOptions | undefined) {
+function releaseRows(pkg: Package, { modules = false }): string[][] {
+  if (!pkg.config.version) return [];
+  if (pkg.latest?.version !== pkg.config.version) {
+    const line = pkg.latest
+      ? `  🚨 ${pkg.latest?.version} 👉 ${pkg.config.version}`
+      : `  🚨 ${pkg.config.version}`;
+    return [[], [line], ...modules ? [] : [[]]];
+  }
+  return [];
+}
+
+function moduleRows(pkg: Package, { modules = false }): string[][] {
+  if (!modules) return [];
+  const rows = packageModules(pkg)
+    .map(([name, path]) => [`  🧩 ${name}`, path]);
+  return [[], ...rows, []];
+}
+
+function packageModules(pkg: Package): [string, string][] {
+  const exports = pkg.config.exports ?? {};
+  const modules = (typeof exports === "string") ? { ".": exports } : exports;
+  return Object.entries(modules)
+    .map((
+      [name, path],
+    ) => [relative(".", name) || "[default]", join(pkg.directory, path)]);
+}
+
+function changelogCommand(context: ForgeOptions | undefined) {
   return new Command()
     .description("Generate changelogs.")
     .example("forge changelog", "List unreleased changes.")
@@ -427,7 +443,7 @@ function changelogCommand(context?: ForgeOptions | undefined) {
     });
 }
 
-function compileCommand(targets: string[], context?: ForgeOptions | undefined) {
+function compileCommand(targets: string[], context: ForgeOptions | undefined) {
   return new Command()
     .description("Compile packages into binary executables.")
     .example("forge compile", "Compile packages.")
@@ -450,8 +466,8 @@ function compileCommand(targets: string[], context?: ForgeOptions | undefined) {
           const artifacts = await compile(pkg, options);
           console.log(`📦 Compiled ${pkg.name}`);
           console.log();
-          artifacts.forEach((artifact) => console.log("  🏺", artifact));
-          if (options.install) console.log(`  🧩 Installed ${pkg.name}`);
+          for (const artifact of artifacts) console.log(`  🏺 ${artifact}`);
+          if (options.install) console.log(`  💾 Installed ${pkg.name}`);
           console.log();
         },
         options,
@@ -459,7 +475,7 @@ function compileCommand(targets: string[], context?: ForgeOptions | undefined) {
     });
 }
 
-function bumpCommand(context?: ForgeOptions | undefined) {
+function bumpCommand(context: ForgeOptions | undefined) {
   return new Command()
     .description("Bump versions on package config files.")
     .example("forge bump", "Bump versions.")
@@ -501,7 +517,7 @@ function bumpCommand(context?: ForgeOptions | undefined) {
     });
 }
 
-function releaseCommand(context?: ForgeOptions | undefined) {
+function releaseCommand(context: ForgeOptions | undefined) {
   return new Command()
     .description("Creates releases for updated packages.")
     .example("forge release", "Create releases and tags for all updates.")
