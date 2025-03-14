@@ -120,7 +120,7 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
   }]);
 });
 
-Deno.test("tempWorkspace() creates workspace a a nameless package", async () => {
+Deno.test("tempWorkspace() creates workspace a nameless package", async () => {
   await using packages = await tempWorkspace({ configs: [{}] });
   const [pkg] = packages;
   assertExists(pkg);
