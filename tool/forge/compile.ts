@@ -179,7 +179,7 @@ function permission<P extends Exclude<keyof Permissions, "prompt">>(
   const value = permissions[name];
   if (value === undefined) return [];
   if (typeof value === "boolean") {
-    return value ? [`--allow-${name}`] : [`--no-allow-${name}`];
+    return value ? [`--allow-${name}`] : [`--deny-${name}`];
   }
   const values = Array.isArray(value) ? value : [value];
   if (merge) return [`--allow-${name}=${values.join(",")}`];
