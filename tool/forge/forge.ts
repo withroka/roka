@@ -336,32 +336,35 @@ function listCommand(context: ForgeOptions | undefined) {
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
+      const releases = packages.map((pkg) => releaseRows(pkg));
       Table.from(
-        packages.map((pkg) => {
-          return [
-            packageRow(pkg),
-            ...releaseRows(pkg, options),
-            ...moduleRows(pkg, options),
-          ];
-        }).flat(),
+        [
+          ...packages.map((pkg) => {
+            return [packageRow(pkg), ...moduleRows(pkg, options)];
+          }).flat(),
+        ],
       ).render();
     });
 }
 
 function packageRow(pkg: Package): string[] {
+  const releasing = pkg.config.version &&
+    pkg.config.version !== pkg.latest?.version;
   return [
-    `📦 ${pkg.config.name ?? pkg.name}`,
-    ...pkg.config.version !== undefined ? [pkg.version] : [],
+    `${releasing ? "🚨" : "📦"} ${pkg.config.name ?? pkg.name}`,
+    ...pkg.config.version !== undefined
+      ? [pkg.version, ...releasing ? [`👉 ${pkg.config.version}`] : []]
+      : [],
   ];
 }
 
-function releaseRows(pkg: Package, { modules = false }): string[][] {
+function releaseRows(pkg: Package): string[] {
   if (!pkg.config.version) return [];
   if (pkg.latest?.version !== pkg.config.version) {
-    const line = pkg.latest
-      ? `  🚨 ${pkg.latest?.version} 👉 ${pkg.config.version}`
-      : `  🚨 ${pkg.config.version}`;
-    return [[], [line], ...modules ? [] : [[]]];
+    const change = pkg.latest
+      ? `${pkg.latest?.version} 👉 ${pkg.config.version}`
+      : pkg.config.version;
+    return [`🚨 ${pkg.config.name}`, change];
   }
   return [];
 }
