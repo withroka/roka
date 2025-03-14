@@ -124,9 +124,9 @@ export interface MockOptions {
   /**
    * Mock output path.
    *
-   * If both {@linkcode MockOptions.dir} and {@linkcode MockOptions.path} are
-   * specified, the `dir` option will be ignored, and the `path` option will be
-   * handled as normal.
+   * If both {@linkcode MockOptions.dir | dir} and `path` are specified, the
+   * `dir` option will be ignored, and the `path` option will be handled as
+   * normal.
    */
   path?: string;
 }
