@@ -14,7 +14,7 @@
  * }
  * ```
  *
- * @module graphql
+ * @module client
  */
 
 import {

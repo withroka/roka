@@ -15,7 +15,7 @@
  * }
  * ```
  *
- * @module json
+ * @module client
  */
 
 import { request } from "../request.ts";
