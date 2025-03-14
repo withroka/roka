@@ -18,7 +18,7 @@
  * @module json
  */
 
-import { request } from "@roka/http/request";
+import { request } from "@roka/http";
 
 /** A JSON client returned by the {@linkcode client} function. */
 export interface Client {
