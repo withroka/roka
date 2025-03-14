@@ -388,6 +388,19 @@ function mockPath(
   }
 }
 
+async function checkPermission(
+  path: string,
+  options: MockOptions | undefined,
+) {
+  if (mode(options) !== "update") return;
+  const permission = await Deno.permissions.query({ name: "write", path });
+  if (permission.state !== "granted") {
+    throw new Deno.errors.PermissionDenied(
+      `Missing write access to the mock file '${path}' (use "--allow-write")`,
+    );
+  }
+}
+
 function serialize(calls: unknown): string {
   return Deno.inspect(calls, {
     compact: false,
@@ -452,6 +465,7 @@ class MockContext {
     property: Prop,
     options: MockOptions | undefined,
   ): Promise<MockState<Input, Output>> {
+    await checkPermission(mockPath(context, options), options);
     const path = mockPath(context, options);
     if (!this.mocks.has(path)) {
       let records: Record<string, MockCall<Input, Output>[]>;

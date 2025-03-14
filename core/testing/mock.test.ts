@@ -5,6 +5,7 @@ import {
   assertRejects,
   assertThrows,
 } from "@std/assert";
+import { dirname, fromFileUrl, join } from "@std/path";
 import { MockError } from "@std/testing/mock";
 import { assertType, type IsExact } from "@std/testing/types";
 
@@ -259,10 +260,21 @@ Deno.test("mock() records in custom directory", async (t) => {
   assertEquals(await mocked(), 42);
 });
 
-Deno.test("mock() records in custom path", async (t) => {
+Deno.test("mock() records in relative custom path", async (t) => {
   const self = { func: async () => await Promise.resolve(42) };
   using mocked = mock(t, self, "func", {
     path: "__mocks__/custom/mock.test.path.ts.mock",
+  });
+  assertEquals(await mocked(), 42);
+});
+
+Deno.test("mock() records in absolute custom path", async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  using mocked = mock(t, self, "func", {
+    path: join(
+      dirname(fromFileUrl(t.origin)),
+      "__mocks__/custom/mock.test.path.ts.mock",
+    ),
   });
   assertEquals(await mocked(), 42);
 });
@@ -316,4 +328,16 @@ Deno.test("mock() can mock a function multiple times", async (t) => {
   const mocked3 = mock(t, self, "func");
   assertEquals(await mocked3(), 42);
   mocked3.restore();
+});
+
+Deno.test("mock() checks write permission", {
+  permissions: { write: false },
+}, async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  const path = join(
+    dirname(fromFileUrl(t.origin)),
+    "__mocks__/custom/mock.test.path.ts.mock",
+  );
+  using mocked = mock(t, self, "func", { path, mode: "update" });
+  await assertRejects(() => mocked(), Deno.errors.PermissionDenied);
 });
