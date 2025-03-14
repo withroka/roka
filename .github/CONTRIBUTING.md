@@ -30,8 +30,9 @@ Pull request titles will be checked to make sure they follow the
 
 ### Terms
 
-By contributing to this repository, you agree to follow the code of conduct, and
-to let everyone use your contributions under the same terms as the project.
+By contributing to this repository, you agree to follow the
+[code of conduct](./CODE_OF_CONDUCT.md), and to let everyone use your
+contributions under the same terms as the project.
 
 ## 🙌 Project structure
 
