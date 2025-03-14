@@ -1,6 +1,6 @@
 {
   "name": "@roka/testing",
-  "version": "0.2.0-pre.13+d105411",
+  "version": "0.2.0",
   "exports": {
     ".": "./testing.ts",
     "./fake": "./fake.ts",
