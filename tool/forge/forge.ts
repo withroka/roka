@@ -7,8 +7,11 @@
  * create GitHub releases. It works best with monorepos of multiple packages
  * published to JSR.
  *
+ * ## Usage
+ *
  * To get started, just run **forge** with `deno run -A jsr:@roka/forge` and
- * you’re all set! No need for any configuration.
+ * you’re all set! Or, you can install with `deno install -gA jsr:@roka/forge`,
+ * and then run with `forge`. No need for any configuration.
  *
  * ## Packages
  *
@@ -17,7 +20,7 @@
  * [Deno workspaces](https://docs.deno.com/runtime/fundamentals/workspaces/).
  *
  * ```sh
- * deno run -A jsr:@roka/forge list
+ * forge list
  * ```
  * ```
  * 📦 example @roka/example 1.2.3
@@ -29,7 +32,7 @@
  * directories or using glob patterns.
  *
  * ```sh
- * deno run -A jsr:@roka/forge list "exam*"
+ * forge list "exam*"
  * ```
  *
  * ## Versions
@@ -41,11 +44,11 @@
  *
  * A {@link https://semver.org | semantic version} is calculated for every
  * package at every commit. The new version begins with the latest release, or
- * _0.0.0_ if the package has no releases. It then tracks the commits made
+ * "0.0.0" if the package has no releases. It then tracks the commits made
  * since that release.
  *
  * ```sh
- * deno run -A jsr:@roka/forge changelog
+ * forge changelog
  * ```
  * ```
  * 🏷️ example@2.0.0-pre.3+fedcba9
@@ -90,8 +93,7 @@
  *
  * ```sh
  * git checkout main
- * export GITHUB_TOKEN=$(gh auth token)
- * deno run -A jsr:@roka/forge bump example --release --pr
+ * GITHUB_TOKEN=$(gh auth token) forge bump example --release --pr
  * ```
  *
  * The `--release` flag drops the pre-release and build
@@ -112,7 +114,7 @@
  *
  * ```sh
  * git pull
- * deno run -A jsr:@roka/forge release example --draft
+ * GITHUB_TOKEN=$(gh auth token) forge release example --draft
  * ```
  *
  * The draft release created with **forge** on GitHub will have the new version
@@ -145,7 +147,7 @@
  *
  * For authentication, the convenient `GITHUB_TOKEN` works. However, this token
  * lacks the ability to initiate CI checks for newly created pull requests.
- * Additionally, organization accounts can restrict this token from creating
+ * Additionally, your GitHub account can restrict this token from creating
  * pull requests, which is a wise practice. A better solution is to create a
  * personal access token with read and write permissions to _contents_ and
  * _pull requests_.
@@ -182,35 +184,20 @@
  * compiled binaries will be bundled and uploaded to the GitHub release as
  * assets.
  *
- * These assets can be created manually as well.
- *
  * ```sh
- * deno run -A jsr:@roka/forge compile example --bundle --checksum
+ * forge release example
  * ```
  * ```
- * 📦 Compiled example
+ * 🚀 Created release example@2.0.0
  *
- *   🏺 dist/example/2.0.0/aarch64-apple-darwin.tar.gz
- *   🏺 dist/example/2.0.0/sha256.txt
- * ```
+ *   [https://github.com/withroka/example/releases/tag/example@2.0.0]
  *
- * You can even install these binaries for the local user. The **forge** tool
- * itself can be compiled and installed from its source in this manner.
- *
- * ```sh
- * deno run -A jsr:@roka/forge compile forge --install
- * ```
- *
- * Now we can simply run **forge** by its name.
- *
- * ```sh
- * forge --version
- * ```
- * ```
- * forge 0.1.0 (release, aarch64-apple-darwin)
- * deno 2.2.3
- * v8 13.4.114.11-rusty
- * typescript 5.7.3
+ *   🏺 x86_64-unknown-linux-gnu.tar.gz
+ *   🏺 aarch64-unknown-linux-gnu.tar.gz
+ *   🏺 x86_64-pc-windows-msvc.zip
+ *   🏺 x86_64-apple-darwin.tar.gz
+ *   🏺 aarch64-apple-darwin.tar.gz
+ *   🏺 sha256.txt
  * ```
  *
  * Magic! 🔮

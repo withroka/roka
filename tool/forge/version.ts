@@ -7,6 +7,8 @@
  * const appVersion = await version();
  * ```
  *
+ * @todo Detect when an app is run as a JSR module without version specifier.
+ *
  * @module version
  */
 
