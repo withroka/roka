@@ -367,13 +367,13 @@ function changelogCommand(context: ForgeOptions | undefined) {
     .example("forge changelog", "List unreleased changes.")
     .example("forge changelog --type feat --no-breaking", "List new features.")
     .example("forge changelog --markdown --all", "All releases in Markdown.")
+    .arguments("[packages...:file]")
     .option("--all", "Generate changelog for all releases.")
     .option("--type=<type:string>", "Commit type.", { collect: true })
     .option("--breaking", "Only breaking changes.")
     .option("--no-breaking", "Skip breaking changes of filtered types.")
     .option("--emoji", "Use emoji for commit summaries.", { default: false })
     .option("--markdown", "Generate Markdown.", { default: false })
-    .arguments("[packages...:file]")
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
       const commitOptions = {
@@ -502,9 +502,9 @@ function releaseCommand(context: ForgeOptions | undefined) {
     .description("Creates releases for updated packages.")
     .example("forge release", "Create releases and tags for all updates.")
     .example("forge release --draft", "Create draft releases for all updates.")
+    .arguments("[packages...:file]")
     .option("--draft", "Create a draft release.", { default: false })
     .option("--emoji", "Use emoji for commit summaries.", { default: false })
-    .arguments("[packages...:file]")
     .env(
       "GITHUB_TOKEN=<token:string>",
       "GitHub personal token for GitHub actions.",
