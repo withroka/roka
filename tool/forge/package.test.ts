@@ -39,6 +39,13 @@ Deno.test("packageInfo() returns package from directory", async () => {
   });
 });
 
+Deno.test("packageInfo() rejects non-file path", async () => {
+  await assertRejects(
+    () => packageInfo({ directory: "jsr:@roka/forge" }),
+    PackageError,
+  );
+});
+
 Deno.test("packageInfo() rejects invalid version", async () => {
   await using directory = await tempDirectory();
   await Deno.writeTextFile(
