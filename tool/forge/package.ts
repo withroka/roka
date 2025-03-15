@@ -60,7 +60,7 @@ import {
   type SemVer,
 } from "@std/semver";
 
-/** An error thrown by the {@link [jsr:@roka/forge]} module. */
+/** An error thrown by the `forge` package. */
 export class PackageError extends Error {
   /** Construct PackageError. */
   constructor(message: string, options?: { cause?: unknown }) {

@@ -51,7 +51,7 @@ import {
 import { basename, join, normalize } from "@std/path";
 
 /**
- * An error thrown by the {@link [jsr:@roka/git]} package.
+ * An error thrown by the `git` package.
  *
  * If the error is from running a git command, the message will include the
  * command and its output.

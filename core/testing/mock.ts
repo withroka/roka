@@ -70,7 +70,7 @@
  * ```
  *
  * **Note**: A ready-to-use mock for the Web API `fetch` is provided by the
- * {@link [jsr:@roka/http]} module.
+ * {@link https://jsr.io/@roka/http | **@roka/http**} module.
  *
  * @module mock
  */

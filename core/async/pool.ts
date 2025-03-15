@@ -36,7 +36,8 @@
  * are passed to the function.
  *
  * This module is a thin wrapper with a more convenient API around the
- * `pooledMap` function from the {@link [jsr:@std/async]} standard library.
+ * `pooledMap` function from the standard
+ * {@link https://jsr.io/@std/async | **@std/async**} library.
  *
  * @module pool
  */
