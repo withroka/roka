@@ -1,3 +1,8 @@
+## forge@0.1.2
+
+- 🐛 use JSR version when running from JSR (#200)
+- 🐛 rename `[default]` module to `(default)` (#199)
+
 ## forge@0.1.1
 
 - 🐛 `deno fmt` changelog files (#197)
