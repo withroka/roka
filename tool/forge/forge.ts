@@ -104,6 +104,10 @@
  * configuration and changelog files. Review and merge these changes, and the
  * release will be ready to roll at the merged commit.
  *
+ * Check out an [example pull request](https://github.com/withroka/roka/pull/181)
+ * that updates multiple packages. Emojis are optional and enabled with the
+ * `--emoji` flag to add some extra flair. 💅
+ *
  * At this point, we are ready to publish the packages to JSR. However, before
  * that, let’s proceed to create a release on GitHub, which is the second step.
  *
@@ -117,10 +121,14 @@
  * GITHUB_TOKEN=$(gh auth token) forge release example --draft
  * ```
  *
- * The draft release created with **forge** on GitHub will have the new version
- * number, the commit changelog, and a link to the package documentation on
- * JSR. If everything looks good, go ahead and publish the release. This will
- * create a new release tag for the released package, like _example@2.0.0_.
+ * The draft release created on GitHub will have the new version number,
+ * the commit changelog, and a link to the documentation on JSR. Here is an
+ * [example release](https://github.com/withroka/roka/releases/tag/testing@0.2.0)
+ * created automatically with **forge**.
+ *
+ * At this point, you may want to add further details to your release summary.
+ * If everything looks good, go ahead and publish it. This will create a new
+ * release tag for the released package, like _example@2.0.0_.
  *
  * ### Publish to JSR
  *
