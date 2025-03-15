@@ -231,11 +231,11 @@
  * @module forge
  */
 
-import { colors } from "@cliffy/ansi/colors";
 import { Command, EnumType, ValidationError } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
 import type { Repository } from "@roka/github";
+import { bold } from "@std/fmt/colors";
 import { join, relative } from "@std/path";
 import { bump } from "./bump.ts";
 import { changelog } from "./changelog.ts";
@@ -245,7 +245,7 @@ import { release } from "./release.ts";
 import { version } from "./version.ts";
 
 const DESCRIPTION = `
-  ${colors.bold("🛠️ forge")}
+  ${bold("🛠️ forge")}
 
   A Deno monorepo tool that manages packages on GitHub and JSR, including
   versioning, releases, and compilation. It works on a git repository using
