@@ -122,9 +122,9 @@
  * ```
  *
  * The draft release created on GitHub will have the new version number,
- * the commit changelog, and a link to the documentation on JSR. Here is an
+ * the commit changelog, and a link to the documentation on JSR. This
  * [example release](https://github.com/withroka/roka/releases/tag/testing@0.2.0)
- * created automatically with **forge**.
+ * was created automatically when the the example pull request above was merged.
  *
  * At this point, you may want to add further details to your release summary.
  * If everything looks good, go ahead and publish it. This will create a new
