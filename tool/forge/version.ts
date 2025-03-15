@@ -71,7 +71,7 @@ export async function version(options?: VersionOptions): Promise<string> {
 }
 
 async function versionString(): Promise<string> {
-  const version = Deno.mainModule.match(/jsr:@.+?@(.+)$/)?.[1];
+  const version = jsrVersion();
   if (version) return version;
   try {
     const pkg = await packageInfo();
@@ -103,4 +103,18 @@ async function versionString(): Promise<string> {
     }
   }
   return "(unknown)";
+}
+
+function jsrVersion(): string | undefined {
+  let version = Deno.mainModule.match(/jsr:@.+?@(.+)$/)?.[1];
+  if (version) return version;
+  const stack = new Error().stack;
+  // Error
+  //  at jsrVersion (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at versionString (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at version (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at caller (https://jsr.io/@caller/caller/VERSION/dir/caller.js:R:C)
+  const caller = stack?.split("\n")?.[4];
+  version = caller?.match(/https:\/\/jsr.io\/@[^/]+\/[^/]+\/([^/]+)\//)?.[1];
+  return version;
 }
