@@ -8,6 +8,7 @@
  * ```
  *
  * @todo Detect when an app is run as a JSR module without version specifier.
+ * @todo This module does not have good test coverage, use caution with changes.
  *
  * @module version
  */
