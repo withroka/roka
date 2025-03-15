@@ -1,3 +1,7 @@
+## forge@0.1.3
+
+- 🐛 determine JSR version from stack trace (#205)
+
 ## forge@0.1.2
 
 - 🐛 use JSR version when running from JSR (#200)
