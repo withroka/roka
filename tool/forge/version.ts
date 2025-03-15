@@ -12,7 +12,7 @@
 
 import { expandGlob } from "@std/fs";
 import { basename, dirname, fromFileUrl } from "@std/path";
-import { parse } from "@std/semver";
+import { canParse, parse } from "@std/semver";
 import { PackageError, packageInfo } from "./package.ts";
 
 /** Options for the {@linkcode version} function. */
@@ -37,6 +37,7 @@ export interface VersionOptions {
  *
  * The version is determined from whichever is available first:
  *
+ *  - JSR version, if running as a JSR module
  *  - release tags and
  *    {@link https://www.conventionalcommits.org | Conventional Commits}
  *    (local development)
@@ -59,7 +60,7 @@ export interface VersionOptions {
 export async function version(options?: VersionOptions): Promise<string> {
   const version = await versionString();
   const meta = [
-    ...options?.release
+    ...options?.release && canParse(version)
       ? [parse(version).prerelease?.length ? "pre-release" : "release"]
       : [],
     ...options?.target ? [Deno.build.target] : [],
@@ -68,13 +69,20 @@ export async function version(options?: VersionOptions): Promise<string> {
 }
 
 async function versionString(): Promise<string> {
+  const version = Deno.mainModule.match(/jsr:@.+?@(.+)$/)?.[1];
+  if (version) return version;
   try {
     const pkg = await packageInfo();
     return pkg.version;
   } catch (e: unknown) {
     if (!(e instanceof PackageError)) throw e;
   }
-  let directory = fromFileUrl(Deno.mainModule);
+  let directory = Deno.mainModule;
+  try {
+    directory = fromFileUrl(directory);
+  } catch {
+    return "(unknown)";
+  }
   while (!basename(directory).match(/^deno-compile-.+$/)) {
     directory = dirname(directory);
     if (directory === dirname(directory)) break;

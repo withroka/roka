@@ -290,9 +290,15 @@ export interface CommitOptions {
  *                        versions could not be parsed from git tags.
  */
 export async function packageInfo(options?: PackageOptions): Promise<Package> {
-  const directory = normalize(
-    options?.directory ?? dirname(fromFileUrl(Deno.mainModule)),
-  );
+  let directory = options?.directory;
+  if (!directory) {
+    try {
+      directory = dirname(fromFileUrl(Deno.mainModule));
+    } catch {
+      throw new PackageError("Cannot determine package directory");
+    }
+  }
+  directory = normalize(directory);
   const config = await readConfig(directory);
   const name = basename(config.name ?? directory);
   const pkg: Package = {
