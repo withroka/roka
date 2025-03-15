@@ -66,7 +66,7 @@ const RETRYABLE_STATUSES: number[] = [
 ] as const;
 
 /**
- * An error thrown by the {@link [jsr:@roka/http]} package.
+ * An error thrown by the `http` package.
  *
  * If the error is thrown due to a response status code, the status code is
  * stored in the `status` property.

@@ -2,9 +2,10 @@
  * A library for making test writing easier.
  *
  * This package provides utilities for testing code to complement the "mock"
- * and "snapshot" systems of the standard library {@link [jsr:@std/testing]}.
- * The functionality provided here is split into the groups of *fake*, *mock*,
- * and *temporary* objects.
+ * and "snapshot" systems of the standard
+ * {@link https://jsr.io/@std/testing | **@std/testing**} library. The
+ * functionality provided here is split into the groups of _fake_, _mock_, and
+ * _temporary_ objects.
  *
  * The "**fake**" objects implement the same interface as their real
  * counterparts, but with fake data and functionality. For example, the
@@ -22,7 +23,8 @@
  * The "**mock**" system is more heavy-handed than fake objects. It provides
  * the {@linkcode [mock].mock | mock} function to record and replay calls to an
  * asynchronous function. This is used to build the `mockFetch` function from
- * the {@link [jsr:@roka/http]} module to record and replay real HTTP calls.
+ * the {@link https://jsr.io/@roka/http | **@roka/http**} module to record and
+ * replay real HTTP calls.
  *
  * ```ts
  * import { mock } from "@roka/testing/mock";
@@ -45,8 +47,10 @@
  *
  * This package contains only the most common utilities from these groups.
  * More specific test helpers are provided in other Roka packages. For example,
- * {@link [jsr:@roka/git]} provides temporary git repositories, and
- * {@link [jsr:@roka/github]} provides a fake GitHub API.
+ * {@link https://jsr.io/@roka/git/doc/testing | **@roka/git/testing**}
+ * provides temporary git repositories, and
+ * {@link https://jsr.io/@roka/github/doc/testing | **@roka/github/testing**}
+ * provides a fake GitHub API.
  *
  * ## Modules
  *
