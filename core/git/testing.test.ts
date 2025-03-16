@@ -1,5 +1,10 @@
 import { tempRepository, testCommit } from "@roka/git/testing";
-import { assertEquals, assertExists, assertGreater } from "@std/assert";
+import {
+  assertEquals,
+  assertExists,
+  assertGreater,
+  assertRejects,
+} from "@std/assert";
 
 Deno.test("testCommit() creates a commit with default data", () => {
   const commit = testCommit();
@@ -20,10 +25,15 @@ Deno.test("testCommit() creates a commit with custom data", () => {
   assertEquals(commit.body, "custom-body");
 });
 
-Deno.test("tempRepo() creates a repo", async () => {
-  await using repo = await tempRepository();
-  const commit = await repo.commits.create("initial", { allowEmpty: true });
-  assertEquals(await repo.commits.head(), commit);
+Deno.test("tempRepo() creates a disposable repo", async () => {
+  let path: string;
+  {
+    await using repo = await tempRepository();
+    const commit = await repo.commits.create("initial", { allowEmpty: true });
+    assertEquals(await repo.commits.head(), commit);
+    path = repo.path();
+  }
+  await assertRejects(() => Deno.stat(path), Deno.errors.NotFound);
 });
 
 Deno.test("tempRepo() can clone a repo from another repo", async () => {
