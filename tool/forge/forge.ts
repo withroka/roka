@@ -18,6 +18,20 @@
  * The repository is treated as a list of Deno packages by **forge**. It
  * supports simple projects with a single package and monorepos that use
  * [Deno workspaces](https://docs.deno.com/runtime/fundamentals/workspaces/).
+ * Currently, only the `deno.json` file is supported for package configuration.
+ *
+ * ```json
+ * {
+ *   "name": "@roka/example",
+ *   "version": "1.2.3",
+ *   "exports": "./example.ts",
+ * }
+ * ```
+ *
+ * The `version` field in this file is how we request new releases. If you are
+ * not ready to release yet, you can set it “0.0.0”, **forge** will calculate
+ * the first version for you. The package will be skipped if it doesn’t have a
+ * version.
  *
  * ```sh
  * forge list
@@ -44,7 +58,7 @@
  *
  * A {@link https://semver.org | semantic version} is calculated for every
  * package at every commit. The new version begins with the latest release, or
- * "0.0.0" if the package has no releases. It then tracks the commits made
+ * “0.0.0” if the package has no releases. It then tracks the commits made
  * since that release.
  *
  * ```sh
@@ -121,8 +135,8 @@
  * GITHUB_TOKEN=$(gh auth token) forge release example --draft
  * ```
  *
- * The draft release created on GitHub will have the new version number,
- * the commit changelog, and a link to the documentation on JSR. This
+ * The draft release created on GitHub will have the new version, the commit
+ * changelog, and a link to the documentation on JSR. This
  * [example release](https://github.com/withroka/roka/releases/tag/testing@0.2.0)
  * was created automatically when the the example pull request above was merged.
  *
