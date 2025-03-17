@@ -1,7 +1,7 @@
-import { mockFetch } from "@roka/http/testing";
 import { assertEquals } from "@std/assert";
 import { STATUS_CODE } from "@std/http/status";
 import { assertSnapshot } from "@std/testing/snapshot";
+import { mockFetch } from "./testing.ts";
 
 Deno.test("mockFetch() stubs fetch", async (t) => {
   using _fetch = mockFetch(t);

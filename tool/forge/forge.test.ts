@@ -1,6 +1,4 @@
 // deno-lint-ignore-file no-console
-import { forge } from "@roka/forge";
-import { tempWorkspace, type TempWorkspaceOptions } from "@roka/forge/testing";
 import { git } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakeRepository } from "@roka/github/testing";
@@ -8,6 +6,8 @@ import { fakeConsole } from "@roka/testing/fake";
 import { assertEquals, assertExists } from "@std/assert";
 import { common, join } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
+import { forge } from "./forge.ts";
+import { tempWorkspace, type TempWorkspaceOptions } from "./testing.ts";
 
 const WORKSPACE: TempWorkspaceOptions = {
   configs: [

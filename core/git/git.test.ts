@@ -1,4 +1,3 @@
-import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing/temp";
 import {
@@ -7,6 +6,7 @@ import {
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
+import { git, GitError } from "./git.ts";
 
 Deno.test("git() mentions failed command on error", async () => {
   await using directory = await tempDirectory();

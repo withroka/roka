@@ -16,13 +16,13 @@
  */
 
 import { git } from "@roka/git";
+import { basename } from "@std/path";
 import type {
   PullRequest,
   Release,
   ReleaseAsset,
   Repository,
-} from "@roka/github";
-import { basename } from "@std/path";
+} from "./github.ts";
 
 /**
  * Creates a repository with fake data and operations.

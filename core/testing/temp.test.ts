@@ -1,5 +1,5 @@
-import { tempDirectory } from "@roka/testing/temp";
 import { assertEquals, assertRejects } from "@std/assert";
+import { tempDirectory } from "./temp.ts";
 
 Deno.test("tempDirectory() creates a disposable directory", async () => {
   let path: string;

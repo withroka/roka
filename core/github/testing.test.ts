@@ -1,10 +1,10 @@
+import { assertEquals, assertExists, assertNotEquals } from "@std/assert";
 import {
   fakePullRequest,
   fakeRelease,
   fakeReleaseAsset,
   fakeRepository,
-} from "@roka/github/testing";
-import { assertEquals, assertExists, assertNotEquals } from "@std/assert";
+} from "./testing.ts";
 
 Deno.test("fakeRepository() creates a repository with default data", () => {
   const repo = fakeRepository();

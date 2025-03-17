@@ -1,10 +1,10 @@
-import { PackageError } from "@roka/forge/package";
-import { release } from "@roka/forge/release";
-import { tempPackage, unstableTestImports } from "@roka/forge/testing";
 import { git } from "@roka/git";
 import { fakeRelease, fakeRepository } from "@roka/github/testing";
 import { assertEquals, assertRejects } from "@std/assert";
 import { dirname, join } from "@std/path";
+import { PackageError } from "./package.ts";
+import { release } from "./release.ts";
+import { tempPackage, unstableTestImports } from "./testing.ts";
 
 Deno.test("release() rejects package without version", async () => {
   await using pkg = await tempPackage({

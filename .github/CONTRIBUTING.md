@@ -63,7 +63,7 @@ category contains development tools. As the codebase grows, new categories like
 - Export core functionality from the default module (**@roka/git**).
 - Group common functionality into submodules (**@roka/git/conventional**).
 - Export a function with the same name as the module (`conventional()`).
-- Avoid relative imports (`"./conventional.ts"`).
+- Use relative imports only within a package (`"./conventional.ts"`).
 - Avoid circular imports.
 - Avoid re-exports.
 - Avoid internal modules.
