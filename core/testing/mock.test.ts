@@ -1,4 +1,3 @@
-import { type Mock, mock } from "@roka/testing/mock";
 import {
   assertEquals,
   assertFalse,
@@ -8,6 +7,7 @@ import {
 import { dirname, fromFileUrl, join } from "@std/path";
 import { MockError } from "@std/testing/mock";
 import { assertType, type IsExact } from "@std/testing/types";
+import { type Mock, mock } from "./mock.ts";
 
 assertType<
   IsExact<

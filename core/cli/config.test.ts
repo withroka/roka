@@ -1,6 +1,6 @@
-import { type Config, config } from "@roka/cli/config";
 import { assertEquals } from "@std/assert";
 import { assertType, type IsExact } from "@std/testing/types";
+import { type Config, config } from "./config.ts";
 
 assertType<
   IsExact<

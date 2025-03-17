@@ -1,8 +1,8 @@
-import { request, RequestError } from "@roka/http/request";
 import { mockFetch } from "@roka/http/testing";
 import { assertEquals, assertRejects } from "@std/assert";
 import { STATUS_CODE } from "@std/http/status";
 import { assertSnapshot } from "@std/testing/snapshot";
+import { request, RequestError } from "./request.ts";
 
 Deno.test("request() makes request", async (t) => {
   using _fetch = mockFetch(t);

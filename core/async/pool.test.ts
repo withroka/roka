@@ -1,5 +1,5 @@
-import { pool, pooled } from "@roka/async/pool";
 import { assertEquals, assertRejects } from "@std/assert";
+import { pool, pooled } from "./pool.ts";
 
 Deno.test("pool() resolves promises with default concurrency", async () => {
   const array = [

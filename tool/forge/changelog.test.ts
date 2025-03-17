@@ -1,6 +1,6 @@
-import { changelog } from "@roka/forge/changelog";
 import { testCommit } from "@roka/git/testing";
 import { assertEquals } from "@std/assert";
+import { changelog } from "./changelog.ts";
 
 Deno.test("changelog() generates Markdown changelog", () => {
   const commits = [

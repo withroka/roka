@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-console
-import { fakeConsole } from "@roka/testing/fake";
 import { assertEquals, assertFalse } from "@std/assert";
+import { fakeConsole } from "./fake.ts";
 
 Deno.test("fakeConsole() stubs console", () => {
   using mock = fakeConsole();

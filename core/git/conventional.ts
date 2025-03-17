@@ -23,8 +23,8 @@
  * @module conventional
  */
 
-import type { Commit } from "@roka/git";
 import { assertExists } from "@std/assert";
+import type { Commit } from "./git.ts";
 
 /**
  * A {@link https://www.conventionalcommits.org | Conventional Commit} returned

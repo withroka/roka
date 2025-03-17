@@ -1,6 +1,6 @@
-import { client } from "@roka/http/graphql/client";
 import { mockFetch } from "@roka/http/testing";
 import { assertSnapshot } from "@std/testing/snapshot";
+import { client } from "./client.ts";
 
 const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 

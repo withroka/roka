@@ -16,7 +16,7 @@
  * @module testing
  */
 
-import { type Commit, type Config, type Git, git } from "@roka/git";
+import { type Commit, type Config, type Git, git } from "./git.ts";
 
 /**
  * Creates a commit with fake data.

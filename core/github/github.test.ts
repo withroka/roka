@@ -1,8 +1,8 @@
 import { tempRepository } from "@roka/git/testing";
-import { github, type PullRequest, type Release } from "@roka/github";
 import { mockFetch } from "@roka/http/testing";
 import { tempDirectory } from "@roka/testing/temp";
 import { assertEquals, assertExists } from "@std/assert";
+import { github, type PullRequest, type Release } from "./github.ts";
 
 const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 

@@ -1,9 +1,9 @@
-import { tempPackage, tempWorkspace } from "@roka/forge/testing";
 import { git } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
 import { omit } from "@std/collections";
 import { join } from "@std/path";
+import { tempPackage, tempWorkspace } from "./testing.ts";
 
 Deno.test("tempPackage() creates a disposable package", async () => {
   let directory: string;

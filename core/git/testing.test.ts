@@ -1,10 +1,10 @@
-import { tempRepository, testCommit } from "@roka/git/testing";
 import {
   assertEquals,
   assertExists,
   assertGreater,
   assertRejects,
 } from "@std/assert";
+import { tempRepository, testCommit } from "./testing.ts";
 
 Deno.test("testCommit() creates a commit with default data", () => {
   const commit = testCommit();
