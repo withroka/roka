@@ -415,8 +415,9 @@ function changelogCommand(context: ForgeOptions | undefined) {
         }
       }
       for (const pkg of packages) {
-        for await (const log of changelogs(pkg)) {
-          console.log(log.replace(/ ♻️ /g, " ♻️  "));
+        for await (let log of changelogs(pkg)) {
+          if (Deno.stdout.isTerminal()) log = log.replace(/ ♻️ /g, " ♻️  ");
+          console.log(log);
         }
       }
     });

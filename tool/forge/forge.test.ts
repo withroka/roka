@@ -37,8 +37,9 @@ const WORKSPACE: TempWorkspaceOptions = {
   commits: [
     { summary: "initial", tags: ["name1@1.0.0-pre.1", "name4@4.0.0"] },
     { summary: "fix(name1): bug", tags: ["name2@2.0.0"] },
+    { summary: "refactor(name2): rewrite" },
     { summary: "feat(name2): feature", tags: ["name3@2.0.0"] },
-    { summary: "style(name3)!:tabs over spaces" },
+    { summary: "style(name3)!: tabs over spaces" },
     { summary: "docs(name4): fix typo" },
   ],
 };
