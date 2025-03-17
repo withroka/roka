@@ -49,10 +49,11 @@ snapshot[`forge changelog 1`] = `
 🏷️  name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
+  refactor(name2): rewrite
 
 🏷️  name3@3.0.0
 
-  style(name3)!:tabs over spaces
+  style(name3)!: tabs over spaces
 
 🏷️  name4@4.0.0
 
@@ -70,6 +71,7 @@ snapshot[`forge changelog --all --emoji 1`] = `
 🏷️  name2@2.1.0-pre.1+<hash>
 
   ✨ feature
+  ♻️ rewrite
 
 🏷️  name3@3.0.0
 
@@ -95,7 +97,7 @@ snapshot[`forge changelog --breaking --markdown 1`] = `
 "
 ## name3@3.0.0
 
-- style(name3)!:tabs over spaces
+- style(name3)!: tabs over spaces
 
 "
 `;
