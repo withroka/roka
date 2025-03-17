@@ -1,3 +1,8 @@
+## forge@0.1.4
+
+- 🐛 do not try to release package at version 0.0.0 (#212)
+- 🐛 pad single width emoji on tty (#211)
+
 ## forge@0.1.3
 
 - 🐛 determine JSR version from stack trace (#205)
