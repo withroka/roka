@@ -31,7 +31,11 @@ const WORKSPACE: TempWorkspaceOptions = {
       version: "4.0.0",
     },
     {
+      version: "0.0.0",
       name: "@scope/dir/name5",
+    },
+    {
+      name: "@scope/dir/name6",
     },
   ],
   commits: [
@@ -39,8 +43,9 @@ const WORKSPACE: TempWorkspaceOptions = {
     { summary: "fix(name1): bug", tags: ["name2@2.0.0"] },
     { summary: "refactor(name2): rewrite" },
     { summary: "feat(name2): feature", tags: ["name3@2.0.0"] },
-    { summary: "style(name3)!: tabs over spaces" },
-    { summary: "docs(name4): fix typo" },
+    { summary: "docs(name3): fix typo" },
+    { summary: "refactor(name4): rewrite" },
+    { summary: "style(name5)!:tabs over spaces" },
   ],
 };
 

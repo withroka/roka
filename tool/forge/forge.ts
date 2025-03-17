@@ -337,8 +337,8 @@ function listCommand(context: ForgeOptions | undefined) {
 }
 
 function packageRow(pkg: Package): string[] {
-  const releasing = pkg.config.version &&
-    pkg.config.version !== pkg.latest?.version;
+  const releasing = pkg.config.version !== undefined &&
+    pkg.config.version !== (pkg.latest?.version ?? "0.0.0");
   return [
     `${releasing ? "🚨" : "📦"} ${pkg.config.name ?? pkg.name}`,
     pkg.config.version !== undefined
@@ -512,8 +512,10 @@ function releaseCommand(context: ForgeOptions | undefined) {
       { prefix: "GITHUB_", required: true },
     )
     .action(async (options, ...filters) => {
-      const packages = (await filter(filters, context))
-        .filter((pkg) => pkg.config.version !== pkg.latest?.version);
+      const packages = (await filter(filters, context)).filter((pkg) =>
+        pkg.config.version !== undefined &&
+        pkg.config.version !== (pkg.latest?.version ?? "0.0.0")
+      );
       if (!packages.length) console.log("📦 No packages to release");
       await pool(packages, async (pkg) => {
         const [rls, assets] = await release(pkg, {
