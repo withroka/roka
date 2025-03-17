@@ -6,7 +6,8 @@ snapshot[`forge list 1`] = `
 📦 @scope/name2     2.1.0-pre.1+<hash>
 🚨 @scope/name3     2.0.0 👉 3.0.0
 📦 @scope/name4     4.0.0
-📦 @scope/dir/name5
+📦 @scope/dir/name5 0.1.0-pre.1+<hash>
+📦 @scope/dir/name6
 "
 `;
 
@@ -30,13 +31,15 @@ snapshot[`forge list name* 1`] = `
 📦 @scope/name2     2.1.0-pre.1+<hash>
 🚨 @scope/name3     2.0.0 👉 3.0.0
 📦 @scope/name4     4.0.0
-📦 @scope/dir/name5
+📦 @scope/dir/name5 0.1.0-pre.1+<hash>
+📦 @scope/dir/name6
 "
 `;
 
 snapshot[`forge list dir/* 1`] = `
 "
-📦 @scope/dir/name5
+📦 @scope/dir/name5 0.1.0-pre.1+<hash>
+📦 @scope/dir/name6
 "
 `;
 
@@ -53,11 +56,15 @@ snapshot[`forge changelog 1`] = `
 
 🏷️  name3@3.0.0
 
-  style(name3)!: tabs over spaces
+  docs(name3): fix typo
 
 🏷️  name4@4.0.0
 
-  docs(name4): fix typo
+  refactor(name4): rewrite
+
+🏷️  name5@0.1.0-pre.1+<hash>
+
+  style(name5)!:tabs over spaces
 
 "
 `;
@@ -75,29 +82,33 @@ snapshot[`forge changelog --all --emoji 1`] = `
 
 🏷️  name3@3.0.0
 
-  🎨 tabs over spaces 💥
+  📝 fix typo
 
 🏷️  name4@4.0.0
 
-  📝 fix typo
+  ♻️ rewrite
+
+🏷️  name5@0.1.0-pre.1+<hash>
+
+  🎨 tabs over spaces 💥
 
 "
 `;
 
 snapshot[`forge changelog --type docs --no-breaking 1`] = `
 "
-🏷️  name4@4.0.0
+🏷️  name3@3.0.0
 
-  docs(name4): fix typo
+  docs(name3): fix typo
 
 "
 `;
 
 snapshot[`forge changelog --breaking --markdown 1`] = `
 "
-## name3@3.0.0
+## name5@0.1.0-pre.1+<hash>
 
-- style(name3)!: tabs over spaces
+- style(name5)!:tabs over spaces
 
 "
 `;
