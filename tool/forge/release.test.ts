@@ -45,7 +45,10 @@ Deno.test("release() rejects 0.0.0", async () => {
 Deno.test("release() creates initial release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ summary: "feat: new feature (#1)" }],
+    commits: [
+      { summary: "fix: bug fix (#2)" },
+      { summary: "feat: new feature (#1)" },
+    ],
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
   const [rls, assets] = await release(pkg, { repo });
@@ -57,6 +60,7 @@ Deno.test("release() creates initial release", async () => {
       "## Initial release",
       "",
       "feat: new feature (#1)",
+      "fix: bug fix (#2)",
       "",
       "### Details",
       "",

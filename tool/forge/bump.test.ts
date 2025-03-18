@@ -104,11 +104,13 @@ Deno.test("bump() creates a changelog file", async () => {
       { name: "@scope/name2" },
     ],
     commits: [
-      { summary: "fix(name1): fix bug (#1)" },
+      { summary: "feat(name1): introduce name1 (#1)" },
+      { summary: "feat(name2): introduce name2 (#2)" },
+      { summary: "fix(name1): fix bug (#3)" },
       {
         summary: [
           "fix(name2): fix bug, but for some reason use a very",
-          "very long summary that doesn't fit in one line (#2)",
+          "very long summary that doesn't fit in one line (#4)",
         ].join(" "),
       },
     ],
@@ -120,14 +122,16 @@ Deno.test("bump() creates a changelog file", async () => {
   assertEquals(
     await Deno.readTextFile(changelog),
     [
-      "## name1@0.0.1",
+      "## name1@0.1.0",
       "",
-      "- fix(name1): fix bug (#1)",
+      "- feat(name1): introduce name1 (#1)",
+      "- fix(name1): fix bug (#3)",
       "",
-      "## name2@0.0.1",
+      "## name2@0.1.0",
       "",
+      "- feat(name2): introduce name2 (#2)",
       "- fix(name2): fix bug, but for some reason use a very very long summary that",
-      "  doesn't fit in one line (#2)",
+      "  doesn't fit in one line (#4)",
       "",
     ].join("\n"),
   );
@@ -219,8 +223,8 @@ Deno.test("bump() creates a pull request", async () => {
     [
       "## name@1.3.0",
       "",
-      `- fix: force pushed (${short})`,
       "- #42",
+      `- fix: force pushed (${short})`,
       "",
     ].join("\n"),
   );
@@ -237,8 +241,8 @@ Deno.test("bump() creates a pull request", async () => {
     [
       "## name@1.3.0",
       "",
-      `- fix: force pushed (${short})`,
       "- feat: new feature (#42)",
+      `- fix: force pushed (${short})`,
     ].join("\n"),
   );
 });

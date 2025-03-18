@@ -20,20 +20,62 @@ import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 
 /** Options for the {@linkcode changelog} function. */
 export interface ChangelogOptions {
-  /**
-   * Title to display at the beginning of the changelog text.
-   *
-   * If not defined, a title will not be added to the changelog.
-   */
-  title?: string;
-  /** Add a list of items to the end of the changelog text, like URLs. */
-  footer?: {
-    /** Title of the footer section */
-    title: string;
-    /** List of items to include in the footer. */
-    items: string[];
+  /** Options for controlling what is included in the changelog. */
+  content?: {
+    /**
+     * Title to display at the beginning of the changelog text.
+     *
+     * If not defined, a title will not be added to the changelog.
+     */
+    title?: string;
+    /** Add a list of items to the end of the changelog text, like URLs. */
+    footer?: {
+      /** Title of the footer section */
+      title: string;
+      /** List of items to include in the footer. */
+      items: string[];
+    };
   };
-  /** Markdown options to control the output. */
+  /** Options for controlling how commits are formatted in the changelog. */
+  commit?: {
+    /**
+     * Sort commits in the generated changelog.
+     *
+     * If set to `importance`, the commits are sorted by their
+     * {@link https://www.conventionalcommits.org | Conventional Commits} details.
+     * Breaking changes are followed by features, and then fixes. Commits of other
+     * types come last and they re grouped by their type.
+     */
+    sort?: "importance";
+    /**
+     * Use emoji in commit summaries.
+     * @default {false}
+     */
+    emoji?: boolean;
+    /**
+     * Include short commit short in commit summaries, when a pull request number
+     * is not available.
+     *
+     * This is useful for generating links to commits that were not merged with a
+     * pull request.
+     *
+     * @default {false}
+     */
+    hash?: boolean;
+    /**
+     * List only pull request numbers as commit summaries.
+     *
+     * This provides a nicely formatted changelog for GitHub pull requests, and
+     * avoids listing commit titles twice.
+     *
+     * Changelogs for releases and markdown files should not use this option,
+     * because GitHub does not provide the pull request title in those contexts.
+     *
+     * @default {false}
+     */
+    github?: boolean;
+  };
+  /** Options for controlling the Markdown syntax. */
   markdown?: {
     /**
      * Markdown heading to use for the version title.
@@ -51,33 +93,6 @@ export interface ChangelogOptions {
      */
     bullet?: string;
   };
-  /**
-   * Use emoji in commit summaries.
-   * @default {false}
-   */
-  emoji?: boolean;
-  /**
-   * Include short commit short in commit summaries, when a pull request number
-   * is not available.
-   *
-   * This is useful for generating links to commits that were not merged with a
-   * pull request.
-   *
-   * @default {false}
-   */
-  hash?: boolean;
-  /**
-   * List only pull request numbers as commit summaries.
-   *
-   * This provides a nicely formatted changelog for GitHub pull requests, and
-   * avoids listing commit titles twice.
-   *
-   * Changelogs for releases and markdown files should not use this option,
-   * because GitHub does not provide the pull request title in those contexts.
-   *
-   * @default {false}
-   */
-  github?: boolean;
 }
 
 /**
@@ -107,28 +122,51 @@ export function changelog(
   commits: Commit[],
   options?: ChangelogOptions,
 ): string {
-  const title = options?.title;
+  const title = options?.content?.title;
   const markdown = {
     heading: "## ",
     subheading: "### ",
     bullet: "- ",
     ...options?.markdown,
   };
-  const footer = options?.footer
+  const footer = options?.content?.footer
     ? [
-      `${markdown.subheading}${options.footer.title}`,
-      options.footer.items.map((x) => `${markdown.bullet}${x}`).join("\n"),
+      `${markdown.subheading}${options.content.footer.title}`,
+      options.content.footer.items
+        .map((x) => `${markdown.bullet}${x}`).join("\n"),
     ]
     : [];
+  let log = commits.map(conventional);
+  if (options?.commit?.sort === "importance") log = sorted(log, byImportance);
   const blocks = [
     ...title ? [`${markdown.heading}${title}`] : [],
-    commits
-      .map(conventional)
-      .map((c) => `${markdown.bullet}${summary(c, options)}`)
-      .join("\n") ?? [],
+    log.map((c) => `${markdown.bullet}${summary(c, options)}`).join("\n") ?? [],
     footer,
   ].flat();
   return `${blocks.join("\n\n")}\n`;
+}
+
+function sorted(
+  commits: ConventionalCommit[],
+  compare: (a: ConventionalCommit, b: ConventionalCommit) => number,
+): ConventionalCommit[] {
+  return commits
+    .map((commit, index) => ({ commit, index }))
+    .toSorted((a, b) => compare(a.commit, b.commit) || a.index - b.index)
+    .map(({ commit }) => commit);
+}
+
+function byImportance(a: ConventionalCommit, b: ConventionalCommit) {
+  if (a.breaking && !b.breaking) return -1;
+  if (!a.breaking && b.breaking) return 1;
+  if (a.type === "feat" && b.type !== "feat") return -1;
+  if (a.type !== "feat" && b.type === "feat") return 1;
+  if (a.type === "fix" && b.type !== "fix") return -1;
+  if (a.type !== "fix" && b.type === "fix") return 1;
+  if (a.type && b.type) { if (b.type) return a.type < b.type ? -1 : 1; }
+  if (a.type) return -1;
+  if (b.type) return 1;
+  return 0;
 }
 
 function summary(
@@ -136,12 +174,12 @@ function summary(
   options: ChangelogOptions | undefined,
 ): string {
   const prPattern = /^.*\((#\d+)\)$/;
-  let summary = options?.emoji ? commit.description : commit.summary;
-  if (options?.hash && !summary.match(prPattern)) {
+  let summary = options?.commit?.emoji ? commit.description : commit.summary;
+  if (options?.commit?.hash && !summary.match(prPattern)) {
     summary = `${summary} (${commit.short})`;
   }
-  if (options?.github) summary = summary.replace(prPattern, "$1");
-  if (options?.emoji) summary = emoji(commit, summary);
+  if (options?.commit?.github) summary = summary.replace(prPattern, "$1");
+  if (options?.commit?.emoji) summary = emoji(commit, summary);
   return summary;
 }
 
