@@ -1,6 +1,6 @@
 import { mockFetch } from "@roka/http/testing";
 import { assertSnapshot } from "@std/testing/snapshot";
-import { client } from "./client.ts";
+import { client, gql } from "./client.ts";
 
 const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 
@@ -32,7 +32,7 @@ Deno.test("client().query() makes GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
   const api = client("https://api.github.com/graphql", { token });
   const result: Repository = await api.query(
-    `
+    gql`
       query($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
           owner {
@@ -52,7 +52,7 @@ Deno.test("client().queryPaginated() makes paginated GraphQL query", async (t) =
   using _fetch = mockFetch(t);
   const api = client("https://api.github.com/graphql", { token });
   const result = await api.queryPaginated(
-    `
+    gql`
       query($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
           issues(first: 100) {
