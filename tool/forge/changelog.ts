@@ -108,7 +108,7 @@ export interface ChangelogOptions {
  *   const pkg = await packageInfo();
  *   assertExists(pkg.changes);
  *   console.log(changelog(pkg.changes, {
- *     title: "Changelog",
+ *     content: { title: "Changelog" },
  *     markdown: { heading: "# ", bullet: "* " },
  *   }));
  * }
