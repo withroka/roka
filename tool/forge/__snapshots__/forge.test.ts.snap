@@ -11,21 +11,33 @@ snapshot[`forge list 1`] = `
 "
 `;
 
-snapshot[`forge list --modules name1 name2 1`] = `
+snapshot[`forge list --modules [packages...] 1`] = `
 "
-🚨 @scope/name1 0.0.0 👉 1.0.0
+🚨 @scope/name1     0.0.0 👉 1.0.0
 
-  🧩 (default)  <root>/name1/name2.ts
-  🧩 main       <root>/name1/main.ts
+  🧩 (default)      <directory>/name1/name2.ts
+  🧩 main           <directory>/name1/main.ts
 
-📦 @scope/name2 2.1.0-pre.1+<hash>
+📦 @scope/name2     2.1.0-pre.1+<hash>
 
-  🧩 (default)  <root>/name2/name1
+  🧩 (default)      <directory>/name2/name1
+
+🚨 @scope/name3     2.0.0 👉 3.0.0
+
+
+📦 @scope/name4     4.0.0
+
+
+📦 @scope/dir/name5 0.1.0-pre.1+<hash>
+
+
+📦 @scope/dir/name6
+
 
 "
 `;
 
-snapshot[`forge list name* 1`] = `
+snapshot[`forge list [pattern] 1`] = `
 "
 🚨 @scope/name1     0.0.0 👉 1.0.0
 📦 @scope/name2     2.1.0-pre.1+<hash>
@@ -36,10 +48,9 @@ snapshot[`forge list name* 1`] = `
 "
 `;
 
-snapshot[`forge list dir/* 1`] = `
+snapshot[`forge list [directory] 1`] = `
 "
-📦 @scope/dir/name5 0.1.0-pre.1+<hash>
-📦 @scope/dir/name6
+
 "
 `;
 
@@ -99,16 +110,20 @@ snapshot[`forge changelog --all --emoji 1`] = `
 "
 `;
 
-snapshot[`forge changelog --type feat --no-breaking 1`] = `
+snapshot[`forge changelog --type <type> 1`] = `
 "
 🏷️  name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
 
+🏷️  name5@0.1.0-pre.1+<hash>
+
+  style(name5)!:tabs over spaces
+
 "
 `;
 
-snapshot[`forge changelog --all --type feat --no-breaking 1`] = `
+snapshot[`forge changelog --type <type> --no-breaking --all 1`] = `
 "
 🏷️  name2@2.1.0-pre.1+<hash>
 
@@ -130,17 +145,17 @@ snapshot[`forge changelog --breaking --markdown 1`] = `
 "
 `;
 
-snapshot[`forge compile --target aarch64-unknown-linux-gnu --bundle --install=<root>/install --concurrency=2 1`] = `
+snapshot[`forge compile --target <target> --bundle --install 1`] = `
 "
 📦 Compiled name1
 
-  🏺 <root>/dist/name1/1.0.0/aarch64-unknown-linux-gnu.tar.gz
+  🏺 <directory>/dist/name1/1.0.0/aarch64-unknown-linux-gnu.tar.gz
   💾 Installed name1
 
 "
 `;
 
-snapshot[`forge bump --release --pr --changelog=<root>/CHANGELOG.md --emoji 1`] = `
+snapshot[`forge bump --release --pr --changelog=<file> --emoji 1`] = `
 "
 🚀 Created bump pull request
 
