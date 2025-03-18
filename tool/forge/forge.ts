@@ -94,14 +94,14 @@
  *
  * ### Bump the versions
  *
- * To start a new release, let’s first update the package versions in the
+ * To start a new release, we’ll need to update the package versions in the
  * configuration files. We’re talking about the `version` field in `deno.json`.
  * If you change this version, it means a new release is coming, and **forge**
  * can help you with that.
  *
  * Let’s create a pull request on GitHub to increment our package version.
  * We’ll use the [GitHub CLI](https://cli.github.com) to get a token and pass
- * it to forge to identify the pull request creator. When our releases are
+ * it to the tool to identify the pull request creator. When our releases are
  * automated with workflows, authentication will be handled differently. More
  * to that later.
  *
