@@ -111,6 +111,23 @@ Deno.test("changelog() generates frivolous changelog with emojis", () => {
   );
 });
 
+Deno.test("changelog() generates commit hashes", () => {
+  const commits = [
+    testCommit({ summary: "fix code (#1)" }),
+    testCommit({ summary: "not a number (#this is not)", short: "short-1" }),
+    testCommit({ summary: "no number", short: "short-2" }),
+  ];
+  assertEquals(
+    changelog(commits, { hash: true }),
+    [
+      "- fix code (#1)",
+      "- not a number (#this is not) (short-1)",
+      "- no number (short-2)",
+      "",
+    ].join("\n"),
+  );
+});
+
 Deno.test("changelog() generates pull request numbers", () => {
   const commits = [
     testCommit({ summary: "feat(name): introduce (#3)" }),

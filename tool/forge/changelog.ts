@@ -51,8 +51,21 @@ export interface ChangelogOptions {
      */
     bullet?: string;
   };
-  /** Use emoji in commit summaries. */
+  /**
+   * Use emoji in commit summaries.
+   * @default {false}
+   */
   emoji?: boolean;
+  /**
+   * Include short commit short in commit summaries, when a pull request number
+   * is not available.
+   *
+   * This is useful for generating links to commits that were not merged with a
+   * pull request.
+   *
+   * @default {false}
+   */
+  hash?: boolean;
   /**
    * List only pull request numbers as commit summaries.
    *
@@ -61,6 +74,8 @@ export interface ChangelogOptions {
    *
    * Changelogs for releases and markdown files should not use this option,
    * because GitHub does not provide the pull request title in those contexts.
+   *
+   * @default {false}
    */
   github?: boolean;
 }
@@ -120,11 +135,14 @@ function summary(
   commit: ConventionalCommit,
   options: ChangelogOptions | undefined,
 ): string {
-  const summary = options?.emoji ? commit.description : commit.summary;
-  const result = options?.github
-    ? summary.replace(/^.*\((#\d+)\)$/, "$1")
-    : summary;
-  return options?.emoji ? emoji(commit, result) : result;
+  const prPattern = /^.*\((#\d+)\)$/;
+  let summary = options?.emoji ? commit.description : commit.summary;
+  if (options?.hash && !summary.match(prPattern)) {
+    summary = `${summary} (${commit.short})`;
+  }
+  if (options?.github) summary = summary.replace(prPattern, "$1");
+  if (options?.emoji) summary = emoji(commit, summary);
+  return summary;
 }
 
 function emoji(commit: ConventionalCommit, summary: string): string {

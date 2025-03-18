@@ -181,6 +181,7 @@ async function createPullRequest(
     changelog(pkg.changes ?? [], {
       title: `${pkg.name}@${pkg.version}`,
       emoji: options?.emoji ?? false,
+      hash: true,
     })
   ).join("\n");
   const prBody = packages.map((pkg) =>
@@ -188,6 +189,7 @@ async function createPullRequest(
       title: `${pkg.name}@${pkg.version}`,
       github: true,
       emoji: options?.emoji ?? false,
+      hash: true,
     })
   ).join("\n");
   try {
