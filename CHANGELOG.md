@@ -1,3 +1,8 @@
+## forge@0.1.5
+
+- 🐛 sort commits by importance in changelogs (#217)
+- 🐛 add commit hash when there is no pull request number (#215)
+
 ## forge@0.1.4
 
 - 🐛 do not try to release package at version 0.0.0 (#212)
