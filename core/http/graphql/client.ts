@@ -26,6 +26,8 @@ import {
 import { retryExchange } from "@urql/exchange-retry";
 import { RequestError } from "../request.ts";
 
+export { gql } from "@urql/core";
+
 /** A GraphQL client returned by the {@linkcode client} function. */
 export interface Client {
   /** Makes a GraphQL query. */
