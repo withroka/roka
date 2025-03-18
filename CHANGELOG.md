@@ -1,3 +1,7 @@
+## http@0.2.2
+
+- 🐛 export `gql` of `urlq` from `graphql/client` (#220)
+
 ## forge@0.1.5
 
 - 🐛 sort commits by importance in changelogs (#217)
