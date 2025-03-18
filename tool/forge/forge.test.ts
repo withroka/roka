@@ -52,16 +52,16 @@ const WORKSPACE: TempWorkspaceOptions = {
 
 const TESTS = [
   "list",
-  "list --modules name1 name2",
-  "list name*",
-  "list dir/*",
+  "list --modules [packages...]",
+  "list [pattern]",
+  "list [directory]",
   "changelog",
   "changelog --all --emoji",
-  "changelog --type feat --no-breaking",
-  "changelog --all --type feat --no-breaking",
+  "changelog --type <type>",
+  "changelog --type <type> --no-breaking --all",
   "changelog --breaking --markdown",
-  "compile --target aarch64-unknown-linux-gnu --bundle --install=<root>/install --concurrency=2",
-  "bump --release --pr --changelog=<root>/CHANGELOG.md --emoji",
+  "compile --target <target> --bundle --install",
+  "bump --release --pr --changelog=<file> --emoji",
   "release --draft --emoji",
 ];
 
@@ -82,13 +82,21 @@ for (const test of TESTS) {
     Deno.env.set("GITHUB_TOKEN", "token");
     const root = common(packages.map((pkg) => pkg.root));
     const repo = fakeRepository({ url: "<url>", git: git({ cwd: root }) });
-    const args = test.replaceAll("<root>", root).split(" ");
+    const args = test
+      .replaceAll("[package]", pkg1.name)
+      .replaceAll("[packages...]", packages.map((pkg) => pkg.name).join(" "))
+      .replaceAll("[pattern]", "name*")
+      .replaceAll("[directory]", root)
+      .replaceAll("<file>", join(root, "CHANGELOG.md"))
+      .replaceAll("<type>", "feat")
+      .replaceAll("<target>", "aarch64-unknown-linux-gnu")
+      .split(" ");
     assertEquals(await forge(args, { repo }), 0);
     console.calls.forEach((call) => {
       call.data = call.data.map((line) => {
         if (typeof line === "string") {
           return line
-            .replaceAll(root, "<root>")
+            .replaceAll(root, "<directory>")
             .replace(/(\d+\.\d+\.\d+-\w+\.\d+)\+(.......)/g, "$1+<hash>");
         }
         return line;
