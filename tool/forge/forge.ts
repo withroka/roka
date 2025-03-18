@@ -252,7 +252,7 @@ import type { Repository } from "@roka/github";
 import { bold } from "@std/fmt/colors";
 import { join, relative } from "@std/path";
 import { bump } from "./bump.ts";
-import { changelog } from "./changelog.ts";
+import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
 import { commits, type Package, releases, workspace } from "./package.ts";
 import { release } from "./release.ts";
@@ -394,11 +394,11 @@ function changelogCommand(context: ForgeOptions | undefined) {
         ...options.type !== undefined && { type: options.type },
         ...options.breaking !== undefined && { breaking: options.breaking },
       };
-      const changelogOptions = {
+      const changelogOptions: ChangelogOptions = {
         ...options.markdown
           ? {}
           : { markdown: { heading: "🏷️  ", bullet: "  " } },
-        emoji: options.emoji,
+        commit: { sort: "importance", emoji: options.emoji },
       };
       async function* changelogs(pkg: Package) {
         const log = await commits(pkg, {
@@ -408,7 +408,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
         if (log.length) {
           yield changelog(log, {
             ...changelogOptions,
-            title: `${pkg.name}@${pkg.version}`,
+            content: { title: `${pkg.name}@${pkg.version}` },
           });
         }
         if (!options.all) return;
@@ -416,14 +416,14 @@ function changelogCommand(context: ForgeOptions | undefined) {
           await releases(pkg),
           async (release) => ({
             ...release,
-            commits: await commits(pkg, { ...changelogOptions, ...release }),
+            commits: await commits(pkg, { ...commitOptions, ...release }),
           }),
         );
         for await (const release of releasesWithCommits) {
           if (release.commits.length) {
             yield changelog(release.commits, {
               ...changelogOptions,
-              title: `${pkg.name}@${release.version}`,
+              content: { title: `${pkg.name}@${release.version}` },
             });
           }
         }

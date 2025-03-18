@@ -137,18 +137,23 @@ function body(
     ? `compare/${latestTag}...${currentTag}`
     : `commits/${currentTag}/${pkg.directory}`;
   return changelog(pkg.changes ?? [], {
-    ...options,
-    title,
-    footer: {
-      title: "Details",
-      items: [
-        `- [Full changelog](${repo.url}/${fullChangelogUrl})`,
-        `- [Documentation](https://jsr.io/${pkg.config.name}@${pkg.config.version})`,
-      ],
+    content: {
+      title,
+      footer: {
+        title: "Details",
+        items: [
+          `- [Full changelog](${repo.url}/${fullChangelogUrl})`,
+          `- [Documentation](https://jsr.io/${pkg.config.name}@${pkg.config.version})`,
+        ],
+      },
+    },
+    commit: {
+      sort: "importance",
+      emoji: options?.emoji ?? false,
+      hash: true,
     },
     markdown: {
       bullet: "",
     },
-    hash: true,
   });
 }

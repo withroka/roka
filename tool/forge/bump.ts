@@ -134,8 +134,11 @@ async function updateChangelog(
   assertExists(options?.changelog, "Changelog file was not passed");
   const prepend = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
-      title: `${pkg.name}@${pkg.version}`,
-      ...options?.emoji && { emoji: options?.emoji },
+      content: { title: `${pkg.name}@${pkg.version}` },
+      commit: {
+        sort: "importance",
+        ...options?.emoji && { emoji: options?.emoji },
+      },
     })
   ).join("\n");
   let existing = "";
@@ -177,19 +180,21 @@ async function createPullRequest(
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} to ${packages[0]?.version}`
     : "chore: bump versions";
+  const commitOptions = {
+    sort: "importance",
+    emoji: options?.emoji ?? false,
+    hash: true,
+  } as const;
   const commitBody = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
-      title: `${pkg.name}@${pkg.version}`,
-      emoji: options?.emoji ?? false,
-      hash: true,
+      content: { title: `${pkg.name}@${pkg.version}` },
+      commit: commitOptions,
     })
   ).join("\n");
   const prBody = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
-      title: `${pkg.name}@${pkg.version}`,
-      github: true,
-      emoji: options?.emoji ?? false,
-      hash: true,
+      content: { title: `${pkg.name}@${pkg.version}` },
+      commit: { ...commitOptions, github: true },
     })
   ).join("\n");
   try {

@@ -21,15 +21,17 @@ Deno.test("changelog() generates Markdown changelog", () => {
   );
 });
 
-Deno.test("changelog() adds title and footer", () => {
+Deno.test("changelog() allows custom content", () => {
   const commits = [
     testCommit({ summary: "feat: introduce" }),
     testCommit({ summary: "fix: fix code" }),
   ];
   assertEquals(
     changelog(commits, {
-      title: "Title",
-      footer: { title: "Footer", items: ["item1", "item2"] },
+      content: {
+        title: "Title",
+        footer: { title: "Footer", items: ["item1", "item2"] },
+      },
     }),
     [
       "## Title",
@@ -53,8 +55,10 @@ Deno.test("changelog() allows custom Markdown", () => {
   ];
   assertEquals(
     changelog(commits, {
-      title: "Title",
-      footer: { title: "Footer", items: ["item1", "item2"] },
+      content: {
+        title: "Title",
+        footer: { title: "Footer", items: ["item1", "item2"] },
+      },
       markdown: { heading: "# ", subheading: "## ", bullet: "* " },
     }),
     [
@@ -67,6 +71,59 @@ Deno.test("changelog() allows custom Markdown", () => {
       "",
       "* item1",
       "* item2",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("changelog() can sort commits by importance", () => {
+  const commits = [
+    testCommit({ summary: "style!: breaking-style-1" }),
+    testCommit({ summary: "build: build" }),
+    testCommit({ summary: "build!: breaking-build" }),
+    testCommit({ summary: "chore: chore" }),
+    testCommit({ summary: "ci: ci" }),
+    testCommit({ summary: "docs: docs" }),
+    testCommit({ summary: "fix: fix" }),
+    testCommit({ summary: "fix!: breaking-fix" }),
+    testCommit({ summary: "perf: perf-1" }),
+    testCommit({ summary: "refactor: refactor" }),
+    testCommit({ summary: "revert: revert" }),
+    testCommit({ summary: "style: style" }),
+    testCommit({ summary: "style!: breaking-style-2" }),
+    testCommit({ summary: "test: test" }),
+    testCommit({ summary: "perf: perf-2" }),
+    testCommit({ summary: "unknown: unknown" }),
+    testCommit({ summary: "no type" }),
+    testCommit({ summary: "feat: feat-1" }),
+    testCommit({ summary: "feat: feat-2" }),
+    testCommit({ summary: "feat!: breaking-feat" }),
+  ];
+  assertEquals(
+    changelog(commits, {
+      commit: { sort: "importance" },
+    }),
+    [
+      "- feat!: breaking-feat",
+      "- fix!: breaking-fix",
+      "- build!: breaking-build",
+      "- style!: breaking-style-1",
+      "- style!: breaking-style-2",
+      "- feat: feat-1",
+      "- feat: feat-2",
+      "- fix: fix",
+      "- build: build",
+      "- chore: chore",
+      "- ci: ci",
+      "- docs: docs",
+      "- perf: perf-1",
+      "- perf: perf-2",
+      "- refactor: refactor",
+      "- revert: revert",
+      "- style: style",
+      "- test: test",
+      "- unknown: unknown",
+      "- no type",
       "",
     ].join("\n"),
   );
@@ -90,7 +147,10 @@ Deno.test("changelog() generates frivolous changelog with emojis", () => {
     testCommit({ summary: "no type" }),
   ];
   assertEquals(
-    changelog(commits, { emoji: true, markdown: { bullet: "" } }),
+    changelog(commits, {
+      commit: { emoji: true },
+      markdown: { bullet: "" },
+    }),
     [
       "🔧 breaking 💥",
       "🔧 build",
@@ -118,7 +178,7 @@ Deno.test("changelog() generates commit hashes", () => {
     testCommit({ summary: "no number", short: "short-2" }),
   ];
   assertEquals(
-    changelog(commits, { hash: true }),
+    changelog(commits, { commit: { hash: true } }),
     [
       "- fix code (#1)",
       "- not a number (#this is not) (short-1)",
@@ -137,7 +197,7 @@ Deno.test("changelog() generates pull request numbers", () => {
     testCommit({ summary: "no number" }),
   ];
   assertEquals(
-    changelog(commits, { github: true }),
+    changelog(commits, { commit: { github: true } }),
     [
       "- #3",
       "- #2",
@@ -158,7 +218,7 @@ Deno.test("changelog() generates pull request numbers with emojis", () => {
     testCommit({ summary: "no number" }),
   ];
   assertEquals(
-    changelog(commits, { emoji: true, github: true }),
+    changelog(commits, { commit: { emoji: true, github: true } }),
     [
       "- ✨ #3",
       "- 🔧 #2 💥",
