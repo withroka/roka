@@ -80,6 +80,10 @@ snapshot[`forge changelog --all --emoji 1`] = `
   ✨ feature
   ♻️ rewrite
 
+🏷️  name2@1.0.0
+
+  ✨ name2
+
 🏷️  name3@3.0.0
 
   📝 fix typo
@@ -95,11 +99,24 @@ snapshot[`forge changelog --all --emoji 1`] = `
 "
 `;
 
-snapshot[`forge changelog --type docs --no-breaking 1`] = `
+snapshot[`forge changelog --type feat --no-breaking 1`] = `
 "
-🏷️  name3@3.0.0
+🏷️  name2@2.1.0-pre.1+<hash>
 
-  docs(name3): fix typo
+  feat(name2): feature
+
+"
+`;
+
+snapshot[`forge changelog --all --type feat --no-breaking 1`] = `
+"
+🏷️  name2@2.1.0-pre.1+<hash>
+
+  feat(name2): feature
+
+🏷️  name2@1.0.0
+
+  feat(name2): name2
 
 "
 `;

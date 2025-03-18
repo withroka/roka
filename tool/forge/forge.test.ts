@@ -40,6 +40,7 @@ const WORKSPACE: TempWorkspaceOptions = {
   ],
   commits: [
     { summary: "initial", tags: ["name1@1.0.0-pre.1", "name4@4.0.0"] },
+    { summary: "feat(name2): name2", tags: ["name2@1.0.0"] },
     { summary: "fix(name1): bug", tags: ["name2@2.0.0"] },
     { summary: "refactor(name2): rewrite" },
     { summary: "feat(name2): feature", tags: ["name3@2.0.0"] },
@@ -56,7 +57,8 @@ const TESTS = [
   "list dir/*",
   "changelog",
   "changelog --all --emoji",
-  "changelog --type docs --no-breaking",
+  "changelog --type feat --no-breaking",
+  "changelog --all --type feat --no-breaking",
   "changelog --breaking --markdown",
   "compile --target aarch64-unknown-linux-gnu --bundle --install=<root>/install --concurrency=2",
   "bump --release --pr --changelog=<root>/CHANGELOG.md --emoji",
