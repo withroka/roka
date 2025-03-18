@@ -45,7 +45,7 @@ Deno.test("release() rejects 0.0.0", async () => {
 Deno.test("release() creates initial release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ summary: "feat: new feature" }],
+    commits: [{ summary: "feat: new feature (#1)" }],
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
   const [rls, assets] = await release(pkg, { repo });
@@ -56,7 +56,7 @@ Deno.test("release() creates initial release", async () => {
     [
       "## Initial release",
       "",
-      "feat: new feature",
+      "feat: new feature (#1)",
       "",
       "### Details",
       "",
@@ -75,7 +75,7 @@ Deno.test("release() creates update release", async () => {
     config: { name: "@scope/name", version: "1.3.0" },
     commits: [
       { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
+      { summary: "feat: new feature (#1)" },
     ],
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
@@ -87,7 +87,7 @@ Deno.test("release() creates update release", async () => {
     [
       "## Changes",
       "",
-      "feat: new feature",
+      "feat: new feature (#1)",
       "",
       "### Details",
       "",
@@ -131,7 +131,7 @@ Deno.test("release() updates existing release", async () => {
     config: { name: "@scope/name", version: `1.3.0` },
     commits: [
       { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
+      { summary: "feat: new feature (#1)" },
     ],
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
@@ -144,7 +144,7 @@ Deno.test("release() updates existing release", async () => {
     [
       "## Changes",
       "",
-      "feat: new feature",
+      "feat: new feature (#1)",
       "",
       "### Details",
       "",

@@ -200,6 +200,7 @@ Deno.test("bump() creates a pull request", async () => {
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const short = (await repo.git.commits.head())?.short;
   const current = await repo.git.branches.current();
   const pr = await bump([pkg], {
     release: true,
@@ -218,7 +219,7 @@ Deno.test("bump() creates a pull request", async () => {
     [
       "## name@1.3.0",
       "",
-      "- fix: force pushed",
+      `- fix: force pushed (${short})`,
       "- #42",
       "",
     ].join("\n"),
@@ -236,7 +237,7 @@ Deno.test("bump() creates a pull request", async () => {
     [
       "## name@1.3.0",
       "",
-      "- fix: force pushed",
+      `- fix: force pushed (${short})`,
       "- feat: new feature (#42)",
     ].join("\n"),
   );

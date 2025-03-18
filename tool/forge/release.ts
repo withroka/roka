@@ -149,5 +149,6 @@ function body(
     markdown: {
       bullet: "",
     },
+    hash: true,
   });
 }
