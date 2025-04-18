@@ -718,7 +718,7 @@ Deno.test("git().index.status() can list files under untracked directories", asy
   });
 });
 
-Deno.test("git().index.status() lists ignored files", async () => {
+Deno.test("git().index.status() skips ignored files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "file");
   await repo.index.add(".gitignore");
@@ -728,21 +728,21 @@ Deno.test("git().index.status() lists ignored files", async () => {
     staged: [],
     unstaged: [],
     untracked: [],
-    ignored: [{ path: "file" }],
+    ignored: [],
   });
 });
 
-Deno.test("git().index.status() can skip ignored files", async () => {
+Deno.test("git().index.status() can list ignored files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "file");
   await repo.index.add(".gitignore");
   await repo.commits.create("commit");
   await Deno.writeTextFile(repo.path("file"), "content");
-  assertEquals(await repo.index.status({ ignored: false }), {
+  assertEquals(await repo.index.status({ ignored: true }), {
     staged: [],
     unstaged: [],
     untracked: [],
-    ignored: [],
+    ignored: [{ path: "file" }],
   });
 });
 
@@ -842,7 +842,7 @@ Deno.test("git().index.status() can list staged and ignored changes to the same 
   await repo.commits.create("commit");
   await repo.index.remove("file");
   await Deno.writeTextFile(repo.path("file"), "content");
-  assertEquals(await repo.index.status(), {
+  assertEquals(await repo.index.status({ ignored: true }), {
     staged: [{ path: "file", status: "deleted" }],
     unstaged: [],
     untracked: [],

@@ -482,7 +482,7 @@ export interface IndexStatusOptions {
    * {@linkcode IndexStatusOptions.untracked | untracked} is set to `"all"`. If
    * set to `false`, ignored files are not included.
    *
-   * @default {true}
+   * @default {false}
    */
   ignored?: boolean;
   /**
@@ -812,7 +812,7 @@ export function git(options?: GitOptions): Git {
         await run(gitOptions, "rm", options?.force && "--force", path);
       },
       async status(options?: IndexStatusOptions) {
-        const { path, untracked = true, ignored = true, renames = true } =
+        const { path, untracked = true, ignored = false, renames = true } =
           options ?? {};
         const output = await run(
           gitOptions,
