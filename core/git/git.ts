@@ -95,13 +95,13 @@ export interface Git {
 /** Index operations from {@linkcode Git.index}. */
 export interface Index {
   /** Stages files for commit. */
-  add: (paths: string | string[], options?: IndexAddOptions) => Promise<void>;
+  add: (path: string | string[], options?: IndexAddOptions) => Promise<void>;
   /** Removes files from the index. */
   remove: (
-    paths: string | string[],
+    path: string | string[],
     options?: IndexRemoveOptions,
   ) => Promise<void>;
-  /** Returns the status of the index. */
+  /** Returns the status of the index and the local working tree. */
   status: (options?: IndexStatusOptions) => Promise<Status>;
 }
 
@@ -212,23 +212,40 @@ export interface User {
 /** Status of files in the index and the working tree. */
 export interface Status {
   /** Files that are staged for commit (the index). */
-  staged: StatusPath[];
+  staged: TrackedPathStatus[];
   /** Files that are not staged for commit (the working tree). */
-  unstaged: StatusPath[];
+  unstaged: TrackedPathStatus[];
   /** Files that are not tracked by git. */
-  untracked: string[];
+  untracked: UntrackedPathStatus[];
   /** Files that are ignored by git. */
-  ignored: string[];
+  ignored: UntrackedPathStatus[];
 }
 
 /** Status of a file in the index and the working tree. */
-export interface StatusPath {
+export type TrackedPathStatus = UpdatedPathStatus | RenamedPathStatus;
+
+/** Status of a non-renamed file in the index and the working tree. */
+export interface UpdatedPathStatus {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
-  status: "modified" | "added" | "deleted" | "renamed";
-  /** Previous file path if renamed. */
-  from?: string;
+  status: "modified" | "added" | "deleted";
+}
+
+/** Status of a renamed file in the index and the working tree. */
+export interface RenamedPathStatus {
+  /** Path to the file. */
+  path: string;
+  /** Status of the file. */
+  status: "renamed";
+  /** Previous file path. */
+  from: string;
+}
+
+/** Status of an untracked or ignored file in the index and the working tree. */
+export interface UntrackedPathStatus {
+  /** Path to the file. */
+  path: string;
 }
 
 /** A single commit in a git repository. */
@@ -781,18 +798,18 @@ export function git(options?: GitOptions): Git {
       },
     },
     index: {
-      async add(pathspecs, options?: IndexAddOptions) {
+      async add(path, options?: IndexAddOptions) {
         await run(
           gitOptions,
           "add",
           options?.force && "--force",
           options?.executable === false && "--chmod=-x",
           options?.executable === true && "--chmod=+x",
-          pathspecs,
+          path,
         );
       },
-      async remove(pathspecs, options?: IndexRemoveOptions) {
-        await run(gitOptions, "rm", options?.force && "--force", pathspecs);
+      async remove(path, options?: IndexRemoveOptions) {
+        await run(gitOptions, "rm", options?.force && "--force", path);
       },
       async status(options?: IndexStatusOptions) {
         const { path, untracked = true, ignored = true, renames = true } =
@@ -817,7 +834,7 @@ export function git(options?: GitOptions): Git {
           untracked: [],
           ignored: [],
         };
-        const xyToStatus: Record<string, StatusPath["status"]> = {
+        const xyToStatus: Record<string, TrackedPathStatus["status"]> = {
           "M": "modified",
           "T": "modified",
           "A": "added",
@@ -840,26 +857,30 @@ export function git(options?: GitOptions): Git {
           assertExists(path, "Cannot parse status line");
           rename = x === "R" || y === "R";
           if (x === "?") {
-            status.untracked.push(path);
+            status.untracked.push({ path });
             continue;
           }
           if (x === "!") {
-            status.ignored.push(path);
+            status.ignored.push({ path });
             continue;
           }
           if (x !== " ") {
-            status.staged.push({
-              path,
-              status: xyToStatus[x] ?? "modified",
-              ...rename ? { from: next } : {},
-            });
+            const type = xyToStatus[x] ?? "modified";
+            if (type === "renamed") {
+              assertExists(next, "Cannot parse status line");
+              status.staged.push({ path, status: "renamed", from: next });
+            } else {
+              status.staged.push({ path, status: type });
+            }
           }
           if (y !== " ") {
-            status.unstaged.push({
-              path,
-              status: xyToStatus[y] ?? "modified",
-              ...rename ? { from: next } : {},
-            });
+            const type = xyToStatus[y] ?? "modified";
+            if (type === "renamed") {
+              assertExists(next, "Cannot parse status line");
+              status.unstaged.push({ path, status: "renamed", from: next });
+            } else {
+              status.unstaged.push({ path, status: type });
+            }
           }
         }
         return status;

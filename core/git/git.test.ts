@@ -678,7 +678,7 @@ Deno.test("git().index.status() lists untracked files", async () => {
   assertEquals(await repo.index.status(), {
     staged: [],
     unstaged: [],
-    untracked: ["file"],
+    untracked: [{ path: "file" }],
     ignored: [],
   });
 });
@@ -701,7 +701,7 @@ Deno.test("git().index.status() lists untracked directories", async () => {
   assertEquals(await repo.index.status(), {
     staged: [],
     unstaged: [],
-    untracked: ["directory/"],
+    untracked: [{ path: "directory/" }],
     ignored: [],
   });
 });
@@ -713,7 +713,7 @@ Deno.test("git().index.status() can list files under untracked directories", asy
   assertEquals(await repo.index.status({ untracked: "all" }), {
     staged: [],
     unstaged: [],
-    untracked: ["directory/file"],
+    untracked: [{ path: "directory/file" }],
     ignored: [],
   });
 });
@@ -728,7 +728,7 @@ Deno.test("git().index.status() lists ignored files", async () => {
     staged: [],
     unstaged: [],
     untracked: [],
-    ignored: ["file"],
+    ignored: [{ path: "file" }],
   });
 });
 
@@ -757,7 +757,7 @@ Deno.test("git().index.status() lists ignored directories", async () => {
     staged: [],
     unstaged: [],
     untracked: [],
-    ignored: ["directory/"],
+    ignored: [{ path: "directory/" }],
   });
 });
 
@@ -772,7 +772,7 @@ Deno.test("git().index.status() can list files under ignored directories", async
     staged: [],
     unstaged: [],
     untracked: [],
-    ignored: ["directory/file"],
+    ignored: [{ path: "directory/file" }],
   });
 });
 
@@ -791,7 +791,9 @@ Deno.test("git().index.status() can filter by path", async () => {
   assertEquals(await repo.index.status({ path: "directory/" }), expected);
   assertEquals(await repo.index.status({ path: "directory/*" }), expected);
   assertEquals(await repo.index.status({ path: "directory/file" }), expected);
+  assertEquals(await repo.index.status({ path: ["directory/file"] }), expected);
   assertEquals(await repo.index.status({ path: "*/file" }), expected);
+  assertEquals(await repo.index.status({ path: ["other", "dir*"] }), expected);
   assertEquals(await repo.index.status({ path: "other" }), {
     staged: [],
     unstaged: [],
@@ -826,7 +828,7 @@ Deno.test("git().index.status() can list staged and untracked changes to the sam
   assertEquals(await repo.index.status(), {
     staged: [{ path: "file", status: "deleted" }],
     unstaged: [],
-    untracked: ["file"],
+    untracked: [{ path: "file" }],
     ignored: [],
   });
 });
@@ -844,7 +846,7 @@ Deno.test("git().index.status() can list staged and ignored changes to the same 
     staged: [{ path: "file", status: "deleted" }],
     unstaged: [],
     untracked: [],
-    ignored: ["file"],
+    ignored: [{ path: "file" }],
   });
 });
 
