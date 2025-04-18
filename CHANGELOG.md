@@ -1,3 +1,7 @@
+## git@0.3.0
+
+- ✨ `git().index.status()` (#223)
+
 ## http@0.2.2
 
 - 🐛 export `gql` of `urlq` from `graphql/client` (#220)
