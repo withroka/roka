@@ -1,3 +1,7 @@
+## git@0.3.1
+
+- 🐛 skip ignored files by default in `git().index.status()` (#225)
+
 ## git@0.3.0
 
 - ✨ `git().index.status()` (#223)
