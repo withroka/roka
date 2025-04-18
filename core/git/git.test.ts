@@ -430,18 +430,62 @@ Deno.test("git().index.add() adds files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commits.create("commit");
-  assertEquals(commit?.summary, "commit");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "added" },
+  ]);
 });
 
 Deno.test("git().index.add() rejects non-existent file", async () => {
   await using repo = await tempRepository();
   await assertRejects(() => repo.index.add("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
 });
 
-Deno.test("git().index.remove() rejects remove non-existent file", async () => {
+Deno.test("git().index.add() rejects ignored file", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.index.remove("file"), GitError);
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await assertRejects(() => repo.index.add("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.add() can force add ignored file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await repo.index.add("file", { force: true });
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "added" },
+  ]);
+});
+
+Deno.test("git().index.add() can add file as executable", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file", { executable: true });
+  const commit = await repo.commits.create("commit");
+  await repo.index.remove("file", { force: true });
+  await repo.commits.create("commit");
+  await repo.branches.checkout({ target: commit });
+  const stat = await Deno.stat(repo.path("file"));
+  assertEquals((stat.mode ?? 0) & 0o111, 0o111);
+});
+
+Deno.test("git().index.add() can add file as non-executable", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await Deno.chmod(repo.path("file"), 0o755);
+  await repo.index.add("file", { executable: false });
+  const commit = await repo.commits.create("commit");
+  await repo.index.remove("file", { force: true });
+  await repo.commits.create("commit");
+  await repo.branches.checkout({ target: commit });
+  const stat = await Deno.stat(repo.path("file"));
+  assertEquals((stat.mode ?? 0) & 0o111, 0o000);
 });
 
 Deno.test("git().index.remove() removes files", async () => {
@@ -450,8 +494,358 @@ Deno.test("git().index.remove() removes files", async () => {
   repo.index.add("file");
   await repo.commits.create("first");
   repo.index.remove("file");
-  await repo.commits.create("second");
-  await assertRejects(() => Deno.stat(repo.path("file")), Deno.errors.NotFound);
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "deleted" },
+  ]);
+});
+
+Deno.test("git().index.remove() rejects non-existent file", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(() => repo.index.remove("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.remove() rejects modified file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "modified content");
+  await assertRejects(() => repo.index.remove("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.remove() can force remove modified file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "modified content");
+  await repo.index.remove("file", { force: true });
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "deleted" },
+  ]);
+});
+
+Deno.test("git().index.status() lists staged modified file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "modified content");
+  await repo.index.add("file");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "modified" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists staged type changed file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file", { executable: false });
+  await repo.commits.create("commit");
+  await Deno.chmod(repo.path("file"), 0o755);
+  await repo.index.add("file", { executable: true });
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "modified" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists staged added file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "added" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists staged deleted file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await repo.index.remove("file");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "deleted" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists staged renamed file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await Deno.rename(repo.path("old.file"), repo.path("file"));
+  await repo.index.add("file");
+  await repo.index.remove("old.file");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "renamed", from: "old.file" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists unstaged modified file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "modified content");
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [{ path: "file", status: "modified" }],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists unstaged type changed file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file", { executable: false });
+  await repo.commits.create("commit");
+  await Deno.chmod(repo.path("file"), 0o755);
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [{ path: "file", status: "modified" }],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists unstaged added file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "added" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists unstaged deleted file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [{ path: "file", status: "deleted" }],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() can ignore renames", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await Deno.rename(repo.path("old.file"), repo.path("file"));
+  await repo.index.add("file");
+  await repo.index.remove("old.file");
+  assertEquals(await repo.index.status({ renames: false }), {
+    staged: [
+      { path: "file", status: "added" },
+      { path: "old.file", status: "deleted" },
+    ],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists untracked files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [],
+    untracked: ["file"],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() can skip untracked files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  assertEquals(await repo.index.status({ untracked: false }), {
+    staged: [],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists untracked directories", async () => {
+  await using repo = await tempRepository();
+  await Deno.mkdir(repo.path("directory"));
+  await Deno.writeTextFile(repo.path("directory/file"), "content");
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [],
+    untracked: ["directory/"],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() can list files under untracked directories", async () => {
+  await using repo = await tempRepository();
+  await Deno.mkdir(repo.path("directory"));
+  await Deno.writeTextFile(repo.path("directory/file"), "content");
+  assertEquals(await repo.index.status({ untracked: "all" }), {
+    staged: [],
+    unstaged: [],
+    untracked: ["directory/file"],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [],
+    untracked: [],
+    ignored: ["file"],
+  });
+});
+
+Deno.test("git().index.status() can skip ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  assertEquals(await repo.index.status({ ignored: false }), {
+    staged: [],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists ignored directories", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "directory/");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await Deno.mkdir(repo.path("directory"));
+  await Deno.writeTextFile(repo.path("directory/file"), "content");
+  assertEquals(await repo.index.status({ ignored: true, untracked: true }), {
+    staged: [],
+    unstaged: [],
+    untracked: [],
+    ignored: ["directory/"],
+  });
+});
+
+Deno.test("git().index.status() can list files under ignored directories", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "directory/");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await Deno.mkdir(repo.path("directory"));
+  await Deno.writeTextFile(repo.path("directory/file"), "content");
+  assertEquals(await repo.index.status({ ignored: true, untracked: "all" }), {
+    staged: [],
+    unstaged: [],
+    untracked: [],
+    ignored: ["directory/file"],
+  });
+});
+
+Deno.test("git().index.status() can filter by path", async () => {
+  await using repo = await tempRepository();
+  await Deno.mkdir(repo.path("directory"));
+  await Deno.writeTextFile(repo.path("directory/file"), "content");
+  await repo.index.add("directory/file");
+  const expected = {
+    staged: [{ path: "directory/file", status: "added" as const }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  };
+  assertEquals(await repo.index.status({ path: "directory" }), expected);
+  assertEquals(await repo.index.status({ path: "directory/" }), expected);
+  assertEquals(await repo.index.status({ path: "directory/*" }), expected);
+  assertEquals(await repo.index.status({ path: "directory/file" }), expected);
+  assertEquals(await repo.index.status({ path: "*/file" }), expected);
+  assertEquals(await repo.index.status({ path: "other" }), {
+    staged: [],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() can list staged and unstaged changes to the same file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "new content");
+  await repo.index.add("file");
+  await Deno.remove(repo.path("file"));
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "modified" }],
+    unstaged: [{ path: "file", status: "deleted" }],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() can list staged and untracked changes to the same file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await repo.index.remove("file");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "deleted" }],
+    unstaged: [],
+    untracked: ["file"],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() can list staged and ignored changes to the same file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await repo.index.add(".gitignore");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file", { force: true });
+  await repo.commits.create("commit");
+  await repo.index.remove("file");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "deleted" }],
+    unstaged: [],
+    untracked: [],
+    ignored: ["file"],
+  });
 });
 
 Deno.test("git().commits.create() creates a commit", async () => {
@@ -802,7 +1196,7 @@ Deno.test("git().commits.log() ignores empty range", async () => {
   );
 });
 
-Deno.test("git().commits.log() filters by author", async () => {
+Deno.test("git().commits.log() can filter by author", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commits.create("first", {
     author: { name: "name1", email: "email1@example.com" },
@@ -826,7 +1220,7 @@ Deno.test("git().commits.log() filters by author", async () => {
   );
 });
 
-Deno.test("git().commits.log() filters by committer", async () => {
+Deno.test("git().commits.log() can filter by committer", async () => {
   await using repo = await tempRepository();
   await repo.config.set({
     user: { name: "name1", email: "email1@example.com" },

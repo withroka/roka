@@ -29,12 +29,14 @@
  *
  * @todo Extend `git().config.set()` with more configurations.
  * @todo Add `git().config.get()`
+ * @todo Add stash management.
  * @todo Introduce the `Branch` object type.
  * @todo Add `git().branches.copy()`
  * @todo Add `git().branches.move()`
  * @todo Add `git().branches.track()`
+ * @todo Add `git().index.move()`
  * @todo Handle merges, rebases, conflicts.
- * @todo Add `git().submodules`.
+ * @todo Handle submodules.
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
@@ -48,6 +50,7 @@ import {
   assertFalse,
   assertGreater,
 } from "@std/assert";
+import { slidingWindows } from "@std/collections";
 import { basename, join, normalize } from "@std/path";
 
 /**
@@ -92,9 +95,14 @@ export interface Git {
 /** Index operations from {@linkcode Git.index}. */
 export interface Index {
   /** Stages files for commit. */
-  add: (pathspecs: string | string[]) => Promise<void>;
+  add: (paths: string | string[], options?: IndexAddOptions) => Promise<void>;
   /** Removes files from the index. */
-  remove: (pathspecs: string | string[]) => Promise<void>;
+  remove: (
+    paths: string | string[],
+    options?: IndexRemoveOptions,
+  ) => Promise<void>;
+  /** Returns the status of the index. */
+  status: (options?: IndexStatusOptions) => Promise<Status>;
 }
 
 /** Branch operations from {@linkcode Git.branches}. */
@@ -149,76 +157,6 @@ export interface Remotes {
   defaultBranch: (name?: string) => Promise<string | undefined>;
 }
 
-/** A ref that points to a commit object in a git repository. */
-export type Commitish = Commit | Tag | string;
-
-/** A single commit in a git repository. */
-export interface Commit {
-  /** Full hash of commit. */
-  hash: string;
-  /** Short hash of commit. */
-  short: string;
-  /** Commit summary, the first line of the commit message. */
-  summary: string;
-  /** Commit body, excluding the first line and trailers from the message. */
-  body?: string;
-  /** Trailer values at the end of the commit message. */
-  trailers: Record<string, string>;
-  /** Author, who wrote the code. */
-  author: User;
-  /** Committer, who created the commit. */
-  committer: User;
-}
-
-/** A tag in a git repository. */
-export interface Tag {
-  /** Tag name. */
-  name: string;
-  /** Commit that is tagged. */
-  commit: Commit;
-  /** Tag subject from tag message. */
-  subject?: string;
-  /** Tag body from tag message. */
-  body?: string;
-  /** Tagger, who created the tag. */
-  tagger?: User;
-}
-
-/** A remote tracked in a git repository. */
-export interface Remote {
-  /** Remote name. */
-  name: string;
-  /** Remote fetch URL. */
-  fetchUrl: string;
-  /** Remote push URL. */
-  pushUrl: string;
-}
-
-/** A revision range over commit history in a git repository. */
-export interface RevisionRange {
-  /**
-   * Match objects that are descendants of this revision.
-   *
-   * The pointed commit itself is excluded from the range.
-   */
-  from?: Commitish;
-  /**
-   * Match objects that are ancestors of this revision.
-   *
-   * The pointed commit itself is included in the range.
-   */
-  to?: Commitish;
-  /**
-   * Match objects that are reachable from either end, but not from both.
-   *
-   * Ignored if either {@linkcode RevisionRange.from} or
-   * {@linkcode RevisionRange.to} is not set.
-   *
-   * @default {false}
-   */
-  symmetric?: boolean;
-}
-
 /** Configuration for a git repository. */
 export interface Config {
   /** Commit configuration. */
@@ -269,6 +207,98 @@ export interface User {
   name: string;
   /** E-mail of the user. */
   email: string;
+}
+
+/** Status of files in the index and the working tree. */
+export interface Status {
+  /** Files that are staged for commit (the index). */
+  staged: StatusPath[];
+  /** Files that are not staged for commit (the working tree). */
+  unstaged: StatusPath[];
+  /** Files that are not tracked by git. */
+  untracked: string[];
+  /** Files that are ignored by git. */
+  ignored: string[];
+}
+
+/** Status of a file in the index and the working tree. */
+export interface StatusPath {
+  /** Path to the file. */
+  path: string;
+  /** Status of the file. */
+  status: "modified" | "added" | "deleted" | "renamed";
+  /** Previous file path if renamed. */
+  from?: string;
+}
+
+/** A single commit in a git repository. */
+export interface Commit {
+  /** Full hash of commit. */
+  hash: string;
+  /** Short hash of commit. */
+  short: string;
+  /** Commit summary, the first line of the commit message. */
+  summary: string;
+  /** Commit body, excluding the first line and trailers from the message. */
+  body?: string;
+  /** Trailer values at the end of the commit message. */
+  trailers: Record<string, string>;
+  /** Author, who wrote the code. */
+  author: User;
+  /** Committer, who created the commit. */
+  committer: User;
+}
+
+/** A tag in a git repository. */
+export interface Tag {
+  /** Tag name. */
+  name: string;
+  /** Commit that is tagged. */
+  commit: Commit;
+  /** Tag subject from tag message. */
+  subject?: string;
+  /** Tag body from tag message. */
+  body?: string;
+  /** Tagger, who created the tag. */
+  tagger?: User;
+}
+
+/** A ref that points to a commit object in a git repository. */
+export type Commitish = Commit | Tag | string;
+
+/** A remote tracked in a git repository. */
+export interface Remote {
+  /** Remote name. */
+  name: string;
+  /** Remote fetch URL. */
+  fetchUrl: string;
+  /** Remote push URL. */
+  pushUrl: string;
+}
+
+/** A revision range over commit history in a git repository. */
+export interface RevisionRange {
+  /**
+   * Match objects that are descendants of this revision.
+   *
+   * The pointed commit itself is excluded from the range.
+   */
+  from?: Commitish;
+  /**
+   * Match objects that are ancestors of this revision.
+   *
+   * The pointed commit itself is included in the range.
+   */
+  to?: Commitish;
+  /**
+   * Match objects that are reachable from either end, but not from both.
+   *
+   * Ignored if either {@linkcode RevisionRange.from} or
+   * {@linkcode RevisionRange.to} is not set.
+   *
+   * @default {false}
+   */
+  symmetric?: boolean;
 }
 
 /** Options for the {@linkcode git} function. */
@@ -382,6 +412,72 @@ export interface BranchDeleteOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+/** Options for the {@linkcode Index.add} function. */
+export interface IndexAddOptions {
+  /**
+   * Add files to the index, even if they are ignored.
+   * @default {false}
+   */
+  force?: boolean;
+  /**
+   * Override the executable bit of the file.
+   *
+   * If set, the file mode in the file sytem is ignored, and the executable bit
+   * is set to the given value.
+   */
+  executable?: boolean;
+}
+
+/** Options for the {@linkcode Index.remove} function. */
+export interface IndexRemoveOptions {
+  /**
+   * Remove files, even if they have local modifications.
+   * @default {false}
+   */
+  force?: boolean;
+}
+
+/** Options for the {@linkcode Index.status} function. */
+export interface IndexStatusOptions {
+  /**
+   * Limit the status to the given pathspecs.
+   *
+   * If not set, all files are included.
+   */
+  path?: string | string[];
+  /**
+   * Control the status output for untracked files.
+   *
+   * If set to `false`, untracked files are not included. If set to `true`,
+   * untracked directories are included, but their files are not listed. If set
+   * to `"all"`, all untracked files are included.
+   *
+   * @default {true}
+   */
+  untracked?: boolean | "all";
+  /**
+   * Control the status output for ignored files.
+   *
+   * If set to `true`, ignored files and directories are included. In
+   * this mode, files under ignored directories are shown if
+   * {@linkcode IndexStatusOptions.untracked | untracked} is set to `"all"`. If
+   * set to `false`, ignored files are not included.
+   *
+   * @default {true}
+   */
+  ignored?: boolean;
+  /**
+   * Control the status output for renamed files.
+   *
+   * If set to `true`, renamed files are included. If set to `false`, rename
+   * detection is turned off, and paths are listed separately as `"added"` and
+   * `"deleted"`.
+   *
+   * @default {true}
+   */
+  renames?: boolean;
 }
 
 /** Options for the {@linkcode Commits.create} function. */
@@ -685,11 +781,88 @@ export function git(options?: GitOptions): Git {
       },
     },
     index: {
-      async add(pathspecs) {
-        await run(gitOptions, "add", pathspecs);
+      async add(pathspecs, options?: IndexAddOptions) {
+        await run(
+          gitOptions,
+          "add",
+          options?.force && "--force",
+          options?.executable === false && "--chmod=-x",
+          options?.executable === true && "--chmod=+x",
+          pathspecs,
+        );
       },
-      async remove(pathspecs) {
-        await run(gitOptions, "rm", pathspecs);
+      async remove(pathspecs, options?: IndexRemoveOptions) {
+        await run(gitOptions, "rm", options?.force && "--force", pathspecs);
+      },
+      async status(options?: IndexStatusOptions) {
+        const { path, untracked = true, ignored = true, renames = true } =
+          options ?? {};
+        const output = await run(
+          gitOptions,
+          "status",
+          ["--porcelain=1", "-z"],
+          path && ["--", ...typeof path === "string" ? [path] : path],
+          untracked === false && "--untracked-files=no",
+          untracked === true && "--untracked-files=normal",
+          untracked === "all" && "--untracked-files=all",
+          ignored === false && "--ignored=no",
+          ignored === true && "--ignored=traditional",
+          renames === false && "--no-renames",
+          renames === true && "--renames",
+        );
+        const lines = output.split("\0").filter((x) => x);
+        const status: Status = {
+          staged: [],
+          unstaged: [],
+          untracked: [],
+          ignored: [],
+        };
+        const xyToStatus: Record<string, StatusPath["status"]> = {
+          "M": "modified",
+          "T": "modified",
+          "A": "added",
+          "C": "added",
+          "D": "deleted",
+          "R": "renamed",
+        };
+        let rename = false;
+        for (
+          const [line, next] of slidingWindows(lines, 2, { partial: true })
+        ) {
+          assertExists(line, "Cannot parse status line");
+          if (rename) {
+            rename = false;
+            continue;
+          }
+          const [x, y, path] = [line[0], line[1], line.slice(3)];
+          assertExists(x, "Cannot parse status line");
+          assertExists(y, "Cannot parse status line");
+          assertExists(path, "Cannot parse status line");
+          rename = x === "R" || y === "R";
+          if (x === "?") {
+            status.untracked.push(path);
+            continue;
+          }
+          if (x === "!") {
+            status.ignored.push(path);
+            continue;
+          }
+          if (x !== " ") {
+            status.staged.push({
+              path,
+              status: xyToStatus[x] ?? "modified",
+              ...rename ? { from: next } : {},
+            });
+          }
+          if (y !== " ") {
+            status.unstaged.push({
+              path,
+              status: xyToStatus[y] ?? "modified",
+              ...rename ? { from: next } : {},
+            });
+          }
+        }
+        return status;
       },
     },
     commits: {
@@ -867,7 +1040,7 @@ async function run(
         cause: { command: "git", args, code, error },
       });
     }
-    return new TextDecoder().decode(stdout).trim();
+    return new TextDecoder().decode(stdout).trimEnd();
   } catch (e: unknown) {
     if (e instanceof Deno.errors.NotCapable) {
       throw new GitError("Permission error (use `--allow-run=git`)", {
