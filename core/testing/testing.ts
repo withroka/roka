@@ -29,8 +29,12 @@
  * ```ts
  * import { mock } from "@roka/testing/mock";
  * Deno.test("mock()", async (t) => {
- *   const mocked = { func: async () => "Hello, world!"};
- *   using func = mock(t, mocked, "func");
+ *   const mocked = {
+ *     func: async () => "Hello, world!",
+ *   };
+ *   using func = mock(t, mocked, "func", {
+ *     path: "__mocks__/testing.ts.mock",
+ *   });
  *   await func();
  * });
  * ```

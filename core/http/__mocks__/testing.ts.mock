@@ -62,10 +62,10 @@ mock[`mockFetch() > fetch 1`] =
         headers: {
           "accept-ranges": "bytes",
           "alt-svc": 'h3=":443"; ma=93600,h3-29=":443"; ma=93600',
-          "cache-control": "max-age=374",
+          "cache-control": "max-age=2879",
           "content-type": "text/html",
           "last-modified": "Mon, 13 Jan 2025 20:11:20 GMT",
-          date: "Sat, 05 Jul 2025 16:32:25 GMT",
+          date: "Sat, 05 Jul 2025 16:44:40 GMT",
           etag: '"84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"',
           vary: "Accept-Encoding",
         },
