@@ -39,9 +39,12 @@
  * @module package
  */
 
+import { pool } from "@roka/async/pool";
 import { git, GitError, type RevisionRange, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { assertExists } from "@std/assert";
+import { distinct } from "@std/collections";
+import { expandGlob } from "@std/fs/expand-glob";
 import {
   basename,
   dirname,
@@ -347,9 +350,19 @@ export async function workspace(
   const rootPackage = await packageInfo({ directory: root, ...options });
   const packages = rootPackage.config.workspace === undefined
     ? [rootPackage]
-    : await Promise.all(rootPackage.config.workspace.map(async (child) => {
-      return await packageInfo({ directory: join(root, child), root });
-    }));
+    : await pool(
+      distinct(
+        (await pool(
+          rootPackage.config.workspace,
+          (path) => Array.fromAsync(expandGlob(join(root, path, "deno.json"))),
+        )).flat().map((file) => dirname(file.path)),
+      ),
+      (path) =>
+        packageInfo({
+          directory: path,
+          root,
+        }),
+    );
   return packages
     .filter((pkg) =>
       patterns.length === 0 ||
