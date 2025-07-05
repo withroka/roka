@@ -22,7 +22,7 @@
  */
 
 import { tempRepository, type TempRepositoryOptions } from "@roka/git/testing";
-import { join } from "@std/path";
+import { join, relative } from "@std/path";
 import {
   type Config,
   type Package,
@@ -44,6 +44,12 @@ export interface TempPackageOptions {
 export interface TempWorkspaceOptions {
   /** File contents for package configurations (`deno.json`). */
   configs?: Config[];
+  /**
+   * The workspace package list for the root package.
+   *
+   * If this is not provided, it is inferred from the `configs` option.
+   */
+  workspace?: string[];
   /** Options for the initialization of the git repository. */
   repo?: TempRepositoryOptions;
   /** Commits and tags to create in the repository. */
@@ -159,9 +165,10 @@ export async function tempWorkspace(
     ),
   );
   await createPackage(repo.path(), {
-    workspace: (options?.configs ?? [])?.map((config, index) =>
-      memberDirectory(config, index)
-    ),
+    workspace: options?.workspace ??
+      (options?.configs ?? [])?.map((config, index) =>
+        memberDirectory(config, index)
+      ),
   });
   const packages = await workspace({ root: repo.path() });
   return Object.assign(packages, {
@@ -192,7 +199,7 @@ export async function unstableTestImports(): Promise<Record<string, string>> {
       : pkg.config.exports;
     Object.entries(exports).forEach(([name, path]) => {
       imports[join(pkg.config.name ?? pkg.name, name)] = `./${
-        join(pkg.directory, path)
+        join(relative(pkg.root, pkg.directory), path)
       }`;
     });
   });

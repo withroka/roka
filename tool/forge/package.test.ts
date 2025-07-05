@@ -351,6 +351,42 @@ Deno.test("workspace() does not return nested workspace packages", async () => {
   assertEquals(await workspace({ root }), [pkg1, pkg2]);
 });
 
+Deno.test("workspace() handles path patterns", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "dir1/pkg1" },
+      { name: "dir1/pkg2" },
+      { name: "dir2/pkg1" },
+      { name: "dir2/pkg2" },
+    ],
+    workspace: ["dir1/*", "*/pkg2"],
+  });
+  const [pkg1, pkg2, pkg3] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  assertExists(pkg3);
+  const root = pkg1.root;
+  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
+  assertEquals(pkg2.directory, join(root, "dir1/pkg2"));
+  assertEquals(pkg3.directory, join(root, "dir2/pkg2"));
+  assertEquals(await workspace({ root }), [pkg1, pkg2, pkg3]);
+});
+
+Deno.test("workspace() does not recurse path patterns", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "dir1/pkg1" },
+      { name: "dir1/subdir/pkg2" },
+    ],
+    workspace: ["dir1/*"],
+  });
+  const [pkg1] = temp;
+  assertExists(pkg1);
+  const root = pkg1.root;
+  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
+  assertEquals(await workspace({ root }), [pkg1]);
+});
+
 Deno.test("workspace() filters packages", async () => {
   await using temp = await tempWorkspace({
     configs: [
