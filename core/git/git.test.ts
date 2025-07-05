@@ -491,9 +491,9 @@ Deno.test("git().index.add() can add file as non-executable", async () => {
 Deno.test("git().index.remove() removes files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
-  repo.index.add("file");
+  await repo.index.add("file");
   await repo.commits.create("first");
-  repo.index.remove("file");
+  await repo.index.remove("file");
   assertEquals((await repo.index.status()).staged, [
     { path: "file", status: "deleted" },
   ]);
