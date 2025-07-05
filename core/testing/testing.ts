@@ -29,8 +29,9 @@
  * ```ts
  * import { mock } from "@roka/testing/mock";
  * Deno.test("mock()", async (t) => {
- *   using fetch = mock(t, globalThis, "fetch");
- *   await fetch("https://www.example.com");
+ *   const mocked = { func: async () => "Hello, world!"};
+ *   using func = mock(t, mocked, "func");
+ *   await func();
  * });
  * ```
  *
