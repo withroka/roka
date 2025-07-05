@@ -1,0 +1,9 @@
+export const mock = {};
+
+mock[`mock() > func 1`] =
+[
+  {
+    input: [],
+    output: "Hello, world!",
+  },
+];

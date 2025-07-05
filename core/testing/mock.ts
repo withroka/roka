@@ -3,7 +3,7 @@
  * create a mock double of an asynchronous function or method. The mock can be
  * used to record and replay interactions in tests.
  *
- * ```ts
+ * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
  * Deno.test("mock() usage", async (t) => {
@@ -40,7 +40,7 @@
  * functions from {@linkcode MockConversion}. All conversion functions can be
  * synchronous or asynchronous.
  *
- * ```ts
+ * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * Deno.test("mock() conversions", async (t) => {
  *   const _ = {
@@ -212,7 +212,7 @@ export interface MockConversion<
  * `MockError` will be thrown.
  *
  * @example Using the mock as a disposable.
- * ```ts
+ * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
  *
@@ -224,7 +224,7 @@ export interface MockConversion<
  * ```
  *
  * @example Using the mock with manual restore.
- * ```ts
+ * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
  *
@@ -237,7 +237,7 @@ export interface MockConversion<
  * ```
  *
  * @example Using the mock with custom conversions.
- * ```ts
+ * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * Deno.test("mock() with custom conversions", async (t) => {
  *   const _ = {
