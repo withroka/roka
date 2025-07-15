@@ -1,12 +1,7 @@
 {
   "workspace": [
-    "./core/async",
-    "./core/cli",
-    "./core/git",
-    "./core/github",
-    "./core/http",
-    "./core/testing",
-    "./tool/forge"
+    "./core/*",
+    "./tool/*"
   ],
   "tasks": {
     "forge": "deno run -A tool/forge/forge.ts",
