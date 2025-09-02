@@ -16,7 +16,7 @@
 import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
 
 /** Type of an object key. */
-declare type PropertyKey = string | number | symbol;
+type PropertyKey = string | number | symbol;
 export type { PropertyKey };
 
 /**
@@ -57,8 +57,7 @@ export type { PropertyKey };
  * @param msg The optional message to display if the assertion fails.
  */
 export function assertArrayObjectMatch(
-  // deno-lint-ignore no-explicit-any
-  actual: Record<PropertyKey, any>[],
+  actual: Record<PropertyKey, unknown>[],
   expected: Record<PropertyKey, unknown>[],
   message?: string,
 ): void {
