@@ -57,7 +57,8 @@ export type { PropertyKey };
  * @param msg The optional message to display if the assertion fails.
  */
 export function assertArrayObjectMatch(
-  actual: Record<PropertyKey, unknown>[],
+  // deno-lint-ignore no-explicit-any
+  actual: Record<PropertyKey, any>[],
   expected: Record<PropertyKey, unknown>[],
   message?: string,
 ): void {
