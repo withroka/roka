@@ -48,6 +48,17 @@ Deno.test("bump() patch updates unreleased package", async () => {
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
 });
 
+Deno.test("bump() patch updates package with unstable changes", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [{ summary: "feat(unstable): new unstable feature" }],
+  });
+  const repo = git({ cwd: pkg.root });
+  const commit = await repo.commits.head();
+  await bump([pkg]);
+  assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
+});
+
 Deno.test("bump() bumps to release version", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.2.3` },
@@ -80,21 +91,24 @@ Deno.test("bump() updates workspace", async () => {
       { name: "@scope/name1" },
       { name: "@scope/name2" },
       { name: "@scope/name3" },
+      { name: "@scope/name4" },
     ],
     commits: [
       {
         summary: "initial",
-        tags: ["name1@1.2.3", "name2@1.2.3", "name3@1.2.3"],
+        tags: ["name1@1.2.3", "name2@1.2.3", "name3@1.2.3", "name4@1.2.3"],
       },
       { summary: "fix(name1): fix bug (#1)" },
       { summary: "feat(name2): new feature (#2)" },
       { summary: "feat(name3)!: breaking changes (#3)" },
+      { summary: "feat(name4/unstable): new unstable feature (#5)" },
     ],
   });
   await bump(packages, { release: true });
   assertEquals(packages[0]?.config.version, "1.2.4");
   assertEquals(packages[1]?.config.version, "1.3.0");
   assertEquals(packages[2]?.config.version, "2.0.0");
+  assertEquals(packages[3]?.config.version, "1.2.4");
 });
 
 Deno.test("bump() creates a changelog file", async () => {

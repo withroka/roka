@@ -183,6 +183,47 @@
  * repository to see how we can automate all steps. With **forge** taking care
  * of most of the work, we can either chill or find more time for coding. 💆‍♀️
  *
+ * ## Unstable features
+ *
+ * Publishing early versions of an upcoming feature is a good idea. Until a
+ * feature is stable, a minor or major release isn’t needed. The tool supports
+ * this with the `unstable` modifier on commit messages.
+ *
+ * ```
+ * 🏷️ example@0.0.1-pre.3+fedcba9
+ *
+ *   feat(example/unstable): introduce unstable feature (#1)
+ *   fix(example/unstable) fix unstable feature (#2)
+ *   test(example/unstable): add tests (#3)
+ * ```
+ *
+ * Unstable changes will only trigger a patch version update during release.
+ * Once the feature is stable, you can add a commit without `unstable` to
+ * request a minor update.
+ *
+ * ```
+ * 🏷️ example@0.1.0-pre.1+fedcba9
+ *
+ *   feat(example): introduce stable feature (#4)
+ * ```
+ *
+ * An optional convention is to export the unstable features with the
+ * `unstable` module of a package, for example from `unstable.ts`. Specify
+ * affected modules in commit messages and **forge** will correctly identify
+ * the changes to the package, applying the special rule to `unstable` only.
+ *
+ * ```
+ * 🏷️ example@0.0.1-pre.3+fedcba9
+ *
+ *   feat(example/client/unstable): add an unstable feature to the client (#3)
+ *   fix(example/server) fix bug in the server module (#2)
+ *   fix(example/client): fix bug in the client module (#1)
+ * ```
+ *
+ * Only a patch update is made for the changelog here, even though there is a
+ * new feature added to the codebase. This is because the new feature is still
+ * unstable.
+ *
  * ## Assets
  *
  * _**WARNING**: This feature is highly experimental._

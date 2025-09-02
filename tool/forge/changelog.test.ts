@@ -137,7 +137,7 @@ Deno.test("changelog() generates frivolous changelog with emojis", () => {
     testCommit({ summary: "ci: ci" }),
     testCommit({ summary: "docs(name): docs" }),
     testCommit({ summary: "feat: feat" }),
-    testCommit({ summary: "fix(module): fix" }),
+    testCommit({ summary: "fix(module/submodule): fix" }),
     testCommit({ summary: "perf: perf" }),
     testCommit({ summary: "refactor(name/unstable): refactor" }),
     testCommit({ summary: "revert: revert" }),
@@ -191,7 +191,7 @@ Deno.test("changelog() generates commit hashes", () => {
 Deno.test("changelog() generates pull request numbers", () => {
   const commits = [
     testCommit({ summary: "feat(name): introduce (#3)" }),
-    testCommit({ summary: "build(name)!: breaking (#2)" }),
+    testCommit({ summary: "build(name/submodule)!: breaking (#2)" }),
     testCommit({ summary: "fix: fix code (#1)" }),
     testCommit({ summary: "fix: not a number (#this is not)" }),
     testCommit({ summary: "no number" }),
@@ -212,7 +212,7 @@ Deno.test("changelog() generates pull request numbers", () => {
 Deno.test("changelog() generates pull request numbers with emojis", () => {
   const commits = [
     testCommit({ summary: "feat(name): introduce (#3)" }),
-    testCommit({ summary: "build(name)!: breaking (#2)" }),
+    testCommit({ summary: "build(name/submodule)!: breaking (#2)" }),
     testCommit({ summary: "fix: fix code (#1)" }),
     testCommit({ summary: "fix: not a number (#this is not)" }),
     testCommit({ summary: "no number" }),

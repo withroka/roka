@@ -325,7 +325,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     if (latest !== undefined) pkg.latest = latest;
     if (changes !== undefined) {
       pkg.changes = changes;
-      pkg.version = calculateVersion(pkg.version, latest, changes);
+      pkg.version = calculateVersion(pkg, latest, changes);
     }
   } catch (e: unknown) {
     // git will fail on non-repository or uninitialized repository
@@ -470,7 +470,7 @@ export async function commits(
   return log
     .map((c) => conventional(c))
     // match scope only on workspaces
-    .filter((c) => pkg.root === pkg.directory || c.scopes.includes(pkg.name))
+    .filter((c) => pkg.root === pkg.directory || matchesScope(pkg, c))
     .filter((c) => options?.breaking !== true || c.breaking)
     .filter((c) =>
       options?.type !== undefined
@@ -499,26 +499,45 @@ async function readConfig(directory: string): Promise<Config> {
 }
 
 function calculateVersion(
-  version: string,
+  pkg: Package,
   latest: Release | undefined,
   log: ConventionalCommit[],
 ) {
   const current = parse(latest?.version ?? "0.0.0");
   const next = log?.length && log[0]
     ? {
-      ...increment(current, updateType(current, log)),
+      ...increment(current, updateType(current, pkg, log)),
       prerelease: ["pre", log.length],
       build: [log[0].short],
     }
     : current;
-  const coded = parse(version);
+  const coded = parse(pkg.version);
   return format(greaterThan(next, coded) ? next : coded);
 }
 
-function updateType(current: SemVer, changelog: ConventionalCommit[]) {
-  const breaking = changelog.some((c) => c.breaking);
+function updateType(
+  current: SemVer,
+  pkg: Package,
+  changelog: ConventionalCommit[],
+) {
+  const breaking = changelog.some((c) => c.breaking && !isUnstable(pkg, c));
   if (current.major > 0 && breaking) return "major";
-  const feature = changelog.some((c) => c.type === "feat");
+  const feature = changelog
+    .some((c) => c.type === "feat" && !isUnstable(pkg, c));
   if (breaking || feature) return "minor";
   return "patch";
+}
+
+function matchesScope(pkg: Package, commit: ConventionalCommit) {
+  return commit.scopes.some((s) =>
+    s === pkg.name || s.startsWith(`${pkg.name}/`)
+  );
+}
+
+function isUnstable(pkg: Package, commit: ConventionalCommit) {
+  const single = pkg.root === pkg.directory;
+  const scopes = commit.scopes
+    .filter((s) => single || s === pkg.name || s.startsWith(`${pkg.name}/`));
+  return scopes.length > 0 && scopes
+    .every((s) => (single && s === "unstable") || s.endsWith("/unstable"));
 }

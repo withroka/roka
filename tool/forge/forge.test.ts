@@ -45,8 +45,8 @@ const WORKSPACE: TempWorkspaceOptions = {
     { summary: "refactor(name2): rewrite" },
     { summary: "feat(name2): feature", tags: ["name3@2.0.0"] },
     { summary: "docs(name3): fix typo" },
-    { summary: "refactor(name4): rewrite" },
-    { summary: "style(name5)!:tabs over spaces" },
+    { summary: "refactor(name4/unstable)!: rewrite unstable api" },
+    { summary: "style(name5): tabs over spaces" },
   ],
 };
 
