@@ -215,7 +215,7 @@ Deno.test("packageInfo() calculates patch version update for unstable changes", 
     commits: [
       { summary: "initial", tags: ["name@1.2.3"] },
       { summary: "feat(unstable): new unstable feature" },
-      { summary: "fix(unstable)!: fix unstable feature" },
+      { summary: "fix(unstable): fix unstable feature" },
     ],
   });
   const directory = temp.directory;
@@ -231,6 +231,28 @@ Deno.test("packageInfo() calculates patch version update for unstable changes", 
     config: { name: "@scope/name", version: "1.2.3" },
     latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit2), conventional(commit1)],
+  });
+});
+
+Deno.test("packageInfo() breaking changes are still breaking for unstable", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commits: [
+      { summary: "initial", tags: ["name@1.2.3"] },
+      { summary: "feat(unstable)!: new unstable feature" },
+    ],
+  });
+  const directory = temp.directory;
+  const repo = git({ cwd: directory });
+  const commit = await repo.commits.head();
+  assertEquals(await packageInfo({ directory }), {
+    name: "name",
+    version: `2.0.0-pre.1+${commit.short}`,
+    directory,
+    root: directory,
+    config: { name: "@scope/name", version: "1.2.3" },
+    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
+    changes: [conventional(commit)],
   });
 });
 
@@ -494,27 +516,23 @@ Deno.test("workspace() considers unstable changes", async () => {
     configs: [
       { name: "pkg1", version: "1.2.3" },
       { name: "pkg2", version: "1.2.3" },
-      { name: "pkg3", version: "1.2.3" },
     ],
     commits: [
       { summary: "initial", tags: ["pkg1@1.2.3", "pkg2@1.2.3", "pkg3@1.2.3"] },
-      { summary: "fix(pkg1/unstable)!: fix" },
-      { summary: "feat(pkg2/dir/unstable): feat" },
-      { summary: "feat(pkg3): feat" },
-      { summary: "fix(pkg3/unstable): fix" },
+      { summary: "feat(pkg1/dir/unstable): feat" },
+      { summary: "feat(pkg2): feat" },
+      { summary: "fix(pkg2/unstable): fix" },
     ],
   });
-  const [pkg1, pkg2, pkg3] = temp;
+  const [pkg1, pkg2] = temp;
   assertExists(pkg1);
   assertExists(pkg2);
-  assertExists(pkg3);
   const root = pkg1.root;
-  const [commit4, commit3, commit2, commit1] = await git({ cwd: root }).commits
+  const [commit3, commit2, commit1] = await git({ cwd: root }).commits
     .log();
   assertExists(commit1);
   assertExists(commit2);
   assertExists(commit3);
-  assertExists(commit4);
   assertEquals(await workspace({ root }), [
     {
       name: "pkg1",
@@ -527,21 +545,12 @@ Deno.test("workspace() considers unstable changes", async () => {
     },
     {
       name: "pkg2",
-      version: `1.2.4-pre.1+${commit2.short}`,
+      version: `1.3.0-pre.2+${commit3.short}`,
       directory: join(root, "pkg2"),
       latest: { version: "1.2.3", range: { to: "pkg2@1.2.3" } },
       root,
       config: { name: "pkg2", version: "1.2.3" },
-      changes: [conventional(commit2)],
-    },
-    {
-      name: "pkg3",
-      version: `1.3.0-pre.2+${commit4.short}`,
-      directory: join(root, "pkg3"),
-      latest: { version: "1.2.3", range: { to: "pkg3@1.2.3" } },
-      root,
-      config: { name: "pkg3", version: "1.2.3" },
-      changes: [conventional(commit4), conventional(commit3)],
+      changes: [conventional(commit3), conventional(commit2)],
     },
   ]);
 });

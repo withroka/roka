@@ -186,8 +186,8 @@
  * ## Unstable features
  *
  * Publishing early versions of an upcoming feature is a good idea. Until a
- * feature is stable, a minor or major release isn’t needed. The tool supports
- * this with the `unstable` modifier on commit messages.
+ * feature is stable, a minor release isn’t needed. The tool supports this
+ * scenario with the `unstable` modifier on commit messages.
  *
  * ```
  * 🏷️ example@0.0.1-pre.3+fedcba9
@@ -223,6 +223,8 @@
  * Only a patch update is made for the changelog here, even though there is a
  * new feature added to the codebase. This is because the new feature is still
  * unstable.
+ *
+ * The unstable modifier does not change the behavior of breaking changes.
  *
  * ## Assets
  *

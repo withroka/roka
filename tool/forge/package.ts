@@ -520,7 +520,7 @@ function updateType(
   pkg: Package,
   changelog: ConventionalCommit[],
 ) {
-  const breaking = changelog.some((c) => c.breaking && !isUnstable(pkg, c));
+  const breaking = changelog.some((c) => c.breaking);
   if (current.major > 0 && breaking) return "major";
   const feature = changelog
     .some((c) => c.type === "feat" && !isUnstable(pkg, c));

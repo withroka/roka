@@ -5,7 +5,7 @@ snapshot[`forge list 1`] = `
 🚨 @scope/name1     0.0.0 👉 1.0.0
 📦 @scope/name2     2.1.0-pre.1+<hash>
 🚨 @scope/name3     2.0.0 👉 3.0.0
-📦 @scope/name4     4.0.1-pre.1+<hash>
+📦 @scope/name4     5.0.0-pre.1+<hash>
 📦 @scope/dir/name5 0.0.0
 📦 @scope/dir/name6
 "
@@ -25,7 +25,7 @@ snapshot[`forge list --modules [packages...] 1`] = `
 🚨 @scope/name3     2.0.0 👉 3.0.0
 
 
-📦 @scope/name4     4.0.1-pre.1+<hash>
+📦 @scope/name4     5.0.0-pre.1+<hash>
 
 
 📦 @scope/dir/name5 0.0.0
@@ -42,7 +42,7 @@ snapshot[`forge list [pattern] 1`] = `
 🚨 @scope/name1     0.0.0 👉 1.0.0
 📦 @scope/name2     2.1.0-pre.1+<hash>
 🚨 @scope/name3     2.0.0 👉 3.0.0
-📦 @scope/name4     4.0.1-pre.1+<hash>
+📦 @scope/name4     5.0.0-pre.1+<hash>
 📦 @scope/dir/name5 0.0.0
 📦 @scope/dir/name6
 "
@@ -69,9 +69,9 @@ snapshot[`forge changelog 1`] = `
 
   docs(name3): fix typo
 
-🏷️  name4@4.0.1-pre.1+<hash>
+🏷️  name4@5.0.0-pre.1+<hash>
 
-  refactor(name4/unstable)!: rewrite unstable api
+  refactor(name4)!: redesign api
 
 🏷️  name5@0.0.0
 
@@ -99,9 +99,9 @@ snapshot[`forge changelog --all --emoji 1`] = `
 
   📝 fix typo
 
-🏷️  name4@4.0.1-pre.1+<hash>
+🏷️  name4@5.0.0-pre.1+<hash>
 
-  ♻️ rewrite unstable api 💥
+  ♻️ redesign api 💥
 
 🏷️  name5@0.0.0
 
@@ -116,9 +116,9 @@ snapshot[`forge changelog --type <type> 1`] = `
 
   feat(name2): feature
 
-🏷️  name4@4.0.1-pre.1+<hash>
+🏷️  name4@5.0.0-pre.1+<hash>
 
-  refactor(name4/unstable)!: rewrite unstable api
+  refactor(name4)!: redesign api
 
 "
 `;
@@ -138,9 +138,9 @@ snapshot[`forge changelog --type <type> --no-breaking --all 1`] = `
 
 snapshot[`forge changelog --breaking --markdown 1`] = `
 "
-## name4@4.0.1-pre.1+<hash>
+## name4@5.0.0-pre.1+<hash>
 
-- refactor(name4/unstable)!: rewrite unstable api
+- refactor(name4)!: redesign api
 
 "
 `;
