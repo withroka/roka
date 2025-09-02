@@ -32,10 +32,15 @@ jobs:
             style
             test
           scopes: |
+            assert
             async
             cli
+            collections
             forge
+            fs
             git
             github
+            html
             http
+            maybe
             testing
