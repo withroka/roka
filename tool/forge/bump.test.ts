@@ -1,3 +1,4 @@
+import { assertArrayObjectMatch } from "@roka/assert";
 import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakePullRequest, fakeRepository } from "@roka/github/testing";
@@ -105,10 +106,12 @@ Deno.test("bump() updates workspace", async () => {
     ],
   });
   await bump(packages, { release: true });
-  assertEquals(packages[0]?.config.version, "1.2.4");
-  assertEquals(packages[1]?.config.version, "1.3.0");
-  assertEquals(packages[2]?.config.version, "2.0.0");
-  assertEquals(packages[3]?.config.version, "1.2.4");
+  assertArrayObjectMatch(packages, [
+    { config: { version: "1.2.4" } },
+    { config: { version: "1.3.0" } },
+    { config: { version: "2.0.0" } },
+    { config: { version: "1.2.4" } },
+  ]);
 });
 
 Deno.test("bump() creates a changelog file", async () => {
