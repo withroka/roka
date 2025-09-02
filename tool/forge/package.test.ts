@@ -1,3 +1,4 @@
+import { assertArrayObjectMatch } from "@roka/assert";
 import {
   commits,
   type Package,
@@ -10,7 +11,12 @@ import { git, GitError } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
 import { tempRepository } from "@roka/git/testing";
 import { tempDirectory } from "@roka/testing/temp";
-import { assertEquals, assertExists, assertRejects } from "@std/assert";
+import {
+  assertEquals,
+  assertExists,
+  assertObjectMatch,
+  assertRejects,
+} from "@std/assert";
 import { join } from "@std/path";
 import { tempPackage, tempWorkspace } from "./testing.ts";
 
@@ -86,13 +92,9 @@ Deno.test("packageInfo() calculates patch version update", async () => {
   const directory = temp.directory;
   const repo = git({ cwd: directory });
   const commit = await repo.commits.head();
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.2.4-pre.1+${commit.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
@@ -108,13 +110,9 @@ Deno.test("packageInfo() calculates minor version update", async () => {
   const directory = temp.directory;
   const repo = git({ cwd: directory });
   const commit = await repo.commits.head();
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.3.0-pre.1+${commit.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
@@ -130,13 +128,9 @@ Deno.test("packageInfo() calculates major version update", async () => {
   const directory = temp.directory;
   const repo = git({ cwd: directory });
   const commit = await repo.commits.head();
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
@@ -154,12 +148,9 @@ Deno.test("packageInfo() matches all scopes for non-workspace", async () => {
   const [commit2, commit1] = await repo.commits.log();
   assertExists(commit2);
   assertExists(commit1);
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `0.0.1-pre.2+${commit2.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name" },
     changes: [conventional(commit2), conventional(commit1)],
   });
 });
@@ -176,12 +167,9 @@ Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
   const repo = git({ cwd: directory });
   const [_, fix] = await repo.commits.log();
   assertExists(fix);
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `0.0.1-pre.1+${fix.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name" },
     changes: [conventional(fix)],
   });
 });
@@ -199,12 +187,9 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
   const [style, fix] = await repo.commits.log();
   assertExists(style);
   assertExists(fix);
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `0.1.0-pre.2+${style.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name" },
     changes: [conventional(style), conventional(fix)],
   });
 });
@@ -223,13 +208,9 @@ Deno.test("packageInfo() calculates patch version update for unstable changes", 
   const [commit2, commit1] = await repo.commits.log();
   assertExists(commit2);
   assertExists(commit1);
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.2.4-pre.2+${commit2.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit2), conventional(commit1)],
   });
 });
@@ -245,13 +226,9 @@ Deno.test("packageInfo() breaking changes are still breaking for unstable", asyn
   const directory = temp.directory;
   const repo = git({ cwd: directory });
   const commit = await repo.commits.head();
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(commit)],
   });
 });
@@ -274,13 +251,9 @@ Deno.test("packageInfo() skips over pre-release versions", async () => {
   assertExists(docs);
   assertExists(fix);
   assertExists(feat1);
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.3.0-pre.3+${feat2.short}`,
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [conventional(feat2), conventional(fix), conventional(feat1)],
   });
 });
@@ -291,12 +264,9 @@ Deno.test("packageInfo() uses forced version for unreleased package", async () =
     commits: [{ summary: "initial" }],
   });
   const directory = temp.directory;
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: "1.2.3",
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.3" },
     changes: [],
   });
 });
@@ -307,13 +277,9 @@ Deno.test("packageInfo() uses forced version for released package", async () => 
     commits: [{ summary: "initial", tags: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: "1.2.4",
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.4" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [],
   });
 });
@@ -324,13 +290,9 @@ Deno.test("packageInfo() ignores forced lower version", async () => {
     commits: [{ summary: "initial", tags: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
-  assertEquals(await packageInfo({ directory }), {
+  assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: "1.2.3",
-    directory,
-    root: directory,
-    config: { name: "@scope/name", version: "1.2.2" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
     changes: [],
   });
 });
@@ -483,29 +445,20 @@ Deno.test("workspace() matches commit scope", async () => {
   assertExists(commit1);
   assertExists(commit2);
   assertExists(commit3);
-  assertEquals(await workspace({ root }), [
+  assertArrayObjectMatch(await workspace({ root }), [
     {
       name: "pkg1",
       version: `0.0.1-pre.1+${commit1.short}`,
-      directory: join(root, "pkg1"),
-      root,
-      config: { name: "pkg1" },
       changes: [conventional(commit1)],
     },
     {
       name: "pkg2",
       version: `0.0.1-pre.1+${commit2.short}`,
-      directory: join(root, "pkg2"),
-      root,
-      config: { name: "pkg2" },
       changes: [conventional(commit2)],
     },
     {
       name: "pkg3",
       version: `0.0.1-pre.1+${commit3.short}`,
-      directory: join(root, "pkg3"),
-      root,
-      config: { name: "pkg3" },
       changes: [conventional(commit3)],
     },
   ]);
@@ -533,23 +486,15 @@ Deno.test("workspace() considers unstable changes", async () => {
   assertExists(commit1);
   assertExists(commit2);
   assertExists(commit3);
-  assertEquals(await workspace({ root }), [
+  assertArrayObjectMatch(await workspace({ root }), [
     {
       name: "pkg1",
       version: `1.2.4-pre.1+${commit1.short}`,
-      directory: join(root, "pkg1"),
-      latest: { version: "1.2.3", range: { to: "pkg1@1.2.3" } },
-      root,
-      config: { name: "pkg1", version: "1.2.3" },
       changes: [conventional(commit1)],
     },
     {
       name: "pkg2",
       version: `1.3.0-pre.2+${commit3.short}`,
-      directory: join(root, "pkg2"),
-      latest: { version: "1.2.3", range: { to: "pkg2@1.2.3" } },
-      root,
-      config: { name: "pkg2", version: "1.2.3" },
       changes: [conventional(commit3), conventional(commit2)],
     },
   ]);

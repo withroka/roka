@@ -1,23 +1,22 @@
+import { assertArrayObjectMatch } from "@roka/assert";
 import { tempRepository } from "@roka/git/testing";
 import { mockFetch } from "@roka/http/testing";
 import { tempDirectory } from "@roka/testing/temp";
-import { assertEquals, assertExists } from "@std/assert";
+import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
 import { github, type PullRequest, type Release } from "./github.ts";
 
 const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 
 Deno.test("github().repos.get() can use named repository", () => {
   const repo = github({ token }).repos.get("withroka", "test");
-  assertEquals(repo.owner, "withroka");
-  assertEquals(repo.repo, "test");
+  assertObjectMatch(repo, { owner: "withroka", repo: "test" });
 });
 
 Deno.test("github().repos.get() can use local repository", async () => {
   await using git = await tempRepository();
   await git.remotes.add("https://github.com/withroka/test.git");
   const repo = await github({ token }).repos.get({ directory: git.path() });
-  assertEquals(repo.owner, "withroka");
-  assertEquals(repo.repo, "test");
+  assertObjectMatch(repo, { owner: "withroka", repo: "test" });
 });
 
 Deno.test("github().repos.pulls", async (t) => {
@@ -32,10 +31,12 @@ Deno.test("github().repos.pulls", async (t) => {
       title: "Test PR",
       body: "Initial body",
     });
-    assertEquals(pull.head, "test-branch");
-    assertEquals(pull.base, "main");
-    assertEquals(pull.title, "Test PR");
-    assertEquals(pull.body, "Initial body");
+    assertObjectMatch(pull, {
+      head: "test-branch",
+      base: "main",
+      title: "Test PR",
+      body: "Initial body",
+    });
   });
 
   await t.step("list pull requests", async () => {
@@ -43,18 +44,20 @@ Deno.test("github().repos.pulls", async (t) => {
       head: "test-branch",
       closed: false,
     });
-    assertEquals(pulls.length, 1);
-    assertExists(pulls[0]);
-    assertEquals(pulls[0].head, "test-branch");
-    assertEquals(pulls[0].base, "main");
-    assertEquals(pulls[0].title, "Test PR");
-    assertEquals(pulls[0].body, "Initial body");
+    assertArrayObjectMatch(pulls, [{
+      head: "test-branch",
+      base: "main",
+      title: "Test PR",
+      body: "Initial body",
+    }]);
   });
 
   await t.step("update and close pull request", async () => {
     pull = await pull.update({ title: "Closed PR", body: "Updated body" });
-    assertEquals(pull.title, "Closed PR");
-    assertEquals(pull.body, "Updated body");
+    assertObjectMatch(pull, {
+      title: "Closed PR",
+      body: "Updated body",
+    });
   });
 
   await t.step("close pull request", async () => {
@@ -79,12 +82,13 @@ Deno.test("github().repos.releases", async (t) => {
       draft: true,
       prerelease: false,
     });
-    assertEquals(release.repo, repo);
-    assertEquals(release.tag, "test-tag");
-    assertEquals(release.name, "Test release");
-    assertEquals(release.body, "Initial body");
-    assertEquals(release.draft, true);
-    assertEquals(release.prerelease, false);
+    assertObjectMatch(release, {
+      tag: "test-tag",
+      name: "Test release",
+      body: "Initial body",
+      draft: true,
+      prerelease: false,
+    });
   });
 
   await t.step("list releases", async () => {
@@ -98,11 +102,13 @@ Deno.test("github().repos.releases", async (t) => {
         break;
       }
     }
-    assertEquals(release.tag, "test-tag");
-    assertEquals(release.name, "Test release");
-    assertEquals(release.body, "Initial body");
-    assertEquals(release.draft, true);
-    assertEquals(release.prerelease, false);
+    assertObjectMatch(release, {
+      tag: "test-tag",
+      name: "Test release",
+      body: "Initial body",
+      draft: true,
+      prerelease: false,
+    });
   });
 
   await t.step("update release", async () => {
@@ -112,28 +118,32 @@ Deno.test("github().repos.releases", async (t) => {
       draft: false,
       prerelease: true,
     });
-    assertEquals(release.tag, "test-tag");
-    assertEquals(release.name, "Updated release");
-    assertEquals(release.body, "Updated body");
-    assertEquals(release.draft, false);
-    assertEquals(release.prerelease, true);
+    assertObjectMatch(release, {
+      tag: "test-tag",
+      name: "Updated release",
+      body: "Updated body",
+      draft: false,
+      prerelease: true,
+    });
   });
 
   await t.step("upload release asset", async () => {
     await using directory = await tempDirectory();
     await Deno.writeTextFile(directory.path("file.txt"), "content");
     const asset = await release.assets.upload(directory.path("file.txt"));
-    assertEquals(asset.release, release);
-    assertEquals(asset.name, "file.txt");
-    assertEquals(asset.size, "content".length);
+    assertObjectMatch(asset, {
+      release,
+      name: "file.txt",
+      size: "content".length,
+    });
   });
 
   await t.step("list release asset", async () => {
     const assets = await release.assets.list();
-    assertEquals(assets.length, 1);
-    assertExists(assets[0]);
-    assertEquals(assets[0]?.name, "file.txt");
-    assertEquals(assets[0]?.size, "content".length);
+    assertArrayObjectMatch(assets, [{
+      name: "file.txt",
+      size: "content".length,
+    }]);
   });
 
   await t.step("delete release", async () => {

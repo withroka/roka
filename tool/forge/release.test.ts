@@ -1,6 +1,7 @@
+import { assertArrayObjectMatch } from "@roka/assert";
 import { git } from "@roka/git";
 import { fakeRelease, fakeRepository } from "@roka/github/testing";
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals, assertObjectMatch, assertRejects } from "@std/assert";
 import { dirname, join } from "@std/path";
 import { PackageError } from "./package.ts";
 import { release } from "./release.ts";
@@ -69,9 +70,11 @@ Deno.test("release() creates initial release", async () => {
       "",
     ].join("\n"),
   );
-  assertEquals(assets.length, 0);
-  assertEquals(rls.prerelease, false);
-  assertEquals(rls.draft, false);
+  assertEquals(assets, []);
+  assertObjectMatch(rls, {
+    prerelease: false,
+    draft: false,
+  });
 });
 
 Deno.test("release() creates update release", async () => {
@@ -100,7 +103,7 @@ Deno.test("release() creates update release", async () => {
       "",
     ].join("\n"),
   );
-  assertEquals(assets.length, 0);
+  assertEquals(assets, []);
 });
 
 Deno.test("release() creates draft release", async () => {
@@ -189,11 +192,9 @@ Deno.test("release() can compile and upload release assets", async () => {
   repo.releases.list = async () => await Promise.resolve([existing]);
   const [rls, assets] = await release(pkg, { repo });
   assertEquals(rls.id, 42);
-  assertEquals(assets.length, 3);
-  assertEquals(assets.map((x) => x.release), [rls, rls, rls]);
-  assertEquals(assets.map((x) => x.name), [
-    "x86_64-unknown-linux-gnu.tar.gz",
-    "x86_64-pc-windows-msvc.zip",
-    "sha256.txt",
+  assertArrayObjectMatch(assets, [
+    { release: rls, name: "x86_64-unknown-linux-gnu.tar.gz" },
+    { release: rls, name: "x86_64-pc-windows-msvc.zip" },
+    { release: rls, name: "sha256.txt" },
   ]);
 });
