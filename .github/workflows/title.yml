@@ -34,13 +34,30 @@ jobs:
           scopes: |
             assert
             async
+            async/pool
             cli
             collections
             forge
+            forge/bump
+            forge/changelog
+            forge/compile
+            forge/package
+            forge/release
+            forge/version
             fs
             git
+            git/conventional
+            git/testing
             github
+            github/testing
             html
             http
+            http/graphql/client
+            http/json/client
+            http/request
+            http/testing
             maybe
             testing
+            testing/fake
+            testing/mock
+            testing/temp
