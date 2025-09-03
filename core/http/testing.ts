@@ -6,7 +6,9 @@
  * ```ts
  * import { mockFetch } from "@roka/http/testing";
  * Deno.test("mockFetch()", async (t) => {
- *   using fetch = mockFetch(t);
+ *   using fetch = mockFetch(t, {
+ *     path: "__mocks__/testing.ts.mock",
+ *   });
  *   await fetch("https://example.com");
  * });
  * ```
@@ -26,8 +28,6 @@
 
 import { type Mock, mock, type MockOptions } from "@roka/testing/mock";
 import { pick } from "@std/collections";
-
-export type { Mock, MockOptions } from "@roka/testing/mock";
 
 /** Options for the {@linkcode mockFetch} function. */
 export interface MockFetchOptions extends MockOptions {
@@ -63,7 +63,9 @@ export interface MockFetchOptions extends MockOptions {
  * import { assertEquals } from "@std/assert";
  *
  * Deno.test("mockFetch()", async (t) => {
- *   using fetch = mockFetch(t);
+ *   using fetch = mockFetch(t, {
+ *     path: "__mocks__/testing.ts.mock",
+ *   });
  *   const response = await fetch("https://example.com");
  *   assertEquals(response.status, 200);
  * });
@@ -94,7 +96,10 @@ export function mockFetch(
             body = body.replaceAll(boundary, "BOUNDARY");
             request.headers.set(
               "Content-Type",
-              contentType.replace(boundary, "BOUNDARY"),
+              contentType.replace(
+                boundary,
+                "BOUNDARY",
+              ),
             );
           }
           const headers = options?.ignore?.headers
