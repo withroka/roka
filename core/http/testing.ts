@@ -8,6 +8,7 @@
  * Deno.test("mockFetch()", async (t) => {
  *   using fetch = mockFetch(t, {
  *     path: "__mocks__/testing.ts.mock",
+ *     ignore: { headers: true },
  *   });
  *   await fetch("https://example.com");
  * });
@@ -69,6 +70,7 @@ export interface MockFetchOptions extends MockOptions {
  * Deno.test("mockFetch()", async (t) => {
  *   using fetch = mockFetch(t, {
  *     path: "__mocks__/testing.ts.mock",
+ *     ignore: { headers: true },
  *   });
  *   const response = await fetch("https://example.com");
  *   assertEquals(response.status, 200);
