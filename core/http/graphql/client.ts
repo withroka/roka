@@ -149,9 +149,10 @@ export interface Paginator<Result, Node, Edge, PageInfo> {
  * }
  * ```
  */
-export function client(url: string, options?: ClientOptions): Client {
+export function client(url: string | URL, options?: ClientOptions): Client {
+  if (typeof url === "string") url = new URL(url);
   const client = new UrqlClient({
-    url,
+    url: url.toString(),
     exchanges: [cacheExchange, retryExchange({}), fetchExchange],
     fetchOptions: () => {
       return {
