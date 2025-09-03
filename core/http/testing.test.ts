@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertExists, assertMatch } from "@std/assert";
 import { STATUS_CODE } from "@std/http/status";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { mockFetch } from "./testing.ts";
@@ -8,6 +8,7 @@ Deno.test("mockFetch() stubs fetch", async (t) => {
   const response = await fetch("https://example.com");
   assertEquals(response.status, STATUS_CODE.OK);
   await assertSnapshot(t, await response.text());
+  assertExists(response?.headers.get("date"));
 });
 
 Deno.test("mockFetch() replays multiple calls", async (t) => {
@@ -116,15 +117,28 @@ Deno.test("mockFetch() matches async iterable body", async (t) => {
   async function* body() {
     yield new TextEncoder().encode("body");
   }
-  await fetch("https://example.com", { method: "POST", body: body() });
+  await fetch("https://example.com", {
+    method: "POST",
+    body: body(),
+  });
 });
 
 Deno.test("mockFetch() can ignore headers", async (t) => {
   using fetch = mockFetch(t, { ignore: { headers: true } });
+  let response: Response | undefined = undefined;
   if (fetch.mode === "update") {
-    await fetch("https://example.com", { headers: { "User-Agent": "v1" } });
+    response = await fetch("https://example.com", {
+      headers: { "User-Agent": "v1" },
+    });
   }
   if (fetch.mode === "replay") {
-    await fetch("https://example.com", { headers: { "User-Agent": "v2" } });
+    response = await fetch("https://example.com", {
+      headers: { "User-Agent": "v2" },
+    });
   }
+  assertEquals(response?.headers.get("date"), null);
+  assertMatch(
+    response?.headers.get("content-type") ?? "",
+    /^text\/html(;.*)?$/,
+  );
 });

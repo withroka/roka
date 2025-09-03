@@ -34,7 +34,11 @@ export interface MockFetchOptions extends MockOptions {
   /** Limit what gets matched with replay calls. */
   ignore?: {
     /**
-     * Whether to ignore the request headers when matching `fetch` calls.
+     * Whether to ignore the request and response headers.
+     *
+     * When matching calls, request headers will not be considered, and
+     * response headers except "Content-Type" will not be stored in the mock
+     * file.
      *
      * Authentication headers (`Authorization`, `Cookie`, `Set-Cookie`) are
      * never stored in mock files and matched, regardless of this option.
@@ -128,7 +132,10 @@ export function mockFetch(
           const body = response.body === null
             ? undefined
             : await response.text();
-          const headers = stripHeaders(response.headers);
+          const contentType = response.headers.get("Content-Type");
+          const headers = options?.ignore?.headers
+            ? (contentType ? { "Content-Type": contentType } : undefined)
+            : stripHeaders(response.headers);
           const init = {
             ...headers && { headers },
             ...pick(response, ["status", "statusText"]),
