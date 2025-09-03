@@ -31,8 +31,8 @@ interface Issues {
 Deno.test("client().query() makes GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
   const api = client("https://api.github.com/graphql", { token });
-  const result: Repository = await api.query(
-    gql`
+  const result = await api.query(
+    gql<{ repository: Repository }>`
       query($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
           owner {

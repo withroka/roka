@@ -4,13 +4,22 @@
  * clients.
  *
  * ```ts
- * import { client } from "@roka/http/graphql/client";
+ * import { client, gql } from "./client.ts";
+ *
  * async function usage() {
  *   const api = client("https://api.github.com/graphql");
- *   const query = await Deno.readTextFile("repo.graphql");
- *   const repo = await api.query(query, {
- *     owner: "owner", name: "name",
- *   });
+ *   type Repository = { owner: { login: string }; name: string }
+ *   const repo = await api.query<{ repository: Repository }>(
+ *     gql`
+ *       query {
+ *         repository(owner: "withroka", name: "roka") {
+ *           owner { login },
+ *           name,
+ *         }
+ *       }
+ *     `,
+ *   );
+ *   console.log(repo?.repository);
  * }
  * ```
  *
@@ -21,6 +30,7 @@ import {
   type AnyVariables,
   cacheExchange,
   Client as UrqlClient,
+  type DocumentInput,
   fetchExchange,
 } from "@urql/core";
 import { retryExchange } from "@urql/exchange-retry";
@@ -31,15 +41,23 @@ export { gql } from "@urql/core";
 /** A GraphQL client returned by the {@linkcode client} function. */
 export interface Client {
   /** Makes a GraphQL query. */
-  query<Result>(
-    query: string,
-    variables?: Record<string, unknown>,
-  ): Promise<Result>;
+  // deno-lint-ignore no-explicit-any
+  query<Data = any, Variables extends AnyVariables = AnyVariables>(
+    query: DocumentInput<Data, Variables>,
+    variables?: Variables,
+  ): Promise<Data | undefined>;
   /** Makes a paginated GraphQL query, given a {@linkcode Paginator}. */
-  queryPaginated<Result, Node, Edge, PageInfo>(
-    query: string,
-    paginator: Paginator<Result, Node, Edge, PageInfo>,
-    variables?: Record<string, unknown>,
+  queryPaginated<
+    Node,
+    Edge,
+    PageInfo,
+    // deno-lint-ignore no-explicit-any
+    Data = any,
+    Variables extends AnyVariables = AnyVariables,
+  >(
+    query: DocumentInput<Data, Variables>,
+    paginator: Paginator<Data, Node, Edge, PageInfo>,
+    variables?: Variables,
   ): Promise<Node[]>;
 }
 
@@ -54,13 +72,13 @@ export interface ClientOptions {
  * A custom paginator is needed by {@linkcode Client.queryPaginated} for
  * nodes it is querying.
  */
-export interface Paginator<Result, Node, Edge, PageInfo> {
+export interface Paginator<Data, Node, Edge, PageInfo> {
   /** Extracts edges from the response data. */
-  edges(data: Result): Edge[];
+  edges(data: Data): Edge[];
   /** Extracts nodes from an edge. */
   node(edge: Edge): Node;
   /** Extracts an object that contains page and cursor information. */
-  pageInfo(data: Result): PageInfo;
+  pageInfo(data: Data): PageInfo;
   /**
    * Extracts the cursor for the next page from page information.
    *
@@ -84,7 +102,7 @@ export interface Paginator<Result, Node, Edge, PageInfo> {
  *
  * async function usage() {
  *   const api = client("https://api.github.com/graphql");
- *   const { repository } = await api.query<{ repository: Repository }>(`
+ *   const { repository } = await api.query(`
  *     query($owner: String!, $name: String!) {
  *       repository(owner: $owner, name: $name) {
  *         description
@@ -153,6 +171,7 @@ export function client(url: string | URL, options?: ClientOptions): Client {
   if (typeof url === "string") url = new URL(url);
   const client = new UrqlClient({
     url: url.toString(),
+    preferGetMethod: false,
     exchanges: [cacheExchange, retryExchange({}), fetchExchange],
     fetchOptions: () => {
       return {
@@ -163,33 +182,46 @@ export function client(url: string | URL, options?: ClientOptions): Client {
     },
   });
   return {
-    async query<Result>(
-      query: string,
-      variables: Record<string, unknown> = {},
-    ): Promise<Result> {
-      const response = await client.query(query, variables);
+    async query<Data, Variables>(
+      query: DocumentInput<Data, Variables>,
+      variables?: Variables,
+    ): Promise<Data | undefined> {
+      const response = await client.query(query, variables ?? {});
       if (response.error) {
         throw new RequestError(response.error.message, {
-          status: response.data?.status,
+          status: response instanceof Response ? response.status : -1,
           cause: response.error,
         });
       }
-      return response.data as Result;
+      return response.data;
     },
-    async queryPaginated<Result, Node, Edge, PageInfo>(
-      query: string,
-      paginator: Paginator<Result, Node, Edge, PageInfo>,
-      variables: AnyVariables & { cursor?: string; limit?: number } = {},
+    async queryPaginated<
+      Node,
+      Edge,
+      PageInfo,
+      Data,
+      Variables extends AnyVariables,
+    >(
+      query: DocumentInput<Data, Variables>,
+      paginator: Paginator<Data, Node, Edge, PageInfo>,
+      variables: Variables & { cursor?: string; limit?: number },
     ): Promise<Node[]> {
       const nodes: Node[] = [];
       let cursor: string | null = null;
       do {
         // deno-lint-ignore no-await-in-loop
-        const data = await this.query<Result>(query, { ...variables, cursor });
-        const edges = paginator.edges(data);
-        nodes.push(...edges.map(paginator.node));
-        const pageInfo = paginator.pageInfo(data);
-        cursor = paginator.cursor(pageInfo);
+        const data = await this.query<Data, Variables>(query, {
+          ...variables,
+          cursor,
+        });
+        if (data !== undefined) {
+          const edges = paginator.edges(data);
+          nodes.push(...edges.map(paginator.node));
+          const pageInfo = paginator.pageInfo(data);
+          cursor = paginator.cursor(pageInfo);
+        } else {
+          cursor = null;
+        }
       } while (
         cursor &&
         (variables.limit === undefined || nodes.length < variables.limit)
