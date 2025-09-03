@@ -46,10 +46,10 @@
  * @module request
  */
 
+import "@sigma/deno-compile-extra/cachesPolyfill";
 import { retry, type RetryOptions } from "@std/async/retry";
 import { omit } from "@std/collections";
 import { STATUS_CODE } from "@std/http/status";
-import "jsr:@sigma/deno-compile-extra@0.12.1/cachesPolyfill";
 
 export { type RetryOptions } from "@std/async/retry";
 
@@ -151,6 +151,7 @@ export interface RequestOptions extends RequestInit {
  * @todo Implement `no-cache` conditional request.
  * @todo Remove caching when Deno supports it in Fetch API.
  *       (https://github.com/denoland/deno/issues/3756).
+ * @todo Remove cache polyfill when Deno supports it in `deno compile`.
  *
  * @param input The URL or Request object to fetch.
  * @param options Standard `fetch` init, extended with {@linkcode RequestOptions}.
