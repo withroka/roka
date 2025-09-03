@@ -92,9 +92,6 @@ export function mockFetch(
           const request = input instanceof Request
             ? input.clone()
             : new Request(input, init);
-          request.headers.delete("Authorization");
-          request.headers.delete("Cookie");
-          request.headers.delete("Set-Cookie");
           let body = request.body === null ? undefined : await request.text();
           const contentType = request.headers.get("Content-Type");
           const boundary = contentType?.match(/boundary=(\S+)/)?.[1];
