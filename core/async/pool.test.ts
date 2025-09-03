@@ -23,22 +23,13 @@ Deno.test("pool() resolves promises with specified concurrency", async () => {
 
 Deno.test("pool() maintains execution order", async () => {
   const order: number[] = [];
-  const array = [
-    () => {
-      order.push(1);
-      return Promise.resolve(1);
-    },
-    () => {
-      order.push(2);
-      return Promise.resolve(2);
-    },
-    () => {
-      order.push(3);
-      return Promise.resolve(3);
-    },
-  ];
-  await pool(array, { concurrency: 1 });
-  assertEquals(order, [1, 2, 3]);
+  await pool([1, 2, 3], async (number) => {
+    order.push(number);
+    await Promise.resolve();
+    order.push(number);
+    return number;
+  }, { concurrency: 1 });
+  assertEquals(order, [1, 1, 2, 2, 3, 3]);
 });
 
 Deno.test("pool() handles empty array", async () => {
@@ -144,22 +135,13 @@ Deno.test("pooled() resolves promises with specified concurrency", async () => {
 
 Deno.test("pooled() maintains execution order", async () => {
   const order: number[] = [];
-  const array = [
-    () => {
-      order.push(1);
-      return Promise.resolve(1);
-    },
-    () => {
-      order.push(2);
-      return Promise.resolve(2);
-    },
-    () => {
-      order.push(3);
-      return Promise.resolve(3);
-    },
-  ];
-  await Array.fromAsync(pooled(array));
-  assertEquals(order, [1, 2, 3]);
+  await Array.fromAsync(pooled([1, 2, 3], async (number) => {
+    order.push(number);
+    await Promise.resolve();
+    order.push(number);
+    return number;
+  }, { concurrency: 1 }));
+  assertEquals(order, [1, 1, 2, 2, 3, 3]);
 });
 
 Deno.test("pooled() handles empty array", async () => {
