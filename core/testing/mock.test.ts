@@ -341,3 +341,26 @@ Deno.test("mock() checks write permission", {
   using mocked = mock(t, self, "func", { path, mode: "update" });
   await assertRejects(() => mocked(), Deno.errors.PermissionDenied);
 });
+
+Deno.test("mock() writes mocks on unload event", async (t) => {
+  const self = { func: async () => await Promise.resolve("unload") };
+  const path = join(
+    dirname(fromFileUrl(t.origin)),
+    "__mocks__/custom/mock.test.unload.ts.mock",
+  );
+  try {
+    await Deno.remove(path);
+  } catch {
+    // ignore
+  }
+  using mocked = mock(t, self, "func", {
+    mode: "update",
+    path,
+    name: "unload write",
+  });
+  assertEquals(await mocked(), "unload");
+  dispatchEvent(new Event("unload"));
+  const content = await Deno.readTextFile(path);
+  assertEquals(content.includes("export const mock = {};"), true);
+  assertEquals(content.includes("mock[`unload write`]"), true);
+});
