@@ -44,10 +44,21 @@ export interface FakeConsole extends Disposable {
 export interface FakeConsoleOutputOptions {
   /** Filter for the log level of the output. */
   level?: "debug" | "log" | "info" | "warn" | "error";
-  /** Trim horizontal whitespace from output lines. */
+  /**
+   * Trim horizontal whitespace from output lines.
+   * @default {false}
+   */
   trimEnd?: boolean;
   /** Wrap the output with a string on both sides before returning it. */
   wrap?: string;
+  /**
+   * Keep CSS styling in the output.
+   *
+   * @default {false}
+   *
+   * @see {@link https://docs.deno.com/examples/color_logging/ Color logging}
+   */
+  color?: boolean;
 }
 
 /**
@@ -134,7 +145,13 @@ export function fakeConsole(): FakeConsole {
     output(options?: FakeConsoleOutputOptions) {
       const output = calls
         .filter((call) => !options?.level || call.level === options?.level)
-        .map((call) => call.data.map((x) => `${x}`).join(" "))
+        .map((call) => {
+          if (
+            !options?.color &&
+            typeof call.data[0] === "string" && call.data[0].startsWith?.("%c")
+          ) return [call.data[0].slice(2)];
+          return call.data.map((x) => `${x}`).join(" ");
+        })
         .join("\n").split("\n").map((line) =>
           options?.trimEnd ? line.replace(/[^\S\r\n]+$/, "") : line
         )
