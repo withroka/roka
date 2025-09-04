@@ -93,8 +93,7 @@ export type MockMode = "replay" | "update";
  *
  * @typeParam T The type of the original function being mocked.
  */
-export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>>
-  extends Disposable {
+export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>> {
   (...args: Parameters<T>): ReturnType<T>;
   /** The current mode of the mock. */
   mode: MockMode;
@@ -286,7 +285,7 @@ export function mock<
   options?:
     & MockOptions
     & { conversion?: MockConversion<Self[Prop], Input, Output> },
-): Mock<Self[Prop]> {
+): Mock<Self[Prop]> & Disposable {
   let state: MockState<Input, Output> | undefined;
   let errored = false;
   const mockContext = MockContext.get();

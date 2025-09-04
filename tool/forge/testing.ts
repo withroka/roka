@@ -94,7 +94,7 @@ export interface TempWorkspaceOptions {
  */
 export async function tempPackage(
   options?: TempPackageOptions,
-): Promise<AsyncDisposable & Package> {
+): Promise<Package & AsyncDisposable> {
   const repo = await createRepository(options);
   await createPackage(repo.path(), options?.config);
   const pkg = await packageInfo({ directory: repo.path() });
@@ -153,7 +153,7 @@ export async function tempPackage(
  */
 export async function tempWorkspace(
   options?: TempWorkspaceOptions,
-): Promise<AsyncDisposable & Package[]> {
+): Promise<Package[] & AsyncDisposable> {
   function memberDirectory(config: Config, index: number) {
     if (!config.name) return `package${index}`;
     return config.name.replace(/^@[^/]+\//, "");
