@@ -14,7 +14,7 @@
 import { join } from "@std/path";
 
 /** A temporary directory returned by the {@linkcode tempDirectory} function. */
-export interface TempDirectory extends AsyncDisposable {
+export interface TempDirectory {
   /** Returns the temporary directory path, with optional relative children. */
   path(...paths: string[]): string;
 }
@@ -30,7 +30,9 @@ export interface TempDirectory extends AsyncDisposable {
  * assertEquals((await Deno.stat(directory.path())).isDirectory, true);
  * ```
  */
-export async function tempDirectory(): Promise<TempDirectory> {
+export async function tempDirectory(): Promise<
+  TempDirectory & AsyncDisposable
+> {
   const directory = await Deno.makeTempDir();
   return Object.assign({
     path: (...paths: string[]) => join(directory, ...paths),

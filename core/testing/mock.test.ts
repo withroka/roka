@@ -12,7 +12,7 @@ import { type Mock, mock } from "./mock.ts";
 assertType<
   IsExact<
     ReturnType<typeof mock<typeof globalThis, "fetch">>,
-    Mock<typeof fetch>
+    Mock<typeof fetch> & Disposable
   >
 >(true);
 

@@ -31,7 +31,7 @@ import { basename, dirname, join } from "@std/path";
  *
  * @typeParam T The type of configuration data.
  */
-export interface Config<T extends Record<string, unknown>> extends Disposable {
+export interface Config<T extends Record<string, unknown>> {
   /** Returns all data stored for this configuration. */
   get(): Promise<Partial<T>>;
   /** Writes data to the configuration. Prior data is not deleted. */
@@ -97,7 +97,7 @@ export interface ConfigOptions {
  */
 export function config<T extends Record<string, unknown>>(
   options?: ConfigOptions,
-): Config<T> {
+): Config<T> & Disposable {
   let kv: Deno.Kv | undefined;
   async function open(): Promise<Deno.Kv> {
     if (kv) return kv;

@@ -84,7 +84,7 @@ export interface MockFetchOptions extends MockOptions {
 export function mockFetch(
   context: Deno.TestContext,
   options?: MockFetchOptions,
-): Mock<typeof fetch> {
+): Mock<typeof fetch> & Disposable {
   return mock(context, globalThis, "fetch", {
     conversion: {
       input: {

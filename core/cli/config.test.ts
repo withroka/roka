@@ -5,7 +5,7 @@ import { type Config, config } from "./config.ts";
 assertType<
   IsExact<
     ReturnType<typeof config<{ foo: string; bar: number }>>,
-    Config<{ foo: string; bar: number }>
+    Config<{ foo: string; bar: number }> & Disposable
   >
 >(true);
 
