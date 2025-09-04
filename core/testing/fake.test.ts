@@ -89,3 +89,18 @@ Deno.test("fakeConsole().output() can wrap output", () => {
   assertEquals(console.output({ wrap: "\n" }), "\nfirst\nsecond\n");
   assertEquals(console.output({ wrap: "'" }), "'first\nsecond'");
 });
+
+Deno.test("fakeConsole().output() ignores styling by default", () => {
+  using console = fakeConsole();
+  console.log("%clog", "color: red", "font-weight: bold");
+  assertEquals(console.output(), "log");
+});
+
+Deno.test("fakeConsole().output() can capture styling", () => {
+  using console = fakeConsole();
+  console.log("%clog", "color: red", "font-weight: bold");
+  assertEquals(
+    console.output({ color: true }),
+    "%clog color: red font-weight: bold",
+  );
+});
