@@ -36,6 +36,7 @@ jobs:
             async
             async/pool
             cli
+            cli/config
             collections
             forge
             forge/bump
