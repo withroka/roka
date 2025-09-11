@@ -15,6 +15,7 @@ Deno.test("compile() rejects package without compile config", async () => {
     config: {
       name: "@scope/name",
       version: "0.0.0",
+      exports: {},
     },
   });
   await assertRejects(() => compile(pkg), PackageError);
