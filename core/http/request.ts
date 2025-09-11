@@ -46,6 +46,7 @@
  * @module request
  */
 
+import { maybe } from "@roka/maybe";
 import "@sigma/deno-compile-extra/cachesPolyfill";
 import { retry, type RetryOptions } from "@std/async/retry";
 import { omit } from "@std/collections";
@@ -200,11 +201,9 @@ async function makeRequest(
 ): Promise<Response> {
   let caught: unknown = undefined;
   const response = await retry(async () => {
-    let response: Response | undefined = undefined;
-    try {
-      response = await fetch(request);
-    } catch (e: unknown) {
-      caught = e;
+    const { value: response, error } = await maybe(() => fetch(request));
+    if (error) {
+      caught = error;
       return undefined;
     }
     if (RETRYABLE_STATUSES.includes(response.status)) {

@@ -75,6 +75,7 @@
  * @module mock
  */
 
+import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
 import { dirname, fromFileUrl, parse, resolve, toFileUrl } from "@std/path";
 import { type GetParametersFromProp, MockError, stub } from "@std/testing/mock";
@@ -467,20 +468,18 @@ class MockContext {
     await checkPermission(mockPath(context, options), options);
     const path = mockPath(context, options);
     if (!this.mocks.has(path)) {
-      let records: Record<string, MockCall<Input, Output>[]>;
-      try {
-        const { mock } = await import(toFileUrl(path).toString());
-        records = mock;
-      } catch (e: unknown) {
-        if (!(e instanceof TypeError)) throw e;
+      const { value: mock, error } = await maybe<
+        { mock: Record<string, MockCall<Input, Output>[]> }
+      >(() => import(toFileUrl(path).toString()));
+      if (error) {
+        if (!(error instanceof TypeError)) throw error;
         if (mode(options) === "replay") {
           throw new MockError(`No mock found: ${path}`);
         }
-        records = {};
       }
       if (!this.mocks.has(path)) {
         this.mocks.set(path, {
-          records,
+          records: mock?.mock ?? {},
           states: new Map(),
           names: new Map(),
         });

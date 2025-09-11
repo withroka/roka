@@ -42,6 +42,7 @@
 import { pool } from "@roka/async/pool";
 import { git, GitError, type RevisionRange, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
+import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
 import { distinct } from "@std/collections";
 import { expandGlob } from "@std/fs/expand-glob";
@@ -295,9 +296,8 @@ export interface CommitOptions {
 export async function packageInfo(options?: PackageOptions): Promise<Package> {
   let directory = options?.directory;
   if (!directory) {
-    try {
-      directory = dirname(fromFileUrl(Deno.mainModule));
-    } catch {
+    ({ value: directory } = maybe(() => dirname(fromFileUrl(Deno.mainModule))));
+    if (!directory) {
       throw new PackageError("Cannot determine package directory");
     }
   }

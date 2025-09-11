@@ -1,0 +1,7 @@
+{
+  "name": "@roka/maybe",
+  "version": "0.0.0",
+  "exports": {
+    ".": "./maybe.ts"
+  }
+}
