@@ -5,7 +5,7 @@
   ],
   "tasks": {
     "forge": "deno run -A tool/forge/forge.ts",
-    "coverage": "deno task test --coverage && deno coverage --html",
+    "coverage": "deno test -P --coverage && deno coverage --html",
     "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",
     "docs": "deno doc --lint --html $(find . -path '**/*.ts' -type f)",
     "ok": "deno task lint && deno task docs && deno test -P && deno publish --quiet --dry-run --allow-dirty"
