@@ -466,13 +466,15 @@ Deno.test("git().index.add() can force add ignored file", async () => {
 Deno.test("git().index.add() can add file as executable", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
+  let stat = await Deno.stat(repo.path("file"));
+  assertEquals((stat.mode ?? 0) & 0o111, 0o000);
   await repo.index.add("file", { executable: true });
   const commit = await repo.commits.create("commit");
   await repo.index.remove("file", { force: true });
   await repo.commits.create("commit");
   await repo.branches.checkout({ target: commit });
-  const stat = await Deno.stat(repo.path("file"));
-  assertEquals((stat.mode ?? 0) & 0o111, 0o111);
+  stat = await Deno.stat(repo.path("file"));
+  assertEquals((stat.mode ?? 0) & 0o110, 0o110);
 });
 
 Deno.test("git().index.add() can add file as non-executable", async () => {
