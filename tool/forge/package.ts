@@ -157,58 +157,24 @@ export interface Config {
   imports?: Record<string, string>;
   /** Package exports. */
   exports?: string | Record<string, string>;
-  /** Configuration for compiling the package. */
-  compile?: CompileConfig;
+  /** Custom configuration for **forge**. */
+  forge?: ForgeConfig;
 }
 
 /**
- * Configuration for compiling the package with the {@linkcode compile}
- * function.
+ * Configuration specific to **forge** and defined in `deno.json`.
+ *
+ * This is used to customize the behavior of compilation and release of the
+ * package.
  */
-export interface CompileConfig {
-  /** Entry module for the package. */
+export interface ForgeConfig {
+  /** Entry module for the package for compiled binaries. */
   main?: string;
-  /** Include patterns for additional files to bundle. */
+  /** Include patterns for additional files to bundle in compilation. */
   include?: string[];
-  /** Enable unstable KV feature. */
-  kv?: boolean;
-  /** Allowed Deno runtime permissions. */
-  permissions?: Permissions;
-  /** List of target OS architectures. */
+  /** List of target OS architectures to compile for during release. */
   target?: string[];
 }
-
-/**
- * Runtime permissions for a binary created with the {@linkcode compile}
- * function.
- */
-export interface Permissions {
-  /** Read file system permissions. */
-  read?: PermissionDescriptor<Deno.ReadPermissionDescriptor["path"]>;
-  /** Write file system permissions. */
-  write?: PermissionDescriptor<Deno.WritePermissionDescriptor["path"]>;
-  /** Network access permissions. */
-  net?: PermissionDescriptor<Deno.NetPermissionDescriptor["host"]>;
-  /** Environment access permissions. */
-  env?: PermissionDescriptor<Deno.EnvPermissionDescriptor["variable"]>;
-  /** Run subprocess permissions. */
-  run?: PermissionDescriptor<Deno.RunPermissionDescriptor["command"]>;
-  /** System access permissions. */
-  sys?: PermissionDescriptor<Deno.SysPermissionDescriptor["kind"]>;
-  /** Foreign function interface access permissions. */
-  ffi?: PermissionDescriptor<Deno.FfiPermissionDescriptor["path"]>;
-  /**
-   * Prompt for permissions at runtime.
-   * @default {false}
-   */
-  prompt?: boolean;
-}
-
-/** Permission descriptor for config from Deno type. */
-export type PermissionDescriptor<T> =
-  | boolean
-  | NonNullable<T>
-  | NonNullable<T[]>;
 
 /** Options for the {@linkcode packageInfo} function. */
 export interface PackageOptions {

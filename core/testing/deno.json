@@ -6,5 +6,11 @@
     "./fake": "./fake.ts",
     "./mock": "./mock.ts",
     "./temp": "./temp.ts"
+  },
+  "test": {
+    "permissions": {
+      "read": true,
+      "write": true
+    }
   }
 }

@@ -5,11 +5,10 @@
   ],
   "tasks": {
     "forge": "deno run -A tool/forge/forge.ts",
-    "test": "deno test -A --unstable-kv --doc **/*.ts",
     "coverage": "deno task test --coverage && deno coverage --html",
     "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",
     "docs": "deno doc --lint --html $(find . -path '**/*.ts' -type f)",
-    "ok": "deno task lint && deno task docs && deno task test && deno publish --quiet --dry-run --allow-dirty"
+    "ok": "deno task lint && deno task docs && deno test -P && deno publish --quiet --dry-run --allow-dirty"
   },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,
@@ -52,5 +51,6 @@
     "@std/testing": "jsr:@std/testing@^1.0.15",
     "@urql/core": "npm:@urql/core@^6.0.1",
     "@urql/exchange-retry": "npm:@urql/exchange-retry@^2.0.0"
-  }
+  },
+  "unstable": ["kv"]
 }

@@ -230,7 +230,7 @@
  *
  * _**WARNING**: This feature is highly experimental._
  *
- * The tool supports a non-standard `compile` extension in the `deno.json`
+ * The tool supports a non-standard `forge` extension in the `deno.json`
  * file. Any package with this field will generate release assets during a
  * release.
  *
@@ -238,13 +238,19 @@
  * {
  *   "name": "@roka/example",
  *   "version": "2.0.0",
+ *   "forge": {
+*      "main": "example.ts"
+ *   },
  *   "compile": {
- *     "main": "example.ts"
+ *     "permissions": {
+ *       "read": true,
+ *       "env": ["HOME", "PATH"]
+ *     }
  *   }
  * }
  * ```
  *
- * A package with the `compile` configuration will be compiled into a binary
+ * A package with the `forge` configuration will be compiled into a binary
  * for every supported Deno [target](https://docs.deno.com/go/compile). These
  * compiled binaries will be bundled and uploaded to the GitHub release as
  * assets.
@@ -496,7 +502,7 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
     .action(async (options, ...filters) => {
       const packages = (await filter(filters, context))
-        .filter((pkg) => pkg.config.compile);
+        .filter((pkg) => pkg.config.forge);
       await pool(
         packages,
         async (pkg) => {

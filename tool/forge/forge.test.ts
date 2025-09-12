@@ -15,7 +15,7 @@ const WORKSPACE: TempWorkspaceOptions = {
       name: "@scope/name1",
       version: "1.0.0",
       exports: { ".": "./name2.ts", "./main": "./main.ts" },
-      compile: { main: "main.ts", target: ["aarch64-unknown-linux-gnu"] },
+      forge: { main: "main.ts", target: ["aarch64-unknown-linux-gnu"] },
     },
     {
       name: "@scope/name2",

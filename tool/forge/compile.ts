@@ -12,21 +12,15 @@
  * }
  * ```
  *
- * The package configuration file (`deno.json`) must contain a compile entry of
- * ype {@linkcode CompileOptions}. This configuration declares the main entry
- * point and the permissions required for the executable compiled from the
- * package.
+ * The package configuration file (`deno.json`) must contain am entry of
+ * ype {@linkcode ForgeConfig}. This configuration declares the main entry
+ * point and the additional files to bundle.
  *
  * ```json
  * {
- *   "compile": {
+ *   "forge": {
  *     "main": "main.ts",
- *     "permissions": {
- *        "env": ["HOME", "PATH"],
- *        "read": true,
- *        "net": "api.github.com",
- *        "run": "git",
- *     }
+ *     "include": ["README.md", "LICENSE"],
  *   }
  * }
  * ```
@@ -38,7 +32,7 @@ import { pool } from "@roka/async/pool";
 import { assertExists, assertNotEquals } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
-import { type Package, PackageError, type Permissions } from "./package.ts";
+import { type Package, PackageError } from "./package.ts";
 
 /** Options for the {@linkcode compile} function. */
 export interface CompileOptions {
@@ -76,7 +70,7 @@ export async function compile(
   pkg: Package,
   options?: CompileOptions,
 ): Promise<string[]> {
-  if (!pkg.config.compile) {
+  if (!pkg.config.forge) {
     throw new PackageError("Compile configuration is required");
   }
   const {
@@ -84,8 +78,7 @@ export async function compile(
     target = [Deno.build.target],
     concurrency = navigator.hardwareConcurrency,
   } = options ?? {};
-  const { main, include = [], kv = false, permissions = {} } =
-    pkg.config.compile ?? {};
+  const { main, include = [] } = pkg.config.forge ?? {};
   assertExists(main, "Compile entrypoint is required");
   const directory = join(dist, pkg.name, pkg.version);
   try {
@@ -105,16 +98,9 @@ export async function compile(
       const output = join(directory, target, pkg.name);
       const args = [
         "compile",
+        "--permission-set",
+        "--no-prompt",
         `--target=${target}`,
-        permission(permissions, "read", false),
-        permission(permissions, "write", false),
-        permission(permissions, "net", false),
-        permission(permissions, "sys", true),
-        permission(permissions, "env", true),
-        permission(permissions, "run", true),
-        permission(permissions, "ffi", true),
-        permissions?.prompt ? [] : ["--no-prompt"],
-        kv ? ["--unstable-kv"] : [],
         `--include=${config}`,
         include.map((path) => `--include=${join(pkg.directory, path)}`),
         `--output=${output}`,
@@ -165,21 +151,6 @@ export async function targets(): Promise<string[]> {
   );
   assertExists(match?.groups?.targets, "Expected targets in stderr");
   return match.groups.targets.split(", ");
-}
-
-function permission<P extends Exclude<keyof Permissions, "prompt">>(
-  permissions: Permissions,
-  name: P,
-  merge: boolean,
-): string[] {
-  const value = permissions[name];
-  if (value === undefined) return [];
-  if (typeof value === "boolean") {
-    return value ? [`--allow-${name}`] : [`--deny-${name}`];
-  }
-  const values = Array.isArray(value) ? value : [value];
-  if (merge) return [`--allow-${name}=${values.join(",")}`];
-  return values.map((v) => `--allow-${name}=${v}`);
 }
 
 async function tar(directory: string, output: string) {
