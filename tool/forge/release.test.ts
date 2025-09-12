@@ -164,7 +164,7 @@ Deno.test("release() can compile and upload release assets", async () => {
     config: {
       name: "@scope/name",
       version: "1.2.3",
-      compile: {
+      forge: {
         main: "./main.ts",
         target: ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"],
       },

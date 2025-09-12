@@ -22,17 +22,16 @@ Deno.test("compile() rejects package without compile config", async () => {
 
 Deno.test("compile() compiles and installs a binary", async () => {
   await using install = await tempDirectory();
+  const config = {
+    name: "@scope/name",
+    version: "1.2.3",
+    forge: { main: "./main.ts" },
+    compile: { permissions: { write: false, read: ["."], env: ["HOME"] } },
+    exports: { ".": "./main.ts" },
+    imports: await unstableTestImports(),
+  };
   await using pkg = await tempPackage({
-    config: {
-      name: "@scope/name",
-      version: "1.2.3",
-      compile: {
-        main: "./main.ts",
-        permissions: { write: false, read: ".", env: ["HOME"], prompt: true },
-      },
-      exports: { ".": "./main.ts" },
-      imports: await unstableTestImports(),
-    },
+    config,
     repo: {
       // run this test inside a clone of roka repository
       // so we can test local changes to the version import below
@@ -69,7 +68,7 @@ Deno.test("compile() can create release bundles", async () => {
     config: {
       name: "@scope/name",
       version: "1.2.3",
-      compile: { main: "./main.ts", permissions: { prompt: true } },
+      forge: { main: "./main.ts" },
       exports: { ".": "./main.ts" },
       imports: await unstableTestImports(),
     },
@@ -111,9 +110,8 @@ Deno.test("compile() can create release bundles", async () => {
 });
 
 Deno.test("compile() rejects code with errors", async () => {
-  await using pkg = await tempPackage({
-    config: { compile: { main: "./main.ts", permissions: { prompt: true } } },
-  });
+  const config = { forge: { main: "./main.ts" } };
+  await using pkg = await tempPackage({ config });
   await Deno.writeTextFile(
     join(pkg.directory, "main.ts"),
     [

@@ -4,5 +4,11 @@
   "exports": {
     ".": "./cli.ts",
     "./config": "./config.ts"
+  },
+  "test": {
+    "permissions": {
+      "read": true,
+      "write": true
+    }
   }
 }

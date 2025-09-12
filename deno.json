@@ -4,8 +4,8 @@
     "./tool/*"
   ],
   "tasks": {
-    "forge": "deno run -A tool/forge/forge.ts",
-    "test": "deno test -A --unstable-kv --doc **/*.ts",
+    "forge": "deno run -P tool/forge/forge.ts",
+    "test": "deno test -P",
     "coverage": "deno task test --coverage && deno coverage --html",
     "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",
     "docs": "deno doc --lint --html $(find . -path '**/*.ts' -type f)",
@@ -52,5 +52,6 @@
     "@std/testing": "jsr:@std/testing@^1.0.15",
     "@urql/core": "npm:@urql/core@^6.0.1",
     "@urql/exchange-retry": "npm:@urql/exchange-retry@^2.0.0"
-  }
+  },
+  "unstable": ["kv"]
 }
