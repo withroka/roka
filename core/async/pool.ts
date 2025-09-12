@@ -111,6 +111,7 @@ export async function pool<T>(
   array: Iterable<() => Promise<T>> | AsyncIterable<T>,
   options?: PoolOptions,
 ): Promise<T[]>;
+
 /**
  * Transforms values to an iterable of promises, resolves them, and returns the
  * results as an array while limiting the maximum amount of concurrency.

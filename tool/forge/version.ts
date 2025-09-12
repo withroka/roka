@@ -13,6 +13,7 @@
  * @module version
  */
 
+import { maybe } from "@roka/maybe";
 import { expandGlob } from "@std/fs";
 import { basename, dirname, fromFileUrl } from "@std/path";
 import { canParse, parse } from "@std/semver";
@@ -80,12 +81,8 @@ async function versionString(): Promise<string> {
   } catch (e: unknown) {
     if (!(e instanceof PackageError)) throw e;
   }
-  let directory = Deno.mainModule;
-  try {
-    directory = fromFileUrl(directory);
-  } catch {
-    return "(unknown)";
-  }
+  let { value: directory } = maybe(() => fromFileUrl(Deno.mainModule));
+  if (!directory) return "(unknown)";
   while (!basename(directory).match(/^deno-compile-.+$/)) {
     directory = dirname(directory);
     if (directory === dirname(directory)) break;

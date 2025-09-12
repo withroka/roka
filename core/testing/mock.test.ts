@@ -1,3 +1,4 @@
+import { maybe } from "@roka/maybe";
 import {
   assertEquals,
   assertFalse,
@@ -348,11 +349,7 @@ Deno.test("mock() writes mocks on unload event", async (t) => {
     dirname(fromFileUrl(t.origin)),
     "__mocks__/custom/mock.test.unload.ts.mock",
   );
-  try {
-    await Deno.remove(path);
-  } catch {
-    // ignore
-  }
+  await maybe(() => Deno.remove(path));
   using mocked = mock(t, self, "func", {
     mode: "update",
     path,
