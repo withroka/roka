@@ -14,8 +14,8 @@
   "forge": {
     "main": "forge.ts"
   },
-  "compile": {
-    "permissions": {
+  "permissions": {
+    "default": {
       "env": ["GIT_NAME", "GIT_EMAIL", "GITHUB_TOKEN", "HOME"],
       "read": true,
       "write": true,
