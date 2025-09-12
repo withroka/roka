@@ -12,8 +12,8 @@
  * }
  * ```
  *
- * The package configuration file (`deno.json`) must contain am entry of
- * ype {@linkcode ForgeConfig}. This configuration declares the main entry
+ * The package configuration file (`deno.json`) must contain an entry of
+ * type {@linkcode ForgeConfig}. This configuration declares the main entry
  * point and the additional files to bundle.
  *
  * ```json
