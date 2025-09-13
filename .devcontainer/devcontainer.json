@@ -1,7 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/base:debian",
   "postCreateCommand": {
-    "deno": "curl -fsSL https://deno.land/install.sh | sh -s -- -y",
+    "deno": "curl -fsSL https://deno.land/install.sh | DENO_INSTALL=$HOME/.local sh -s -- -y",
     "gh": "curl -sS https://webi.sh/gh | sh",
     "git-town": "curl https://www.git-town.com/install.sh | sh"
   }

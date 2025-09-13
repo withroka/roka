@@ -8,6 +8,9 @@ import {
 } from "@std/assert";
 import { git, GitError } from "./git.ts";
 
+// some tests cannot check committer/tagger if Codespaces are signing with GPG
+const codespaces = !!Deno.env.get("CODESPACES");
+
 Deno.test("git() mentions failed command on error", async () => {
   await using directory = await tempDirectory();
   const repo = git({ cwd: directory.path() });
@@ -956,7 +959,9 @@ Deno.test("git().commits.create() can set author", async () => {
   assertEquals(commit?.author, { name: "name", email: "email@example.com" });
 });
 
-Deno.test("git().commits.create() can set committer", async () => {
+Deno.test("git().commits.create() can set committer", {
+  ignore: codespaces,
+}, async () => {
   await using repo = await tempRepository({
     config: { user: { name: "name", email: "email@example.com" } },
   });
@@ -964,7 +969,10 @@ Deno.test("git().commits.create() can set committer", async () => {
     author: { name: "other", email: "other@example.com" },
     allowEmpty: true,
   });
-  assertEquals(commit?.committer, { name: "name", email: "email@example.com" });
+  assertEquals(commit?.committer, {
+    name: "name",
+    email: "email@example.com",
+  });
 });
 
 Deno.test("git().commits.create() reject empty summary", async () => {
@@ -1224,7 +1232,9 @@ Deno.test("git().commits.log() can filter by author", async () => {
   );
 });
 
-Deno.test("git().commits.log() can filter by committer", async () => {
+Deno.test("git().commits.log() can filter by committer", {
+  ignore: codespaces,
+}, async () => {
   await using repo = await tempRepository();
   await repo.config.set({
     user: { name: "name1", email: "email1@example.com" },
@@ -1241,15 +1251,11 @@ Deno.test("git().commits.log() can filter by committer", async () => {
     allowEmpty: true,
   });
   assertEquals(
-    await repo.commits.log({
-      committer: { name: "name1", email: "email1@example.com" },
-    }),
+    await repo.commits.log({ committer: commit1.committer }),
     [commit1],
   );
   assertEquals(
-    await repo.commits.log({
-      committer: { name: "name2", email: "email2@example.com" },
-    }),
+    await repo.commits.log({ committer: commit2.committer }),
     [commit2],
   );
 });
@@ -1390,7 +1396,9 @@ Deno.test("git().tags.create() creates a lightweight tag", async () => {
   assertEquals(tag, { name: "tag", commit });
 });
 
-Deno.test("git().tags.create() creates an annotated tag", async () => {
+Deno.test("git().tags.create() creates an annotated tag", {
+  ignore: codespaces,
+}, async () => {
   await using repo = await tempRepository({
     config: { user: { name: "tagger", email: "tagger@example.com" } },
   });
@@ -1408,7 +1416,9 @@ Deno.test("git().tags.create() creates an annotated tag", async () => {
   });
 });
 
-Deno.test("git().tags.create() ignores empty body", async () => {
+Deno.test("git().tags.create() ignores empty body", {
+  ignore: codespaces,
+}, async () => {
   await using repo = await tempRepository({
     config: { user: { name: "tagger", email: "tagger@example.com" } },
   });
