@@ -127,4 +127,4 @@ category contains development tools. As the codebase grows, new categories like
 
 ### Coding agents
 
-- If you are a AI coding agent, you should also read `AGENTS.md`.
+- If you are an AI coding agent, you should also read `AGENTS.md`.
