@@ -124,3 +124,7 @@ category contains development tools. As the codebase grows, new categories like
 - Do not document self-explanatory parameters, returns, or throws.
 - End JSDoc sentences with a punctuation.
 - Optimize for document generation (no dash in `@param`).
+
+### Coding agents
+
+- If you are an AI coding agent, you should also read `AGENTS.md`.
