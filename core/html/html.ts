@@ -43,10 +43,7 @@ export function plain(html: string): string {
       .replace(/<\s*head\b[^>]*>[\s\S]*?<\s*\/head\b[^>]*>/gi, "")
       .replace(/<\s*script\b[^>]*>[\s\S]*?<\s*\/script\b[^>]*>/gi, "")
       .replace(/<\s*style\b[^>]*>[\s\S]*?<\s*\/style\b[^>]*>/gi, "")
-      .replace(/<\s*style\b[^>]*>[\s\S]*?<\s*\/style\b[^>]*>/gi, "");
-  } while (html !== prev);
-  return unescape(
-    html
+      .replace(/<\s*style\b[^>]*>[\s\S]*?<\s*\/style\b[^>]*>/gi, "")
       .replace(/(?=<\s*(td|th)\b[^>]*>)/gi, " ")
       .replace(/(?=<\s*(br|hr|li)\b[^>]*>)/gi, "\n")
       .replace(/(?=<\s*(p|div|tr)\b[^>]*>)/gi, "\n\n")
@@ -55,6 +52,9 @@ export function plain(html: string): string {
       .replace(/\r+/g, "\n")
       .replace(/[^\S\n]+/g, " ")
       .replace(/\s*\n\s+/g, "\n")
-      .trim(),
+      .trim();
+  } while (html !== prev);
+  return unescape(
+    html,
   );
 }
