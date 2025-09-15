@@ -97,7 +97,6 @@ category contains development tools. As the codebase grows, new categories like
 - Name the data types after their factory functions (`Git`).
 - Use optional definition for fields (`x?: string`, not
   `x: string | undefined`).
-- Do not export classes, except for errors.
 
 ### Errors
 
@@ -123,3 +122,5 @@ category contains development tools. As the codebase grows, new categories like
 - Document every exported symbol.
 - Document missing features or known bugs with `@todo`.
 - Do not document self-explanatory parameters, returns, or throws.
+- End JSDoc sentences with a punctuation.
+- Optimize for document generation (no dash in `@param`).
