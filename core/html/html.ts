@@ -15,8 +15,7 @@
  * @module html
  */
 
-import sanitizeHtml from "@sanitize-html";
-import { unescape } from "@std/html";
+import { DOMParser } from "@b-fuze/deno-dom";
 
 /**
  * Converts HTML content to plain text by removing tags and decoding special
@@ -31,22 +30,9 @@ import { unescape } from "@std/html";
  * ```
  */
 export function plain(html: string): string {
-  return unescape(
-    sanitizeHtml(html, {
-      allowedTags: [],
-      allowedAttributes: {},
-      nonTextTags: [
-        "head",
-        "style",
-        "script",
-        "textarea",
-        "option",
-        "noscript",
-      ],
-      enforceHtmlBoundary: true,
-    })
-      .replace(/[\u200E-\u200F]/g, "")
-      .replace(/\s+/g, " ")
-      .trim(),
-  );
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent
+    .replace(/[\u200E-\u200F]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }

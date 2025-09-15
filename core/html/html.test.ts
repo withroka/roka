@@ -22,8 +22,8 @@ Deno.test("plain() removes head content", () => {
 });
 
 Deno.test("plain() removes script and style content", () => {
-  const input =
-    "<script>\nalert('x')\n</script>Hello, World!<style>body{}</style>";
+  const input = "<head><style>body{}</style></head>" +
+    "<script>\nalert('x')\n</script><body>Hello, World!</body>";
   assertEquals(plain(input), "Hello, World!");
 });
 
