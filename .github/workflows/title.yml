@@ -46,6 +46,7 @@ jobs:
             forge/release
             forge/version
             fs
+            fs/temp
             git
             git/conventional
             git/testing
