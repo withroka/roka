@@ -3,7 +3,7 @@
  *
  * This package only provides the {@link [temp]} module to work with
  * temporary files and directories.
- *  *
+ *
  * ```ts
  * import { tempDirectory } from "@roka/fs/temp";
  * await using directory = await tempDirectory();
