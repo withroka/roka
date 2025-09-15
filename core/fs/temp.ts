@@ -1,9 +1,10 @@
 /**
- * This module provides common temporary objects useful for testing. Currently,
- * only the {@linkcode tempDirectory} function is available.
+ * This module provides helpers for working with temporary files and
+ * directories. Currently, only the {@linkcode tempDirectory} function is
+ * available.
  *
  * ```ts
- * import { tempDirectory } from "@roka/testing/temp";
+ * import { tempDirectory } from "@roka/fs/temp";
  * await using directory = await tempDirectory();
  * await Deno.writeTextFile(directory.path("file.txt"), "Hello, world!");
  * ```
@@ -24,7 +25,7 @@ export interface TempDirectory {
  *
  * @example Using a temporary directory.
  * ```ts
- * import { tempDirectory } from "@roka/testing/temp";
+ * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
  * await using directory = await tempDirectory();
  * assertEquals((await Deno.stat(directory.path())).isDirectory, true);

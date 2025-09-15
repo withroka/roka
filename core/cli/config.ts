@@ -66,7 +66,7 @@ export interface ConfigOptions {
  * @example Use a file-based user configuration.
  * ```ts
  * import { config } from "@roka/cli/config";
- * import { tempDirectory } from "@roka/testing/temp";
+ * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
  * await using directory = await tempDirectory();
  * using cfg = config<{ foo: string, bar: number }>({

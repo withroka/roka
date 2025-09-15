@@ -696,7 +696,7 @@ export interface TransportOptions {
  * @example Create a new git repository and add a file.
  * ```ts
  * import { git } from "@roka/git";
- * import { tempDirectory } from "@roka/testing/temp";
+ * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
  * await using directory = await tempDirectory();
  * const repo = git({ cwd: directory.path() });

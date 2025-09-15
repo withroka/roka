@@ -4,8 +4,8 @@
  * This package provides utilities for testing code to complement the "mock"
  * and "snapshot" systems of the standard
  * {@link https://jsr.io/@std/testing | **@std/testing**} library. The
- * functionality provided here is split into the groups of _fake_, _mock_, and
- * _temporary_ objects.
+ * functionality provided here is split into the groups of _fake_ and _mock_
+ * objects.
  *
  * The "**fake**" objects implement the same interface as their real
  * counterparts, but with fake data and functionality. For example, the
@@ -39,17 +39,6 @@
  * });
  * ```
  *
- * Finally, "**temp**" objects are real objects that are disposed automatically
- * at the end of a test. The {@linkcode [temp].tempDirectory | tempDirectory}
- * is an example.
- *
- * ```ts
- * import { tempDirectory } from "@roka/testing/temp";
- * Deno.test("tempDirectory()", async (t) => {
- *   await using directory = await tempDirectory();
- * });
- * ```
- *
  * This package contains only the most common utilities from these groups.
  * More specific test helpers are provided in other Roka packages. For example,
  * {@link https://jsr.io/@roka/git/doc/testing | **@roka/git/testing**}
@@ -61,7 +50,6 @@
  *
  *  -  {@link [fake]}: Use fake objects in tests.
  *  -  {@link [mock]}: Build test mocks for async functions.
- *  -  {@link [temp]}: Create temporary resources in tests.
  *
  * @module testing
  */
