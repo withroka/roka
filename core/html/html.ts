@@ -15,6 +15,7 @@
  * @module html
  */
 
+import sanitizeHtml from "@sanitize-html";
 import { unescape } from "@std/html";
 
 /**
@@ -36,23 +37,22 @@ import { unescape } from "@std/html";
  * @todo Rewrite with a proper HTML parser.
  */
 export function plain(html: string): string {
-  let prev;
-  do {
-    prev = html;
-    html = html
-      .replace(/<\s*head\b[^>]*>[\s\S]*?<\s*\/head\b[^>]*>/gi, "")
-      .replace(/<\s*script\b[^>]*>[\s\S]*?<\s*\/script\b[^>]*>/gi, "")
-      .replace(/<\s*style\b[^>]*>[\s\S]*?<\s*\/style\b[^>]*>/gi, "")
-      .replace(/<\s*style\b[^>]*>[\s\S]*?<\s*\/style\b[^>]*>/gi, "")
-      .replace(/(?=<\s*(td|th)\b[^>]*>)/gi, " ")
-      .replace(/(?=<\s*(br|hr|li)\b[^>]*>)/gi, "\n")
-      .replace(/(?=<\s*(p|div|tr)\b[^>]*>)/gi, "\n\n")
-      .replace(/<[^>]+>/g, "")
+  return unescape(
+    sanitizeHtml(html, {
+      allowedTags: [],
+      allowedAttributes: {},
+      nonTextTags: [
+        "head",
+        "style",
+        "script",
+        "textarea",
+        "option",
+        "noscript",
+      ],
+      enforceHtmlBoundary: true,
+    })
       .replace(/[\u200E-\u200F]/g, "")
-      .replace(/\r+/g, "\n")
-      .replace(/[^\S\n]+/g, " ")
-      .replace(/\s*\n\s+/g, "\n")
-      .trim();
-  } while (html !== prev);
-  return unescape(html);
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 }

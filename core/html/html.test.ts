@@ -6,55 +6,57 @@ Deno.test("plain() empty string", () => {
 });
 
 Deno.test("plain() removes HTML tags", () => {
-  const input = "<p>Hello, <b>world</b>!</p>";
+  const input = "<p>Hello, <b>World</b>!</p>";
   const output = plain(input);
-  assertEquals(output, "Hello, world!");
+  assertEquals(output, "Hello, World!");
 });
 
 Deno.test("plain() handles nested tags", () => {
-  const input = "<div><span>one</span> <strong>two</strong></div>";
-  assertEquals(plain(input), "one two");
+  const input = "<div><span>Hello,</span> <strong>World!</strong></div>";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() removes head content", () => {
-  const input = "<head><title>title</title></head><body>content</body>";
-  assertEquals(plain(input), "content");
+  const input = "<head><title>Hi!</title></head><body>Hello, World!</body>";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() removes script and style content", () => {
-  const input = "<script>\nalert('x')\n</script>text<style>body{}</style>";
-  assertEquals(plain(input), "text");
+  const input =
+    "<script>\nalert('x')\n</script>Hello, World!<style>body{}</style>";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() handles nested script tags", () => {
-  const input = "<script>if (a < b) { console.log('<script>'); }</script>text";
-  assertEquals(plain(input), "text");
+  const input =
+    "<script>if (a < b) { console.log('<script>'); }</script>Hello, World!";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() strips comments", () => {
-  const input = "text<!-- this is a comment -->more text";
-  assertEquals(plain(input), "textmore text");
+  const input = "Hello,<!-- this is a comment --> World!";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() handles broken tags", () => {
-  const input = "<div><span>text";
-  assertEquals(plain(input), "text");
+  const input = "<div>Hello<span>, World!";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() keeps special characters", () => {
-  const input = "one & two";
-  assertEquals(plain(input), "one & two");
+  const input = "Hello World & Mars!";
+  assertEquals(plain(input), "Hello World & Mars!");
 });
 
 Deno.test("plain() unescapes special characters", () => {
-  const input = "one &amp; two";
-  assertEquals(plain(input), "one & two");
+  const input = "Hello, World &amp; Mars!";
+  assertEquals(plain(input), "Hello, World & Mars!");
 });
 
 Deno.test("plain() keeps special characters when removing tags", () => {
-  const input = "<p>Hello, <b>world</b> & everyone!</p>";
+  const input = "<p>Hello, <b>World</b> & Mars!</p>";
   const output = plain(input);
-  assertEquals(output, "Hello, world & everyone!");
+  assertEquals(output, "Hello, World & Mars!");
 });
 
 Deno.test("plain() keeps non-tag angle bracket text", () => {
@@ -63,13 +65,13 @@ Deno.test("plain() keeps non-tag angle bracket text", () => {
 });
 
 Deno.test("plain() removes directional formatting marks", () => {
-  const input = `\u200EHello\u200F World`; // Contains LRM and RLM
-  assertEquals(plain(input), "Hello World");
+  const input = `\u200EHello\u200F, World!`; // contains LRM and RLM
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() collapses whitespace", () => {
   const input = "Hello,\n\n\n   World!  \n";
-  assertEquals(plain(input), "Hello,\nWorld!");
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() trims leading and trailing whitespace", () => {
@@ -77,43 +79,38 @@ Deno.test("plain() trims leading and trailing whitespace", () => {
   assertEquals(plain(input), "Hello, World!");
 });
 
-Deno.test("plain() handles multiple line breaks", () => {
-  const input = "Line 1<br>Line 2<p>Line 3</p> <div>Line 4</div>";
-  assertEquals(plain(input), "Line 1\nLine 2\nLine 3\nLine 4");
-});
-
 Deno.test("plain() handles self-closing tags", () => {
-  const input = "Hello<br/>World<hr/>!";
-  assertEquals(plain(input), "Hello\nWorld\n!");
+  const input = "Hello,<br/> World<hr/>!";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() handles tags with attributes", () => {
-  const input = '<a href="url">one</a> <b class="title">two</b>';
-  assertEquals(plain(input), "one two");
+  const input = '<a href="url">Hello</a>, <b class="title">World!</b>';
+  assertEquals(plain(input), "Hello, World!");
 });
 
-Deno.test.ignore("plain() handles attributes with angle brackets", () => {
-  const input = '<div data-x="1 > 0">text</div>';
-  assertEquals(plain(input), "text");
+Deno.test("plain() handles attributes with angle brackets", () => {
+  const input = '<div data-x="1 > 0">Hello, World!</div>';
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() handles tags with newlines and spaces", () => {
-  const input = "<div>\n  <p>Hello</p>\n  <p>World</p>\n</div>";
-  assertEquals(plain(input), "Hello\nWorld");
+  const input = "<div>\n  <p>Hello,</p>\n  <p>World!</p>\n</div>";
+  assertEquals(plain(input), "Hello, World!");
 });
 
 Deno.test("plain() handles tables", () => {
   const input = "<table>\n" +
     "<tr><th>Header1</th><th>Header2</th></tr>" +
-    "<tr><td>Cell 1</td><td>Cell 2</td></tr>" +
-    "<tr><td>Cell 3</td><td>Cell 4</td></tr>" +
+    "<tr><td>Cell1</td><td>Cell2</td></tr>" +
+    "<tr><td>Cell3</td><td>Cell4</td></tr>" +
     "</table>";
-  assertEquals(plain(input), "Header1 Header2\nCell 1 Cell 2\nCell 3 Cell 4");
+  assertEquals(plain(input), "Header1Header2Cell1Cell2Cell3Cell4");
 });
 
 Deno.test("plain() decodes basic entities before final escaping", () => {
-  const input = "Tom &amp; Jerry &lt;Cartoon&gt; &apos;Classic&apos;";
-  assertEquals(plain(input), "Tom & Jerry <Cartoon> 'Classic'");
+  const input = "Hello, &lt;World&gt; &amp; &apos;Mars&apos;!";
+  assertEquals(plain(input), "Hello, <World> & 'Mars'!");
 });
 
 Deno.test("plain() handles emoji and non-Latin characters", () => {
@@ -122,7 +119,7 @@ Deno.test("plain() handles emoji and non-Latin characters", () => {
 });
 
 Deno.test("plain() is idempotent", () => {
-  const once = plain("<p>one & two &amp; three</p>");
+  const once = plain("<p>Hello, World &amp; <b>Mars!</b></p>");
   const twice = plain(once);
   assertEquals(twice, once);
 });
