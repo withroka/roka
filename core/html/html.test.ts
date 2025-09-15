@@ -26,6 +26,11 @@ Deno.test("plain() removes script and style content", () => {
   assertEquals(plain(input), "text");
 });
 
+Deno.test("plain() handles nested script tags", () => {
+  const input = "<script>if (a < b) { console.log('<script>'); }</script>text";
+  assertEquals(plain(input), "text");
+});
+
 Deno.test("plain() strips comments", () => {
   const input = "text<!-- this is a comment -->more text";
   assertEquals(plain(input), "textmore text");
