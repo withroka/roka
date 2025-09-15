@@ -54,7 +54,5 @@ export function plain(html: string): string {
       .replace(/\s*\n\s+/g, "\n")
       .trim();
   } while (html !== prev);
-  return unescape(
-    html,
-  );
+  return unescape(html);
 }
