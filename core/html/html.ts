@@ -35,7 +35,7 @@ import { unescape } from "@std/html";
  *
  * @todo Rewrite with a proper HTML parser.
  */
-export function plain(html: string) {
+export function plain(html: string): string {
   return unescape(
     html
       .replace(/<\s*head\b[^>]*>[\s\S]*?<\s*\/head\b[^>]*>/gi, "")
