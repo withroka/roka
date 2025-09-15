@@ -107,7 +107,9 @@ export function config<T extends Record<string, unknown>>(
         `.${basename(dirname(Deno.mainModule))}`,
         "config.db",
       );
-    await Deno.mkdir(dirname(path), { recursive: true });
+    if (path !== ":memory:") {
+      await Deno.mkdir(dirname(path), { recursive: true });
+    }
     kv = await Deno.openKv(path);
     return kv;
   }
