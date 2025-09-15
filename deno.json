@@ -35,6 +35,7 @@
     }
   },
   "imports": {
+    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.56",
     "@cliffy/command": "jsr:@cliffy/command@^1.0.0-rc.8",
     "@cliffy/table": "jsr:@cliffy/table@^1.0.0-rc.8",
     "@octokit/openapi-types": "npm:@octokit/openapi-types@^25.1.0",
@@ -46,6 +47,7 @@
     "@std/encoding": "jsr:@std/encoding@^1.0.10",
     "@std/fmt": "jsr:@std/fmt@^1.0.8",
     "@std/fs": "jsr:@std/fs@^1.0.19",
+    "@std/html": "jsr:@std/html@^1.0.4",
     "@std/http": "jsr:@std/http@^1.0.20",
     "@std/path": "jsr:@std/path@^1.1.2",
     "@std/semver": "jsr:@std/semver@^1.0.5",
