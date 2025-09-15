@@ -1,5 +1,5 @@
+import { tempDirectory } from "@roka/fs/temp";
 import { tempRepository } from "@roka/git/testing";
-import { tempDirectory } from "@roka/testing/temp";
 import {
   assertEquals,
   assertExists,

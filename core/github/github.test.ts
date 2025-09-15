@@ -1,7 +1,7 @@
 import { assertArrayObjectMatch } from "@roka/assert";
+import { tempDirectory } from "@roka/fs/temp";
 import { tempRepository } from "@roka/git/testing";
 import { mockFetch } from "@roka/http/testing";
-import { tempDirectory } from "@roka/testing/temp";
 import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
 import { github, type PullRequest, type Release } from "./github.ts";
 
