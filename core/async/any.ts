@@ -89,7 +89,7 @@
  * @throws {Error} If the array is empty.
  * @throws {AggregateError} If all promises reject.
  */
-export async function any<T>(
+export function any<T>(
   array: Iterable<() => Promise<T>> | AsyncIterable<T>,
 ): Promise<T>;
 
@@ -149,12 +149,12 @@ export async function any<T>(
  * @throws {Error} If the array is empty.
  * @throws {AggregateError} If all promises reject.
  */
-export async function any<T, R>(
+export function any<T, R>(
   array: Iterable<T> | AsyncIterable<T>,
   iteratorFn: (value: T) => Promise<R>,
 ): Promise<R>;
 
-export async function any<T, R>(
+export function any<T, R>(
   array: Iterable<() => Promise<T>> | AsyncIterable<T> | Iterable<T>,
   iteratorFn?: (value: T) => Promise<R>,
 ): Promise<T | R> {
