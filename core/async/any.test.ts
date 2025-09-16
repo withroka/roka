@@ -26,9 +26,9 @@ Deno.test("any() ignores rejections with successful result", async () => {
 Deno.test("any() rejects when all promises reject", async () => {
   await assertRejects(() =>
     any([
-      Promise.reject(new Error("rejected")),
-      Promise.reject(new Error("rejected")),
-      Promise.reject(new Error("rejected")),
+      Promise.reject("rejected"),
+      Promise.reject("rejected"),
+      Promise.reject("rejected"),
     ]), AggregateError);
 });
 
@@ -36,7 +36,7 @@ Deno.test("any() rejects empty array", async () => {
   await assertRejects(() => any([]), AggregateError);
 });
 
-Deno.test("any() handles callables", async () => {
+Deno.test("any() handles promise factory", async () => {
   const result = await any([
     Promise.reject("rejected"),
     Promise.resolve()
@@ -74,12 +74,12 @@ Deno.test("any() handles iterable to promises map", async () => {
   }
   const result = await any(
     generator(),
-    (x) =>
-      x === "delayed"
-        ? Promise.resolve().then(() => Promise.resolve(x))
-        : x === "rejected"
-        ? Promise.reject(x)
-        : Promise.resolve(x),
+    (x) => {
+      if (x === "rejected") throw new Error(x);
+      let result = Promise.resolve(x);
+      if (x === "delayed") result = result.then(() => Promise.resolve(x));
+      return result;
+    },
   );
   assertEquals(result, "first");
 });

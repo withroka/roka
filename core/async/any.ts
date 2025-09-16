@@ -90,18 +90,14 @@ export async function any<T, R>(
     | Iterable<T>,
   iteratorFn?: (value: T) => Promise<R>,
 ): Promise<T | R> {
-  if (typeof iteratorFn === "function") {
-    return await any(
-      Array.from(array as Iterable<T>, (x: T) => iteratorFn(x)),
-    );
-  }
-  return await Promise.any(
-    Array.from(
-      array as Iterable<Promise<T>> | Iterable<() => Promise<T>>,
-      (promise: Promise<T> | (() => Promise<T>)) =>
-        typeof promise === "function"
-          ? (promise as (() => Promise<T>))()
-          : promise,
-    ),
-  );
+  const promises = Array.from(array as Iterable<T | R>, (value) => {
+    if (typeof iteratorFn === "function") {
+      return Promise.resolve(value).then(() => iteratorFn(value as T));
+    }
+    return typeof value === "function"
+      ? Promise.resolve(value)
+        .then(() => (value as () => Promise<T>)())
+      : value;
+  });
+  return await Promise.any(promises);
 }
