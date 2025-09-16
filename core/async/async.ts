@@ -14,8 +14,8 @@
  * ```
  *
  * ```ts
- * import { first } from "@roka/async/first";
- * const result = await first([
+ * import { any } from "@roka/async/any";
+ * const result = await any([
  *   () => Promise.resolve(1),
  *   () => Promise.resolve(2),
  *   () => Promise.resolve(3),
@@ -25,7 +25,7 @@
  * ## Modules
  *
  *  -  {@link [pool]}: Limit concurrency.
- *  -  {@link [first]}: Get first resolved result.
+ *  -  {@link [any]}: Get first resolved result.
  *
  * @module async
  */

@@ -4,6 +4,6 @@
   "exports": {
     ".": "./async.ts",
     "./pool": "./pool.ts",
-    "./first": "./first.ts"
+    "./any": "./any.ts"
   }
 }

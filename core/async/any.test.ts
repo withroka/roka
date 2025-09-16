@@ -1,8 +1,8 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import { first } from "./first.ts";
+import { any } from "./any.ts";
 
-Deno.test("first() returns the first resolved result", async () => {
-  const result = await first([
+Deno.test("any() returns the first resolved result", async () => {
+  const result = await any([
     () => Promise.resolve(1),
     () => Promise.resolve(2),
     () => Promise.resolve(3),
@@ -10,8 +10,8 @@ Deno.test("first() returns the first resolved result", async () => {
   assertEquals(result, 1);
 });
 
-Deno.test("first() returns first resolved result even with delays", async () => {
-  const result = await first([
+Deno.test("any() returns first resolved result even with delays", async () => {
+  const result = await any([
     () => new Promise((resolve) => setTimeout(() => resolve(1), 100)),
     () => Promise.resolve(2),
     () => new Promise((resolve) => setTimeout(() => resolve(3), 50)),
@@ -19,8 +19,8 @@ Deno.test("first() returns first resolved result even with delays", async () => 
   assertEquals(result, 2); // resolves immediately
 });
 
-Deno.test("first() ignores rejections and returns first successful result", async () => {
-  const result = await first([
+Deno.test("any() ignores rejections and returns first successful result", async () => {
+  const result = await any([
     () => Promise.reject(new Error("first fails")),
     () => Promise.reject(new Error("second fails")),
     () => Promise.resolve(3),
@@ -28,8 +28,8 @@ Deno.test("first() ignores rejections and returns first successful result", asyn
   assertEquals(result, 3);
 });
 
-Deno.test("first() handles mixed successes and failures", async () => {
-  const result = await first([
+Deno.test("any() handles mixed successes and failures", async () => {
+  const result = await any([
     () => Promise.reject(new Error("fails")),
     () => new Promise((resolve) => setTimeout(() => resolve(2), 100)),
     () => Promise.resolve(3),
@@ -38,10 +38,10 @@ Deno.test("first() handles mixed successes and failures", async () => {
   assertEquals(result, 3);
 });
 
-Deno.test("first() rejects with AggregateError when all promises reject", async () => {
+Deno.test("any() rejects with AggregateError when all promises reject", async () => {
   await assertRejects(
     () =>
-      first([
+      any([
         () => Promise.reject(new Error("first fails")),
         () => Promise.reject(new Error("second fails")),
         () => Promise.reject(new Error("third fails")),
@@ -51,42 +51,52 @@ Deno.test("first() rejects with AggregateError when all promises reject", async 
   );
 });
 
-Deno.test("first() throws error for empty array", async () => {
+Deno.test("any() throws error for empty array", async () => {
   await assertRejects(
-    () => first([]),
+    () => any([]),
     Error,
     "Cannot get first result from empty array",
   );
 });
 
-Deno.test("first() handles iterable input", async () => {
+Deno.test("any() handles iterable input", async () => {
   function* generator() {
     yield () => Promise.resolve(1);
     yield () => Promise.resolve(2);
     yield () => Promise.resolve(3);
   }
-  const result = await first(generator());
+  const result = await any(generator());
   assertEquals(result, 1);
 });
 
-Deno.test("first() with mapper returns first mapped result", async () => {
-  const result = await first(
+Deno.test("any() handles async iterable input", async () => {
+  async function* asyncGenerator() {
+    yield Promise.resolve(1);
+    yield Promise.resolve(2);
+    yield Promise.resolve(3);
+  }
+  const result = await any(asyncGenerator());
+  assertEquals(result, 1);
+});
+
+Deno.test("any() with mapper returns first mapped result", async () => {
+  const result = await any(
     [1, 2, 3],
     (value) => Promise.resolve(value * 2),
   );
   assertEquals(result, 2); // 1 * 2
 });
 
-Deno.test("first() with mapper handles delays", async () => {
-  const result = await first(
+Deno.test("any() with mapper handles delays", async () => {
+  const result = await any(
     [100, 50, 200],
     (ms) => new Promise((resolve) => setTimeout(() => resolve(ms), ms)),
   );
   assertEquals(result, 50); // fastest to resolve
 });
 
-Deno.test("first() with mapper ignores rejections", async () => {
-  const result = await first(
+Deno.test("any() with mapper ignores rejections", async () => {
+  const result = await any(
     [1, 2, 3],
     (value) =>
       value === 1
@@ -96,10 +106,10 @@ Deno.test("first() with mapper ignores rejections", async () => {
   assertEquals(result, 4); // 2 * 2
 });
 
-Deno.test("first() with mapper rejects when all mapped promises reject", async () => {
+Deno.test("any() with mapper rejects when all mapped promises reject", async () => {
   await assertRejects(
     () =>
-      first(
+      any(
         [1, 2, 3],
         () => Promise.reject(new Error("all fail")),
       ),
@@ -108,34 +118,47 @@ Deno.test("first() with mapper rejects when all mapped promises reject", async (
   );
 });
 
-Deno.test("first() with mapper throws error for empty array", async () => {
+Deno.test("any() with mapper throws error for empty array", async () => {
   await assertRejects(
-    () => first([], (x: number) => Promise.resolve(x)),
+    () => any([], (x: number) => Promise.resolve(x)),
     Error,
     "Cannot get first result from empty array",
   );
 });
 
-Deno.test("first() with mapper handles iterable input", async () => {
+Deno.test("any() with mapper handles iterable input", async () => {
   function* generator() {
     yield 1;
     yield 2;
     yield 3;
   }
-  const result = await first(
+  const result = await any(
     generator(),
     (value) => Promise.resolve(value * 2),
   );
   assertEquals(result, 2); // 1 * 2
 });
 
-Deno.test("first() maintains order independence", async () => {
+Deno.test("any() with mapper handles async iterable input", async () => {
+  async function* asyncGenerator() {
+    yield 1;
+    yield 2;
+    yield 3;
+  }
+  const result = await any(
+    asyncGenerator(),
+    (value) => Promise.resolve(value * 2),
+  );
+  assertEquals(result, 2); // 1 * 2
+});
+
+Deno.test("any() maintains order independence", async () => {
   // Test that the function returns the first to resolve, not the first in order
   const results: number[] = [];
 
   // Run multiple times to ensure consistent behavior
   for (let i = 0; i < 5; i++) {
-    const result = await first([
+    const result = await any([
       () =>
         new Promise((resolve) =>
           setTimeout(() => resolve(1), Math.random() * 10)
