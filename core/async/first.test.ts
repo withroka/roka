@@ -40,11 +40,12 @@ Deno.test("first() handles mixed successes and failures", async () => {
 
 Deno.test("first() rejects with AggregateError when all promises reject", async () => {
   await assertRejects(
-    () => first([
-      () => Promise.reject(new Error("first fails")),
-      () => Promise.reject(new Error("second fails")),
-      () => Promise.reject(new Error("third fails")),
-    ]),
+    () =>
+      first([
+        () => Promise.reject(new Error("first fails")),
+        () => Promise.reject(new Error("second fails")),
+        () => Promise.reject(new Error("third fails")),
+      ]),
     AggregateError,
     "All promises rejected",
   );
@@ -87,19 +88,21 @@ Deno.test("first() with mapper handles delays", async () => {
 Deno.test("first() with mapper ignores rejections", async () => {
   const result = await first(
     [1, 2, 3],
-    (value) => value === 1 
-      ? Promise.reject(new Error("first fails"))
-      : Promise.resolve(value * 2),
+    (value) =>
+      value === 1
+        ? Promise.reject(new Error("first fails"))
+        : Promise.resolve(value * 2),
   );
   assertEquals(result, 4); // 2 * 2
 });
 
 Deno.test("first() with mapper rejects when all mapped promises reject", async () => {
   await assertRejects(
-    () => first(
-      [1, 2, 3],
-      () => Promise.reject(new Error("all fail")),
-    ),
+    () =>
+      first(
+        [1, 2, 3],
+        () => Promise.reject(new Error("all fail")),
+      ),
     AggregateError,
     "All promises rejected",
   );
@@ -129,17 +132,23 @@ Deno.test("first() with mapper handles iterable input", async () => {
 Deno.test("first() maintains order independence", async () => {
   // Test that the function returns the first to resolve, not the first in order
   const results: number[] = [];
-  
+
   // Run multiple times to ensure consistent behavior
   for (let i = 0; i < 5; i++) {
     const result = await first([
-      () => new Promise((resolve) => setTimeout(() => resolve(1), Math.random() * 10)),
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(1), Math.random() * 10)
+        ),
       () => Promise.resolve(2), // This should always win
-      () => new Promise((resolve) => setTimeout(() => resolve(3), Math.random() * 10)),
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(3), Math.random() * 10)
+        ),
     ]);
     results.push(result);
   }
-  
+
   // All results should be 2 since it resolves immediately
-  assertEquals(results.every(r => r === 2), true);
+  assertEquals(results.every((r) => r === 2), true);
 });

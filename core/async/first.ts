@@ -127,11 +127,11 @@ export async function first<T, R>(
 ): Promise<T | R> {
   if (mapper) {
     const promiseFactories = Array.from(input as Iterable<T>).map(
-      (value) => () => mapper(value)
+      (value) => () => mapper(value),
     );
     return firstInternal(promiseFactories);
   }
-  
+
   return firstInternal(input as Iterable<() => Promise<T>>);
 }
 
@@ -142,7 +142,7 @@ async function firstInternal<T>(
   promises: Iterable<() => Promise<T>>,
 ): Promise<T> {
   const promiseArray = Array.from(promises);
-  
+
   if (promiseArray.length === 0) {
     throw new Error("Cannot get first result from empty array");
   }
@@ -163,7 +163,7 @@ async function firstInternal<T>(
         .catch((error) => {
           errors.push(error);
           rejectedCount++;
-          
+
           // If all promises have rejected, reject with AggregateError
           if (rejectedCount === promiseArray.length) {
             reject(new AggregateError(errors, "All promises rejected"));
