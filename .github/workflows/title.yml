@@ -56,6 +56,7 @@ jobs:
             github
             github/testing
             html
+            html/plain
             http
             http/graphql/client
             http/json/client
