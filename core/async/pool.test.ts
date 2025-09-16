@@ -190,12 +190,12 @@ Deno.test("pooled() handles async iterable", async () => {
 
 Deno.test("pooled() handles async iterable map", async () => {
   async function* asyncGenerator() {
-    yield 1;
-    yield 2;
-    yield 3;
+    yield Promise.resolve(1);
+    yield Promise.resolve(2);
+    yield Promise.resolve(3);
   }
   const results = await Array.fromAsync(
-    pooled(asyncGenerator(), (x) => Promise.resolve(x)),
+    pooled(asyncGenerator()),
   );
   assertEquals(results, [1, 2, 3]);
 });
