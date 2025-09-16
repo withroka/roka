@@ -8,10 +8,10 @@
  * await pool([1, 2, 3], (x) => Promise.resolve(x * 2));
  * ```
  *
- * The maximum concurrency is not limited by default but can be set using the
- * {@linkcode PoolOptions.concurrency | concurrency} option. The promises will
- * be executed based on the order that they are passed to the function, and the
- * results will be in the same order.
+ * The maximum concurrency is not limited by default, but it can be set using
+ * the {@linkcode PoolOptions.concurrency | concurrency} option. The promises
+ * will be executed based on the order that they are passed to the function,
+ * and the results will be in the same order.
  *
  * ```ts
  * import { pool } from "@roka/async/pool";
@@ -25,10 +25,10 @@
  * }
  * ```
  *
- * If an error is thrown from a function, no new executions will begin. All
- * currently executing functions are allowed to finish and still yield success.
- * Subsequently, the rejections among them are gathered and thrown by the
- * iterator in an `AggregateError`.
+ * If a promise is rejected, no new executions will begin. All currently
+ * executing functions are allowed to finish. Subsequently, the rejections that
+ * already occurred are gathered and thrown by the iterator in an
+ * `AggregateError`.
  *
  * The accepted input types make sure that the asynchronous operations start
  * only when the pooling function is called. For example, an iterable of
@@ -164,7 +164,7 @@ export async function pool<T>(
  * @typeParam T The type of the input values.
  * @typeParam R The type of the output values.
  * @param array The input values to map to promises.
- * @param iteratorFn The function to transform the values.
+ * @param iteratorFn The function to transform the values to promises.
  * @returns A promise that resolves all mapped inputs concurrently.
  */
 export async function pool<T, R>(
@@ -327,7 +327,7 @@ export function pooled<T>(
  * @typeParam T The type of the input values.
  * @typeParam R The type of the output values.
  * @param array The input values to map to promises.
- * @param iteratorFn The function to transform the values.
+ * @param iteratorFn The function to transform the values to promises.
  * @returns An async iterator for the transformed and resolved promises.
  */
 export function pooled<T, R>(
