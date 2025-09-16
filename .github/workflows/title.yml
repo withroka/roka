@@ -34,7 +34,7 @@ jobs:
           scopes: |
             assert
             async
-            async/first
+            async/any
             async/pool
             cli
             cli/config
