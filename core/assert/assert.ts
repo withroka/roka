@@ -1,7 +1,6 @@
 /**
- * This module provides functions for making assertions, and it is
- * complementary to the standard {@link https://jsr.io/@std/assert | **@std/assert**}
- * library.
+ * A library for making assertions, complementary to the standard
+ * {@link https://jsr.io/@std/assert | **@std/assert**} library.
  *
  * ```ts
  * assertArrayObjectMatch(

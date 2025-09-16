@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { plain } from "./html.ts";
+import { plain } from "./plain.ts";
 
 Deno.test("plain() empty string", () => {
   assertEquals(plain(""), "");
