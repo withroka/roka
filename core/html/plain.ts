@@ -26,7 +26,7 @@ import { DOMParser } from "@b-fuze/deno-dom";
  */
 export function plain(html: string): string {
   const doc = new DOMParser().parseFromString(html, "text/html");
-  return doc.body.textContent
+  return doc?.body?.textContent
     .replace(/[\u200E-\u200F]/g, "")
     .replace(/\s+/g, " ")
     .trim();
