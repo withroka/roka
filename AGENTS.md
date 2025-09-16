@@ -16,6 +16,8 @@
 - Testing: `deno test -P <package_folder>`
 - All checks: `deno task ok`
 - Run forge locally: `deno task forge`
+- Behind a firewall: `export DENO_TLS_CA_STORE=system`
+  - to resolve firewall and certificate related problems
 
 ## PRs
 
