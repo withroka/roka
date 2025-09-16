@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "exports": {
     ".": "./async.ts",
-    "./pool": "./pool.ts"
+    "./pool": "./pool.ts",
+    "./first": "./first.ts"
   }
 }

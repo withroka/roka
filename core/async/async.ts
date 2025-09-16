@@ -1,8 +1,8 @@
 /**
  * A library for working with asynchronous operations.
  *
- * This package only provides the {@link [pool]} module to limit the
- * concurrency of promises.
+ * This package provides modules to limit the concurrency of promises and to
+ * get the first resolved result from a collection of promises.
  *
  * ```ts
  * import { pool } from "@roka/async/pool";
@@ -13,9 +13,19 @@
  * );
  * ```
  *
+ * ```ts
+ * import { first } from "@roka/async/first";
+ * const result = await first([
+ *   () => Promise.resolve(1),
+ *   () => Promise.resolve(2),
+ *   () => Promise.resolve(3),
+ * ]);
+ * ```
+ *
  * ## Modules
  *
  *  -  {@link [pool]}: Limit concurrency.
+ *  -  {@link [first]}: Get first resolved result.
  *
  * @module async
  */
