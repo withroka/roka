@@ -13,7 +13,7 @@ Deno.test("any() returns the first resolved result", async () => {
   assertEquals(result, "first");
 });
 
-Deno.test("any() ignores rejections with succesful result", async () => {
+Deno.test("any() ignores rejections with successful result", async () => {
   const result = await any([
     Promise.resolve()
       .then(() => Promise.reject(new Error("rejected"))),
