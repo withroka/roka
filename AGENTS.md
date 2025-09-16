@@ -15,9 +15,10 @@
 - Formatting: `deno fmt`
 - Testing: `deno test -P <package_folder>`
 - All checks: `deno task ok`
-- Run forge locally: `deno task forge`
+  - must be passing before committing
 - Behind a firewall: `export DENO_TLS_CA_STORE=system`
   - to resolve firewall and certificate related problems
+- Run forge locally: `deno task forge`
 
 ## PRs
 
