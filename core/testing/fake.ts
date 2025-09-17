@@ -1,6 +1,17 @@
 /**
  * This module provides common fake objects for testing.
  *
+ * The {@linkcode fakeArgs} function creates a fake script arguments array
+ * that overrides `Deno.args`. Code being testing reads from this array to get
+ * script arguments.
+ *
+ * ```ts
+ * import { fakeArgs } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using args = fakeArgs(["arg1", "arg2"]);
+ * assertEquals(Deno.args, ["arg1", "arg2"]);
+ * ```
+ *
  * The {@linkcode fakeEnv} function creates a fake environment variables
  * object that overrides `Deno.env`. Code being testing reads from and updates
  * environment variables of this object.
@@ -29,6 +40,50 @@
 
 import { assertExists } from "@std/assert";
 import { MockError, stub } from "@std/testing/mock";
+
+/** Fake script arguments returned by the {@linkcode fakeArgs} function. */
+export interface FakeArgs {
+  /** The fake script arguments. */
+  args: string[];
+  /** Whether the original `Deno.args` instance has been restored. */
+  restored: boolean;
+  /** Restores the original `Deno.args` instance. */
+  restore: () => void;
+}
+
+/**
+ * Create a fake replacement for script arguments supplied by `Deno.args`.
+ *
+ * Useful for testing command-line applications.
+ *
+ * @example Use fake script arguments for testing.
+ * ```ts
+ * import { fakeArgs } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using args = fakeArgs(["arg1", "arg2"]);
+ * assertEquals(Deno.args, ["arg1", "arg2"]);
+ * ```
+ */
+export function fakeArgs(args: string[]): FakeArgs & Disposable {
+  const original = Object.getOwnPropertyDescriptor(Deno, "args");
+  assertExists(original);
+  const fake = {
+    args,
+    get restored() {
+      return Object.getOwnPropertyDescriptor(Deno, "args")?.get ===
+        original.get;
+    },
+    restore() {
+      if (this.restored) {
+        throw new MockError("Cannot restore: fakeArgs already restored");
+      }
+      Object.defineProperties(Deno, { args: original });
+    },
+    [Symbol.dispose]: () => fake.restore(),
+  };
+  Object.defineProperties(Deno, { args: { get: () => fake.args } });
+  return fake;
+}
 
 /** Fake environment variables returned by the {@linkcode fakeEnv} function. */
 export interface FakeEnv extends Deno.Env {
