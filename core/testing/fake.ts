@@ -48,7 +48,7 @@ export interface FakeArgs {
   /** Whether the original `Deno.args` instance has been restored. */
   restored: boolean;
   /** Restores the original `Deno.args` instance. */
-  restore: () => void;
+  restore(): void;
 }
 
 /**
@@ -97,7 +97,7 @@ export interface FakeEnv extends Deno.Env {
   /** Whether the original `Deno.env` instance has been restored. */
   restored: boolean;
   /** Restores the original `Deno.env` instance. */
-  restore: () => void;
+  restore(): void;
 }
 
 /**
@@ -168,15 +168,15 @@ export function fakeEnv(env: Record<string, string>): FakeEnv & Disposable {
 /** A fake console returned by the {@linkcode fakeConsole} function. */
 export interface FakeConsole {
   /** Logs a message with the `debug` level. */
-  debug: (...data: unknown[]) => void;
+  debug(...data: unknown[]): void;
   /** Logs a message with the `log` level. */
-  log: (...data: unknown[]) => void;
+  log(...data: unknown[]): void;
   /** Logs a message with the `info` level. */
-  info: (...data: unknown[]) => void;
+  info(...data: unknown[]): void;
   /** Logs a message with the `warn` level. */
-  warn: (...data: unknown[]) => void;
+  warn(...data: unknown[]): void;
   /** Logs a message with the `error` level. */
-  error: (...data: unknown[]) => void;
+  error(...data: unknown[]): void;
   /** The string output of the recorded calls to the console. */
   output(options?: FakeConsoleOutputOptions): string;
   /** The recorded calls to the Console. */
@@ -187,7 +187,7 @@ export interface FakeConsole {
   /** Whether the original `console` instance has been restored. */
   restored: boolean;
   /** Restores the original `console` instance. */
-  restore: () => void;
+  restore(): void;
 }
 
 /** Options for the {@linkcode fakeConsole} function. */
