@@ -9,7 +9,8 @@
   "test": {
     "permissions": {
       "read": true,
-      "write": true
+      "write": true,
+      "env": ["FAKE_ENV"]
     }
   }
 }
