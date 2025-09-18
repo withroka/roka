@@ -67,6 +67,9 @@ export interface FakeArgs {
 export function fakeArgs(args: string[]): FakeArgs & Disposable {
   const original = Object.getOwnPropertyDescriptor(Deno, "args");
   assertExists(original);
+  if ("fake" in (original.get ?? {})) {
+    throw new MockError("Cannot create fakeArgs: another fake is active");
+  }
   const fake = {
     args,
     get restored() {
@@ -81,7 +84,11 @@ export function fakeArgs(args: string[]): FakeArgs & Disposable {
     },
     [Symbol.dispose]: () => fake.restore(),
   };
-  Object.defineProperties(Deno, { args: { get: () => fake.args } });
+  Object.defineProperties(Deno, {
+    args: {
+      get: Object.defineProperties(() => fake.args, { fake: { value: true } }),
+    },
+  });
   return fake;
 }
 
@@ -121,6 +128,9 @@ export interface FakeEnv extends Deno.Env {
  * ```
  */
 export function fakeEnv(env: Record<string, string>): FakeEnv & Disposable {
+  if ("restore" in Deno.env) {
+    throw new MockError("Cannot create fakeEnv: another fake is active");
+  }
   const original = Object.getOwnPropertyDescriptor(Deno, "env");
   assertExists(original);
   const fake = {

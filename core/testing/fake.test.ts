@@ -31,6 +31,11 @@ Deno.test("fakeArgs() implements spy like interface", () => {
   assertThrows(() => fake.restore(), MockError);
 });
 
+Deno.test("fakeArgs() rejects recursive use", () => {
+  using _ = fakeArgs(["arg1", "arg2"]);
+  assertThrows(() => fakeArgs(["arg3", "arg4"]), MockError);
+});
+
 Deno.test("fakeEnv() provides fake environment variables", () => {
   assertEquals(Deno.env.get("FAKE_ENV"), undefined);
   const env = fakeEnv({ FAKE_ENV: "value" });
@@ -88,6 +93,11 @@ Deno.test("fakeEnv() isolates from test environments", () => {
   } finally {
     Deno.env.delete("FAKE_ENV");
   }
+});
+
+Deno.test("fakeEnv() rejects recursive use", () => {
+  using _ = fakeEnv({ ENV: "value1" });
+  assertThrows(() => fakeEnv({ ENV: "value2" }), MockError);
 });
 
 Deno.test("fakeConsole() stubs console", () => {
@@ -191,4 +201,9 @@ Deno.test("fakeConsole().output() can capture styling", () => {
     console.output({ color: true }),
     "%clog color: red font-weight: bold",
   );
+});
+
+Deno.test("fakeConsole() rejects recursive use", () => {
+  using _ = fakeConsole();
+  assertThrows(() => fakeConsole(), MockError);
 });
