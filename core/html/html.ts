@@ -6,9 +6,13 @@
  * from text input.
  *
  * ```ts
- * import { plain } from "@roka/html";
+ * import { plain } from "@roka/html/plain";
  * const text = plain("<p>Hello, <b>world</b>!</p>");  // "Hello, world!"
  * ```
+ *
+ * ## Modules
+ *
+ *  -  {@link [plain]}: Convert HTML to plain text.
  *
  * @module html
  */
