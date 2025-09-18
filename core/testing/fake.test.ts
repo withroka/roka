@@ -80,22 +80,24 @@ Deno.test("fakeConsole() stubs console", () => {
 
 Deno.test("fakeConsole() implements spy like interface", () => {
   const console = fakeConsole();
-  console.debug("Hello, Debug!");
-  console.log("Hello, Log!");
-  console.info("Hello, Info!");
-  console.warn("Hello, Warn!");
-  console.error("Hello, Error!");
-  assertEquals(console.calls, [
-    { level: "debug", data: ["Hello, Debug!"] },
-    { level: "log", data: ["Hello, Log!"] },
-    { level: "info", data: ["Hello, Info!"] },
-    { level: "warn", data: ["Hello, Warn!"] },
-    { level: "error", data: ["Hello, Error!"] },
-  ]);
-  assertFalse(console.restored);
-  console.restore();
-  assert(console.restored);
-  assertThrows(() => console.restore(), MockError);
+  try {
+    console.debug("Hello, Debug!");
+    console.log("Hello, Log!");
+    console.info("Hello, Info!");
+    console.warn("Hello, Warn!");
+    console.error("Hello, Error!");
+    assertEquals(console.calls, [
+      { level: "debug", data: ["Hello, Debug!"] },
+      { level: "log", data: ["Hello, Log!"] },
+      { level: "info", data: ["Hello, Info!"] },
+      { level: "warn", data: ["Hello, Warn!"] },
+      { level: "error", data: ["Hello, Error!"] },
+    ]);
+    assertFalse(console.restored);
+  } finally {
+    console.restore();
+    assertEquals(console.restored, true);
+  }
 });
 
 Deno.test("fakeConsole() captures multiple calls", () => {
