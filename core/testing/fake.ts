@@ -1,6 +1,20 @@
 /**
- * This module provides common fake objects for testing. Currently, only the
- * {@linkcode fakeConsole} function is available.
+ * This module provides common fake objects for testing.
+ *
+ * The {@linkcode fakeEnv} function creates a fake environment variables
+ * object that overrides `Deno.env`. Code being tested reads from and updates
+ * environment variables of this object.
+ *
+ * ```ts
+ * import { fakeEnv } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using env = fakeEnv({ ENV: "value" });
+ * assertEquals(env.get("ENV"), "value");
+ * ```
+ *
+ * The {@linkcode fakeConsole} overrides the global `console` object and
+ * records calls to its log methods. This object records calls to the console
+ * from the code being tested.
  *
  * ```ts
  * import { fakeConsole } from "@roka/testing/fake";
@@ -13,7 +27,78 @@
  * @module fake
  */
 
-import { stub } from "@std/testing/mock";
+import { assertExists } from "@std/assert";
+import { MockError, stub } from "@std/testing/mock";
+
+/** Fake environment variables returned by the {@linkcode fakeEnv} function. */
+export interface FakeEnv extends Deno.Env {
+  /** Whether the original `Deno.env` instance has been restored. */
+  restored: boolean;
+  /** Restores the original `Deno.env` instance. */
+  restore: () => void;
+}
+
+/**
+ * Create a fake replacement for environment variables supplied by `Deno.env`.
+ *
+ * Useful for supplying and manipulating environment variables in tests.
+ *
+ * @example Use fake environment variables for testing.
+ * ```ts
+ * import { fakeEnv } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using env = fakeEnv({ ENV1: "value1", ENV2: "value2" });
+ * assertEquals(env.get("ENV1"), "value1");
+ * assertEquals(env.get("ENV2"), "value2");
+ * ```
+ *
+ * @example Verify environment variable updated from code under test.
+ * ```ts
+ * import { fakeEnv } from "@roka/testing/fake";
+ * import { assert, assertEquals, assertFalse } from "@std/assert";
+ * using env = fakeEnv({});
+ * assertFalse(env.has("ENV"));
+ * env.set("ENV", "value");
+ * assert(env.has("ENV"));
+ * assertEquals(env.get("ENV"), "value");
+ * env.delete("ENV");
+ * assertFalse(env.has("ENV"));
+ * ```
+ */
+export function fakeEnv(env: Record<string, string>): FakeEnv & Disposable {
+  const original = Object.getOwnPropertyDescriptor(Deno, "env");
+  assertExists(original);
+  const fake = {
+    get(key: string) {
+      return env[key];
+    },
+    toObject() {
+      return env;
+    },
+    set(key: string, value: string) {
+      env[key] = value;
+    },
+    has(key: string) {
+      return env[key] !== undefined;
+    },
+    delete(key: string) {
+      delete env[key];
+    },
+    get restored() {
+      return Object.getOwnPropertyDescriptor(Deno, "env")?.value ===
+        original.value;
+    },
+    restore() {
+      if (this.restored) {
+        throw new MockError("Cannot restore: fakeEnv already restored");
+      }
+      Object.defineProperties(Deno, { env: original });
+    },
+    [Symbol.dispose]: () => fake.restore(),
+  };
+  Object.defineProperties(Deno, { env: { value: fake } });
+  return fake;
+}
 
 /** A fake console returned by the {@linkcode fakeConsole} function. */
 export interface FakeConsole {
