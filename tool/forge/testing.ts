@@ -22,7 +22,7 @@
  */
 
 import { tempRepository, type TempRepositoryOptions } from "@roka/git/testing";
-import { join, relative } from "@std/path";
+import { dirname, fromFileUrl, join, relative } from "@std/path";
 import {
   type Config,
   type Package,
@@ -188,7 +188,9 @@ export async function tempWorkspace(
  */
 export async function unstableTestImports(): Promise<Record<string, string>> {
   await Promise.resolve();
-  const root = await packageInfo({ directory: "." });
+  const root = await packageInfo({
+    directory: dirname(dirname(dirname(fromFileUrl(import.meta.url)))),
+  });
   const packages = await workspace({ root: root.directory });
   const imports: Record<string, string> = {};
   packages.forEach((pkg) => {

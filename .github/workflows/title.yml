@@ -47,6 +47,7 @@ jobs:
             forge/compile
             forge/package
             forge/release
+            forge/testing
             forge/version
             fs
             fs/temp
