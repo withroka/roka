@@ -2,7 +2,7 @@
  * This module provides common fake objects for testing.
  *
  * The {@linkcode fakeEnv} function creates a fake environment variables
- * object that overrides `Deno.env`. Code being testing reads from and updates
+ * object that overrides `Deno.env`. Code being tested reads from and updates
  * environment variables of this object.
  *
  * ```ts
