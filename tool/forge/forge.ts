@@ -326,13 +326,11 @@ export interface ForgeOptions {
 }
 
 /**
- * Run the `forge` tool with the given command-line arguments.
+ * Run the `forge` CLI tool.
  *
- * @param args Command-line arguments.
  * @returns The exit code of the command.
  */
 export async function forge(
-  args: string[],
   options?: ForgeOptions,
 ): Promise<number> {
   let verbose = false;
@@ -362,7 +360,7 @@ export async function forge(
     .command("bump", bumpCommand(options))
     .command("release", releaseCommand(options));
   try {
-    await cmd.parse(args);
+    await cmd.parse();
   } catch (e: unknown) {
     if (e instanceof ValidationError) {
       cmd.showHelp();
@@ -607,4 +605,4 @@ async function filter(
   });
 }
 
-if (import.meta.main) Deno.exit(await forge(Deno.args));
+if (import.meta.main) Deno.exit(await forge());

@@ -17,6 +17,7 @@
  * ## Modules
  *
  *  -  {@link [config]}: Store user configuration.
+ *  -  {@link [testing]}: Test CLI applications.
  *
  * @module cli
  */
