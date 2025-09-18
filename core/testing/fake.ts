@@ -13,7 +13,7 @@
  * ```
  *
  * The {@linkcode fakeConsole} overrides the global `console` object and
- * records calls to its log methods. This objects records calls to the console
+ * records calls to its log methods. This object records calls to the console
  * from the code being tested.
  *
  * ```ts
