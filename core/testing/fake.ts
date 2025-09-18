@@ -16,7 +16,7 @@
 import { stub } from "@std/testing/mock";
 
 /** A fake console returned by the {@linkcode fakeConsole} function. */
-export interface FakeConsole extends Disposable {
+export interface FakeConsole {
   /** Logs a message with the `debug` level. */
   debug: (...data: unknown[]) => void;
   /** Logs a message with the `log` level. */
@@ -102,7 +102,7 @@ export interface FakeConsoleOutputOptions {
  * ]);
  * ```
  */
-export function fakeConsole(): FakeConsole {
+export function fakeConsole(): FakeConsole & Disposable {
   const calls: {
     level: "debug" | "log" | "info" | "warn" | "error";
     data: unknown[];
