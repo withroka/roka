@@ -1,7 +1,35 @@
 // deno-lint-ignore-file no-console
 import { assert, assertEquals, assertFalse, assertThrows } from "@std/assert";
 import { MockError } from "@std/testing/mock";
-import { fakeConsole, fakeEnv } from "./fake.ts";
+import { fakeArgs, fakeConsole, fakeEnv } from "./fake.ts";
+
+Deno.test("fakeArgs() provides fake script arguments", () => {
+  const original = Deno.args;
+  const fake = fakeArgs(["arg1", "arg2"]);
+  assertEquals(Deno.args, ["arg1", "arg2"]);
+  fake.restore();
+  assertEquals(Deno.args, original);
+});
+
+Deno.test("fakeArgs() provides a disposable object", () => {
+  const original = Deno.args;
+  {
+    using _ = fakeArgs(["arg1", "arg2"]);
+    assertEquals(Deno.args, ["arg1", "arg2"]);
+  }
+  assertEquals(Deno.args, original);
+});
+
+Deno.test("fakeArgs() implements spy like interface", () => {
+  const original = Deno.args;
+  const fake = fakeArgs(["arg1", "arg2"]);
+  assertEquals(fake.args, Deno.args);
+  assertFalse(fake.restored);
+  fake.restore();
+  assert(fake.restored);
+  assertEquals(Deno.args, original);
+  assertThrows(() => fake.restore(), MockError);
+});
 
 Deno.test("fakeEnv() provides fake environment variables", () => {
   assertEquals(Deno.env.get("FAKE_ENV"), undefined);
