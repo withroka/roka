@@ -65,13 +65,13 @@ async function test(context: Deno.TestContext) {
   );
   using _args = fakeArgs(
     context.name
-      .replace("[package]", pkg.name)
-      .replace("[packages...]", packages.map((pkg) => pkg.name).join(" "))
-      .replace("[pattern]", "name*")
-      .replace("[directory]", root)
-      .replace("<file>", join(root, "CHANGELOG.md"))
-      .replace("<type>", "feat")
-      .replace("<target>", "aarch64-unknown-linux-gnu")
+      .replaceAll("[package]", pkg.name)
+      .replaceAll("[packages...]", packages.map((pkg) => pkg.name).join(" "))
+      .replaceAll("[pattern]", "name*")
+      .replaceAll("[directory]", root)
+      .replaceAll("<file>", join(root, "CHANGELOG.md"))
+      .replaceAll("<type>", "feat")
+      .replaceAll("<target>", "aarch64-unknown-linux-gnu")
       .split(" ").slice(1),
   );
   using _env = fakeEnv({ GITHUB_TOKEN: "token" });
