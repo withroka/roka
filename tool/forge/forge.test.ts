@@ -1,15 +1,14 @@
-// deno-lint-ignore-file no-console
 import { git } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakeRepository } from "@roka/github/testing";
-import { fakeConsole } from "@roka/testing/fake";
-import { assertEquals, assertExists } from "@std/assert";
+import { fakeArgs, fakeConsole, fakeEnv } from "@roka/testing/fake";
+import { assertExists } from "@std/assert";
 import { common, join } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { forge } from "./forge.ts";
-import { tempWorkspace, type TempWorkspaceOptions } from "./testing.ts";
+import { tempWorkspace } from "./testing.ts";
 
-const WORKSPACE: TempWorkspaceOptions = {
+const WORKSPACE = {
   configs: [
     {
       name: "@scope/name1",
@@ -50,58 +49,59 @@ const WORKSPACE: TempWorkspaceOptions = {
   ],
 };
 
-const TESTS = [
-  "list",
-  "list --modules [packages...]",
-  "list [pattern]",
-  "list [directory]",
-  "changelog",
-  "changelog --all --emoji",
-  "changelog --type <type>",
-  "changelog --type <type> --no-breaking --all",
-  "changelog --breaking --markdown",
-  "compile --target <target> --bundle --install",
-  "bump --release --pr --changelog=<file> --emoji",
-  "release --draft --emoji",
-];
-
-for (const test of TESTS) {
-  Deno.test(`forge ${test}`, async (t) => {
-    await using console = fakeConsole();
-    await using remote = await tempRepository();
-    await using packages = await tempWorkspace({
-      ...WORKSPACE,
-      repo: { clone: remote.path() },
-    });
-    const [pkg1] = packages;
-    assertExists(pkg1);
-    await Deno.writeTextFile(
-      join(pkg1.directory, "main.ts"),
-      "console.log('Hello, World!');",
-    );
-    Deno.env.set("GITHUB_TOKEN", "token");
-    const root = common(packages.map((pkg) => pkg.root));
-    const repo = fakeRepository({ url: "<url>", git: git({ cwd: root }) });
-    const args = test
-      .replaceAll("[package]", pkg1.name)
+async function test(context: Deno.TestContext) {
+  await using remote = await tempRepository();
+  await using packages = await tempWorkspace({
+    ...WORKSPACE,
+    repo: { clone: remote.path() },
+  });
+  assertExists(packages[0]);
+  const pkg = packages[0];
+  const root = common(packages.map((pkg) => pkg.root));
+  const repo = fakeRepository({ url: "<url>", git: git({ cwd: root }) });
+  await Deno.writeTextFile(
+    join(pkg.directory, "main.ts"),
+    "console.log('Hello, World!');",
+  );
+  using _args = fakeArgs(
+    context.name
+      .replaceAll("[package]", pkg.name)
       .replaceAll("[packages...]", packages.map((pkg) => pkg.name).join(" "))
       .replaceAll("[pattern]", "name*")
       .replaceAll("[directory]", root)
       .replaceAll("<file>", join(root, "CHANGELOG.md"))
       .replaceAll("<type>", "feat")
       .replaceAll("<target>", "aarch64-unknown-linux-gnu")
-      .split(" ");
-    assertEquals(await forge(args, { repo }), 0);
-    console.calls.forEach((call) => {
-      call.data = call.data.map((line) => {
-        if (typeof line === "string") {
-          return line
-            .replaceAll(root, "<directory>")
-            .replace(/(\d+\.\d+\.\d+-\w+\.\d+)\+(.......)/g, "$1+<hash>");
-        }
-        return line;
-      });
-    });
-    await assertSnapshot(t, console.output({ trimEnd: true, wrap: "\n" }));
-  });
+      .split(" ").slice(1),
+  );
+  using _env = fakeEnv({ GITHUB_TOKEN: "token" });
+  using console = fakeConsole();
+  const cwd = Deno.cwd();
+  try {
+    Deno.chdir(root);
+    await forge({ repo });
+  } finally {
+    Deno.chdir(cwd);
+  }
+  await assertSnapshot(
+    context,
+    // deno-lint-ignore no-console
+    console
+      .output({ trimEnd: true, wrap: "\n" })
+      .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
+      .replaceAll(root, "<directory>"),
+  );
 }
+
+Deno.test("forge list", test);
+Deno.test("forge list --modules [packages...]", test);
+Deno.test("forge list [pattern]", test);
+Deno.test("forge list [directory]", test);
+Deno.test("forge changelog", test);
+Deno.test("forge changelog --all --emoji", test);
+Deno.test("forge changelog --type <type>", test);
+Deno.test("forge changelog --type <type> --no-breaking --all", test);
+Deno.test("forge changelog --breaking --markdown", test);
+Deno.test("forge compile --target <target> --bundle --install", test);
+Deno.test("forge bump --release --pr --changelog=<file> --emoji", test);
+Deno.test("forge release --draft --emoji", test);
