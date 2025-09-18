@@ -2,7 +2,7 @@
  * This module provides common fake objects for testing.
  *
  * The {@linkcode fakeArgs} function creates a fake script arguments array
- * that overrides `Deno.args`. Code being testing reads from this array to get
+ * that overrides `Deno.args`. Code being tested reads from this array to get
  * script arguments.
  *
  * ```ts
