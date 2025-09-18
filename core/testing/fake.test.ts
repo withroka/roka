@@ -1,6 +1,66 @@
 // deno-lint-ignore-file no-console
-import { assertEquals, assertFalse } from "@std/assert";
-import { fakeConsole } from "./fake.ts";
+import { assert, assertEquals, assertFalse, assertThrows } from "@std/assert";
+import { MockError } from "@std/testing/mock";
+import { fakeConsole, fakeEnv } from "./fake.ts";
+
+Deno.test("fakeEnv() provides fake environment variables", () => {
+  assertEquals(Deno.env.get("FAKE_ENV"), undefined);
+  const env = fakeEnv({ FAKE_ENV: "value" });
+  assertEquals(env.toObject(), { FAKE_ENV: "value" });
+  assertEquals(Deno.env.get("FAKE_ENV"), "value");
+  env.set("FAKE_ENV", "new_value");
+  assertEquals(Deno.env.get("FAKE_ENV"), "new_value");
+  assert(env.has("FAKE_ENV"));
+  env.delete("FAKE_ENV");
+  assertEquals(Deno.env.get("FAKE_ENV"), undefined);
+  assertFalse(env.has("FAKE_ENV"));
+  env.delete("FAKE_ENV");
+  assertFalse(env.has("FAKE_ENV"));
+  env.restore();
+  assertEquals(Deno.env.get("FAKE_ENV"), undefined);
+});
+
+Deno.test("fakeEnv() provides a disposable object", () => {
+  assertEquals(Deno.env.get("FAKE_ENV"), undefined);
+  {
+    using _ = fakeEnv({ FAKE_ENV: "value" });
+    assertEquals(Deno.env.get("FAKE_ENV"), "value");
+  }
+  assertEquals(Deno.env.get("FAKE_ENV"), undefined);
+});
+
+Deno.test("fakeEnv() implements spy like interface", () => {
+  const env = fakeEnv({ FAKE_ENV: "value" });
+  assertFalse(env.restored);
+  env.restore();
+  assert(env.restored);
+  assertThrows(() => env.restore(), MockError);
+});
+
+Deno.test("fakeEnv() handles variables without permissions", () => {
+  using env = fakeEnv({ UNKNOWN1: "value" });
+  assertEquals(env.get("UNKNOWN1"), "value");
+  env.set("UNKNOWN2", "value");
+  assertEquals(env.get("UNKNOWN2"), "value");
+  assert(env.has("UNKNOWN1"));
+  assert(env.has("UNKNOWN2"));
+});
+
+Deno.test("fakeEnv() isolates from test environments", () => {
+  try {
+    assertFalse(Deno.env.has("FAKE_ENV"));
+    Deno.env.set("FAKE_ENV", "original");
+    const env = fakeEnv({});
+    assertFalse(env.has("FAKE_ENV"));
+    Deno.env.set("FAKE_ENV", "modified");
+    assertEquals(Deno.env.get("FAKE_ENV"), "modified");
+    assert(env.has("FAKE_ENV"));
+    env.restore();
+    assertEquals(Deno.env.get("FAKE_ENV"), "original");
+  } finally {
+    Deno.env.delete("FAKE_ENV");
+  }
+});
 
 Deno.test("fakeConsole() stubs console", () => {
   using mock = fakeConsole();
@@ -20,24 +80,22 @@ Deno.test("fakeConsole() stubs console", () => {
 
 Deno.test("fakeConsole() implements spy like interface", () => {
   const console = fakeConsole();
-  try {
-    console.debug("Hello, Debug!");
-    console.log("Hello, Log!");
-    console.info("Hello, Info!");
-    console.warn("Hello, Warn!");
-    console.error("Hello, Error!");
-    assertEquals(console.calls, [
-      { level: "debug", data: ["Hello, Debug!"] },
-      { level: "log", data: ["Hello, Log!"] },
-      { level: "info", data: ["Hello, Info!"] },
-      { level: "warn", data: ["Hello, Warn!"] },
-      { level: "error", data: ["Hello, Error!"] },
-    ]);
-    assertFalse(console.restored);
-  } finally {
-    console.restore();
-    assertEquals(console.restored, true);
-  }
+  console.debug("Hello, Debug!");
+  console.log("Hello, Log!");
+  console.info("Hello, Info!");
+  console.warn("Hello, Warn!");
+  console.error("Hello, Error!");
+  assertEquals(console.calls, [
+    { level: "debug", data: ["Hello, Debug!"] },
+    { level: "log", data: ["Hello, Log!"] },
+    { level: "info", data: ["Hello, Info!"] },
+    { level: "warn", data: ["Hello, Warn!"] },
+    { level: "error", data: ["Hello, Error!"] },
+  ]);
+  assertFalse(console.restored);
+  console.restore();
+  assert(console.restored);
+  assertThrows(() => console.restore(), MockError);
 });
 
 Deno.test("fakeConsole() captures multiple calls", () => {
