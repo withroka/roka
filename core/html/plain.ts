@@ -3,7 +3,7 @@
  * tags and escapes special characters to produce plain text from HTML input.
  *
  * ```ts
- * import { plain } from "@roka/html";
+ * import { plain } from "@roka/html/plain";
  * const text = plain("<p>Hello, <b>world</b>!</p>");  // "Hello, world!"
  * ```
  *
@@ -18,7 +18,7 @@ import { DOMParser } from "@b-fuze/deno-dom";
  *
  * @example Basic usage.
  * ```ts
- * import { plain } from "@roka/html";
+ * import { plain } from "@roka/html/plain";
  * import { assertEquals } from "@std/assert";
  * const text = plain("<p>Hello, <b>world</b>!</p>");
  * assertEquals(text, "Hello, world!");
