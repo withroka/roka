@@ -11,9 +11,7 @@
   "test": {
     "permissions": {
       "read": ["."],
-      "write": ["."],
-      "env": ["GITHUB_TOKEN", "NODE_ENV"],
-      "net": ["www.example.com", "api.github.com"]
+      "write": ["."]
     }
   }
 }
