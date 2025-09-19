@@ -294,10 +294,11 @@
  * @module forge
  */
 
-import { Command, EnumType, ValidationError } from "@cliffy/command";
+import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
 import type { Repository } from "@roka/github";
+import { maybe } from "@roka/maybe";
 import { bold } from "@std/fmt/colors";
 import { join, relative } from "@std/path";
 import { bump } from "./bump.ts";
@@ -352,32 +353,18 @@ export async function forge(
       global: true,
       action: () => verbose = true,
     })
-    .noExit()
     .default("list")
     .command("list", listCommand(options))
     .command("changelog", changelogCommand(options))
     .command("compile", compileCommand(await targets(), options))
     .command("bump", bumpCommand(options))
     .command("release", releaseCommand(options));
-  try {
-    await cmd.parse();
-  } catch (e: unknown) {
-    if (e instanceof ValidationError) {
-      cmd.showHelp();
-      console.error(`❌ ${e.message}`);
-      return 1;
-    }
-    const errors = (e instanceof AggregateError) ? e.errors : [e];
-    for (const error of errors) {
-      console.error(`❌ ${error.message}`);
-      if (verbose) console.error(error);
-      else if (error["cause"] && error["cause"]["error"]) {
-        console.error(error.cause.error);
-      }
-    }
-    return 2;
+  const { errors } = await maybe(() => cmd.parse());
+  for (const error of errors ?? []) {
+    console.error(`❌ ${error.message}`);
+    if (verbose) console.error(error);
   }
-  return 0;
+  return errors ? 1 : 0;
 }
 
 function listCommand(context: ForgeOptions | undefined) {
@@ -388,6 +375,11 @@ function listCommand(context: ForgeOptions | undefined) {
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
+      if (filters.includes("error")) {
+        await pool([1, 2, 3], () => {
+          throw new Error("Test error");
+        });
+      }
       const packages = await filter(filters, context);
       Table.from([
         ...packages.map((pkg) => {
