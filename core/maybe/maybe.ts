@@ -37,6 +37,7 @@
 
 import { assertExists } from "@std/assert";
 
+/** The result of an operation returned by the {@linkcode maybe} function. */
 export type Maybe<T, E extends Error = Error> =
   | { value: T; error: undefined; errors: undefined }
   | { value: undefined; error: E; errors: [Error, ...Error[]] };
