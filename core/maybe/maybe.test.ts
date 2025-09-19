@@ -108,22 +108,17 @@ Deno.test("maybe() returns multiple errors from AggregateError", () => {
   assertEquals(errors[1].cause, thrown2);
 });
 
-Deno.test("maybe() returns multiple errors from AggregateError from async function", async () => {
-  const thrown1 = new Error("boom1");
-  const thrown2 = "boom2";
-  const aggregate = new AggregateError([thrown1, thrown2], "multiple");
-  const { value, error, errors } = await maybe(async () => {
+Deno.test("maybe() returns the AggregateError when it has zero errors", () => {
+  const aggregate = new AggregateError([], "zero errors");
+  const { value, error, errors } = maybe(() => {
     // deno-lint-ignore no-constant-condition
     if (true) throw aggregate;
-    await Promise.resolve(42);
+    return 42;
   });
   assertEquals(value, undefined);
   assertStrictEquals(error, aggregate);
-  assertEquals(errors.length, 2);
-  assertStrictEquals(errors[0], thrown1);
-  assertInstanceOf(errors[1], Error);
-  assertEquals(errors[1].message, String(thrown2));
-  assertEquals(errors[1].cause, thrown2);
+  assertEquals(errors.length, 1);
+  assertStrictEquals(errors[0], aggregate);
 });
 
 Deno.test("maybe() handles undefined return value", () => {
@@ -211,7 +206,10 @@ Deno.test("maybe() fully resolves types with error", () => {
   if (error) {
     assertType<IsExact<typeof value, undefined>>(true);
     assertType<IsExact<typeof error, Error>>(true);
-    assertType<IsExact<typeof errors, Error[]>>(true);
+    const [error1, error2] = errors;
+    assertType<IsExact<typeof error1, Error>>(true);
+    assertType<IsExact<typeof error2, Error | undefined>>(true);
+    assertType<IsExact<typeof errors, [Error, ...Error[]]>>(true);
   } else {
     assertType<IsExact<typeof value, string>>(true);
     assertType<IsExact<typeof error, undefined>>(true);
@@ -224,7 +222,11 @@ Deno.test("maybe() fully resolves types with errors", () => {
   if (errors) {
     assertType<IsExact<typeof value, undefined>>(true);
     assertType<IsExact<typeof error, Error>>(true);
-    assertType<IsExact<typeof errors, Error[]>>(true);
+    assertType<IsExact<typeof errors[0], Error>>(true);
+    const [error1, error2] = errors;
+    assertType<IsExact<typeof error1, Error>>(true);
+    assertType<IsExact<typeof error2, Error | undefined>>(true);
+    assertType<IsExact<typeof errors, [Error, ...Error[]]>>(true);
   } else {
     assertType<IsExact<typeof value, string>>(true);
     assertType<IsExact<typeof error, undefined>>(true);
