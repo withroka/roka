@@ -108,7 +108,7 @@ export interface PoolOptions {
  * @returns A promise that resolves all inputs concurrently.
  */
 export async function pool<T>(
-  array: Iterable<() => Promise<T>> | AsyncIterable<T>,
+  array: Iterable<() => Promise<T>>,
   options?: PoolOptions,
 ): Promise<T[]>;
 
@@ -180,9 +180,7 @@ export async function pool<T, R>(
 ): Promise<(T | R)[]> {
   if (typeof iteratorFnOrOptions !== "function") {
     return await Array.fromAsync(
-      Symbol.asyncIterator in array
-        ? pooled(array, iteratorFnOrOptions)
-        : pooled(array as Iterable<() => Promise<T>>, options),
+      pooled(array as Iterable<() => Promise<T>>, options),
     );
   }
   return await Array.fromAsync(pooled(
@@ -259,7 +257,7 @@ export async function pool<T, R>(
  * @returns An async iterator for the resolved promises.
  */
 export function pooled<T>(
-  array: Iterable<() => Promise<T>> | AsyncIterable<T>,
+  array: Iterable<() => Promise<T>>,
   options?: PoolOptions,
 ): AsyncIterableIterator<T>;
 
@@ -342,13 +340,11 @@ export function pooled<T, R>(
   options?: PoolOptions,
 ): AsyncIterableIterator<T | R> {
   if (typeof iteratorFnOrOptions !== "function") {
-    return Symbol.asyncIterator in array
-      ? pooled(array, (x) => Promise.resolve(x), iteratorFnOrOptions)
-      : pooled(
-        array as Iterable<() => Promise<T>>,
-        (x) => x(),
-        iteratorFnOrOptions,
-      );
+    return pooled(
+      array as Iterable<() => Promise<T>>,
+      (x) => x(),
+      iteratorFnOrOptions,
+    );
   }
   const { concurrency = Infinity } = options ?? {};
   return pooledMap(

@@ -64,17 +64,7 @@ Deno.test("pool() handles iterable map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool() handles async iterable of promises", async () => {
-  async function* asyncGenerator() {
-    yield Promise.resolve(1);
-    yield Promise.resolve(2);
-    yield Promise.resolve(3);
-  }
-  const results = await pool(asyncGenerator());
-  assertEquals(results, [1, 2, 3]);
-});
-
-Deno.test("pool() handles async iterable to promises map", async () => {
+Deno.test("pool() handles async iterable map", async () => {
   async function* asyncGenerator() {
     yield 1;
     yield 2;
@@ -84,7 +74,7 @@ Deno.test("pool() handles async iterable to promises map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool() handles async iterable to promises map", async () => {
+Deno.test("pool() handles async iterable of promises map", async () => {
   async function* asyncGenerator() {
     yield Promise.resolve(1);
     yield Promise.resolve(2);
@@ -178,29 +168,7 @@ Deno.test("pooled() handles iterable map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled() handles async iterable", async () => {
-  async function* asyncGenerator() {
-    yield Promise.resolve(1);
-    yield Promise.resolve(2);
-    yield Promise.resolve(3);
-  }
-  const results = await Array.fromAsync(pooled(asyncGenerator()));
-  assertEquals(results, [1, 2, 3]);
-});
-
 Deno.test("pooled() handles async iterable map", async () => {
-  async function* asyncGenerator() {
-    yield Promise.resolve(1);
-    yield Promise.resolve(2);
-    yield Promise.resolve(3);
-  }
-  const results = await Array.fromAsync(
-    pooled(asyncGenerator()),
-  );
-  assertEquals(results, [1, 2, 3]);
-});
-
-Deno.test("pooled() handles async iterable to promises map", async () => {
   async function* asyncGenerator() {
     yield Promise.resolve(1);
     yield Promise.resolve(2);
