@@ -2,26 +2,31 @@ import { assertArrayObjectMatch } from "@roka/assert";
 import { tempDirectory } from "@roka/fs/temp";
 import { tempRepository } from "@roka/git/testing";
 import { mockFetch } from "@roka/http/testing";
+import type { Mock } from "@roka/testing/mock";
 import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
 import { github, type PullRequest, type Release } from "./github.ts";
 
-const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
+function token(mock?: Mock<typeof fetch>) {
+  return mock?.mode === "update" ? Deno.env.get("GITHUB_TOKEN") ?? "" : "token";
+}
 
 Deno.test("github().repos.get() can use named repository", () => {
-  const repo = github({ token }).repos.get("withroka", "test");
+  const repo = github({ token: token() }).repos.get("withroka", "test");
   assertObjectMatch(repo, { owner: "withroka", repo: "test" });
 });
 
 Deno.test("github().repos.get() can use local repository", async () => {
   await using git = await tempRepository();
   await git.remotes.add("https://github.com/withroka/test.git");
-  const repo = await github({ token }).repos.get({ directory: git.path() });
+  const repo = await github({ token: token() }).repos.get({
+    directory: git.path(),
+  });
   assertObjectMatch(repo, { owner: "withroka", repo: "test" });
 });
 
 Deno.test("github().repos.pulls", async (t) => {
   using _fetch = mockFetch(t, { ignore: { headers: true } });
-  const repo = github({ token }).repos.get("withroka", "test");
+  const repo = github({ token: token(_fetch) }).repos.get("withroka", "test");
   let pull: PullRequest;
 
   await t.step("create pull request", async () => {
@@ -72,7 +77,7 @@ Deno.test("github().repos.pulls", async (t) => {
 
 Deno.test("github().repos.releases", async (t) => {
   using _fetch = mockFetch(t, { ignore: { headers: true } });
-  const repo = github({ token }).repos.get("withroka", "test");
+  const repo = github({ token: token(_fetch) }).repos.get("withroka", "test");
   let release: Release;
 
   await t.step("create release", async () => {

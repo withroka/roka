@@ -1,8 +1,8 @@
 import { mockFetch } from "@roka/http/testing";
+import { fakeEnv } from "@roka/testing/fake";
+import type { Mock } from "@roka/testing/mock";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { client, gql } from "./client.ts";
-
-const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
 
 interface Repository {
   owner: string;
@@ -28,9 +28,16 @@ interface Issues {
   };
 }
 
+function token(mock?: Mock<typeof fetch>) {
+  return mock?.mode === "update" ? Deno.env.get("GITHUB_TOKEN") ?? "" : "token";
+}
+
 Deno.test("client().query() makes GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
-  const api = client("https://api.github.com/graphql", { token });
+  using _env = fakeEnv({ NODE_ENV: "test" });
+  const api = client("https://api.github.com/graphql", {
+    token: token(_fetch),
+  });
   const result = await api.query(
     gql<{ repository: Repository }>`
       query($owner: String!, $name: String!) {
@@ -50,7 +57,10 @@ Deno.test("client().query() makes GraphQL query", async (t) => {
 
 Deno.test("client().queryPaginated() makes paginated GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
-  const api = client("https://api.github.com/graphql", { token });
+  using _env = fakeEnv({ NODE_ENV: "test" });
+  const api = client("https://api.github.com/graphql", {
+    token: token(_fetch),
+  });
   const result = await api.queryPaginated(
     gql`
       query($owner: String!, $name: String!) {

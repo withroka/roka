@@ -2,11 +2,12 @@ import { mockFetch } from "@roka/http/testing";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { client } from "./client.ts";
 
-const token = Deno.env.get("GITHUB_TOKEN") ?? "TOKEN";
-
 Deno.test("client() can make requests", async (t) => {
   let issue: Partial<{ number: number; state: string }>;
   using _fetch = mockFetch(t);
+  const token = _fetch.mode === "update"
+    ? Deno.env.get("GITHUB_TOKEN") ?? ""
+    : "token";
   const api = client("https://api.github.com", { token });
   await t.step("post", async (t) => {
     issue = await api.post(
