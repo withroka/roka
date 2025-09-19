@@ -5,5 +5,11 @@
     ".": "./async.ts",
     "./any": "./any.ts",
     "./pool": "./pool.ts"
+  },
+  "test": {
+    "permissions": {
+      "read": true,
+      "env": true
+    }
   }
 }
