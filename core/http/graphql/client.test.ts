@@ -34,7 +34,7 @@ function token(mock?: Mock<typeof fetch>) {
 
 Deno.test("client().query() makes GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
-  using _env = fakeEnv({ NODE_ENV: "test" });
+  using _env = fakeEnv({ NODE_ENV: "test" }); // queried by urql
   const api = client("https://api.github.com/graphql", {
     token: token(_fetch),
   });
@@ -57,7 +57,7 @@ Deno.test("client().query() makes GraphQL query", async (t) => {
 
 Deno.test("client().queryPaginated() makes paginated GraphQL query", async (t) => {
   using _fetch = mockFetch(t);
-  using _env = fakeEnv({ NODE_ENV: "test" });
+  using _env = fakeEnv({ NODE_ENV: "test" }); // queried by urql
   const api = client("https://api.github.com/graphql", {
     token: token(_fetch),
   });
