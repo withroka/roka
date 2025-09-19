@@ -35,6 +35,8 @@
  * @module maybe
  */
 
+import { assertExists } from "@std/assert";
+
 export type Maybe<T, E extends Error = Error> =
   | { value: T; error: undefined; errors: undefined }
   | { value: undefined; error: E; errors: [Error, ...Error[]] };
@@ -146,7 +148,8 @@ export function maybe<T>(
     if (e instanceof AggregateError) {
       const result = e.errors.map(error);
       if (result.length === 0) return [e];
-      return result as [Error, ...Error[]];
+      assertExists(result[0]);
+      return [result[0], ...result.slice(1)];
     }
     return [e];
   };
