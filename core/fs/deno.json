@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "exports": {
     ".": "./fs.ts",
+    "./find": "./find.ts",
     "./temp": "./temp.ts"
   },
   "test": {
