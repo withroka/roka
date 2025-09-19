@@ -37,7 +37,7 @@
 
 export type Maybe<T, E extends Error = Error> =
   | { value: T; error: undefined; errors: undefined }
-  | { value: undefined; error: E; errors: E[] };
+  | { value: undefined; error: E; errors: [Error, ...Error[]] };
 
 /**
  * Overload for functions that never return (always throw).
@@ -48,7 +48,7 @@ export type Maybe<T, E extends Error = Error> =
  */
 export function maybe(
   fn: () => never,
-): { value: never; error: Error; errors: Error[] };
+): { value: never; error: Error; errors: [Error, ...Error[]] };
 
 /**
  * Executes an asynchronous function, capturing exceptions as a failure result.
@@ -142,8 +142,14 @@ export function maybe<T>(
 ): Maybe<T> | Promise<Maybe<T>> {
   const error = (e: unknown) =>
     e instanceof Error ? e : new Error(String(e), { cause: e });
-  const errors = (e: Error): Error[] =>
-    e instanceof AggregateError ? e.errors.map(error) : [e];
+  const errors = (e: Error): [Error, ...Error[]] => {
+    if (e instanceof AggregateError) {
+      const result = e.errors.map(error);
+      if (result.length === 0) return [e];
+      return result as [Error, ...Error[]];
+    }
+    return [e];
+  };
   try {
     const value = fn();
     if (!(value instanceof Promise)) {
