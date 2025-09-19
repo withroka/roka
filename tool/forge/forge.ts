@@ -375,11 +375,6 @@ function listCommand(context: ForgeOptions | undefined) {
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
-      if (filters.includes("error")) {
-        await pool([1, 2, 3], () => {
-          throw new Error("Test error");
-        });
-      }
       const packages = await filter(filters, context);
       Table.from([
         ...packages.map((pkg) => {
