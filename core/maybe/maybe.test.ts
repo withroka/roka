@@ -68,6 +68,7 @@ Deno.test("maybe() captures thrown literal", () => {
   });
   assertEquals(value, undefined);
   assertInstanceOf(error, Error);
+  assertEquals(error?.message, "boom");
   assertEquals(error?.cause, "boom");
   assertEquals(errors, [error]);
   assertStrictEquals(errors[0], error);
@@ -85,7 +86,6 @@ Deno.test("maybe() captures thrown literal from async function", async () => {
   assertEquals(value, undefined);
   assertInstanceOf(error, Error);
   assertEquals(error?.cause, "boom");
-  assertEquals(error?.cause, "boom");
   assertEquals(errors, [error]);
   assertStrictEquals(errors[0], error);
 });
@@ -93,14 +93,14 @@ Deno.test("maybe() captures thrown literal from async function", async () => {
 Deno.test("maybe() returns multiple errors from AggregateError", () => {
   const thrown1 = new Error("boom1");
   const thrown2 = "boom2";
-  const agregate = new AggregateError([thrown1, thrown2], "multiple");
+  const aggregate = new AggregateError([thrown1, thrown2], "multiple");
   const { value, error, errors } = maybe(() => {
     // deno-lint-ignore no-constant-condition
-    if (true) throw agregate;
+    if (true) throw aggregate;
     return 42;
   });
   assertEquals(value, undefined);
-  assertStrictEquals(error, agregate);
+  assertStrictEquals(error, aggregate);
   assertEquals(errors.length, 2);
   assertStrictEquals(errors[0], thrown1);
   assertInstanceOf(errors[1], Error);
@@ -111,14 +111,14 @@ Deno.test("maybe() returns multiple errors from AggregateError", () => {
 Deno.test("maybe() returns multiple errors from AggregateError from async function", async () => {
   const thrown1 = new Error("boom1");
   const thrown2 = "boom2";
-  const agregate = new AggregateError([thrown1, thrown2], "multiple");
+  const aggregate = new AggregateError([thrown1, thrown2], "multiple");
   const { value, error, errors } = await maybe(async () => {
     // deno-lint-ignore no-constant-condition
-    if (true) throw agregate;
+    if (true) throw aggregate;
     await Promise.resolve(42);
   });
   assertEquals(value, undefined);
-  assertStrictEquals(error, agregate);
+  assertStrictEquals(error, aggregate);
   assertEquals(errors.length, 2);
   assertStrictEquals(errors[0], thrown1);
   assertInstanceOf(errors[1], Error);
