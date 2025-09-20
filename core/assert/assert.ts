@@ -27,9 +27,9 @@ import {
  * Makes an assertion that two arrays contain the same elements, regardless of
  * their order.
  *
- * This function converts both input arrays to sorted arrays and then compares
- * them using `assertEquals` from the standard {@link
- * https://jsr.io/@std/assert | **@std/assert**} library.
+ * This function converts both input arrays to `Set` objects and then compares
+ * them using `assertEquals` from the standard
+ * {@link https://jsr.io/@std/assert | **@std/assert**} library.
  *
  * @throws {AssertionError} If the arrays differ in length or if the arrays
  * contain different groups of elements.
