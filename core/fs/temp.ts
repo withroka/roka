@@ -20,6 +20,16 @@ export interface TempDirectory {
   path(...paths: string[]): string;
 }
 
+/** Options for the {@linkcode tempDirectory} function. */
+export interface TempDirectoryOptions {
+  /**
+   * Automatically changes the current working directory to the
+   * temporary directory and restores it when disposed.
+   * @default {false}
+   */
+  chdir?: boolean;
+}
+
 /**
  * Returns a temporary directory as a disposable object.
  *
@@ -30,15 +40,33 @@ export interface TempDirectory {
  * await using directory = await tempDirectory();
  * assertEquals((await Deno.stat(directory.path())).isDirectory, true);
  * ```
+ *
+ * @example Automatically changing to the directory.
+ * ```ts
+ * import { tempDirectory } from "@roka/fs/temp";
+ * {
+ *   await using dir = await tempDirectory({ chdir: true });
+ *   Deno.cwd(); // dir.path()
+ *   await Deno.writeTextFile("file.txt", "Hello!");
+ * }
+ * Deno.cwd(); // restored
+ * ```
  */
-export async function tempDirectory(): Promise<
-  TempDirectory & AsyncDisposable
-> {
+export async function tempDirectory(
+  options?: TempDirectoryOptions,
+): Promise<TempDirectory & AsyncDisposable> {
   const directory = await Deno.makeTempDir();
+  const cwd = options?.chdir ? Deno.cwd() : undefined;
+
+  if (options?.chdir) Deno.chdir(directory);
+
   return Object.assign({
     path: (...paths: string[]) => join(directory, ...paths),
   }, {
     toString: () => directory,
-    [Symbol.asyncDispose]: () => Deno.remove(directory, { recursive: true }),
+    [Symbol.asyncDispose]: async () => {
+      if (cwd) Deno.chdir(cwd);
+      await Deno.remove(directory, { recursive: true });
+    },
   });
 }
