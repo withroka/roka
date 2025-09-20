@@ -9,19 +9,6 @@
  * await Deno.writeTextFile(directory.path("file.txt"), "Hello, world!");
  * ```
  *
- * You can also automatically change to the temporary directory by passing
- * the `chdir` option:
- *
- * ```ts
- * import { tempDirectory } from "@roka/fs/temp";
- * {
- *   await using dir = await tempDirectory({ chdir: true });
- *   // cwd is dir.path() at this point
- *   await Deno.writeTextFile("file.txt", "Hello, world!");
- * }
- * // cwd is restored here
- * ```
- *
  * @module temp
  */
 
@@ -30,8 +17,9 @@ import { join } from "@std/path";
 /** Options for the {@linkcode tempDirectory} function. */
 export interface TempDirectoryOptions {
   /**
-   * If true, automatically changes the current working directory to the
+   * Automatically changes the current working directory to the
    * temporary directory and restores it when disposed.
+   * @default {false}
    */
   chdir?: boolean;
 }
@@ -58,30 +46,26 @@ export interface TempDirectory {
  * import { tempDirectory } from "@roka/fs/temp";
  * {
  *   await using dir = await tempDirectory({ chdir: true });
- *   // cwd is dir.path() at this point
+ *   Deno.cwd(); // dir.path()
  *   await Deno.writeTextFile("file.txt", "Hello!");
  * }
- * // Original directory is restored here
+ * Deno.cwd(); //restored
  * ```
  */
 export async function tempDirectory(
   options?: TempDirectoryOptions,
 ): Promise<TempDirectory & AsyncDisposable> {
   const directory = await Deno.makeTempDir();
-  const originalCwd = options?.chdir ? Deno.cwd() : undefined;
+  const cwd = options?.chdir ? Deno.cwd() : undefined;
 
-  if (options?.chdir) {
-    Deno.chdir(directory);
-  }
+  if (options?.chdir) Deno.chdir(directory);
 
   return Object.assign({
     path: (...paths: string[]) => join(directory, ...paths),
   }, {
     toString: () => directory,
     [Symbol.asyncDispose]: async () => {
-      if (originalCwd) {
-        Deno.chdir(originalCwd);
-      }
+      if (cwd) Deno.chdir(cwd);
       await Deno.remove(directory, { recursive: true });
     },
   });
