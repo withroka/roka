@@ -49,7 +49,7 @@ export interface TempDirectoryOptions {
  *   Deno.cwd(); // dir.path()
  *   await Deno.writeTextFile("file.txt", "Hello!");
  * }
- * Deno.cwd(); //restored
+ * Deno.cwd(); // restored
  * ```
  */
 export async function tempDirectory(
