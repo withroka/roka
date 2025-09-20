@@ -47,8 +47,8 @@ export function assertSameElements<T>(
   message?: string,
 ): void {
   return assertEquals(
-    Array.from(actual).toSorted(),
-    Array.from(expected).toSorted(),
+    new Set(Array.from(actual)),
+    new Set(Array.from(expected)),
     message,
   );
 }

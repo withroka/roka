@@ -23,6 +23,13 @@ Deno.test("assertSameElements() rejects arrays with different elements", () => {
   );
 });
 
+Deno.test("assertSameElements() handles non-comparable elements", () => {
+  assertSameElements(
+    [{ id: 1 }, { id: 2 }],
+    [{ id: 2 }, { id: 1 }],
+  );
+});
+
 Deno.test("assertArrayObjectMatch() asserts expected objects are subsets of actual objects", () => {
   const actual = [
     { id: 1, name: "Alice", age: 30 },
