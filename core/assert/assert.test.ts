@@ -1,5 +1,34 @@
 import { AssertionError, assertThrows } from "@std/assert";
-import { assertArrayObjectMatch } from "./assert.ts";
+import { assertArrayObjectMatch, assertSameElements } from "./assert.ts";
+
+Deno.test("assertSameElements() asserts arrays with same elements in different order", () => {
+  assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]);
+});
+
+Deno.test("assertSameElements() handles empty arrays", () => {
+  assertSameElements([], []);
+});
+
+Deno.test("assertSameElements() rejects arrays with different lengths", () => {
+  assertThrows(
+    () => assertSameElements(["Alice", "Bob"], ["Alice"]),
+    AssertionError,
+  );
+});
+
+Deno.test("assertSameElements() rejects arrays with different elements", () => {
+  assertThrows(
+    () => assertSameElements(["Alice", "Bob"], ["Alice", "Charlie"]),
+    AssertionError,
+  );
+});
+
+Deno.test("assertSameElements() handles non-comparable elements", () => {
+  assertSameElements(
+    [{ id: 1 }, { id: 2 }],
+    [{ id: 2 }, { id: 1 }],
+  );
+});
 
 Deno.test("assertArrayObjectMatch() asserts expected objects are subsets of actual objects", () => {
   const actual = [
