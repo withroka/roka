@@ -1,7 +1,8 @@
+import { assertSameElements } from "@roka/assert";
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { type TempDirectory, tempDirectory } from "@roka/fs/temp";
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertRejects } from "@std/assert";
 import { distinct } from "@std/collections/distinct";
 import { dirname } from "@std/path";
 
@@ -15,13 +16,13 @@ async function createFiles(dir: TempDirectory, files: string[]) {
 Deno.test("find() return empty results for empty input", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt", "b/c.txt", "d/e/f.txt"]);
-  assertEquals(await Array.fromAsync(find([])), []);
+  assertSameElements(await Array.fromAsync(find([])), []);
 });
 
 Deno.test("find() can find existing file", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt"]);
-  assertEquals(await Array.fromAsync(find(["a.txt"])), [
+  assertSameElements(await Array.fromAsync(find(["a.txt"])), [
     "a.txt",
   ]);
 });
@@ -29,7 +30,7 @@ Deno.test("find() can find existing file", async () => {
 Deno.test("find() skips non-existing file", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt"]);
-  assertEquals(await Array.fromAsync(find(["b.txt"])), []);
+  assertSameElements(await Array.fromAsync(find(["b.txt"])), []);
 });
 
 Deno.test("find() can reject non-existing file", async () => {
@@ -44,7 +45,7 @@ Deno.test("find() can reject non-existing file", async () => {
 Deno.test("find() can find multiple files", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt", "b.txt", "c.txt"]);
-  assertEquals(await Array.fromAsync(find(["b.txt", "c.txt", "d.txt"])), [
+  assertSameElements(await Array.fromAsync(find(["b.txt", "c.txt", "d.txt"])), [
     "b.txt",
     "c.txt",
   ]);
@@ -53,7 +54,7 @@ Deno.test("find() can find multiple files", async () => {
 Deno.test("find() can find existing directory", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["dir/a.txt"]);
-  assertEquals(await Array.fromAsync(find(["dir"])), [
+  assertSameElements(await Array.fromAsync(find(["dir"])), [
     "dir",
     "dir/a.txt",
   ]);
@@ -62,7 +63,7 @@ Deno.test("find() can find existing directory", async () => {
 Deno.test("find() skips non-existing directory", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt"]);
-  assertEquals(await Array.fromAsync(find(["dir"])), []);
+  assertSameElements(await Array.fromAsync(find(["dir"])), []);
 });
 
 Deno.test("find() can reject non-existing directory", async () => {
@@ -77,7 +78,7 @@ Deno.test("find() can reject non-existing directory", async () => {
 Deno.test("find() can find multiple directories", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt", "dir1/b.txt", "dir2/c.txt"]);
-  assertEquals(await Array.fromAsync(find(["dir1", "dir2", "dir3"])), [
+  assertSameElements(await Array.fromAsync(find(["dir1", "dir2", "dir3"])), [
     "dir1",
     "dir1/b.txt",
     "dir2",
@@ -97,7 +98,7 @@ Deno.test("find() rejects with AggregateError for multiple failures", async () =
 Deno.test("find() can find files and directories", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt", "dir1/b.txt", "dir2/c.txt"]);
-  assertEquals(await Array.fromAsync(find(["a.txt", "dir1"])), [
+  assertSameElements(await Array.fromAsync(find(["a.txt", "dir1"])), [
     "a.txt",
     "dir1",
     "dir1/b.txt",
@@ -107,7 +108,7 @@ Deno.test("find() can find files and directories", async () => {
 Deno.test("find() can find in subdirectories", async () => {
   await using dir = await tempDirectory({ chdir: true });
   await createFiles(dir, ["a.txt", "b/c.txt", "d/e/f.txt"]);
-  assertEquals(await Array.fromAsync(find(["."])), [
+  assertSameElements(await Array.fromAsync(find(["."])), [
     ".",
     "a.txt",
     "b",
