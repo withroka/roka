@@ -27,8 +27,8 @@ import {
  * Makes an assertion that two arrays contain the same elements, regardless of
  * their order.
  *
- * This function converts both input arrays to `Set` objects and then compares
- * them using `assertEquals` from the standard
+ * This function counts the number of times each element appears in both arrays
+ * and then compares these tallies using `assertEquals` from the standard
  * {@link https://jsr.io/@std/assert | **@std/assert**} library.
  *
  * @throws {AssertionError} If the arrays differ in length or if the arrays
@@ -46,10 +46,17 @@ export function assertSameElements<T>(
   expected: ArrayLikeArg<T>,
   message?: string,
 ): void {
-  return assertEquals(
-    new Set(Array.from(actual)),
-    new Set(Array.from(expected)),
-    message,
+  function count(array: ArrayLikeArg<T>): Map<T, number> {
+    const map = new Map<T, number>();
+    for (const item of Array.from(array)) {
+      map.set(item, (map.get(item) ?? 0) + 1);
+    }
+    return map;
+  }
+  assertEquals(
+    count(actual),
+    count(expected),
+    message || "different elements",
   );
 }
 

@@ -14,6 +14,10 @@ Deno.test("assertSameElements() rejects arrays with different lengths", () => {
     () => assertSameElements(["Alice", "Bob"], ["Alice"]),
     AssertionError,
   );
+  assertThrows(
+    () => assertSameElements(["Alice"], ["Alice", "Bob"]),
+    AssertionError,
+  );
 });
 
 Deno.test("assertSameElements() rejects arrays with different elements", () => {
@@ -23,10 +27,33 @@ Deno.test("assertSameElements() rejects arrays with different elements", () => {
   );
 });
 
+Deno.test("assertSameElements() handles elements occurring multiple times", () => {
+  assertSameElements(["Alice", "Bob", "Alice"], ["Bob", "Alice", "Alice"]);
+});
+
+Deno.test("assertSameElements() rejects different counts of same elements", () => {
+  assertThrows(
+    () => assertSameElements(["Alice", "Bob", "Alice"], ["Bob", "Alice"]),
+    AssertionError,
+  );
+  assertThrows(
+    () => assertSameElements(["Bob", "Alice"], ["Alice", "Bob", "Alice"]),
+    AssertionError,
+  );
+});
+
 Deno.test("assertSameElements() handles non-comparable elements", () => {
   assertSameElements(
     [{ id: 1 }, { id: 2 }],
     [{ id: 2 }, { id: 1 }],
+  );
+});
+
+Deno.test("assertSameElements() fails with custom message", () => {
+  assertThrows(
+    () => assertSameElements(["Alice", "Bob"], ["Alice"], "custom-message"),
+    AssertionError,
+    "custom-message",
   );
 });
 
