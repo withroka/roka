@@ -1,4 +1,5 @@
 import { pool } from "@roka/async/pool";
+import { omit } from "@std/collections";
 import { walk } from "@std/fs";
 import { basename, dirname, globToRegExp } from "@std/path";
 
@@ -17,6 +18,19 @@ export class FindError extends Error {
 }
 
 export interface FindOptions {
+  maxDepth?: number;
+  type?: {
+    file?: boolean;
+    directory?: boolean;
+    symlink?: boolean;
+  };
+  followSymlinks?: boolean;
+  exts?: string[];
+  match?: RegExp[];
+  skip?: RegExp[];
+}
+
+export interface FindOptionsOld {
   /**
    * Include files in results.
    * @default {false}
@@ -32,6 +46,33 @@ export interface FindOptions {
 export async function* find(
   paths: string[],
   options?: FindOptions,
+): AsyncGenerator<string> {
+  const walkOptions = options && {
+    ...omit(options, ["type"]),
+    ...options?.type && { includeFiles: options.type.file === true },
+    ...options?.type && { includeDirs: options.type.directory === true },
+    ...options?.type && { includeSymlinks: options.type.symlink === true },
+  };
+  console.log("walk:", walkOptions);
+  const stats = await pool(paths, async (path) => ({
+    path,
+    stat: await Deno.stat(path),
+  }));
+  for (const { path, stat } of stats) {
+    if (stat.isFile) {
+      yield path;
+    }
+    if (stat.isDirectory) {
+      for await (const entry of walk(path, walkOptions)) {
+        yield entry.path;
+      }
+    }
+  }
+}
+
+export async function* findOld(
+  paths: string[],
+  options?: FindOptionsOld,
 ): AsyncGenerator<string> {
   const { files = false, directories = false } = options ?? {};
   function check(path: string, check: boolean | string) {
