@@ -1,5 +1,4 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import { realPath } from "@std/fs/unstable-real-path";
 import { tempDirectory } from "./temp.ts";
 
 Deno.test("tempDirectory() creates a disposable directory", async () => {
@@ -20,7 +19,7 @@ Deno.test("tempDirectory({ chdir: true }) changes working directory", async () =
   const cwd = Deno.cwd();
   {
     await using directory = await tempDirectory({ chdir: true });
-    assertEquals(await realPath(Deno.cwd()), await realPath(directory.path()));
+    assertEquals(await realPath(Deno.cwd()), await Deno.realPath(directory.path()));
     await Deno.writeTextFile("test.txt", "Hello, world!");
     assertEquals(
       await Deno.readTextFile(directory.path("test.txt")),
