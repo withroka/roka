@@ -14,6 +14,12 @@
 
 import { join } from "@std/path";
 
+/** A temporary directory returned by the {@linkcode tempDirectory} function. */
+export interface TempDirectory {
+  /** Returns the temporary directory path, with optional relative children. */
+  path(...paths: string[]): string;
+}
+
 /** Options for the {@linkcode tempDirectory} function. */
 export interface TempDirectoryOptions {
   /**
@@ -22,12 +28,6 @@ export interface TempDirectoryOptions {
    * @default {false}
    */
   chdir?: boolean;
-}
-
-/** A temporary directory returned by the {@linkcode tempDirectory} function. */
-export interface TempDirectory {
-  /** Returns the temporary directory path, with optional relative children. */
-  path(...paths: string[]): string;
 }
 
 /**

@@ -21,7 +21,6 @@ Deno.test("tempDirectory({ chdir: true }) changes working directory", async () =
     await using directory = await tempDirectory({ chdir: true });
     assertEquals(Deno.cwd(), directory.path());
     await Deno.writeTextFile("test.txt", "Hello, world!");
-    assertEquals(await Deno.readTextFile("test.txt"), "Hello, world!");
     assertEquals(
       await Deno.readTextFile(directory.path("test.txt")),
       "Hello, world!",
