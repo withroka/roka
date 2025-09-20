@@ -3,6 +3,10 @@
  * {@link https://jsr.io/@std/assert | **@std/assert**} library.
  *
  * ```ts
+ * assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]);
+ * ```
+ *
+ * ```ts
  * assertArrayObjectMatch(
  *   [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }],
  *   [{ name: "Alice" }, { name: "Bob" }],
@@ -12,7 +16,42 @@
  * @module assert
  */
 
-import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
+import {
+  type ArrayLikeArg,
+  assertEquals,
+  assertExists,
+  assertObjectMatch,
+} from "@std/assert";
+
+/**
+ * Makes an assertion that two arrays contain the same elements, regardless of
+ * their order.
+ *
+ * This function converts both input arrays to sorted arrays and then compares
+ * them using `assertEquals` from the standard {@link
+ * https://jsr.io/@std/assert | **@std/assert**} library.
+ *
+ * @throws {AssertionError} If the arrays differ in length or if the arrays
+ * contain different groups of elements.
+ *
+ * @example Using `assertSameElements()`.
+ * ```ts
+ * import { assertSameElements } from "@roka/assert";
+ *
+ * assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]);  // passes
+ * ```
+ */
+export function assertSameElements<T>(
+  actual: ArrayLikeArg<T>,
+  expected: ArrayLikeArg<T>,
+  message?: string,
+): void {
+  return assertEquals(
+    Array.from(actual).toSorted(),
+    Array.from(expected).toSorted(),
+    message,
+  );
+}
 
 /** Type of an object key. */
 type PropertyKey = string | number | symbol;
