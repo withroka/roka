@@ -52,7 +52,9 @@ category contains development tools. As the codebase grows, new categories like
 - Write
   [inclusive](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md)
   code.
-- Prefer singular names (`tool`, not `tools`).
+- Prefer single words over multiple words (`cwd`, not `currentCwd`).
+- Prefer full words over abbreviations (`directory`, not `dir`).
+- Prefer singular modules names over plural ones (`tool`, not `tools`).
 
 ### Packages
 
