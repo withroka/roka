@@ -12,15 +12,14 @@ Deno.test("tempDirectory() creates a disposable directory", async () => {
   await assertRejects(() => Deno.stat(path), Deno.errors.NotFound);
 });
 
-Deno.test("tempDirectory.chdir() temporarily changes working directory", async () => {
+Deno.test("tempDirectory({ chdir: true }) changes working directory", async () => {
   const originalCwd = Deno.cwd();
-  await using directory = await tempDirectory();
-  const tempPath = directory.path();
+  let tempPath: string;
 
   {
-    using cwd = directory.chdir();
+    await using dir = await tempDirectory({ chdir: true });
+    tempPath = dir.path();
     assertEquals(Deno.cwd(), tempPath);
-    assertEquals(cwd.restored, false);
 
     // Test that we can create files in the current directory
     await Deno.writeTextFile("test.txt", "Hello, world!");
@@ -31,59 +30,46 @@ Deno.test("tempDirectory.chdir() temporarily changes working directory", async (
   assertEquals(Deno.cwd(), originalCwd);
 });
 
-Deno.test("tempDirectory.chdir() can be manually restored", async () => {
+Deno.test("tempDirectory({ chdir: true }) without chdir option preserves cwd", async () => {
   const originalCwd = Deno.cwd();
-  await using directory = await tempDirectory();
-  const tempPath = directory.path();
-
-  const cwd = directory.chdir();
-  assertEquals(Deno.cwd(), tempPath);
-  assertEquals(cwd.restored, false);
-
-  cwd.restore();
-  assertEquals(Deno.cwd(), originalCwd);
-  assertEquals(cwd.restored, true);
-
-  // Should throw if restored again
-  try {
-    cwd.restore();
-    throw new Error("Expected error but none was thrown");
-  } catch (error) {
-    assertEquals(
-      (error as Error).message,
-      "Cannot restore: chdir already restored",
-    );
-  }
-});
-
-Deno.test("tempDirectory.chdir() integrates with using statement", async () => {
-  const originalCwd = Deno.cwd();
-  await using directory = await tempDirectory();
-  const tempPath = directory.path();
 
   {
-    using _cwd = directory.chdir();
-    assertEquals(Deno.cwd(), tempPath);
+    await using dir = await tempDirectory();
+    assertEquals(Deno.cwd(), originalCwd);
+    // Directory should still be created at a different path
+    assertEquals((await Deno.stat(dir.path())).isDirectory, true);
+  }
 
-    // Create a file to verify we're in the right directory
+  assertEquals(Deno.cwd(), originalCwd);
+});
+
+Deno.test("tempDirectory({ chdir: false }) preserves cwd", async () => {
+  const originalCwd = Deno.cwd();
+
+  {
+    await using dir = await tempDirectory({ chdir: false });
+    assertEquals(Deno.cwd(), originalCwd);
+    assertEquals((await Deno.stat(dir.path())).isDirectory, true);
+  }
+
+  assertEquals(Deno.cwd(), originalCwd);
+});
+
+Deno.test("tempDirectory({ chdir: true }) can create nested files", async () => {
+  const originalCwd = Deno.cwd();
+
+  {
+    await using dir = await tempDirectory({ chdir: true });
+    assertEquals(Deno.cwd(), dir.path());
+
+    // Create a file using relative path (since we're in the temp dir)
     await Deno.writeTextFile("nested.txt", "content");
+    // Verify it exists using the absolute path
     assertEquals(
-      await Deno.readTextFile(directory.path("nested.txt")),
+      await Deno.readTextFile(dir.path("nested.txt")),
       "content",
     );
   }
 
-  // Should restore automatically
   assertEquals(Deno.cwd(), originalCwd);
-});
-
-Deno.test("tempDirectory.chdir() restored property works correctly", async () => {
-  const _originalCwd = Deno.cwd();
-  await using directory = await tempDirectory();
-
-  const cwd = directory.chdir();
-  assertEquals(cwd.restored, false);
-
-  cwd.restore();
-  assertEquals(cwd.restored, true);
 });
