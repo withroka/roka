@@ -1,6 +1,7 @@
+import { assertArrayObjectMatch } from "@roka/assert";
 import { git } from "@roka/git";
 import { fakeRelease, fakeRepository } from "@roka/github/testing";
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals, assertObjectMatch, assertRejects } from "@std/assert";
 import { dirname, join } from "@std/path";
 import { PackageError } from "./package.ts";
 import { release } from "./release.ts";
@@ -52,11 +53,10 @@ Deno.test("release() creates initial release", async () => {
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
   const [rls, assets] = await release(pkg, { repo });
-  assertEquals(rls.tag, "name@0.1.0");
-  assertEquals(rls.name, "name@0.1.0");
-  assertEquals(
-    rls.body,
-    [
+  assertObjectMatch(rls, {
+    tag: "name@0.1.0",
+    name: "name@0.1.0",
+    body: [
       "## Initial release",
       "",
       "feat: new feature (#1)",
@@ -68,10 +68,10 @@ Deno.test("release() creates initial release", async () => {
       "- [Documentation](https://jsr.io/@scope/name@0.1.0)",
       "",
     ].join("\n"),
-  );
-  assertEquals(assets.length, 0);
-  assertEquals(rls.prerelease, false);
-  assertEquals(rls.draft, false);
+    prerelease: false,
+    draft: false,
+  });
+  assertEquals(assets, []);
 });
 
 Deno.test("release() creates update release", async () => {
@@ -84,11 +84,10 @@ Deno.test("release() creates update release", async () => {
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
   const [rls, assets] = await release(pkg, { repo });
-  assertEquals(rls.tag, "name@1.3.0");
-  assertEquals(rls.name, "name@1.3.0");
-  assertEquals(
-    rls.body,
-    [
+  assertObjectMatch(rls, {
+    tag: "name@1.3.0",
+    name: "name@1.3.0",
+    body: [
       "## Changes",
       "",
       "feat: new feature (#1)",
@@ -99,8 +98,8 @@ Deno.test("release() creates update release", async () => {
       "- [Documentation](https://jsr.io/@scope/name@1.3.0)",
       "",
     ].join("\n"),
-  );
-  assertEquals(assets.length, 0);
+  });
+  assertEquals(assets, []);
 });
 
 Deno.test("release() creates draft release", async () => {
@@ -126,8 +125,11 @@ Deno.test("release() creates pre-release", async () => {
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
   const [rls] = await release(pkg, { repo, draft: true });
-  assertEquals(rls.name, `name@1.3.0-pre.1+fedcba9`);
-  assertEquals(rls.prerelease, true);
+  assertObjectMatch(rls, {
+    name: `name@1.3.0-pre.1+fedcba9`,
+    prerelease: true,
+    draft: true,
+  });
 });
 
 Deno.test("release() updates existing release", async () => {
@@ -142,10 +144,9 @@ Deno.test("release() updates existing release", async () => {
   const existing = fakeRelease({ repo, id: 42, tag: "name@1.2.3" });
   repo.releases.list = async () => await Promise.resolve([existing]);
   const [rls] = await release(pkg, { repo });
-  assertEquals(rls.id, 42);
-  assertEquals(
-    rls.body,
-    [
+  assertObjectMatch(rls, {
+    id: 42,
+    body: [
       "## Changes",
       "",
       "feat: new feature (#1)",
@@ -156,7 +157,7 @@ Deno.test("release() updates existing release", async () => {
       "- [Documentation](https://jsr.io/@scope/name@1.3.0)",
       "",
     ].join("\n"),
-  );
+  });
 });
 
 Deno.test("release() can compile and upload release assets", async () => {
@@ -189,11 +190,9 @@ Deno.test("release() can compile and upload release assets", async () => {
   repo.releases.list = async () => await Promise.resolve([existing]);
   const [rls, assets] = await release(pkg, { repo });
   assertEquals(rls.id, 42);
-  assertEquals(assets.length, 3);
-  assertEquals(assets.map((x) => x.release), [rls, rls, rls]);
-  assertEquals(assets.map((x) => x.name), [
-    "x86_64-unknown-linux-gnu.tar.gz",
-    "x86_64-pc-windows-msvc.zip",
-    "sha256.txt",
+  assertArrayObjectMatch(assets, [
+    { release: rls, name: "x86_64-unknown-linux-gnu.tar.gz" },
+    { release: rls, name: "x86_64-pc-windows-msvc.zip" },
+    { release: rls, name: "sha256.txt" },
   ]);
 });
