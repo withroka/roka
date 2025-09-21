@@ -1,6 +1,6 @@
 name: Copilot Setup
 
-on: []
+on: [workflow_dispatch]
 
 permissions: {}
 
