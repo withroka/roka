@@ -2,8 +2,9 @@
 
 ## Coding
 
-- Coding style in [CONTRIBUTING.md](./CONTRIBUTING.md).
-- Prefer style from the surrounding code.
+- Match style from the surrounding code.
+- Adher to guidelines in [CONTRIBUTING.md](./CONTRIBUTING.md).
+- Write minimal code, no frivolous variables, comments and lines.
 
 ## Directories
 
