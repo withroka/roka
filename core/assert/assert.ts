@@ -16,12 +16,13 @@
  * @module assert
  */
 
-import {
-  type ArrayLikeArg,
-  assertEquals,
-  assertExists,
-  assertObjectMatch,
-} from "@std/assert";
+import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
+
+/** An array-like object that is not a string. */
+export type ArrayLikeArg<T> = ArrayLike<T> & object;
+
+/** Type of an object key. */
+export type PropertyKey = string | number | symbol;
 
 /**
  * Makes an assertion that two arrays contain the same elements, regardless of
@@ -59,10 +60,6 @@ export function assertSameElements<T>(
     message || "different elements",
   );
 }
-
-/** Type of an object key. */
-type PropertyKey = string | number | symbol;
-export type { PropertyKey };
 
 /**
  * Makes an assertion that the expected array is a list of objects that is a
