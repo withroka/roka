@@ -44,7 +44,7 @@ export interface ChangelogOptions {
      * If set to `importance`, the commits are sorted by their
      * {@link https://www.conventionalcommits.org | Conventional Commits} details.
      * Breaking changes are followed by features, and then fixes. Commits of other
-     * types come last and they re grouped by their type.
+     * types come last and they are grouped by their type.
      */
     sort?: "importance";
     /**
@@ -53,7 +53,7 @@ export interface ChangelogOptions {
      */
     emoji?: boolean;
     /**
-     * Include short commit short in commit summaries, when a pull request number
+     * Include short commit hash in commit summaries, when a pull request number
      * is not available.
      *
      * This is useful for generating links to commits that were not merged with a
