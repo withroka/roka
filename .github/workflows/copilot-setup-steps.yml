@@ -1,13 +1,6 @@
 name: Copilot Setup
 
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
-  pull_request:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
+on: []
 
 permissions: {}
 
@@ -16,8 +9,5 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
       - name: Setup
         uses: denoland/setup-deno@v2
