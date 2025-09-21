@@ -194,7 +194,7 @@ export interface Config {
      * is considered a pre-release version.
      *
      * For multiple suffixes, the order defined here defines the tag order.
-     * For example `["-pre", "-rc"]` will cause `v1.0.0-pre` the release to be
+     * For example `["-pre", "-rc"]` will cause the `v1.0.0-pre` release to be
      * earlier than `v1.0.0-rc`.
      */
     suffix: string[];
