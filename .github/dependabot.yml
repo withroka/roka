@@ -5,4 +5,4 @@ updates:
     schedule:
       interval: "quarterly"
     commit-message:
-      prefix: "chore"
+      prefix: "ci"
