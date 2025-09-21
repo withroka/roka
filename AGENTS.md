@@ -3,7 +3,7 @@
 ## Coding
 
 - Match style from the surrounding code.
-- Adher to guidelines in [CONTRIBUTING.md](./CONTRIBUTING.md).
+- Adhere to guidelines in [CONTRIBUTING.md](./CONTRIBUTING.md).
 - Write minimal code, no frivolous variables, comments and lines.
 
 ## Directories
