@@ -2,7 +2,8 @@
 
 ## Coding
 
-- Match style from the surrounding code and adhere to [CONTRIBUTING.md](./CONTRIBUTING.md).
+- Match style from the surrounding code and adhere to
+  [CONTRIBUTING.md](./CONTRIBUTING.md).
 - Write minimal code, avoiding unnecessary variables, comments, and lines.
 
 ## Directories
