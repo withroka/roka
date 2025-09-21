@@ -71,7 +71,7 @@ export function assertSameElements<T>(
  * Extra keys in the `actual` objects are ignored.
  *
  * This function is an array variant of the `assertObjectMatch` function from
- * the the standard {@link https://jsr.io/@std/assert | **@std/assert**}
+ * the standard {@link https://jsr.io/@std/assert | **@std/assert**}
  * library.
  *
  * @example Using `assertArrayObjectMatch()`.
