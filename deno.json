@@ -7,9 +7,8 @@
     "forge": "deno run -P tool/forge/forge.ts",
     "test": "deno test -P",
     "coverage": "deno task test --coverage && deno coverage --html",
-    "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts",
-    "docs": "deno doc --lint --html $(find . -path '**/*.ts' -type f)",
-    "ok": "deno task lint && deno task docs && deno task test && deno publish --quiet --dry-run --allow-dirty"
+    "lint": "deno fmt -q --check && deno lint -q && deno doc --lint **/*.ts",
+    "ok": "deno task lint && deno task test"
   },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,
