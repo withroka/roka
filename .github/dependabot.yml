@@ -3,6 +3,6 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "quarterly"
+      interval: "monthly"
     commit-message:
-      prefix: "ci"
+      prefix: "chore"
