@@ -23,6 +23,9 @@ import {
   assertObjectMatch,
 } from "@std/assert";
 
+// Re-export ArrayLikeArg for use in public API
+export type { ArrayLikeArg };
+
 /**
  * Makes an assertion that two arrays contain the same elements, regardless of
  * their order.
