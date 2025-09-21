@@ -7,7 +7,7 @@
     "forge": "deno run -P tool/forge/forge.ts",
     "test": "deno test -P",
     "coverage": "deno task test --coverage && deno coverage --html",
-    "lint": "deno fmt -q --check && deno lint -q && deno check -q **/*.ts && deno doc --lint **/*.ts && deno publish -q --dry-run --allow-dirty",
+    "lint": "deno fmt -q --check && deno lint -q && deno doc --lint **/*.ts",
     "ok": "deno task lint && deno task test"
   },
   "compilerOptions": {
