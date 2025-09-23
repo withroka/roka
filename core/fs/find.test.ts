@@ -119,19 +119,22 @@ Deno.test("find() deduplicates results", async () => {
 });
 
 Deno.test("find() returns absolute paths for absolute input", async () => {
-  await using dir = await tempDirectory({ chdir: true });
+  await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
   assertSameElements(
-    await Array.fromAsync(find([dir.path()])),
-    [
-      dir.path(),
-      dir.path("a.txt"),
-      dir.path("b"),
-      dir.path("b/c.md"),
-      dir.path("d"),
-      dir.path("d/e"),
-      dir.path("d/e/f.txt"),
-    ],
+    await Array.fromAsync(find([await Deno.realPath(".")])),
+    await pool(
+      [
+        ".",
+        "a.txt",
+        "b",
+        "b/c.md",
+        "d",
+        "d/e",
+        "d/e/f.txt",
+      ],
+      Deno.realPath,
+    ),
   );
 });
 
@@ -473,6 +476,10 @@ Deno.test("find() can find by path glob", async () => {
   assertSameElements(await Array.fromAsync(find(["."], { path: "*.txt" })), [
     "a.txt",
   ]);
+  assertSameElements(await Array.fromAsync(find(["."], { path: "**/*.txt" })), [
+    "a.txt",
+    "b/d/e.txt",
+  ]);
   assertSameElements(await Array.fromAsync(find(["."], { path: "b/*.md" })), [
     "b/c.md",
   ]);
@@ -498,6 +505,27 @@ Deno.test("find() can find by path glob", async () => {
     [
       ".",
       "b",
+    ],
+  );
+});
+
+Deno.test("find() can find by path glob with absolute paths", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
+  assertSameElements(
+    await Array.fromAsync(
+      find([await Deno.realPath(".")], { path: "*.txt" }),
+    ),
+    [],
+  );
+  await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
+  assertSameElements(
+    await Array.fromAsync(
+      find([await Deno.realPath(".")], { path: "**/*.txt" }),
+    ),
+    [
+      await Deno.realPath("a.txt"),
+      await Deno.realPath("b/d/e.txt"),
     ],
   );
 });
