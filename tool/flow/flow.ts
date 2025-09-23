@@ -81,8 +81,8 @@ async function formatFile(path: string) {
     match = contents.match(CODE);
     if (match?.index !== undefined) {
       const { indent = "", lang = "ts", lines = "" } = { ...match?.groups };
-      // deno-lint-ignore no-await-in-loop
       console.log({ match });
+      // deno-lint-ignore no-await-in-loop
       const formatted = await formatBlock(path, indent, lang, lines);
       console.log({ formatted });
       result += contents.slice(0, match.index) + formatted;
