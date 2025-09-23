@@ -8,6 +8,8 @@
  *   // do something with path
  * }
  * ```
+ *
+ * @module find
  */
 
 import { maybe } from "@roka/maybe";
