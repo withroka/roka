@@ -222,7 +222,7 @@ export async function pool<T, R>(
  *
  * @example Eagerly resolve an async iterable of promises.
  * ```ts
- * import { pool } from "@roka/async/pool";
+ * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "jsr:@std/assert";
  * async function* asyncGenerator() {
  *   yield Promise.resolve(1);
