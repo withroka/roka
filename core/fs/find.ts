@@ -13,7 +13,6 @@
  */
 
 import { maybe } from "@roka/maybe";
-import { assert } from "@std/assert";
 import { basename, globToRegExp } from "@std/path";
 import { join } from "node:path";
 
@@ -37,12 +36,12 @@ export interface FindOptions {
    *
    * If not specified, both files and directories are returned.
    */
-  type?: "file" | "dir";
+  type?: "file" | "dir" | "symlink";
   /**
    * Whether to follow symbolic links.
    * @default {false}
    */
-  symlinks?: boolean;
+  followSymlinks?: boolean;
   /**
    * Extended glob pattern to match file or directory names.
    *
@@ -76,11 +75,12 @@ export interface FindOptions {
  * the entries that match the given criteria.
  *
  * Symbolic links are not followed by default, but they can be followed by
- * setting {@linkcode FindOptions.symlinks} to `true`. File system nodes that
- * are neither files nor directories, such as sockets and devices, are ignored.
+ * setting {@linkcode FindOptions.followSymlinks} to `true`. File system nodes
+ * that are neither files nor directories, such as sockets and devices, are
+ * ignored.
  *
- * The function can be made to return only files or only directories by
- * setting {@linkcode FindOptions.type} to `"file"` or `"dir"`, respectively.
+ * This functions returns all file system node types by default. Filtering by
+ * type can be done with {@linkcode FindOptions.type}.
  *
  * The results contain no duplicates, even if there are multiple paths
  * leading to the same file or directory, for example via overlapping inputs or
@@ -167,11 +167,11 @@ export async function* find(
   const {
     maxDepth = Infinity,
     type,
-    symlinks = false,
+    followSymlinks = false,
   } = options ?? {};
-  const found = new Set<string>();
   const namePattern = options?.name ? globToRegExp(options.name) : undefined;
   const pathPattern = options?.path ? globToRegExp(options.path) : undefined;
+  const found = new Set<string>();
   async function* internal(
     depth: number,
     validate: boolean,
@@ -183,14 +183,16 @@ export async function* find(
       if (info) return info;
       const [real, stat] = await Promise.all([
         Deno.realPath(path),
-        symlinks ? Deno.stat(path) : Deno.lstat(path),
+        followSymlinks ? Deno.stat(path) : Deno.lstat(path),
       ]);
       return { real, stat };
     });
     const { real, stat } = value ?? {};
     if (
       (!real || !stat) ||
-      (!stat.isDirectory && !(stat.isFile && type !== "dir"))
+      (type === "dir" && !stat.isDirectory) ||
+      (type === "file" && !stat.isFile && !stat.isDirectory) ||
+      (type === "symlink" && !stat.isSymlink && !stat.isDirectory)
     ) {
       if (validate) {
         if (error) throw error;
@@ -198,11 +200,10 @@ export async function* find(
       }
       return;
     }
-    assert(stat.isFile || stat.isDirectory);
     if (found.has(real)) return;
     found.add(real);
     if (
-      (stat.isFile || type !== "file") &&
+      (type === undefined || type === "dir" || !stat.isDirectory) &&
       (namePattern === undefined || namePattern?.exec(basename(path))) &&
       (pathPattern === undefined || pathPattern?.exec(path))
     ) yield path;
