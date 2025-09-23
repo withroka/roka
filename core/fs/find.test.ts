@@ -454,7 +454,7 @@ Deno.test("find() skips broken symlinks", async () => {
   );
 });
 
-Deno.test("find() can return types other than file or directory", {
+Deno.test("find() can return types other than file, directory or symlink", {
   ignore: Deno.build.os === "windows",
 }, async () => {
   await using _ = await tempDirectory({ chdir: true });
