@@ -12,7 +12,8 @@
  * ```
  *
  * ```ts
- * import { any } from "@roka/async/any" * const result = await any([
+ * import { any } from "@roka/async/any";
+ * const result = await any([
  *   () => Promise.reject(new Error()),
  *   () => Promise.resolve().then(() => Promise.resolve("next tick")),
  *   () => Promise.resolve("first"),
