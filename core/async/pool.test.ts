@@ -45,22 +45,32 @@ Deno.test("pool() handles empty array map", async () => {
 });
 
 Deno.test("pool() handles iterable", async () => {
-  function* generator() {
+  function* iterable() {
     yield () => Promise.resolve(1);
     yield () => Promise.resolve(2);
     yield () => Promise.resolve(3);
   }
-  const results = await pool(generator());
+  const results = await pool(iterable());
   assertEquals(results, [1, 2, 3]);
 });
 
 Deno.test("pool() handles iterable map", async () => {
-  function* generator() {
+  function* iterable() {
     yield 1;
     yield 2;
     yield 3;
   }
-  const results = await pool(generator(), (x) => Promise.resolve(x));
+  const results = await pool(iterable(), (x) => Promise.resolve(x));
+  assertEquals(results, [1, 2, 3]);
+});
+
+Deno.test("pooled() handles async iterable", async () => {
+  async function* asyncIterable() {
+    yield Promise.resolve(1);
+    yield Promise.resolve(2);
+    yield Promise.resolve(3);
+  }
+  const results = await Array.fromAsync(pooled(asyncIterable()));
   assertEquals(results, [1, 2, 3]);
 });
 
@@ -147,24 +157,34 @@ Deno.test("pooled() handles empty array map", async () => {
 });
 
 Deno.test("pooled() handles iterable", async () => {
-  function* generator() {
+  function* iterable() {
     yield () => Promise.resolve(1);
     yield () => Promise.resolve(2);
     yield () => Promise.resolve(3);
   }
-  const results = await Array.fromAsync(pooled(generator()));
+  const results = await Array.fromAsync(pooled(iterable()));
   assertEquals(results, [1, 2, 3]);
 });
 
 Deno.test("pooled() handles iterable map", async () => {
-  function* generator() {
+  function* iterable() {
     yield 1;
     yield 2;
     yield 3;
   }
   const results = await Array.fromAsync(
-    pooled(generator(), (x) => Promise.resolve(x)),
+    pooled(iterable(), (x) => Promise.resolve(x)),
   );
+  assertEquals(results, [1, 2, 3]);
+});
+
+Deno.test("pooled() handles async iterable", async () => {
+  async function* asyncIterable() {
+    yield Promise.resolve(1);
+    yield Promise.resolve(2);
+    yield Promise.resolve(3);
+  }
+  const results = await Array.fromAsync(pooled(asyncIterable()));
   assertEquals(results, [1, 2, 3]);
 });
 
