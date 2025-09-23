@@ -50,6 +50,7 @@ jobs:
             forge/testing
             forge/version
             fs
+            fs/find
             fs/temp
             git
             git/conventional
