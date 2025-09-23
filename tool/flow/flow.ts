@@ -46,7 +46,7 @@ function fmtCommand() {
     .example("forge fmt **/*.ts", "Format all TypeScript files.")
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
-      for await (const path of find(paths, { type: "file" })) {
+      for await (const path of find(paths, { type: "file", validate: true })) {
         await formatFile(path);
       }
     });
@@ -112,16 +112,15 @@ async function formatBlock(
   await Deno.writeTextFile(block, lines);
   console.log(lines);
   const command = new Deno.Command("deno", {
-    args: ["fmt", "--quiet", block],
+    args: ["fmt", "--quiet", block, "--permit-no-files"],
     stdout: "piped",
     stderr: "piped",
   });
   const { code, stderr } = await command.output();
   if (code !== 0) {
+    const message = new TextDecoder().decode(stderr);
     throw new Error(
-      `Failed to format code block in ${path} (code: ${code}): ${
-        new TextDecoder().decode(stderr)
-      }`,
+      `Failed to format code block in ${path} (code: ${code}): ${message}`,
       { cause: { error: new TextDecoder().decode(stderr) } },
     );
   }
