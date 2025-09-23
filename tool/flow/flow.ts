@@ -1,8 +1,17 @@
 // deno-lint-ignore-file no-console
-import { Command, ValidationError } from "@cliffy/command";
-import { pool } from "@roka/async/pool";
+import { Command } from "@cliffy/command";
 import { version } from "@roka/forge/version";
+import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
+import { maybe } from "@roka/maybe";
+import { bold } from "@std/fmt/colors";
+
+const DESCRIPTION = `
+  ${bold("🍃 flow")}
+
+  An assistant tool to eliminate chore work in your Deno projects. Current
+  functionality is limited to extending "deno fmt".
+`;
 
 export async function flow(): Promise<number> {
   let verbose = false;
@@ -12,91 +21,111 @@ export async function flow(): Promise<number> {
     .meta("deno", Deno.version.deno)
     .meta("v8", Deno.version.v8)
     .meta("typescript", Deno.version.typescript)
-    .description("Format code blocks in JSDoc.")
-    // .example("forge", "List all packages.")
-    // .usage("<command> [options] [packages...]")
+    .description(DESCRIPTION)
+    .example("flow", "TODO")
+    .example("forge fmt", "Format code, including code blocks in JSDoc.")
+    .usage("<command> [options]")
     .option("--verbose", "Print additional information.", {
       hidden: true,
       global: true,
       action: () => verbose = true,
     })
-    .arguments("[files...:file]")
-    .action(async (_, ...files) => {
-      await pool(files, formatFile, { concurrency: 8 });
-    });
-  try {
-    await cmd.parse();
-  } catch (e: unknown) {
-    if (e instanceof ValidationError) {
-      cmd.showHelp();
-      console.error(`❌ ${e.message}`);
-      Deno.exit(1);
-    }
-    const errors = (e instanceof AggregateError) ? e.errors : [e];
-    for (const error of errors) {
-      console.error(`❌ ${error.message}`);
-      if (verbose) console.error(error);
-      else if (error["cause"] && error["cause"]["error"]) {
-        console.error(error.cause.error);
-      }
-    }
-    return 2;
+    .command("fmt", fmtCommand());
+  const { errors } = await maybe(() => cmd.parse());
+  for (const error of errors ?? []) {
+    console.error(`❌ ${error.message}`);
+    if (verbose) console.error(error);
   }
-  return 0;
+  return errors ? 1 : 0;
 }
 
-async function formatFile(file: string) {
-  const original = await Deno.readTextFile(file);
+function fmtCommand() {
+  return new Command()
+    .description("Format code, including code blocks in JSDoc.")
+    .example("forge fmt", "Format all files.")
+    .example("forge fmt **/*.ts", "Format all TypeScript files.")
+    .arguments("[paths...:file]")
+    .action(async (_, ...paths) => {
+      for await (const path of find(paths, { type: "file" })) {
+        await formatFile(path);
+      }
+    });
+}
+
+const INDENT = /(?<=^|\n)[ \t]*(?:\*)[ \t]*/;
+const DELIMITER = /```/;
+const LINE = new RegExp(
+  `${INDENT.source}[^\n]*?(?=${DELIMITER.source}|\n)`,
+  "g",
+);
+console.log(LINE.source);
+const CODE = new RegExp(
+  `(?<indent>${INDENT.source})${DELIMITER.source}(?<lang>\\w+)[ \t]*\n` +
+    `(?<lines>(?:${LINE.source}\n)*?${LINE.source})` +
+    `(?<tail>(?:\n${INDENT.source})?${DELIMITER.source})`,
+  // "g",
+);
+console.log(CODE.source);
+
+async function formatFile(path: string) {
+  const original = await Deno.readTextFile(path);
   let result = "";
   let contents = original;
   let match: RegExpMatchArray | null = null;
+  // console.log("line", Array.from(contents.matchAll(LINE))?.map((x) => x[0]));
+  // console.log("code", contents.match(CODE)?.groups);
   do {
     if (match?.index !== undefined) {
       contents = contents.slice(match.index + match[0].length);
     }
-    match = contents
-      .match(
-        /(?<=\n)(?<indent>\s*(?:\*|\/\/)\s*)```(?<lang>.*)\n(?<lines>[\s\S]*)\n\s*(?:\*|\/\/)\s*```/,
-      );
-    if (match !== null) {
+    match = contents.match(CODE);
+    if (match?.index !== undefined) {
       const { indent = "", lang = "ts", lines = "" } = { ...match?.groups };
       // deno-lint-ignore no-await-in-loop
-      const formatted = await formatBlock(indent, lang, lines);
+      console.log({ match });
+      const formatted = await formatBlock(path, indent, lang, lines);
+      console.log({ formatted });
       result += contents.slice(0, match.index) + formatted;
     } else {
       result += contents;
     }
   } while (match?.index !== undefined);
   if (result !== original) {
-    await Deno.writeTextFile(file, result);
-    console.log(file);
+    console.log({ path, original, result });
+    // await Deno.writeTextFile(path, result);
   }
 }
 
 async function formatBlock(
+  path: string,
   indent: string,
   lang: string,
   lines: string,
 ): Promise<string> {
   await using temp = await tempDirectory();
   lines = lines
-    .split("\n").map((line) => line.replaceAll(/(^|\n)\s*(?:\*|\/\/)\s*/g, ""))
+    .split("\n")
+    .map((line) => line.replace(INDENT, ""))
     .join("\n");
-  const path = temp.path(`block.${lang}`);
-  await Deno.writeTextFile(path, lines);
+  console.log(lines);
+  const block = temp.path(`block.${lang}`);
+  await Deno.writeTextFile(block, lines);
+  console.log(lines);
   const command = new Deno.Command("deno", {
-    args: ["fmt", "--quiet", path],
+    args: ["fmt", "--quiet", block],
     stdout: "piped",
     stderr: "piped",
   });
   const { code, stderr } = await command.output();
   if (code !== 0) {
     throw new Error(
-      `Failed to format code block: ${new TextDecoder().decode(stderr)}`,
+      `Failed to format code block in ${path} (code: ${code}): ${
+        new TextDecoder().decode(stderr)
+      }`,
       { cause: { error: new TextDecoder().decode(stderr) } },
     );
   }
-  lines = await Deno.readTextFile(path);
+  lines = await Deno.readTextFile(block);
   lines = lines.trimEnd().split("\n").map((line) => indent + line).join("\n");
   lines = `${indent}\`\`\`${lang}\n${lines}\n${indent}\`\`\``;
   return lines;

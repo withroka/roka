@@ -8,7 +8,7 @@
     "default": {
       "read": true,
       "write": true,
-      "run": ["deno"]
+      "run": ["deno", "git"]
     }
   }
 }
