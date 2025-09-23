@@ -133,13 +133,13 @@ export async function pool<T>(
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "jsr:@std/assert";
  *
- * async function* asyncGenerator() {
+ * async function* asyncIterable() {
  *   yield 1;
  *   yield 2;
  *   yield 3;
  * }
  * const results = await pool(
- *   asyncGenerator(),
+ *   asyncIterable(),
  *   (value) => Promise.resolve(value * 2),
  * );
  *
@@ -225,12 +225,12 @@ export async function pool<T, R>(
  * import { assertEquals } from "jsr:@std/assert";
  *
  * const results: number[] = [];
- * async function* asyncGenerator() {
+ * async function* asyncIterable() {
  *   yield 1;
  *   yield 2;
  *   yield 3;
  * }
- * for await (const number of pooled(asyncGenerator())) {
+ * for await (const number of pooled(asyncIterable())) {
  *   results.push(number);
  * }
  *
@@ -292,13 +292,13 @@ export function pooled<T>(
  * import { assertEquals } from "jsr:@std/assert";
  *
  * const results: number[] = [];
- * async function* asyncGenerator() {
+ * async function* asyncIterable() {
  *   yield 1;
  *   yield 2;
  *   yield 3;
  * }
  * for await (const number of pooled(
- *   asyncGenerator(),
+ *   asyncIterable(),
  *   (value) => Promise.resolve(value * 2),
  * )) {
  *   results.push(number);
