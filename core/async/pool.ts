@@ -265,7 +265,8 @@ export function pooled<T>(
  * @example Resolve a mapping of promises with a concurrency limit.
  * ```ts
  * import { pooled } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert" * const results: number[] = [];
+ * import { assertEquals } from "jsr:@std/assert";
+ * const results: number[] = [];
  * const iterable = pooled(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
