@@ -88,21 +88,6 @@ export interface PoolOptions {
  * assertEquals(result, [1, 2, 3]);
  * ```
  *
- * @example Resolve an async iterable of promises.
- * ```ts
- * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
- *
- * async function* asyncGenerator() {
- *   yield 1;
- *   yield 2;
- *   yield 3;
- * }
- * const results = await pool(asyncGenerator());
- *
- * assertEquals(results, [1, 2, 3]);
- * ```
- *
  * @typeParam T The type of the input and output values.
  * @param array The promises to resolve.
  * @returns A promise that resolves all inputs concurrently.
