@@ -41,7 +41,7 @@
  * @todo Verify signatures.
  * @todo Add pruning.
  *
- * @module git
+ * @module git: P
  */
 
 import {

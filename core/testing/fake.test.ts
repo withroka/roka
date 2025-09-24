@@ -436,3 +436,21 @@ Deno.test("fakeCommand() rejects output() when stdin is piped", async () => {
     stdin: new Uint8Array(),
   }]);
 });
+
+Deno.test("fakeCommand() stubs Deno.Command", async () => {
+  using mock = fakeCommand();
+  const command = new Deno.Command("echo", { args: ["Hello, World!"] });
+  const expected = {
+    success: true,
+    code: 0,
+    signal: null,
+    stderr: new Uint8Array(),
+    stdout: new Uint8Array(),
+  };
+  assertEquals(await command.output(), expected);
+  assertEquals(command.outputSync(), expected);
+  assertEquals(mock.runs, [{
+    command: "echo",
+    options: { args: ["Hello, World!"] },
+  }]);
+});
