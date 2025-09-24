@@ -41,6 +41,12 @@ jobs:
             cli/input
             cli/testing
             collections
+            deno
+            flow
+            flow/fmt
+            flow/lint
+            flow/title
+            flow/test
             forge
             forge/bump
             forge/changelog
