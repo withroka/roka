@@ -8,6 +8,7 @@
     "permissions": {
       "read": true,
       "write": true,
+      "env": ["PATH"],
       "run": ["deno"]
     }
   }
