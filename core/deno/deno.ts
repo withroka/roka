@@ -239,6 +239,13 @@ export interface PermissionOptions {
    * @default {false}
    */
   denyFfi?: boolean | string[];
+  /**
+   * Enable stack traces in permission prompts.
+   * @default {false}
+   */
+  tracePermissions?: boolean;
+  /** Generate a JSONL file with all permissions accesses. */
+  auditPermissions?: string;
 }
 
 /**
@@ -392,67 +399,76 @@ export function deno(options?: DenoOptions): Deno {
     async compile(script, options) {
       await run(
         denoOptions,
-        "compile",
-        ...typeCheckingArgs(options),
-        ...permissionArgs(options),
-        flag("--exclude", options?.exclude),
-        flag("--include", options?.include),
-        flag("--icon", options?.icon),
-        flag("--no-terminal", options?.terminal === false),
-        flag("--output", options?.output),
-        flag("--target", options?.target),
-        script,
-        options?.scriptArgs,
+        args([
+          "compile",
+          ...typeCheckingFlags(options),
+          ...permissionFlags(options),
+          flag("--exclude", options?.exclude),
+          flag("--include", options?.include),
+          flag("--icon", options?.icon),
+          flag("--no-terminal", options?.terminal === false),
+          flag("--output", options?.output),
+          flag("--target", options?.target),
+          script,
+          options?.scriptArgs,
+        ]),
+        permissionEnv(options),
       );
     },
     async fmt(files, options) {
       await run(
         denoOptions,
-        "fmt",
-        ...fileWatchingArgs(options),
-        flag("--check", options?.check),
-        flag("--ext", options?.ext),
-        flag("--ignore=", options?.ignore),
-        flag("--indent-width", options?.indentWidth),
-        flag("--line-width", options?.lineWidth),
-        flag("--no-semicolons", options?.semicolons === false),
-        flag("--prose-wrap", options?.proseWrap),
-        flag("--single-quote", options?.singleQuote),
-        flag("--use-tabs", options?.useTabs),
-        flag("--unstable-component", options?.unstableComponent),
-        flag("--unstable-sql", options?.unstableSql),
-        ...files,
+        args([
+          "fmt",
+          ...fileWatchingFlags(options),
+          flag("--check", options?.check),
+          flag("--ext", options?.ext),
+          flag("--ignore=", options?.ignore),
+          flag("--indent-width", options?.indentWidth),
+          flag("--line-width", options?.lineWidth),
+          flag("--no-semicolons", options?.semicolons === false),
+          flag("--prose-wrap", options?.proseWrap),
+          flag("--single-quote", options?.singleQuote),
+          flag("--use-tabs", options?.useTabs),
+          flag("--unstable-component", options?.unstableComponent),
+          flag("--unstable-sql", options?.unstableSql),
+          ...files,
+        ]),
       );
     },
     async lint(files, options) {
       await run(
         denoOptions,
-        "lint",
-        ...fileWatchingArgs(options),
-        flag("--compact", options?.compact),
-        flag("--fix", options?.fix),
-        flag("--ignore=", options?.ignore),
-        flag("--json", options?.json),
-        flag("--rules-exclude=", options?.rulesExclude),
-        flag("--rules-include=", options?.rulesInclude),
-        flag("--rules-tags=", options?.rulesTags),
-        ...files,
+        args([
+          "lint",
+          ...fileWatchingFlags(options),
+          flag("--compact", options?.compact),
+          flag("--fix", options?.fix),
+          flag("--ignore=", options?.ignore),
+          flag("--json", options?.json),
+          flag("--rules-exclude=", options?.rulesExclude),
+          flag("--rules-include=", options?.rulesInclude),
+          flag("--rules-tags=", options?.rulesTags),
+          ...files,
+        ]),
       );
     },
     async test() {
       await run(
         denoOptions,
-        "test",
-        // "--quiet",
-        // options?.allowAll ? "--allow-all" : false,
-        // options?.permissionSet ? `--allow=${options.permissionSet}` : false,
-        // options?.noPrompt ? "--no-prompt" : false,
+        args([
+          "test",
+          // "--quiet",
+          // options?.allowAll ? "--allow-all" : false,
+          // options?.permissionSet ? `--allow=${options.permissionSet}` : false,
+          // options?.noPrompt ? "--no-prompt" : false,
+        ]),
       );
     },
   };
 }
 
-function fileWatchingArgs(
+function fileWatchingFlags(
   options?: FileWatchingOptions,
 ): (ReturnType<typeof flag>)[] {
   return [
@@ -462,16 +478,16 @@ function fileWatchingArgs(
   ];
 }
 
-function typeCheckingArgs(
+function typeCheckingFlags(
   options?: TypeCheckingOptions,
 ): (ReturnType<typeof flag>)[] {
-  return [
+  return args([
     flag("--check=", options?.check),
     flag("--no-check", options?.check === false),
-  ];
+  ]);
 }
 
-function permissionArgs(
+function permissionFlags(
   options?: PermissionOptions,
 ): (ReturnType<typeof flag>)[] {
   return [
@@ -497,9 +513,20 @@ function permissionArgs(
   ];
 }
 
-function flag<T>(
+function permissionEnv(
+  options?: PermissionOptions,
+): Record<string, string> {
+  return env({
+    DENO_TRACE_PERMISSIONS: options?.tracePermissions,
+    DENO_AUDIT_PERMISSIONS: options?.auditPermissions,
+  });
+}
+
+type Value = boolean | number | string | string[];
+
+function flag(
   flag: string,
-  value?: boolean | NonNullable<T> | NonNullable<T>[],
+  value: Value | undefined,
 ): string | string[] | undefined {
   const equalSign = flag.endsWith("=");
   if (equalSign) flag = flag.slice(0, -1);
@@ -516,18 +543,37 @@ function flag<T>(
   }
 }
 
+function args(args: (string | string[] | false | undefined)[]): string[] {
+  return args.filter((x) => x !== false && x !== undefined).flat() as string[];
+}
+
+function env(env: Record<string, Value | undefined>): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (!value) continue;
+    if (value === true) {
+      result[key] = "1";
+    } else if (Array.isArray(value)) {
+      result[key] = value.join(",");
+    } else {
+      result[key] = value.toString();
+    }
+  }
+  return result;
+}
+
 async function run(
   options: DenoOptions,
-  ...commandArgs: (string | string[] | false | undefined)[]
+  args: string[],
+  env?: Record<string, string>,
 ): Promise<string> {
   const { cwd = "." } = options ?? {};
-  const args = commandArgs.filter((x) => x !== false && x !== undefined).flat();
   const command = new Deno.Command("deno", {
     cwd,
     args,
     stdin: "null",
     stdout: "piped",
-    env: { NO_COLOR: "true" },
+    env: { NO_COLOR: "1", ...env },
   });
   try {
     const { code, stdout, stderr } = await command.output();
