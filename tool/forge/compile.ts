@@ -29,7 +29,7 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { deno, type TargetArchitecture } from "@roka/deno";
+import { deno } from "@roka/deno";
 import { assertExists, assertNotEquals } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
@@ -46,7 +46,7 @@ export interface CompileOptions {
    * Target OS architectures.
    * @default {[Deno.build.target]}
    */
-  target?: TargetArchitecture[];
+  target?: string[];
   /** Bundle artifacts. */
   bundle?: boolean;
   /** Create a checksum file. */
@@ -76,7 +76,7 @@ export async function compile(
   }
   const {
     dist = join(pkg.root, "dist"),
-    target = [Deno.build.target as TargetArchitecture],
+    target = [Deno.build.target],
     concurrency = navigator.hardwareConcurrency,
   } = options ?? {};
   const { main, include = [] } = pkg.config.forge ?? {};

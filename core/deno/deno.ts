@@ -55,13 +55,6 @@ export interface Deno {
   test(files: string[], options?: TestOptions): Promise<void>;
 }
 
-export type TargetArchitecture =
-  | "x86_64-unknown-linux-gnu"
-  | "aarch64-unknown-linux-gnu"
-  | "x86_64-pc-windows-msvc"
-  | "x86_64-apple-darwin"
-  | "aarch64-apple-darwin";
-
 /** Options for the {@linkcode deno} function. */
 export interface DenoOptions {
   /**
@@ -101,9 +94,13 @@ export interface CompileOptions
   output?: string;
   /**
    * Target OS architecture.
+   *
+   * The target can be an [LLVM](https://llvm.org/) target triple, which is the
+   * combination of `${arch}-${vendor}-${os}`.
+   *
    * @default {Deno.build.target}
    */
-  target?: TargetArchitecture;
+  target?: string;
 }
 
 /**
