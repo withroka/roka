@@ -88,9 +88,12 @@ export interface PermissionOptions {
   allowAll?: boolean;
   /**
    * Loads the permission set from the config file.
+   *
+   * If set to `true`, the default permission set will be used.
+   *
    * @default {false}
    */
-  permissionSet?: boolean;
+  permissionSet?: boolean | string;
   /**
    * Prompt, instead of throwing, if required permission wasn't passed.
    * @default {true}
@@ -464,7 +467,7 @@ function typeCheckingArgs(options?: TypeCheckingOptions): string[] {
 function permissionArgs(options?: PermissionOptions): string[] {
   return [
     options?.allowAll ? "--allow-all" : undefined,
-    options?.permissionSet ? "--permission-set" : undefined,
+    flag("permission-set", options?.permissionSet),
     options?.prompt === false ? "--no-prompt" : undefined,
     flag("allow-read", options?.allowRead),
     flag("deny-read", options?.denyRead),

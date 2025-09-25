@@ -58,6 +58,7 @@ Deno.test("deno() passes correct permission arguments", async () => {
   await deno().compile(["input.ts"]);
   await deno().compile(["input.ts"], { allowAll: true });
   await deno().compile(["input.ts"], { permissionSet: true });
+  await deno().compile(["input.ts"], { permissionSet: "test" });
   await deno().compile(["input.ts"], { prompt: false });
   await deno().compile(["input.ts"], { allowRead: true });
   await deno().compile(["input.ts"], { allowRead: ["path1", "path2"] });
@@ -97,6 +98,7 @@ Deno.test("deno() passes correct permission arguments", async () => {
       ["compile", "input.ts"],
       ["compile", "--allow-all", "input.ts"],
       ["compile", "--permission-set", "input.ts"],
+      ["compile", "--permission-set=test", "input.ts"],
       ["compile", "--no-prompt", "input.ts"],
       ["compile", "--allow-read", "input.ts"],
       ["compile", "--allow-read=path1,path2", "input.ts"],
