@@ -99,7 +99,7 @@ export async function compile(
       const output = join(directory, target, pkg.name);
       await deno().compile([join(pkg.directory, main)], {
         permissionSet: true,
-        noPrompt: true,
+        prompt: false,
         target,
         include: [config, ...include.map((path) => join(pkg.directory, path))],
         output,
