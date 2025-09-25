@@ -52,6 +52,88 @@ Deno.test("deno() passes correct type checking arguments", async () => {
   );
 });
 
+Deno.test("deno() passes correct permission arguments", async () => {
+  // @todo use the run command
+  await using command = fakeCommand();
+  await deno().compile(["input.ts"]);
+  await deno().compile(["input.ts"], { allowAll: true });
+  await deno().compile(["input.ts"], { permissionSet: true });
+  await deno().compile(["input.ts"], { prompt: false });
+  await deno().compile(["input.ts"], { allowRead: true });
+  await deno().compile(["input.ts"], { allowRead: ["path1", "path2"] });
+  await deno().compile(["input.ts"], { denyRead: true });
+  await deno().compile(["input.ts"], { denyRead: ["path1", "path2"] });
+  await deno().compile(["input.ts"], { allowWrite: true });
+  await deno().compile(["input.ts"], { allowWrite: ["path1", "path2"] });
+  await deno().compile(["input.ts"], { denyWrite: true });
+  await deno().compile(["input.ts"], { denyWrite: ["path1", "path2"] });
+  await deno().compile(["input.ts"], { allowImport: true });
+  await deno().compile(["input.ts"], { allowImport: ["host1", "host2:8080"] });
+  await deno().compile(["input.ts"], { denyImport: true });
+  await deno().compile(["input.ts"], { denyImport: ["host1", "host2:8080"] });
+  await deno().compile(["input.ts"], { allowNet: true });
+  await deno().compile(["input.ts"], { allowNet: ["host1", "host2:8080"] });
+  await deno().compile(["input.ts"], { denyNet: true });
+  await deno().compile(["input.ts"], { denyNet: ["host1", "host2:8080"] });
+  await deno().compile(["input.ts"], { allowEnv: true });
+  await deno().compile(["input.ts"], { allowEnv: ["VAR1", "VAR2"] });
+  await deno().compile(["input.ts"], { denyEnv: true });
+  await deno().compile(["input.ts"], { denyEnv: ["VAR1", "VAR2"] });
+  await deno().compile(["input.ts"], { allowSys: true });
+  await deno().compile(["input.ts"], { allowSys: ["uid", "gid"] });
+  await deno().compile(["input.ts"], { denySys: true });
+  await deno().compile(["input.ts"], { denySys: ["uid", "gid"] });
+  await deno().compile(["input.ts"], { allowRun: true });
+  await deno().compile(["input.ts"], { allowRun: ["cmd1", "cmd2"] });
+  await deno().compile(["input.ts"], { denyRun: true });
+  await deno().compile(["input.ts"], { denyRun: ["cmd1", "cmd2"] });
+  await deno().compile(["input.ts"], { allowFfi: true });
+  await deno().compile(["input.ts"], { allowFfi: ["path1", "path2"] });
+  await deno().compile(["input.ts"], { denyFfi: true });
+  await deno().compile(["input.ts"], { denyFfi: ["path1", "path2"] });
+  assertEquals(
+    command.runs.map((x) => x?.options?.args),
+    [
+      ["compile", "input.ts"],
+      ["compile", "--allow-all", "input.ts"],
+      ["compile", "--permission-set", "input.ts"],
+      ["compile", "--no-prompt", "input.ts"],
+      ["compile", "--allow-read", "input.ts"],
+      ["compile", "--allow-read=path1,path2", "input.ts"],
+      ["compile", "--deny-read", "input.ts"],
+      ["compile", "--deny-read=path1,path2", "input.ts"],
+      ["compile", "--allow-write", "input.ts"],
+      ["compile", "--allow-write=path1,path2", "input.ts"],
+      ["compile", "--deny-write", "input.ts"],
+      ["compile", "--deny-write=path1,path2", "input.ts"],
+      ["compile", "--allow-import", "input.ts"],
+      ["compile", "--allow-import=host1,host2:8080", "input.ts"],
+      ["compile", "--deny-import", "input.ts"],
+      ["compile", "--deny-import=host1,host2:8080", "input.ts"],
+      ["compile", "--allow-net", "input.ts"],
+      ["compile", "--allow-net=host1,host2:8080", "input.ts"],
+      ["compile", "--deny-net", "input.ts"],
+      ["compile", "--deny-net=host1,host2:8080", "input.ts"],
+      ["compile", "--allow-env", "input.ts"],
+      ["compile", "--allow-env=VAR1,VAR2", "input.ts"],
+      ["compile", "--deny-env", "input.ts"],
+      ["compile", "--deny-env=VAR1,VAR2", "input.ts"],
+      ["compile", "--allow-sys", "input.ts"],
+      ["compile", "--allow-sys=uid,gid", "input.ts"],
+      ["compile", "--deny-sys", "input.ts"],
+      ["compile", "--deny-sys=uid,gid", "input.ts"],
+      ["compile", "--allow-run", "input.ts"],
+      ["compile", "--allow-run=cmd1,cmd2", "input.ts"],
+      ["compile", "--deny-run", "input.ts"],
+      ["compile", "--deny-run=cmd1,cmd2", "input.ts"],
+      ["compile", "--allow-ffi", "input.ts"],
+      ["compile", "--allow-ffi=path1,path2", "input.ts"],
+      ["compile", "--deny-ffi", "input.ts"],
+      ["compile", "--deny-ffi=path1,path2", "input.ts"],
+    ],
+  );
+});
+
 Deno.test("deno().compile() passes correct arguments", async () => {
   await using command = fakeCommand();
   await deno().compile(["input1.ts", "input2.ts"], {

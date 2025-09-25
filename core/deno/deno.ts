@@ -96,6 +96,137 @@ export interface PermissionOptions {
    * @default {true}
    */
   prompt?: boolean;
+  /**
+   * Allow file system read access.
+   *
+   * Optionally specify allowed paths.
+   *
+   * @default {false}
+   */
+  allowRead?: boolean | string[];
+  /**
+   * Deny file system read access.
+   *
+   * Optionally specify denied paths.
+   *
+   * @default {false}
+   */
+  denyRead?: boolean | string[];
+  /**
+   * Allow file system write access.
+   *
+   * Optionally specify allowed paths.
+   *
+   * @default {false}
+   */
+  allowWrite?: boolean | string[];
+  /**
+   * Deny file system write access.
+   *
+   * Optionally specify denied paths.
+   *
+   * @default {false}
+   */
+  denyWrite?: boolean | string[];
+  /**
+   * Allow importing from remote hosts.
+   *
+   * Optionally specify allowed IP addresses and host names, with ports as
+   * necessary.
+   *
+   * @default {false}
+   */
+  allowImport?: boolean | string[];
+  /**
+   * Deny importing from remote hosts.
+   *
+   * Optionally specify denied IP addresses and host names, with ports as
+   * necessary.
+   *
+   * @default {false}
+   */
+  denyImport?: boolean | string[];
+  /**
+   * Allow network access. Optionally specify allowed IP addresses and host
+   * names, with ports as necessary.
+   *
+   * @default {false}
+   */
+  allowNet?: boolean | string[];
+  /**
+   * Deny network access.
+   *
+   * Optionally specify defined IP addresses and host names, with ports as necessary.
+   *
+   * @default {false}
+   */
+  denyNet?: boolean | string[];
+  /**
+   * Allow access to environment variables.
+   *
+   * Optionally specify accessible environment variables.
+   */
+  allowEnv?: boolean | string[];
+  /**
+   * Deny access to environment variables.
+   *
+   * Optionally specify inacessible environment variables.
+   *
+   * @default {false}
+   */
+  denyEnv?: boolean | string[];
+  /**
+   * Allow access to OS information.
+   *
+   * Optionally allow specific APIs by function name.
+   *
+   * @default {false}
+   */
+  allowSys?: boolean | string[];
+  /**
+   * Deny access to OS information.
+   *
+   * Optionally deny specific APIs by function name.
+   *
+   * @default {false}
+   */
+  denySys?: boolean | string[];
+  /**
+   * Allow running subprocesses.
+   *
+   * Optionally specify allowed runnable program names.
+   *
+   * @default {false}
+   */
+  allowRun?: boolean | string[];
+  /**
+   * Deny running subprocesses.
+   *
+   * Optionally specify denied runnable program names.
+   *
+   * @default {false}
+   */
+  denyRun?: boolean | string[];
+  /**
+   * Allow loading dynamic libraries.
+   *
+   * Optionally specify allowed directories or files.
+   *
+   * This is an unstable feature in Deno.
+   *
+   * @default {false}
+   */
+  allowFfi?: boolean | string[];
+  /**
+   * Deny loading dynamic libraries.
+   *
+   * Optionally specify denied directories or files.
+   *
+   * This is an unstable feature in Deno.
+   *
+   * @default {false}
+   */
+  denyFfi?: boolean | string[];
 }
 
 /**
@@ -335,7 +466,33 @@ function permissionArgs(options?: PermissionOptions): string[] {
     options?.allowAll ? "--allow-all" : undefined,
     options?.permissionSet ? "--permission-set" : undefined,
     options?.prompt === false ? "--no-prompt" : undefined,
-  ].filter((x) => x !== undefined);
+    flag("allow-read", options?.allowRead),
+    flag("deny-read", options?.denyRead),
+    flag("allow-write", options?.allowWrite),
+    flag("deny-write", options?.denyWrite),
+    flag("allow-import", options?.allowImport),
+    flag("deny-import", options?.denyImport),
+    flag("allow-net", options?.allowNet),
+    flag("deny-net", options?.denyNet),
+    flag("allow-env", options?.allowEnv),
+    flag("deny-env", options?.denyEnv),
+    flag("allow-sys", options?.allowSys),
+    flag("deny-sys", options?.denySys),
+    flag("allow-run", options?.allowRun),
+    flag("deny-run", options?.denyRun),
+    flag("allow-ffi", options?.allowFfi),
+    flag("deny-ffi", options?.denyFfi),
+  ].filter((x) => x !== undefined).flat();
+}
+
+function flag<T>(
+  flag: string,
+  value?: boolean | T | T[],
+): string | undefined {
+  if (!value) return undefined;
+  if (value === true) return `--${flag}`;
+  if (Array.isArray(value)) return `--${flag}=${value.join(",")}`;
+  return `--${flag}=${value}`;
 }
 
 async function run(
