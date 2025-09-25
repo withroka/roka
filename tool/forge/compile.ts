@@ -29,6 +29,7 @@
  */
 
 import { pool } from "@roka/async/pool";
+import { deno, type TargetArchitecture } from "@roka/deno";
 import { assertExists, assertNotEquals } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
@@ -45,7 +46,7 @@ export interface CompileOptions {
    * Target OS architectures.
    * @default {[Deno.build.target]}
    */
-  target?: string[];
+  target?: TargetArchitecture[];
   /** Bundle artifacts. */
   bundle?: boolean;
   /** Create a checksum file. */
@@ -75,7 +76,7 @@ export async function compile(
   }
   const {
     dist = join(pkg.root, "dist"),
-    target = [Deno.build.target],
+    target = [Deno.build.target as TargetArchitecture],
     concurrency = navigator.hardwareConcurrency,
   } = options ?? {};
   const { main, include = [] } = pkg.config.forge ?? {};
@@ -96,24 +97,13 @@ export async function compile(
     target,
     async (target) => {
       const output = join(directory, target, pkg.name);
-      const args = [
-        "compile",
-        "--permission-set",
-        "--no-prompt",
-        `--target=${target}`,
-        `--include=${config}`,
-        include.map((path) => `--include=${join(pkg.directory, path)}`),
-        `--output=${output}`,
-        join(pkg.directory, main),
-      ].flat();
-      const command = new Deno.Command("deno", { args });
-      const { code, stderr } = await command.output();
-      if (code !== 0) {
-        const error = new TextDecoder().decode(stderr);
-        throw new PackageError(`Compile failed for ${pkg.name}`, {
-          cause: { command: "deno", args, code, error },
-        });
-      }
+      await deno().compile([join(pkg.directory, main)], {
+        permissionSet: true,
+        noPrompt: true,
+        target,
+        include: [config, ...include.map((path) => join(pkg.directory, path))],
+        output,
+      });
       if (options?.install) {
         const install = options.install === true
           ? `${Deno.env.get("HOME")}/.local/bin`
