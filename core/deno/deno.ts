@@ -33,7 +33,7 @@ export interface Deno {
    *
    * @see {@link https://docs.deno.com/go/compile `deno compile`, standalone executables}
    */
-  compile(scripts: string[], options?: CompileOptions): Promise<void>;
+  compile(script: string, options?: CompileOptions): Promise<void>;
   /**
    * Auto-format various file types.
    *
@@ -55,6 +55,15 @@ export type TargetArchitecture =
   | "x86_64-pc-windows-msvc"
   | "x86_64-apple-darwin"
   | "aarch64-apple-darwin";
+
+/**
+ * Options for commands accepting script arguments, such as the
+ * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
+ */
+export interface ScriptOptions {
+  /** Arguments to pass to the script. */
+  scriptArgs?: string[];
+}
 
 /**
  * Options for commands accepting type checking arguments, such as the
@@ -261,7 +270,8 @@ export interface FileWatchingOptions {
  *
  * @see {@link https://docs.deno.com/go/compile `deno compile`, standalone executables}
  */
-export interface CompileOptions extends TypeCheckingOptions, PermissionOptions {
+export interface CompileOptions
+  extends ScriptOptions, TypeCheckingOptions, PermissionOptions {
   /**
    * Excludes files/directories in the compiled executable.
    */
@@ -379,22 +389,20 @@ export interface DenoOptions {
 export function deno(options?: DenoOptions): Deno {
   const denoOptions = options ?? {};
   return {
-    async compile(scripts, options) {
-      if (scripts.length === 0) {
-        throw new DenoError("Provide at least one script to compile");
-      }
+    async compile(script, options) {
       await run(
         denoOptions,
         "compile",
         ...typeCheckingArgs(options),
         ...permissionArgs(options),
-        options?.exclude?.map((x) => ["--exclude", x]).flat(),
-        options?.include?.map((x) => ["--include", x]).flat(),
-        options?.icon && ["--icon", options.icon],
-        options?.terminal === false && ["--no-terminal"],
-        options?.output && ["--output", options.output],
-        options?.target && ["--target", options.target],
-        ...scripts,
+        flag("--exclude", options?.exclude),
+        flag("--include", options?.include),
+        flag("--icon", options?.icon),
+        flag("--no-terminal", options?.terminal === false),
+        flag("--output", options?.output),
+        flag("--target", options?.target),
+        script,
+        options?.scriptArgs,
       );
     },
     async fmt(files, options) {
@@ -402,19 +410,17 @@ export function deno(options?: DenoOptions): Deno {
         denoOptions,
         "fmt",
         ...fileWatchingArgs(options),
-        options?.check && ["--check"],
-        options?.ext && ["--ext", options.ext],
-        options?.ignore?.map((x) => ["--ignore", x]).flat(),
-        options?.indentWidth !== undefined &&
-          ["--indent-width", options.indentWidth.toString()],
-        options?.lineWidth !== undefined &&
-          ["--line-width", options.lineWidth.toString()],
-        options?.semicolons === false && ["--no-semicolons"],
-        options?.proseWrap && ["--prose-wrap", options.proseWrap],
-        options?.singleQuote && ["--single-quote"],
-        options?.useTabs && ["--use-tabs"],
-        options?.unstableComponent && "--unstable-component",
-        options?.unstableSql && "--unstable-sql",
+        flag("--check", options?.check),
+        flag("--ext", options?.ext),
+        flag("--ignore=", options?.ignore),
+        flag("--indent-width", options?.indentWidth),
+        flag("--line-width", options?.lineWidth),
+        flag("--no-semicolons", options?.semicolons === false),
+        flag("--prose-wrap", options?.proseWrap),
+        flag("--single-quote", options?.singleQuote),
+        flag("--use-tabs", options?.useTabs),
+        flag("--unstable-component", options?.unstableComponent),
+        flag("--unstable-sql", options?.unstableSql),
         ...files,
       );
     },
@@ -423,13 +429,13 @@ export function deno(options?: DenoOptions): Deno {
         denoOptions,
         "lint",
         ...fileWatchingArgs(options),
-        options?.compact && ["--compact"],
-        options?.fix && ["--fix"],
-        options?.ignore?.map((x) => ["--ignore", x]).flat(),
-        options?.json && ["--json"],
-        options?.rulesExclude?.map((x) => ["--rules-exclude", x]).flat(),
-        options?.rulesInclude?.map((x) => ["--rules-include", x]).flat(),
-        options?.rulesTags?.map((x) => ["--rules-tags", x]).flat(),
+        flag("--compact", options?.compact),
+        flag("--fix", options?.fix),
+        flag("--ignore=", options?.ignore),
+        flag("--json", options?.json),
+        flag("--rules-exclude=", options?.rulesExclude),
+        flag("--rules-include=", options?.rulesInclude),
+        flag("--rules-tags=", options?.rulesTags),
         ...files,
       );
     },
@@ -446,56 +452,68 @@ export function deno(options?: DenoOptions): Deno {
   };
 }
 
-function fileWatchingArgs(options?: FileWatchingOptions): string[] {
+function fileWatchingArgs(
+  options?: FileWatchingOptions,
+): (ReturnType<typeof flag>)[] {
   return [
-    options?.watch ? "--watch" : undefined,
-    options?.watchExclude
-      ? options.watchExclude.map((x) => ["--watch-exclude", x]).flat()
-      : undefined,
-    options?.clearScreen === false ? "--no-clear-screen" : undefined,
-  ].filter((x) => x !== undefined).flat();
+    flag("--watch", options?.watch),
+    flag("--watch-exclude=", options?.watchExclude),
+    flag("--no-clear-screen", options?.clearScreen === false),
+  ];
 }
 
-function typeCheckingArgs(options?: TypeCheckingOptions): string[] {
+function typeCheckingArgs(
+  options?: TypeCheckingOptions,
+): (ReturnType<typeof flag>)[] {
   return [
-    options?.check === true ? "--check" : undefined,
-    options?.check === "all" ? "--check=all" : undefined,
-    options?.check === false ? "--no-check" : undefined,
-  ].filter((x) => x !== undefined);
+    flag("--check=", options?.check),
+    flag("--no-check", options?.check === false),
+  ];
 }
 
-function permissionArgs(options?: PermissionOptions): string[] {
+function permissionArgs(
+  options?: PermissionOptions,
+): (ReturnType<typeof flag>)[] {
   return [
-    options?.allowAll ? "--allow-all" : undefined,
-    flag("permission-set", options?.permissionSet),
-    options?.prompt === false ? "--no-prompt" : undefined,
-    flag("allow-read", options?.allowRead),
-    flag("deny-read", options?.denyRead),
-    flag("allow-write", options?.allowWrite),
-    flag("deny-write", options?.denyWrite),
-    flag("allow-import", options?.allowImport),
-    flag("deny-import", options?.denyImport),
-    flag("allow-net", options?.allowNet),
-    flag("deny-net", options?.denyNet),
-    flag("allow-env", options?.allowEnv),
-    flag("deny-env", options?.denyEnv),
-    flag("allow-sys", options?.allowSys),
-    flag("deny-sys", options?.denySys),
-    flag("allow-run", options?.allowRun),
-    flag("deny-run", options?.denyRun),
-    flag("allow-ffi", options?.allowFfi),
-    flag("deny-ffi", options?.denyFfi),
-  ].filter((x) => x !== undefined).flat();
+    flag("--allow-all", options?.allowAll),
+    flag("--permission-set=", options?.permissionSet),
+    flag("--no-prompt", options?.prompt === false),
+    flag("--allow-read=", options?.allowRead),
+    flag("--deny-read=", options?.denyRead),
+    flag("--allow-write=", options?.allowWrite),
+    flag("--deny-write=", options?.denyWrite),
+    flag("--allow-import=", options?.allowImport),
+    flag("--deny-import=", options?.denyImport),
+    flag("--allow-net=", options?.allowNet),
+    flag("--deny-net=", options?.denyNet),
+    flag("--allow-env=", options?.allowEnv),
+    flag("--deny-env=", options?.denyEnv),
+    flag("--allow-sys=", options?.allowSys),
+    flag("--deny-sys=", options?.denySys),
+    flag("--allow-run=", options?.allowRun),
+    flag("--deny-run=", options?.denyRun),
+    flag("--allow-ffi=", options?.allowFfi),
+    flag("--deny-ffi=", options?.denyFfi),
+  ];
 }
 
 function flag<T>(
   flag: string,
-  value?: boolean | T | T[],
-): string | undefined {
+  value?: boolean | NonNullable<T> | NonNullable<T>[],
+): string | string[] | undefined {
+  const equalSign = flag.endsWith("=");
+  if (equalSign) flag = flag.slice(0, -1);
   if (!value) return undefined;
-  if (value === true) return `--${flag}`;
-  if (Array.isArray(value)) return `--${flag}=${value.join(",")}`;
-  return `--${flag}=${value}`;
+  if (value === true) return flag;
+  if (equalSign) {
+    if (Array.isArray(value)) return `${flag}=${value.join(",")}`;
+    return `${flag}=${value}`;
+  } else {
+    if (Array.isArray(value)) {
+      return value.map((x) => [flag, x.toString()]).flat();
+    }
+    return [flag, value.toString()];
+  }
 }
 
 async function run(

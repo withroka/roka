@@ -97,7 +97,7 @@ export async function compile(
     target,
     async (target) => {
       const output = join(directory, target, pkg.name);
-      await deno().compile([join(pkg.directory, main)], {
+      await deno().compile(join(pkg.directory, main), {
         permissionSet: true,
         prompt: false,
         target,

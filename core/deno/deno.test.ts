@@ -20,15 +20,7 @@ Deno.test("deno() passes correct file watching arguments", async () => {
       ["lint", "input.ts"],
       ["lint", "input.ts"],
       ["lint", "--watch", "input.ts"],
-      [
-        "lint",
-        "--watch",
-        "--watch-exclude",
-        "exclude1",
-        "--watch-exclude",
-        "exclude2",
-        "input.ts",
-      ],
+      ["lint", "--watch", "--watch-exclude=exclude1,exclude2", "input.ts"],
       ["lint", "--watch", "--no-clear-screen", "input.ts"],
     ],
   );
@@ -37,10 +29,10 @@ Deno.test("deno() passes correct file watching arguments", async () => {
 Deno.test("deno() passes correct type checking arguments", async () => {
   // @todo use the run command
   await using command = fakeCommand();
-  await deno().compile(["input.ts"]);
-  await deno().compile(["input.ts"], { check: true });
-  await deno().compile(["input.ts"], { check: "all" });
-  await deno().compile(["input.ts"], { check: false });
+  await deno().compile("input.ts");
+  await deno().compile("input.ts", { check: true });
+  await deno().compile("input.ts", { check: "all" });
+  await deno().compile("input.ts", { check: false });
   assertEquals(
     command.runs.map((x) => x?.options?.args),
     [
@@ -55,43 +47,43 @@ Deno.test("deno() passes correct type checking arguments", async () => {
 Deno.test("deno() passes correct permission arguments", async () => {
   // @todo use the run command
   await using command = fakeCommand();
-  await deno().compile(["input.ts"]);
-  await deno().compile(["input.ts"], { allowAll: true });
-  await deno().compile(["input.ts"], { permissionSet: true });
-  await deno().compile(["input.ts"], { permissionSet: "test" });
-  await deno().compile(["input.ts"], { prompt: false });
-  await deno().compile(["input.ts"], { allowRead: true });
-  await deno().compile(["input.ts"], { allowRead: ["path1", "path2"] });
-  await deno().compile(["input.ts"], { denyRead: true });
-  await deno().compile(["input.ts"], { denyRead: ["path1", "path2"] });
-  await deno().compile(["input.ts"], { allowWrite: true });
-  await deno().compile(["input.ts"], { allowWrite: ["path1", "path2"] });
-  await deno().compile(["input.ts"], { denyWrite: true });
-  await deno().compile(["input.ts"], { denyWrite: ["path1", "path2"] });
-  await deno().compile(["input.ts"], { allowImport: true });
-  await deno().compile(["input.ts"], { allowImport: ["host1", "host2:8080"] });
-  await deno().compile(["input.ts"], { denyImport: true });
-  await deno().compile(["input.ts"], { denyImport: ["host1", "host2:8080"] });
-  await deno().compile(["input.ts"], { allowNet: true });
-  await deno().compile(["input.ts"], { allowNet: ["host1", "host2:8080"] });
-  await deno().compile(["input.ts"], { denyNet: true });
-  await deno().compile(["input.ts"], { denyNet: ["host1", "host2:8080"] });
-  await deno().compile(["input.ts"], { allowEnv: true });
-  await deno().compile(["input.ts"], { allowEnv: ["VAR1", "VAR2"] });
-  await deno().compile(["input.ts"], { denyEnv: true });
-  await deno().compile(["input.ts"], { denyEnv: ["VAR1", "VAR2"] });
-  await deno().compile(["input.ts"], { allowSys: true });
-  await deno().compile(["input.ts"], { allowSys: ["uid", "gid"] });
-  await deno().compile(["input.ts"], { denySys: true });
-  await deno().compile(["input.ts"], { denySys: ["uid", "gid"] });
-  await deno().compile(["input.ts"], { allowRun: true });
-  await deno().compile(["input.ts"], { allowRun: ["cmd1", "cmd2"] });
-  await deno().compile(["input.ts"], { denyRun: true });
-  await deno().compile(["input.ts"], { denyRun: ["cmd1", "cmd2"] });
-  await deno().compile(["input.ts"], { allowFfi: true });
-  await deno().compile(["input.ts"], { allowFfi: ["path1", "path2"] });
-  await deno().compile(["input.ts"], { denyFfi: true });
-  await deno().compile(["input.ts"], { denyFfi: ["path1", "path2"] });
+  await deno().compile("input.ts");
+  await deno().compile("input.ts", { allowAll: true });
+  await deno().compile("input.ts", { permissionSet: true });
+  await deno().compile("input.ts", { permissionSet: "test" });
+  await deno().compile("input.ts", { prompt: false });
+  await deno().compile("input.ts", { allowRead: true });
+  await deno().compile("input.ts", { allowRead: ["path1", "path2"] });
+  await deno().compile("input.ts", { denyRead: true });
+  await deno().compile("input.ts", { denyRead: ["path1", "path2"] });
+  await deno().compile("input.ts", { allowWrite: true });
+  await deno().compile("input.ts", { allowWrite: ["path1", "path2"] });
+  await deno().compile("input.ts", { denyWrite: true });
+  await deno().compile("input.ts", { denyWrite: ["path1", "path2"] });
+  await deno().compile("input.ts", { allowImport: true });
+  await deno().compile("input.ts", { allowImport: ["host1", "host2:8080"] });
+  await deno().compile("input.ts", { denyImport: true });
+  await deno().compile("input.ts", { denyImport: ["host1", "host2:8080"] });
+  await deno().compile("input.ts", { allowNet: true });
+  await deno().compile("input.ts", { allowNet: ["host1", "host2:8080"] });
+  await deno().compile("input.ts", { denyNet: true });
+  await deno().compile("input.ts", { denyNet: ["host1", "host2:8080"] });
+  await deno().compile("input.ts", { allowEnv: true });
+  await deno().compile("input.ts", { allowEnv: ["VAR1", "VAR2"] });
+  await deno().compile("input.ts", { denyEnv: true });
+  await deno().compile("input.ts", { denyEnv: ["VAR1", "VAR2"] });
+  await deno().compile("input.ts", { allowSys: true });
+  await deno().compile("input.ts", { allowSys: ["uid", "gid"] });
+  await deno().compile("input.ts", { denySys: true });
+  await deno().compile("input.ts", { denySys: ["uid", "gid"] });
+  await deno().compile("input.ts", { allowRun: true });
+  await deno().compile("input.ts", { allowRun: ["cmd1", "cmd2"] });
+  await deno().compile("input.ts", { denyRun: true });
+  await deno().compile("input.ts", { denyRun: ["cmd1", "cmd2"] });
+  await deno().compile("input.ts", { allowFfi: true });
+  await deno().compile("input.ts", { allowFfi: ["path1", "path2"] });
+  await deno().compile("input.ts", { denyFfi: true });
+  await deno().compile("input.ts", { denyFfi: ["path1", "path2"] });
   assertEquals(
     command.runs.map((x) => x?.options?.args),
     [
@@ -138,7 +130,8 @@ Deno.test("deno() passes correct permission arguments", async () => {
 
 Deno.test("deno().compile() passes correct arguments", async () => {
   await using command = fakeCommand();
-  await deno().compile(["input1.ts", "input2.ts"], {
+  await deno().compile("input.ts", {
+    scriptArgs: ["--arg1", "--arg2=value2"],
     include: ["include1", "include2"],
     exclude: ["exclude1", "exclude2"],
     icon: "icon.ico",
@@ -168,8 +161,9 @@ Deno.test("deno().compile() passes correct arguments", async () => {
           "output",
           "--target",
           "x86_64-unknown-linux-gnu",
-          "input1.ts",
-          "input2.ts",
+          "input.ts",
+          "--arg1",
+          "--arg2=value2",
         ],
       },
       stdin: null,
@@ -201,10 +195,7 @@ Deno.test("deno().fmt() passes correct arguments", async () => {
           "--check",
           "--ext",
           ".ts",
-          "--ignore",
-          "ignore1",
-          "--ignore",
-          "ignore2",
+          "--ignore=ignore1,ignore2",
           "--indent-width",
           "4",
           "--line-width",
@@ -244,23 +235,11 @@ Deno.test("deno().lint() passes correct arguments", async () => {
           "lint",
           "--compact",
           "--fix",
-          "--ignore",
-          "ignore1",
-          "--ignore",
-          "ignore2",
+          "--ignore=ignore1,ignore2",
           "--json",
-          "--rules-exclude",
-          "rulesExclude1",
-          "--rules-exclude",
-          "rulesExclude2",
-          "--rules-include",
-          "rulesInclude1",
-          "--rules-include",
-          "rulesInclude2",
-          "--rules-tags",
-          "rulesTags1",
-          "--rules-tags",
-          "rulesTags2",
+          "--rules-exclude=rulesExclude1,rulesExclude2",
+          "--rules-include=rulesInclude1,rulesInclude2",
+          "--rules-tags=rulesTags1,rulesTags2",
           "input1.ts",
           "input2.ts",
         ],
