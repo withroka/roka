@@ -17,7 +17,7 @@ async function assertDeno(
   assertEquals(omit(run.options?.env ?? {}, ["NO_COLOR"]), expected.env ?? {});
 }
 
-Deno.test("deno() passes correct file watching arguments", async () => {
+Deno.test("deno() passes correct file watching options", async () => {
   // @todo use the run command
   await assertDeno(() =>
     deno().lint(["file"], {
@@ -44,7 +44,7 @@ Deno.test("deno() passes correct file watching arguments", async () => {
   });
 });
 
-Deno.test("deno() passes correct type checking arguments", async () => {
+Deno.test("deno() passes correct type checking options", async () => {
   // @todo use the run command
   await assertDeno(() =>
     deno().compile("script", {
@@ -78,7 +78,7 @@ Deno.test("deno() passes correct type checking arguments", async () => {
   });
 });
 
-Deno.test("deno() passes correct permission arguments", async () => {
+Deno.test("deno() passes correct permission options", async () => {
   // @todo use the run command
   await assertDeno(() =>
     deno().compile("script", {
@@ -216,10 +216,6 @@ Deno.test("deno() passes correct permission arguments", async () => {
       "script",
     ],
   });
-});
-
-Deno.test("deno() passes correct permission environment variables", async () => {
-  // @todo use the run command
   await assertDeno(() =>
     deno().compile("script", {
       tracePermissions: true,
@@ -236,7 +232,92 @@ Deno.test("deno() passes correct permission environment variables", async () => 
   });
 });
 
-Deno.test("deno().compile() passes correct arguments", async () => {
+Deno.test("deno() passes correct debugging options", async () => {
+  // @todo use the run command
+  await assertDeno(() =>
+    deno().test(["file"], {
+      inspect: true,
+      inspectBrk: true,
+      inspectWait: true,
+    }), {
+    args: [
+      "test",
+      "--inspect",
+      "--inspect-brk",
+      "--inspect-wait",
+      "file",
+    ],
+  });
+  await assertDeno(() =>
+    deno().test(["file"], {
+      inspect: "host:9229",
+      inspectBrk: "host:9228",
+      inspectWait: "host:9227",
+    }), {
+    args: [
+      "test",
+      "--inspect=host:9229",
+      "--inspect-brk=host:9228",
+      "--inspect-wait=host:9227",
+      "file",
+    ],
+  });
+});
+
+Deno.test("deno() passes correct dependency management options", async () => {
+  // @todo use the run command
+  await assertDeno(() =>
+    deno().test(["file"], {
+      cachedOnly: true,
+      frozen: true,
+      lock: false,
+      npm: false,
+      remote: false,
+      reload: true,
+      vendor: true,
+    }), {
+    args: [
+      "test",
+      "--cached-only",
+      "--frozen",
+      "--no-lock",
+      "--no-npm",
+      "--no-remote",
+      "--reload",
+      "--vendor",
+      "file",
+    ],
+  });
+  await assertDeno(() =>
+    deno().test(["file"], {
+      importMap: "deno.json",
+      lock: "deno.lock",
+      nodeModulesDir: "manual",
+      reload: ["jsr:@roka/deno", "npm:"],
+    }), {
+    args: [
+      "test",
+      "--import-map",
+      "deno.json",
+      "--lock",
+      "deno.lock",
+      "--node-modules-dir=manual",
+      "--reload=jsr:@roka/deno,npm:",
+      "file",
+    ],
+  });
+  await assertDeno(() =>
+    deno().test(["file"], {
+      lock: true,
+    }), {
+    args: [
+      "test",
+      "file",
+    ],
+  });
+});
+
+Deno.test("deno().compile() passes correct options", async () => {
   await assertDeno(() => deno().compile("script"), {
     args: ["compile", "script"],
   });
@@ -285,7 +366,7 @@ Deno.test("deno().compile() passes correct arguments", async () => {
   });
 });
 
-Deno.test("deno().fmt() passes correct arguments", async () => {
+Deno.test("deno().fmt() passes correct options", async () => {
   await assertDeno(() => deno().fmt(["file"]), {
     args: [
       "fmt",
@@ -301,6 +382,7 @@ Deno.test("deno().fmt() passes correct arguments", async () => {
       lineWidth: 120,
       semicolons: false,
       proseWrap: "preserve",
+      singleQuote: true,
       useTabs: true,
       unstableComponent: true,
       unstableSql: true,
@@ -318,6 +400,7 @@ Deno.test("deno().fmt() passes correct arguments", async () => {
       "--no-semicolons",
       "--prose-wrap",
       "preserve",
+      "--single-quote",
       "--use-tabs",
       "--unstable-component",
       "--unstable-sql",
@@ -326,7 +409,7 @@ Deno.test("deno().fmt() passes correct arguments", async () => {
   });
 });
 
-Deno.test("deno().lint() passes correct arguments", async () => {
+Deno.test("deno().lint() passes correct options", async () => {
   await assertDeno(() => deno().lint(["file"]), {
     args: [
       "lint",
@@ -352,6 +435,75 @@ Deno.test("deno().lint() passes correct arguments", async () => {
       "--rules-exclude=rulesExclude1,rulesExclude2",
       "--rules-include=rulesInclude1,rulesInclude2",
       "--rules-tags=rulesTags1,rulesTags2",
+      "file",
+    ],
+  });
+});
+
+Deno.test("deno().test() passes correct options", async () => {
+  await assertDeno(() => deno().test(["file"]), {
+    args: ["test", "file"],
+  });
+  await assertDeno(() =>
+    deno().test(["file"], {
+      scriptArgs: ["--arg1", "--arg2=value2"],
+    }), {
+    args: [
+      "test",
+      "file",
+      "--arg1",
+      "--arg2=value2",
+    ],
+  });
+  await assertDeno(() =>
+    deno().test(["file"], {
+      scriptArgs: ["--arg1", "--arg2=value2"],
+      clean: true,
+      coverage: true,
+      coverageRawDataOnly: true,
+      doc: true,
+      failFast: true,
+      run: false,
+      permitNoFiles: true,
+      shuffle: true,
+      traceLeaks: true,
+    }), {
+    args: [
+      "test",
+      "--clean",
+      "--coverage",
+      "--coverage-raw-data-only",
+      "--doc",
+      "--fail-fast",
+      "--no-run",
+      "--permit-no-files",
+      "--shuffle",
+      "--trace-leaks",
+      "file",
+      "--arg1",
+      "--arg2=value2",
+    ],
+  });
+  await assertDeno(() =>
+    deno().test(["file"], {
+      coverage: "cov/",
+      failFast: 10,
+      filter: "test()",
+      junitPath: "junit.xml",
+      reporter: "junit",
+      shuffle: 12345,
+    }), {
+    args: [
+      "test",
+      "--coverage=cov/",
+      "--fail-fast=10",
+      "--filter",
+      "test()",
+      "--junit-path",
+      "junit.xml",
+      "--reporter",
+      "junit",
+      "--shuffle=12345",
       "file",
     ],
   });
