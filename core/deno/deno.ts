@@ -13,6 +13,8 @@
  * @module deno
  */
 
+import { omit } from "@std/collections";
+
 /**
  * An error thrown by the `deno` package.
  *
@@ -62,6 +64,55 @@ export interface DenoOptions {
    * @default {"."}
    */
   cwd?: string;
+  /**
+   * Configure different aspects of deno including TypeScript, linting, and
+   * code formatting.
+   *
+   * Typically the configuration file will be called `deno.json` or `deno.jsonc`
+   * and automatically detected; in that case this flag is not necessary.
+   *
+   * If set to `false`, automatic loading of the configuration file will be
+   * disabled.
+   *
+   * @see {@link https://docs.deno.com/go/config deno.json and package.json}
+   *
+   * @default {true}
+   */
+  config?: boolean | string;
+  /**
+   * Set content type of the supplied files.
+   */
+  ext?:
+    | "ts"
+    | "tsx"
+    | "js"
+    | "jsx"
+    | "mts"
+    | "mjs"
+    | "cts"
+    | "cjs"
+    | "md"
+    | "json"
+    | "jsonc"
+    | "css"
+    | "scss"
+    | "sass"
+    | "less"
+    | "html"
+    | "svelte"
+    | "vue"
+    | "astro"
+    | "yml"
+    | "yaml"
+    | "ipynb"
+    | "sql"
+    | "vto"
+    | "njk";
+  /**
+   * Suppress diagnostic output.
+   * @default {false}
+   */
+  quiet?: boolean;
 }
 
 /**
@@ -70,7 +121,7 @@ export interface DenoOptions {
  * @see {@link https://docs.deno.com/go/compile `deno compile`, standalone executables}
  */
 export interface CompileOptions
-  extends ScriptOptions, TypeCheckingOptions, PermissionOptions {
+  extends DenoOptions, TypeCheckingOptions, PermissionOptions, ScriptOptions {
   /**
    * Excludes files/directories in the compiled executable.
    */
@@ -108,11 +159,10 @@ export interface CompileOptions
  *
  * @see {@link https://docs.deno.com/runtime/reference/cli/fmt/ `deno fmt`, code formatting}
  */
-export interface FormatOptions extends FileWatchingOptions {
+export interface FormatOptions
+  extends DenoOptions, FileOptions, FileWatchingOptions {
   /** Check if the source files are formatted. */
   check?: boolean;
-  /** Set content type of the supplied files. */
-  ext?: string;
   /** Ignore formatting particular source files. */
   ignore?: string[];
   /**
@@ -153,7 +203,12 @@ export interface FormatOptions extends FileWatchingOptions {
  *
  * @see {@link https://docs.deno.com/runtime/reference/cli/lint/ `deno lint`, linter}
  */
-export interface LintOptions extends FileWatchingOptions {
+export interface LintOptions
+  extends
+    DenoOptions,
+    FileOptions,
+    FileWatchingOptions,
+    Pick<PermissionOptions, "allowImport" | "denyImport"> {
   /**
    * Output lint result in compact format.
    * @default {false}
@@ -183,12 +238,14 @@ export interface LintOptions extends FileWatchingOptions {
  */
 export interface TestOptions
   extends
-    ScriptOptions,
+    DenoOptions,
+    FileOptions,
     TypeCheckingOptions,
     FileWatchingOptions,
     DebuggingOptions,
     DependendencyManagementOptions,
-    PermissionOptions {
+    PermissionOptions,
+    ScriptOptions {
   /**
    * Empty the temporary coverage profile data directory before running tests.
    *
@@ -235,6 +292,15 @@ export interface TestOptions
    */
   junitPath?: string;
   /**
+   * Run test modules in parallel.
+   *
+   * If set to `true`, parallelism defaults to the number of available CPUs or
+   * the value of the `DENO_JOBS` environment variable.
+   *
+   * @default {false}
+   */
+  parallel?: boolean | number;
+  /**
    * Run tests.
    *
    * If set to `false`, only caches the test modules, but doesn't run tests.
@@ -242,11 +308,6 @@ export interface TestOptions
    * @default {true}
    */
   run?: boolean;
-  /**
-   * Don't return an error code if no files were found
-   * @default {false}
-   */
-  permitNoFiles?: boolean;
   /**
    * Select reporter to use.
    * @default {"pretty"}
@@ -262,6 +323,11 @@ export interface TestOptions
    */
   shuffle?: boolean | number;
   /**
+   * Hide stack traces for errors in failure test results.
+   * @default {false}
+   */
+  hideStacktraces?: boolean;
+  /**
    * Enable tracing of leaks.
    *
    * Useful when debugging leaking ops in test, but impacts test execution time.
@@ -272,12 +338,15 @@ export interface TestOptions
 }
 
 /**
- * Options for commands that accept script arguments, such as the
- * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
+ * Options for commands that run on a list of files, such as the
+ * {@linkcode Deno.lint} and {@linkcode Deno.format} functions.
  */
-export interface ScriptOptions {
-  /** Arguments to pass to the script. */
-  scriptArgs?: string[];
+export interface FileOptions {
+  /**
+   * Don't return an error code if no files were found
+   * @default {false}
+   */
+  permitNoFiles?: boolean;
 }
 
 /**
@@ -585,17 +654,30 @@ export interface PermissionOptions {
 }
 
 /**
+ * Options for commands that accept script arguments, such as the
+ * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
+ */
+export interface ScriptOptions {
+  /** Arguments to pass to the script. */
+  scriptArgs?: string[];
+}
+
+/**
  * Creates a new {@linkcode Deno} instance for a directory for running
  * deno commands.
  */
 export function deno(options?: DenoOptions): Deno {
-  const denoOptions = options ?? {};
+  function merge<T extends DenoOptions>(other?: T): DenoOptions {
+    return { ...omit(options ?? {}, ["cwd"]), ...other ?? {} };
+  }
   return {
     async compile(script, options) {
+      options = merge(options);
       await run(
-        denoOptions,
+        options,
         args([
           "compile",
+          ...commonArgs(options),
           flag("--exclude", options?.exclude),
           flag("--include", options?.include),
           flag("--icon", options?.icon),
@@ -611,12 +693,14 @@ export function deno(options?: DenoOptions): Deno {
       );
     },
     async fmt(files, options) {
+      options = merge(options);
       await run(
-        denoOptions,
+        options,
         args([
           "fmt",
+          ...commonArgs(options),
+          ...fileArgs(options),
           flag("--check", options?.check),
-          flag("--ext", options?.ext),
           flag("--ignore=", options?.ignore),
           flag("--indent-width", options?.indentWidth),
           flag("--line-width", options?.lineWidth),
@@ -632,10 +716,13 @@ export function deno(options?: DenoOptions): Deno {
       );
     },
     async lint(files, options) {
+      options = merge(options);
       await run(
-        denoOptions,
+        options,
         args([
           "lint",
+          ...commonArgs(options),
+          ...fileArgs(options),
           flag("--compact", options?.compact),
           flag("--fix", options?.fix),
           flag("--ignore=", options?.ignore),
@@ -644,15 +731,19 @@ export function deno(options?: DenoOptions): Deno {
           flag("--rules-include=", options?.rulesInclude),
           flag("--rules-tags=", options?.rulesTags),
           ...fileWatchingArgs(options),
+          ...permissionArgs(options),
           ...files,
         ]),
       );
     },
     async test(files, options) {
+      options = merge(options);
       await run(
-        denoOptions,
+        options,
         args([
           "test",
+          ...commonArgs(options),
+          ...fileArgs(options),
           flag("--clean", options?.clean),
           flag("--coverage=", options?.coverage),
           flag("--coverage-raw-data-only", options?.coverageRawDataOnly),
@@ -660,10 +751,11 @@ export function deno(options?: DenoOptions): Deno {
           flag("--fail-fast=", options?.failFast),
           flag("--filter", options?.filter),
           flag("--junit-path", options?.junitPath),
+          flag("--parallel", !!(options?.parallel ?? false)),
           flag("--no-run", options?.run === false),
-          flag("--permit-no-files", options?.permitNoFiles),
           flag("--reporter", options?.reporter),
           flag("--shuffle=", options?.shuffle),
+          flag("--hide-stacktraces", options?.hideStacktraces),
           flag("--trace-leaks", options?.traceLeaks),
           ...typeCheckingArgs(options),
           ...fileWatchingArgs(options),
@@ -673,9 +765,33 @@ export function deno(options?: DenoOptions): Deno {
           ...files,
           options?.scriptArgs,
         ]),
+        {
+          ...typeof options?.parallel === "number" &&
+            { DENO_JOBS: options.parallel.toString() },
+          ...permissionEnv(options),
+        },
       );
     },
   };
+}
+
+function commonArgs(
+  options?: DenoOptions,
+): (ReturnType<typeof flag>)[] {
+  return [
+    flag("--config", options?.config),
+    flag("--no-config", options?.config === false),
+    flag("--ext=", options?.ext),
+    flag("--quiet", options?.quiet),
+  ];
+}
+
+function fileArgs(
+  options?: FileOptions,
+): (ReturnType<typeof flag>)[] {
+  return [
+    flag("--permit-no-files", options?.permitNoFiles),
+  ];
 }
 
 function fileWatchingArgs(

@@ -17,6 +17,48 @@ async function assertDeno(
   assertEquals(omit(run.options?.env ?? {}, ["NO_COLOR"]), expected.env ?? {});
 }
 
+Deno.test("deno() passes correct common options", async () => {
+  // @todo use the run command
+  await assertDeno(() =>
+    deno().lint(["file"], {
+      config: false,
+      quiet: true,
+    }), {
+    args: [
+      "lint",
+      "--no-config",
+      "--quiet",
+      "file",
+    ],
+  });
+  await assertDeno(() =>
+    deno().lint(["file"], {
+      config: "deno.json",
+      ext: "ts",
+    }), {
+    args: [
+      "lint",
+      "--config",
+      "deno.json",
+      "--ext=ts",
+      "file",
+    ],
+  });
+});
+
+Deno.test("deno() passes correct file options", async () => {
+  await assertDeno(() =>
+    deno().test(["file"], {
+      permitNoFiles: true,
+    }), {
+    args: [
+      "test",
+      "--permit-no-files",
+      "file",
+    ],
+  });
+});
+
 Deno.test("deno() passes correct file watching options", async () => {
   // @todo use the run command
   await assertDeno(() =>
@@ -376,7 +418,6 @@ Deno.test("deno().fmt() passes correct options", async () => {
   await assertDeno(() =>
     deno().fmt(["file"], {
       check: true,
-      ext: ".ts",
       ignore: ["ignore1", "ignore2"],
       indentWidth: 4,
       lineWidth: 120,
@@ -390,8 +431,6 @@ Deno.test("deno().fmt() passes correct options", async () => {
     args: [
       "fmt",
       "--check",
-      "--ext",
-      ".ts",
       "--ignore=ignore1,ignore2",
       "--indent-width",
       "4",
@@ -463,9 +502,10 @@ Deno.test("deno().test() passes correct options", async () => {
       coverageRawDataOnly: true,
       doc: true,
       failFast: true,
+      parallel: true,
       run: false,
-      permitNoFiles: true,
       shuffle: true,
+      hideStacktraces: true,
       traceLeaks: true,
     }), {
     args: [
@@ -475,9 +515,10 @@ Deno.test("deno().test() passes correct options", async () => {
       "--coverage-raw-data-only",
       "--doc",
       "--fail-fast",
+      "--parallel",
       "--no-run",
-      "--permit-no-files",
       "--shuffle",
+      "--hide-stacktraces",
       "--trace-leaks",
       "file",
       "--arg1",
@@ -490,6 +531,7 @@ Deno.test("deno().test() passes correct options", async () => {
       failFast: 10,
       filter: "test()",
       junitPath: "junit.xml",
+      parallel: 4,
       reporter: "junit",
       shuffle: 12345,
     }), {
@@ -501,10 +543,14 @@ Deno.test("deno().test() passes correct options", async () => {
       "test()",
       "--junit-path",
       "junit.xml",
+      "--parallel",
       "--reporter",
       "junit",
       "--shuffle=12345",
       "file",
     ],
+    env: {
+      DENO_JOBS: "4",
+    },
   });
 });
