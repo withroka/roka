@@ -1,6 +1,6 @@
 /**
  * A library for working with asynchronous operations, complementary to the
- * standard {@link https://jsr.io/@std/async | **@std/async**} library.
+ * standard {@link https://github.com/denoland/std/tree/main/async | **@std/async**} library.
  *
  * ```ts
  * import { pool } from "@roka/async/pool";

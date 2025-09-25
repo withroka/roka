@@ -37,7 +37,7 @@
  *
  * This module is a thin wrapper with a more convenient API around the
  * `pooledMap` function from the standard
- * {@link https://jsr.io/@std/async | **@std/async**} library.
+ * {@link https://github.com/denoland/std/tree/main/async | **@std/async**} library.
  *
  * @module pool
  */

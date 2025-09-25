@@ -3,7 +3,7 @@
  *
  * This package provides utilities for testing code to complement the "mock"
  * and "snapshot" systems of the standard
- * {@link https://jsr.io/@std/testing | **@std/testing**} library. The
+ * {@link https://github.com/denoland/std/tree/main/testing | **@std/testing**} library. The
  * functionality provided here is split into the groups of _fake_ and _mock_
  * objects.
  *
