@@ -30,7 +30,7 @@ export class DenoError extends Error {
 export interface Deno {
   compile(scripts: string[], options?: CompileOptions): Promise<void>;
   fmt(): Promise<void>;
-  lint(): Promise<void>;
+  lint(files: string[], options?: LintOptions): Promise<void>;
   test(): Promise<void>;
 }
 
@@ -42,8 +42,8 @@ export type TargetArchitecture =
   | "aarch64-apple-darwin";
 
 /**
- * Options common to operations that can check types for TypeScript, such as
- * the {@linkcode Deno.check} and {@linkcode Deno.test} functions.
+ * Options for commands accepting type checking arguments, such as the
+ * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
  *
  * @see {@link https://docs.deno.com/runtime/fundamentals/typescript/ TypeScript support}
  */
@@ -60,8 +60,8 @@ export interface TypeCheckingOptions {
 }
 
 /**
- * Options common to operations that need a permission specification, such as
- * the {@linkcode Deno.run} and {@linkcode Deno.test} functions.
+ * Options for commands accepting type permission arguments, such as the
+ * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
  *
  * @see {@link https://docs.deno.com/go/permissions Security and permissions}
  */
@@ -81,6 +81,30 @@ export interface PermissionOptions {
    * @default {false}
    */
   noPrompt?: boolean;
+}
+
+/**
+ * Options for commands accepting file watching arguments, such as the
+ * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
+ *
+ * @see {@link https://docs.deno.com/runtime/getting_started/command_line_interface/#watch-mode Watch mode}
+ */
+export interface FileWatchingOptions {
+  /**
+   * Watch for file changes and restart process automatically.
+   *
+   * Only local files from entry point module graph are watched.
+   *
+   * @default {false}
+   */
+  watch?: boolean;
+  /** Exclude provided files/patterns from watch mode. */
+  watchExclude?: string[];
+  /**
+   * Do not clear terminal screen when under watch mode.
+   * @default {false}
+   */
+  noClearScreen?: boolean;
 }
 
 /**
@@ -112,6 +136,34 @@ export interface CompileOptions extends TypeCheckingOptions, PermissionOptions {
    * @default {Deno.build.target}
    */
   target?: TargetArchitecture;
+}
+
+/**
+ * Options for the {@linkcode Deno.lint} function.
+ *
+ * @see {@link https://docs.deno.com/runtime/reference/cli/lint/ `deno lint`, linter}
+ */
+export interface LintOptions extends FileWatchingOptions {
+  /**
+   * Output lint result in compact format.
+   * @default {false}
+   */
+  compact?: boolean;
+  /**
+   * Fix any linting errors for rules that support it.
+   * @default {false}
+   */
+  fix?: boolean;
+  /** Ignore linting particular source files. */
+  ignore?: string[];
+  /** Output lint result in JSON format. */
+  json?: boolean;
+  /** Exclude lint rules. */
+  rulesExclude?: string[];
+  /** Include lint rules. */
+  rulesInclude?: string[];
+  /** Use set of rules with a tag. */
+  rulesTags?: string[];
 }
 
 /** Options for the {@linkcode deno} function. */
@@ -151,8 +203,20 @@ export function deno(options?: DenoOptions): Deno {
     async fmt() {
       await run(denoOptions, "fmt", "--quiet");
     },
-    async lint() {
-      await run(denoOptions, "lint", "--quiet");
+    async lint(files, options) {
+      await run(
+        denoOptions,
+        "lint",
+        ...fileWatchingArgs(options),
+        options?.compact && ["--compact"],
+        options?.fix && ["--fix"],
+        options?.ignore?.map((x) => ["--ignore", x]).flat(),
+        options?.json && ["--json"],
+        options?.rulesExclude?.map((x) => ["--rules-exclude", x]).flat(),
+        options?.rulesInclude?.map((x) => ["--rules-include", x]).flat(),
+        options?.rulesTags?.map((x) => ["--rules-tags", x]).flat(),
+        ...files,
+      );
     },
     async test() {
       await run(
@@ -165,6 +229,23 @@ export function deno(options?: DenoOptions): Deno {
       );
     },
   };
+}
+
+function fileWatchingArgs(options?: FileWatchingOptions): string[] {
+  if (!options?.watch && options?.watchExclude) {
+    throw new DenoError("`watchExclude` requires `watch` to be enabled");
+  }
+  if (!options?.watch && options?.noClearScreen) {
+    throw new DenoError("`noClearScreen` requires `watch` to be enabled");
+  }
+
+  return [
+    options?.watch ? "--watch" : undefined,
+    options?.watchExclude
+      ? options.watchExclude.map((x) => ["--watch-exclude", x]).flat()
+      : undefined,
+    options?.noClearScreen ? "--no-clear-screen" : undefined,
+  ].filter((x) => x !== undefined).flat();
 }
 
 function typeCheckingArgs(options?: TypeCheckingOptions): string[] {
