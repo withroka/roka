@@ -1,7 +1,7 @@
 import { assertArrayObjectMatch } from "@roka/assert";
-import { deno, DenoError } from "@roka/deno";
+import { deno } from "@roka/deno";
 import { fakeCommand } from "@roka/testing/fake";
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals } from "@std/assert";
 
 Deno.test("deno() passes correct file watching arguments", async () => {
   // @todo use the run command
@@ -13,7 +13,7 @@ Deno.test("deno() passes correct file watching arguments", async () => {
     watch: true,
     watchExclude: ["exclude1", "exclude2"],
   });
-  await deno().lint(["input.ts"], { watch: true, noClearScreen: true });
+  await deno().lint(["input.ts"], { watch: true, clearScreen: false });
   assertEquals(
     command.runs.map((x) => x?.options?.args),
     [
@@ -31,14 +31,6 @@ Deno.test("deno() passes correct file watching arguments", async () => {
       ],
       ["lint", "--watch", "--no-clear-screen", "input.ts"],
     ],
-  );
-  assertRejects(
-    () => deno().lint(["input"], { watchExclude: ["exclude"] }),
-    DenoError,
-  );
-  assertRejects(
-    () => deno().lint(["input"], { noClearScreen: true }),
-    DenoError,
   );
 });
 
@@ -66,7 +58,7 @@ Deno.test("deno().compile() passes correct arguments", async () => {
     include: ["include1", "include2"],
     exclude: ["exclude1", "exclude2"],
     icon: "icon.ico",
-    noTerminal: true,
+    terminal: false,
     output: "output",
     target: "x86_64-unknown-linux-gnu",
   });
@@ -92,6 +84,53 @@ Deno.test("deno().compile() passes correct arguments", async () => {
           "output",
           "--target",
           "x86_64-unknown-linux-gnu",
+          "input1.ts",
+          "input2.ts",
+        ],
+      },
+      stdin: null,
+    }],
+  );
+});
+
+Deno.test("deno().fmt() passes correct arguments", async () => {
+  await using command = fakeCommand();
+  await deno().fmt(["input1.ts", "input2.ts"], {
+    check: true,
+    ext: ".ts",
+    ignore: ["ignore1", "ignore2"],
+    indentWidth: 4,
+    lineWidth: 120,
+    semicolons: false,
+    proseWrap: "preserve",
+    useTabs: true,
+    unstableComponent: true,
+    unstableSql: true,
+  });
+  assertArrayObjectMatch(
+    command.runs,
+    [{
+      command: "deno",
+      options: {
+        args: [
+          "fmt",
+          "--check",
+          "--ext",
+          ".ts",
+          "--ignore",
+          "ignore1",
+          "--ignore",
+          "ignore2",
+          "--indent-width",
+          "4",
+          "--line-width",
+          "120",
+          "--no-semicolons",
+          "--prose-wrap",
+          "preserve",
+          "--use-tabs",
+          "--unstable-component",
+          "--unstable-sql",
           "input1.ts",
           "input2.ts",
         ],

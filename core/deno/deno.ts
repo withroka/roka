@@ -28,8 +28,23 @@ export class DenoError extends Error {
 
 /** The deno command interface returned by the {@linkcode deno} function. */
 export interface Deno {
+  /**
+   * Compiles the given script into a self contained executable.
+   *
+   * @see {@link https://docs.deno.com/go/compile `deno compile`, standalone executables}
+   */
   compile(scripts: string[], options?: CompileOptions): Promise<void>;
-  fmt(): Promise<void>;
+  /**
+   * Auto-format various file types.
+   *
+   * @see {@link https://docs.deno.com/runtime/reference/cli/fmt/ `deno fmt`, code formatting}
+   */
+  fmt(files: string[], options?: FormatOptions): Promise<void>;
+  /**
+   * Lint JavaScript/TypeScript source code.
+   *
+   * @see {@link https://docs.deno.com/runtime/reference/cli/lint/ `deno lint`, linter}
+   */
   lint(files: string[], options?: LintOptions): Promise<void>;
   test(): Promise<void>;
 }
@@ -77,10 +92,10 @@ export interface PermissionOptions {
    */
   permissionSet?: boolean;
   /**
-   * Always throw if required permission wasn't passed.
-   * @default {false}
+   * Prompt, instead of throwing, if required permission wasn't passed.
+   * @default {true}
    */
-  noPrompt?: boolean;
+  prompt?: boolean;
 }
 
 /**
@@ -101,10 +116,10 @@ export interface FileWatchingOptions {
   /** Exclude provided files/patterns from watch mode. */
   watchExclude?: string[];
   /**
-   * Do not clear terminal screen when under watch mode.
-   * @default {false}
+   * Clear terminal screen when under watch mode.
+   * @default {true}
    */
-  noClearScreen?: boolean;
+  clearScreen?: boolean;
 }
 
 /**
@@ -124,8 +139,11 @@ export interface CompileOptions extends TypeCheckingOptions, PermissionOptions {
   include?: string[];
   /** Set the icon of the executable on Windows (.ico). */
   icon?: string;
-  /** Hide terminal on Windows. */
-  noTerminal?: boolean;
+  /**
+   * Show terminal on Windows.
+   * @default {true}
+   */
+  terminal?: boolean;
   /**
    * Output file for the compiled binary.
    * @default {"$PWD/<inferred-name>"}
@@ -136,6 +154,51 @@ export interface CompileOptions extends TypeCheckingOptions, PermissionOptions {
    * @default {Deno.build.target}
    */
   target?: TargetArchitecture;
+}
+
+/**
+ * Options for the {@linkcode Deno.fmt} function.
+ *
+ * @see {@link https://docs.deno.com/runtime/reference/cli/fmt/ `deno fmt`, code formatting}
+ */
+export interface FormatOptions extends FileWatchingOptions {
+  /** Check if the source files are formatted. */
+  check?: boolean;
+  /** Set content type of the supplied files. */
+  ext?: string;
+  /** Ignore formatting particular source files. */
+  ignore?: string[];
+  /**
+   * Define indentation width.
+   * @default {2}
+   */
+  indentWidth?: number;
+  /**
+   * Define maximum line width.
+   * @default {80}
+   */
+  lineWidth?: number;
+  /**
+   * Use semicolons except where necessary.
+   * @default {true}
+   */
+  semicolons?: boolean;
+  /**
+   * Define how prose should be wrapped.
+   * @default {"always"}
+   */
+  proseWrap?: "always" | "never" | "preserve";
+  /**
+   * Use single quotes.
+   * @default {false}
+   */
+  singleQuote?: boolean;
+  /** Use tabs instead of spaces for indentation. */
+  useTabs?: boolean;
+  /** Enable formatting Svelte, Vue, Astro and Angular files. */
+  unstableComponent?: boolean;
+  /** Enable formatting SQL files. */
+  unstableSql?: boolean;
 }
 
 /**
@@ -194,14 +257,32 @@ export function deno(options?: DenoOptions): Deno {
         options?.exclude?.map((x) => ["--exclude", x]).flat(),
         options?.include?.map((x) => ["--include", x]).flat(),
         options?.icon && ["--icon", options.icon],
-        options?.noTerminal && ["--no-terminal"],
+        options?.terminal === false && ["--no-terminal"],
         options?.output && ["--output", options.output],
         options?.target && ["--target", options.target],
         ...scripts,
       );
     },
-    async fmt() {
-      await run(denoOptions, "fmt", "--quiet");
+    async fmt(files, options) {
+      await run(
+        denoOptions,
+        "fmt",
+        ...fileWatchingArgs(options),
+        options?.check && ["--check"],
+        options?.ext && ["--ext", options.ext],
+        options?.ignore?.map((x) => ["--ignore", x]).flat(),
+        options?.indentWidth !== undefined &&
+          ["--indent-width", options.indentWidth.toString()],
+        options?.lineWidth !== undefined &&
+          ["--line-width", options.lineWidth.toString()],
+        options?.semicolons === false && ["--no-semicolons"],
+        options?.proseWrap && ["--prose-wrap", options.proseWrap],
+        options?.singleQuote && ["--single-quote"],
+        options?.useTabs && ["--use-tabs"],
+        options?.unstableComponent && "--unstable-component",
+        options?.unstableSql && "--unstable-sql",
+        ...files,
+      );
     },
     async lint(files, options) {
       await run(
@@ -232,19 +313,12 @@ export function deno(options?: DenoOptions): Deno {
 }
 
 function fileWatchingArgs(options?: FileWatchingOptions): string[] {
-  if (!options?.watch && options?.watchExclude) {
-    throw new DenoError("`watchExclude` requires `watch` to be enabled");
-  }
-  if (!options?.watch && options?.noClearScreen) {
-    throw new DenoError("`noClearScreen` requires `watch` to be enabled");
-  }
-
   return [
     options?.watch ? "--watch" : undefined,
     options?.watchExclude
       ? options.watchExclude.map((x) => ["--watch-exclude", x]).flat()
       : undefined,
-    options?.noClearScreen ? "--no-clear-screen" : undefined,
+    options?.clearScreen === false ? "--no-clear-screen" : undefined,
   ].filter((x) => x !== undefined).flat();
 }
 
@@ -260,7 +334,7 @@ function permissionArgs(options?: PermissionOptions): string[] {
   return [
     options?.allowAll ? "--allow-all" : undefined,
     options?.permissionSet ? "--permission-set" : undefined,
-    options?.noPrompt ? "--no-prompt" : undefined,
+    options?.prompt === false ? "--no-prompt" : undefined,
   ].filter((x) => x !== undefined);
 }
 
