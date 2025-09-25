@@ -5,6 +5,10 @@
  * intended to be used as a building block for higher-level abstractions. It
  * uses the locally installed deno binary.
  *
+ * @todo Add common deno options.
+ * @todo Add dependency management options.
+ * @todo Finish permission options.
+ *
  * @module deno
  */
 
@@ -38,8 +42,26 @@ export type TargetArchitecture =
   | "aarch64-apple-darwin";
 
 /**
+ * Options common to operations that can check types for TypeScript, such as
+ * the {@linkcode Deno.check} and {@linkcode Deno.test} functions.
+ *
+ * @see {@link https://docs.deno.com/runtime/fundamentals/typescript/ TypeScript support}
+ */
+export interface TypeCheckingOptions {
+  /**
+   * Set type-checking behavior.
+   *
+   * Only local module are type-checked by default. If set to `"all"`, remote
+   * modules are also checked.
+   *
+   * @default {true}
+   */
+  check?: boolean | "all";
+}
+
+/**
  * Options common to operations that need a permission specification, such as
- * the {@linkcode Deno.compile} and {@linkcode Deno.test} functions.
+ * the {@linkcode Deno.run} and {@linkcode Deno.test} functions.
  *
  * @see {@link https://docs.deno.com/go/permissions Security and permissions}
  */
@@ -66,9 +88,9 @@ export interface PermissionOptions {
  *
  * @see {@link https://docs.deno.com/go/compile `deno compile`, standalone executables}
  */
-export interface CompileOptions extends PermissionOptions {
+export interface CompileOptions extends TypeCheckingOptions, PermissionOptions {
   /**
-   * Excludes a files/directories in the compiled executable.
+   * Excludes files/directories in the compiled executable.
    */
   exclude?: string[];
   /**
@@ -76,6 +98,10 @@ export interface CompileOptions extends PermissionOptions {
    * executable.
    */
   include?: string[];
+  /** Set the icon of the executable on Windows (.ico). */
+  icon?: string;
+  /** Hide terminal on Windows. */
+  noTerminal?: boolean;
   /**
    * Output file for the compiled binary.
    * @default {"$PWD/<inferred-name>"}
@@ -111,9 +137,12 @@ export function deno(options?: DenoOptions): Deno {
       await run(
         denoOptions,
         "compile",
+        ...typeCheckingArgs(options),
         ...permissionArgs(options),
         options?.exclude?.map((x) => ["--exclude", x]).flat(),
         options?.include?.map((x) => ["--include", x]).flat(),
+        options?.icon && ["--icon", options.icon],
+        options?.noTerminal && ["--no-terminal"],
         options?.output && ["--output", options.output],
         options?.target && ["--target", options.target],
         ...scripts,
@@ -136,6 +165,14 @@ export function deno(options?: DenoOptions): Deno {
       );
     },
   };
+}
+
+function typeCheckingArgs(options?: TypeCheckingOptions): string[] {
+  return [
+    options?.check === true ? "--check" : undefined,
+    options?.check === "all" ? "--check=all" : undefined,
+    options?.check === false ? "--no-check" : undefined,
+  ].filter((x) => x !== undefined);
 }
 
 function permissionArgs(options?: PermissionOptions): string[] {
