@@ -367,10 +367,10 @@ export interface FakeCommandRun {
   command: string | URL;
   /** The options passed to the command. */
   options?: Deno.CommandOptions;
+  /** The standard input passed to the command. */
+  stdin: Uint8Array<ArrayBuffer> | null;
   /** The child process created by the command. */
   process: Deno.ChildProcess;
-  /** The standard input passed to the command. */
-  stdin: Uint8Array<ArrayBuffer>;
 }
 
 /**
@@ -583,6 +583,7 @@ export function fakeCommand(
         ...this.options && { options: this.options },
         ...{ debug: data },
         get stdin() {
+          if (this.options?.stdin !== "piped") return null;
           return Uint8Array.from(data.stdin.flatMap((x) => Array.from(x)));
         },
         process: child,

@@ -235,6 +235,7 @@ Deno.test("fakeCommand() stubs Deno.Command", async () => {
   assertArrayObjectMatch(mock.runs, [{
     command: "echo",
     options: { args: ["Hello, World!"] },
+    stdin: null,
   }]);
 });
 
@@ -249,6 +250,7 @@ Deno.test("fakeCommand() implements spy like interface", async () => {
   assertArrayObjectMatch(command.runs, [{
     command: "echo",
     options: { args: ["Hello, World!"] },
+    stdin: null,
   }]);
   command.restore();
   assertThrows(() => command.restore(), MockError);
@@ -378,6 +380,7 @@ Deno.test("fakeCommand() can keep processes alive", async () => {
       await Promise.resolve();
       assertFalse(statusResolved);
       const status = await statusPromise;
+      assertExists(run.stdin);
       assertEquals(new TextDecoder().decode(run.stdin), "Hello, World!");
       assert(statusResolved);
       assertThrows(() => run.process.kill(), MockError);
@@ -393,7 +396,7 @@ Deno.test("fakeCommand() can keep processes alive", async () => {
 });
 
 Deno.test("fakeCommand() rejects piping when disabled", async () => {
-  using _ = fakeCommand();
+  using mock = fakeCommand();
   const cmd = new Deno.Command("null", {
     stdin: "null",
     stdout: "null",
@@ -406,10 +409,19 @@ Deno.test("fakeCommand() rejects piping when disabled", async () => {
   const output = await cmd.output();
   assertThrows(() => output.stdout, TypeError);
   assertThrows(() => output.stderr, TypeError);
+  assertArrayObjectMatch(mock.runs, [{
+    command: "null",
+    options: { stdin: "null", stdout: "null", stderr: "null" },
+    stdin: null,
+  }, {
+    command: "null",
+    options: { stdin: "null", stdout: "null", stderr: "null" },
+    stdin: null,
+  }]);
 });
 
 Deno.test("fakeCommand() rejects output() when stdin is piped", async () => {
-  using _ = fakeCommand();
+  using mock = fakeCommand();
   const cmd = new Deno.Command("null", {
     stdin: "piped",
     stdout: "null",
@@ -418,4 +430,9 @@ Deno.test("fakeCommand() rejects output() when stdin is piped", async () => {
   const proc = cmd.spawn();
   assertExists(proc.stdin);
   await assertRejects(() => cmd.output(), TypeError);
+  assertArrayObjectMatch(mock.runs, [{
+    command: "null",
+    options: { stdin: "piped", stdout: "null", stderr: "null" },
+    stdin: new Uint8Array(),
+  }]);
 });
