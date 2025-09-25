@@ -35,4 +35,4 @@ single package repositories and monorepos using
 ## Contributing
 
 Would you like to contribute? That’s wonderful! Please take a look at the
-[contribution guide](.github/CONTRIBUTING.md).
+[contribution guide](./CONTRIBUTING.md).
