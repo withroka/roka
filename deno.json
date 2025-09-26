@@ -52,6 +52,7 @@
     "@std/semver": "jsr:@std/semver@^1.0.5",
     "@std/streams": "jsr:@std/streams@^1.0.12",
     "@std/testing": "jsr:@std/testing@^1.0.15",
+    "@std/text": "jsr:@std/text@^1.0.16",
     "@urql/core": "npm:@urql/core@^6.0.1",
     "@urql/exchange-retry": "npm:@urql/exchange-retry@^2.0.0"
   },
