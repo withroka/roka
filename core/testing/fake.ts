@@ -1,6 +1,11 @@
 /**
  * This module provides common fake objects for testing.
  *
+ * These fake objects override various standard global objects for testing.
+ * They follow the mocking conventions of the Deno standard library. In
+ * addition, fake objects implement the `Disposable` interface, allowing them
+ * to be used with the `using` statement for automatic cleanup.
+ *
  * The {@linkcode fakeArgs} function creates a fake script arguments array
  * that overrides `Deno.args`. Code being tested reads from this array to get
  * script arguments.
@@ -35,10 +40,27 @@
  * assertEquals(console.output(), "I won't be printed");
  * ```
  *
+ * The {@linkcode fakeCommand} function creates a fake replacement for the
+ * `Deno.Command` class. This allows testing code that spawns subprocesses
+ * without actually running commands.
+ *
+ * ```ts
+ * import { fakeCommand } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using command = fakeCommand({
+ *   cat: [ { code: 0, stdout: "Hello, World!\n" } ],
+ * });
+ * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
+ * const { stdout: output } = await cmd.output();
+ * assertEquals(new TextDecoder().decode(output), "Hello, World!\n");
+ * ```
+ *
  * @module fake
  */
 
 import { assertExists } from "@std/assert";
+import { waitFor } from "@std/async/unstable-wait-for";
+import { toArrayBuffer, toJson, toText } from "@std/streams";
 import { MockError, stub } from "@std/testing/mock";
 
 /** Fake script arguments returned by the {@linkcode fakeArgs} function. */
@@ -165,7 +187,7 @@ export function fakeEnv(env: Record<string, string>): FakeEnv & Disposable {
   return fake;
 }
 
-/** A fake console returned by the {@linkcode fakeConsole} function. */
+/** A fake `console` returned by the {@linkcode fakeConsole} function. */
 export interface FakeConsole {
   /** Logs a message with the `debug` level. */
   debug(...data: unknown[]): void;
@@ -325,4 +347,268 @@ export function fakeConsole(): FakeConsole & Disposable {
     },
   };
   return console;
+}
+
+/** A fake `Deno.Command` returned by the {@linkcode fakeCommand} function. */
+export interface FakeCommand {
+  /** The recorded command invocations. */
+  runs: FakeCommandRun[];
+  /** Whether the original `Deno.Command` instance has been restored. */
+  restored: boolean;
+  /** Restores the original `Deno.Command` instance. */
+  restore(): void;
+}
+
+/**
+ * A fake command invocation recorded by the {@linkcode fakeCommand} function.
+ */
+export interface FakeCommandRun {
+  /** The command that was invoked. */
+  command: string | URL;
+  /** The options passed to the command. */
+  options?: Deno.CommandOptions;
+  /** The standard input passed to the command. */
+  stdin: Uint8Array<ArrayBuffer> | null;
+  /** The child process created by the command. */
+  process: Deno.ChildProcess;
+}
+
+/**
+ * Options for a single command for the {@linkcode fakeCommand} function.
+ */
+export interface FakeCommandOptions {
+  /**
+   * Whether to make the fake process stay around.
+   *
+   * If this is set to `true`, the process will not end automatically and
+   * needs to be ended manually by calling the `kill()` method on
+   * the process supplied by {@linkcode FakeCommandRun.process}.
+   *
+   * @default {false}
+   */
+  keep?: boolean;
+  /**
+   * The exit code of the command.
+   * @default {0}
+   */
+  code?: number;
+  /**
+   * The standard output of the command.
+   * @default {""}
+   */
+  stdout?: string | Uint8Array<ArrayBuffer>;
+  /**
+   * The standard error output of the command.
+   * @default {""}
+   */
+  stderr?: string | Uint8Array<ArrayBuffer>;
+}
+
+/**
+ * Create a fake replacement for the `Deno.Command` class.
+ *
+ * Useful for testing subprocess execution without actually running commands.
+ *
+ * @example Use fake commands for testing.
+ * ```ts
+ * import { fakeCommand } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using command = fakeCommand();
+ * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
+ * const { code } = await cmd.output();
+ * assertEquals(code, 0);
+ * ```
+ *
+ * @example Control the result of fake commands.
+ * ```ts
+ * import { fakeCommand } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using command = fakeCommand({
+ *   cat: [
+ *     { code: 0, stdout: "Hello, World!\n" },
+ *     { code: 1, stdout: "Hello, Mars!\n" },
+ *   ],
+ * });
+ * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
+ * const proc1 = cmd.spawn();
+ * const proc2 = cmd.spawn();
+ * assertEquals(await proc1.status, { success: true, code: 0, signal: null });
+ * assertEquals(await proc2.status, { success: false, code: 1, signal: null });
+ * ```
+ *
+ * @example Test an always-running process.
+ * ```ts
+ * import { fakeCommand } from "@roka/testing/fake";
+ * import { assertEquals } from "@std/assert";
+ * using command = fakeCommand({ sleep: [ { keep: true } ] });
+ * const cmd = new Deno.Command("sleep", { args: ["1000"] });
+ * const process = cmd.spawn();
+ * assertEquals(process.pid, 1);
+ * process.kill();
+ * const status = await process.status;
+ * assertEquals(status.code, 1);
+ * assertEquals(status.signal, "SIGTERM");
+ * ```
+ */
+export function fakeCommand(
+  commands?: Record<string, FakeCommandOptions[]>,
+): FakeCommand & Disposable {
+  const commandMap = new Map<string, FakeCommandOptions[]>(
+    Object.entries(commands ?? {}),
+  );
+  let nextPid = 0;
+  const runs: FakeCommandRun[] = [];
+  function readable(
+    data: Uint8Array<ArrayBuffer>,
+  ): Deno.SubprocessReadableStream {
+    const stream = ReadableStream.from([data]);
+    return Object.assign(stream, {
+      arrayBuffer: () => toArrayBuffer(stream),
+      bytes: () => Promise.resolve(data),
+      json: () => toJson(stream),
+      text: () => toText(stream),
+    });
+  }
+  function get<T>(name: string, value: T, pipe: "piped" | "inherit" | "null") {
+    if (pipe !== "piped") {
+      throw new TypeError(`Cannot get '${name}': '${name}' is not piped`);
+    }
+    return value;
+  }
+  class FakeCommand implements Deno.Command {
+    command: string | URL;
+    options?: Deno.CommandOptions;
+    constructor(command: string | URL, options?: Deno.CommandOptions) {
+      this.command = command;
+      if (options) this.options = options;
+    }
+    async output(): Promise<Deno.CommandOutput> {
+      if (this.options?.stdin === "piped") {
+        throw new TypeError(
+          "Piped stdin is not supported for this function, " +
+            "use 'Deno.Command.spawn()' instead",
+        );
+      }
+      return await this.spawn("piped").output();
+    }
+    outputSync(): Deno.CommandOutput {
+      throw new MockError("Synchronous output not supported in fakeCommand");
+    }
+    spawn(pipe?: "piped" | "inherit" | "null"): Deno.ChildProcess {
+      if (pipe === undefined) pipe = "inherit";
+      nextPid += 1;
+      const key = typeof this.command === "string"
+        ? this.command
+        : this.command.href;
+      const options = this.options;
+      const command = commandMap.get(key)?.shift() ?? {};
+      const data = {
+        stdin: [] as Uint8Array<ArrayBufferLike>[],
+        stdout: typeof command.stdout === "string"
+          ? new TextEncoder().encode(command.stdout)
+          : command.stdout ?? new Uint8Array(),
+        stderr: typeof command.stderr === "string"
+          ? new TextEncoder().encode(command.stderr)
+          : command.stderr ?? new Uint8Array(),
+      };
+      const stream = {
+        stdin: new WritableStream({
+          write(chunk) {
+            data.stdin.push(chunk);
+          },
+        }),
+        stdout: readable(data.stdout),
+        stderr: readable(data.stderr),
+      };
+      let commandStatus: Deno.CommandStatus | undefined = command.keep
+        ? undefined
+        : {
+          success: (command.code ?? 0) === 0,
+          code: command.code ?? 0,
+          signal: null,
+        };
+      const child: Deno.ChildProcess = {
+        get stdin() {
+          return get("stdin", stream.stdin, options?.stdin ?? "inherit");
+        },
+        get stdout() {
+          return get("stdout", stream.stdout, options?.stdout ?? pipe);
+        },
+        get stderr() {
+          return get("stderr", stream.stderr, options?.stderr ?? pipe);
+        },
+        pid: nextPid,
+        status: commandStatus !== undefined
+          ? Promise.resolve(commandStatus)
+          : waitFor(
+            () => commandStatus !== undefined,
+            Number.MAX_SAFE_INTEGER,
+            { step: 1 },
+          ).then(() => {
+            assertExists(commandStatus);
+            return commandStatus;
+          }).finally(() => {
+            if (!commandStatus) throw new MockError("Fake process timed out");
+          }),
+        async output() {
+          return {
+            ...await this.status,
+            get stdout() {
+              return get("stdout", data.stdout, options?.stdout ?? pipe);
+            },
+            get stderr() {
+              return get("stderr", data.stderr, options?.stderr ?? pipe);
+            },
+          };
+        },
+        kill(signo?: Deno.Signal) {
+          if (commandStatus !== undefined) {
+            throw new MockError("Cannot kill: process already ended");
+          }
+          commandStatus = {
+            success: (command.code ?? 1) === 0,
+            code: command.code ?? 1,
+            signal: signo ?? "SIGTERM",
+          };
+        },
+        ref: () => {},
+        unref: () => {},
+        async [Symbol.asyncDispose]() {
+          this.kill();
+          await Promise.resolve();
+        },
+      };
+      runs.push({
+        command: this.command,
+        ...this.options && { options: this.options },
+        ...{ debug: data },
+        get stdin() {
+          if (this.options?.stdin !== "piped") return null;
+          return Uint8Array.from(data.stdin.flatMap((x) => Array.from(x)));
+        },
+        process: child,
+      });
+      return child;
+    }
+  }
+  const fake = stub(Deno, "Command", (...args: unknown[]) => {
+    const [command, options] = args as [string | URL, Deno.CommandOptions?];
+    return new FakeCommand(command, options);
+  });
+  const command = {
+    runs,
+    get restored() {
+      return fake.restored;
+    },
+    restore() {
+      if (command.restored) {
+        throw new MockError("Cannot restore: fakeCommand already restored");
+      }
+      fake.restore();
+    },
+    [Symbol.dispose]: () => {
+      command.restore();
+    },
+  };
+  return command;
 }
