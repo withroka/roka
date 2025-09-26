@@ -41,7 +41,7 @@ export interface Deno {
   /**
    * Download and type-check without execution.
    *
-   * @see {@link https://docs.deno.com/go/check `deno check`
+   * @see {@link https://docs.deno.com/go/check `deno check`}
    */
   check(files: string[], options?: CheckOptions): Promise<void>;
   /**
@@ -65,7 +65,7 @@ export interface Deno {
   /**
    * Run tests using Deno's built-in test runner.
    *
-   * @see {@link https://docs.deno.com/go/test `deno test`
+   * @see {@link https://docs.deno.com/go/test `deno test`}
    */
   test(files: string[], options?: TestOptions): Promise<void>;
 }
