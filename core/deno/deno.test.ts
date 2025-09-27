@@ -161,8 +161,8 @@ Deno.test("deno() passes correct runtime options", async () => {
     deno().test(["file"], {
       cert: "ca.pem",
       envFile: ".env",
-      location: "https://example.com",
-      preload: ["preload1", "preload2"],
+      location: new URL("https://example.com/"),
+      preload: ["preload1", new URL("https://example.com/preload2")],
       seed: 12345,
       v8Flags: ["--expose_gc", "--lazy"],
     }), {
@@ -172,11 +172,11 @@ Deno.test("deno() passes correct runtime options", async () => {
       "ca.pem",
       "--env-file=.env",
       "--location",
-      "https://example.com",
+      "https://example.com/",
       "--preload",
       "preload1",
       "--preload",
-      "preload2",
+      "https://example.com/preload2",
       "--seed",
       "12345",
       "--v8-flags=--expose_gc,--lazy",
@@ -455,6 +455,17 @@ Deno.test("deno() passes correct dependency management options", async () => {
   });
   await assertDenoArgs(() =>
     deno().test(["file"], {
+      importMap: new URL("https://example.com/deno.json"),
+    }), {
+    args: [
+      "test",
+      "--import-map",
+      "https://example.com/deno.json",
+      "file",
+    ],
+  });
+  await assertDenoArgs(() =>
+    deno().test(["file"], {
       lock: true,
     }), {
     args: [
@@ -540,7 +551,7 @@ Deno.test("deno().compile() passes correct options", async () => {
   await assertDenoArgs(() =>
     deno().compile("script", {
       scriptArgs: ["--arg1", "--arg2=value2"],
-      include: ["include1", "include2"],
+      include: ["include1", new URL("https://example.com/include2")],
       exclude: ["exclude1", "exclude2"],
       icon: "icon.ico",
       terminal: false,
@@ -556,7 +567,7 @@ Deno.test("deno().compile() passes correct options", async () => {
       "--include",
       "include1",
       "--include",
-      "include2",
+      "https://example.com/include2",
       "--icon",
       "icon.ico",
       "--no-terminal",

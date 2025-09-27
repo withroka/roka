@@ -5,10 +5,11 @@
  * intended to be used as a building block for higher-level abstractions. It
  * uses the locally installed deno binary.
  *
- * @todo Add support for URL.
  * @todo Add support for RegExp.
  * @todo Handle different commands accepting different `ext` values.
  * @todo Use go links where possible.
+ * @todo Add suppot for global flags.
+ * @todo Add support for unstable features.
  *
  * @module deno
  */
@@ -183,17 +184,13 @@ export interface CompileOptions
     DependendencyManagementOptions,
     PermissionOptions,
     ScriptOptions {
-  // extends
-  //   FileOptions,
-  //   FileWatchingOptions,
-  //   DebuggingOptions, {
   /** Excludes files/directories in the compiled executable. */
   exclude?: string[];
   /**
    * Includes additional modules or files/directories in the compiled
    * executable.
    */
-  include?: string[];
+  include?: (string | URL)[];
   /** Set the icon of the executable on Windows (.ico). */
   icon?: string;
   /**
@@ -466,9 +463,9 @@ export interface RuntimeOptions {
    */
   envFile?: boolean | string;
   /** Value of `globalThis.location` used by some web APIs. */
-  location?: string;
+  location?: string | URL;
   /** A list of files that will be executed before the main module. */
-  preload?: string[];
+  preload?: (string | URL)[];
   /** Set the random number generator seed. */
   seed?: number;
   /** Set V8 command line options. */
@@ -531,7 +528,7 @@ export interface DebuggingOptions {
    *
    * @default {false}
    */
-  inspect?: string | true;
+  inspect?: boolean | string;
   /**
    * Activate inspector on host:port, wait for debugger to connect and break
    * at the start of user script.
@@ -540,7 +537,7 @@ export interface DebuggingOptions {
    *
    * @default {false}
    */
-  inspectBrk?: string | true;
+  inspectBrk?: boolean | string;
   /**
    * Activate inspector on host:port and wait for debugger to connect before
    * running user code.
@@ -549,7 +546,7 @@ export interface DebuggingOptions {
    *
    * @default {false}
    */
-  inspectWait?: string | true;
+  inspectWait?: boolean | string;
 }
 
 /**
@@ -569,7 +566,7 @@ export interface DependendencyManagementOptions {
    * Load import map file from local file or remote URL.
    * @default {false}
    */
-  importMap?: string;
+  importMap?: string | URL;
   /**
    * Check the specified lock file.
    *
@@ -1043,7 +1040,7 @@ function permissionEnv(
   });
 }
 
-type Value = boolean | number | string | string[];
+type Value = boolean | number | string | URL | (string | URL)[];
 
 function flag(
   flag: string,
@@ -1064,8 +1061,8 @@ function flag(
   }
 }
 
-function args(args: (string | string[] | false | undefined)[]): string[] {
-  return args.filter((x) => x !== false && x !== undefined).flat() as string[];
+function args(args: (string | string[] | undefined)[]): string[] {
+  return args.filter((x) => x !== undefined).flat() as string[];
 }
 
 function env(env: Record<string, Value | undefined>): Record<string, string> {
