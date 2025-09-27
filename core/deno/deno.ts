@@ -5,7 +5,6 @@
  * intended to be used as a building block for higher-level abstractions. It
  * uses the locally installed deno binary.
  *
- * @todo Handle different commands accepting different `ext` values.
  * @todo Use go links where possible.
  * @todo Add suppot for global flags.
  * @todo Add support for unstable features.
@@ -93,35 +92,6 @@ export interface DenoOptions {
    */
   config?: boolean | string;
   /**
-   * Set content type of the supplied files.
-   */
-  ext?:
-    | "ts"
-    | "tsx"
-    | "js"
-    | "jsx"
-    | "mts"
-    | "mjs"
-    | "cts"
-    | "cjs"
-    | "md"
-    | "json"
-    | "jsonc"
-    | "css"
-    | "scss"
-    | "sass"
-    | "less"
-    | "html"
-    | "svelte"
-    | "vue"
-    | "astro"
-    | "yml"
-    | "yaml"
-    | "ipynb"
-    | "sql"
-    | "vto"
-    | "njk";
-  /**
    * Suppress diagnostic output.
    * @default {false}
    */
@@ -178,6 +148,7 @@ export interface CheckOptions
 export interface CompileOptions
   extends
     DenoOptions,
+    Omit<FileOptions<ScriptExtension>, "permitNoFiles">,
     RuntimeOptions,
     TypeCheckingOptions,
     DependendencyManagementOptions,
@@ -219,7 +190,7 @@ export interface CompileOptions
  * @see {@link https://docs.deno.com/runtime/reference/cli/fmt/ `deno fmt`, code formatting}
  */
 export interface FormatOptions
-  extends DenoOptions, FileOptions, FileWatchingOptions {
+  extends DenoOptions, FileOptions<FileExtension>, FileWatchingOptions {
   /** Check if the source files are formatted. */
   check?: boolean;
   /** Ignore formatting particular source files. */
@@ -265,7 +236,7 @@ export interface FormatOptions
 export interface LintOptions
   extends
     DenoOptions,
-    FileOptions,
+    FileOptions<FileExtension>,
     FileWatchingOptions,
     Pick<PermissionOptions, "allowImport" | "denyImport"> {
   /**
@@ -298,7 +269,7 @@ export interface LintOptions
 export interface TestOptions
   extends
     DenoOptions,
-    FileOptions,
+    FileOptions<ScriptExtension>,
     Omit<RuntimeOptions, "codeCache">,
     TypeCheckingOptions,
     FileWatchingOptions,
@@ -403,7 +374,11 @@ export interface TestOptions
  * Options for commands that run on a list of files, such as the
  * {@linkcode Deno.lint} and {@linkcode Deno.format} functions.
  */
-export interface FileOptions {
+export interface FileOptions<Extensions extends string> {
+  /**
+   * Set content type of the supplied files.
+   */
+  ext?: Extensions;
   /**
    * Don't return an error code if no files were found
    * @default {false}
@@ -779,6 +754,36 @@ export interface ScriptOptions {
   scriptArgs?: string[];
 }
 
+export type ScriptExtension =
+  | "ts"
+  | "tsx"
+  | "js"
+  | "jsx"
+  | "mts"
+  | "mjs"
+  | "cts"
+  | "cjs";
+
+export type FileExtension =
+  | ScriptExtension
+  | "md"
+  | "json"
+  | "jsonc"
+  | "css"
+  | "scss"
+  | "sass"
+  | "less"
+  | "html"
+  | "svelte"
+  | "vue"
+  | "astro"
+  | "yml"
+  | "yaml"
+  | "ipynb"
+  | "sql"
+  | "vto"
+  | "njk";
+
 /**
  * Creates a new {@linkcode Deno} instance for a directory for running
  * deno commands.
@@ -929,15 +934,15 @@ function commonArgs(
   return [
     flag("--config", options?.config),
     flag("--no-config", options?.config === false),
-    flag("--ext=", options?.ext),
     flag("--quiet", options?.quiet),
   ];
 }
 
 function fileArgs(
-  options?: FileOptions,
+  options?: FileOptions<FileExtension>,
 ): (ReturnType<typeof flag>)[] {
   return [
+    flag("--ext=", options?.ext),
     flag("--permit-no-files", options?.permitNoFiles),
   ];
 }
