@@ -735,4 +735,15 @@ Deno.test("deno().test() passes correct options", async () => {
       DENO_JOBS: "4",
     },
   });
+  await assertDenoArgs(() =>
+    deno().test(["file"], {
+      filter: /test\(\)/,
+    }), {
+    args: [
+      "test",
+      "--filter",
+      "/test\\(\\)/",
+      "file",
+    ],
+  });
 });

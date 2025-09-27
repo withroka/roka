@@ -5,7 +5,6 @@
  * intended to be used as a building block for higher-level abstractions. It
  * uses the locally installed deno binary.
  *
- * @todo Add support for RegExp.
  * @todo Handle different commands accepting different `ext` values.
  * @todo Use go links where possible.
  * @todo Add suppot for global flags.
@@ -345,7 +344,7 @@ export interface TestOptions
   /**
    * Run tests with this string or regular expression pattern in the test name.
    */
-  filter?: string;
+  filter?: string | RegExp;
   /** Ignore files. */
   ignore?: string[];
   /**
@@ -1040,7 +1039,7 @@ function permissionEnv(
   });
 }
 
-type Value = boolean | number | string | URL | (string | URL)[];
+type Value = boolean | number | string | RegExp | URL | (string | URL)[];
 
 function flag(
   flag: string,
