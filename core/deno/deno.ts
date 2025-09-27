@@ -5,7 +5,6 @@
  * intended to be used as a building block for higher-level abstractions. It
  * uses the locally installed deno binary.
  *
- * @todo Use go links where possible.
  * @todo Add suppot for global flags.
  * @todo Add support for unstable features.
  *
@@ -40,31 +39,31 @@ export interface Deno {
   /**
    * Download and type-check without execution.
    *
-   * @see {@link https://docs.deno.com/go/check `deno check`}
+   * @see {@link https://docs.deno.com/runtime/reference/cli/check/ `deno check`}
    */
   check(files: string[], options?: CheckOptions): Promise<void>;
   /**
    * Compiles the given script into a self contained executable.
    *
-   * @see {@link https://docs.deno.com/go/compile `deno compile`, standalone executables}
+   * @see {@link https://docs.deno.com/runtime/reference/cli/compile/ `deno compile`}
    */
   compile(script: string, options?: CompileOptions): Promise<void>;
   /**
    * Auto-format various file types.
    *
-   * @see {@link https://docs.deno.com/runtime/reference/cli/fmt/ `deno fmt`, code formatting}
+   * @see {@link https://docs.deno.com/runtime/reference/cli/fmt/ `deno fmt`}
    */
   fmt(files: string[], options?: FormatOptions): Promise<void>;
   /**
    * Lint JavaScript/TypeScript source code.
    *
-   * @see {@link https://docs.deno.com/runtime/reference/cli/lint/ `deno lint`, linter}
+   * @see {@link https://docs.deno.com/runtime/reference/cli/lint/ `deno lint`}
    */
   lint(files: string[], options?: LintOptions): Promise<void>;
   /**
    * Run tests using Deno's built-in test runner.
    *
-   * @see {@link https://docs.deno.com/go/test `deno test`}
+   * @see {@link https://docs.deno.com/runtime/reference/cli/test/ `deno test`}
    */
   test(files: string[], options?: TestOptions): Promise<void>;
 }
@@ -86,7 +85,7 @@ export interface DenoOptions {
    * If set to `false`, automatic loading of the configuration file will be
    * disabled.
    *
-   * @see {@link https://docs.deno.com/go/config deno.json and package.json}
+   * @see {@link https://docs.deno.com/runtime/fundamentals/configuration/ Configuration in Deno}
    *
    * @default {true}
    */
@@ -114,11 +113,7 @@ export interface HelpOptions {
   context?: "unstable" | "full";
 }
 
-/**
- * Options for the {@linkcode Deno.check} function.
- *
- * @see {@link https://docs.deno.com/go/check `deno check`}
- */
+/** Options for the {@linkcode Deno.check} function. */
 export interface CheckOptions
   extends
     Omit<DenoOptions, "ext">,
@@ -140,11 +135,7 @@ export interface CheckOptions
   doc?: boolean | "only";
 }
 
-/**
- * Options for the {@linkcode Deno.compile} function.
- *
- * @see {@link https://docs.deno.com/go/compile `deno compile`, standalone executables}
- */
+/** Options for the {@linkcode Deno.compile} function. */
 export interface CompileOptions
   extends
     DenoOptions,
@@ -184,11 +175,7 @@ export interface CompileOptions
   target?: string;
 }
 
-/**
- * Options for the {@linkcode Deno.fmt} function.
- *
- * @see {@link https://docs.deno.com/runtime/reference/cli/fmt/ `deno fmt`, code formatting}
- */
+/** Options for the {@linkcode Deno.fmt} function. */
 export interface FormatOptions
   extends DenoOptions, FileOptions<FileExtension>, FileWatchingOptions {
   /** Check if the source files are formatted. */
@@ -228,11 +215,7 @@ export interface FormatOptions
   unstableSql?: boolean;
 }
 
-/**
- * Options for the {@linkcode Deno.lint} function.
- *
- * @see {@link https://docs.deno.com/runtime/reference/cli/lint/ `deno lint`, linter}
- */
+/** Options for the {@linkcode Deno.lint} function. */
 export interface LintOptions
   extends
     DenoOptions,
@@ -261,11 +244,7 @@ export interface LintOptions
   rulesTags?: string[];
 }
 
-/**
- * Options for the {@linkcode Deno.test} function.
- *
- * @see {@link https://docs.deno.com/go/test `deno test`}
- */
+/** Options for the {@linkcode Deno.test} function. */
 export interface TestOptions
   extends
     DenoOptions,
@@ -414,11 +393,7 @@ export interface RuntimeOptions {
    * @default {true}
    */
   codeCache?: boolean;
-  /**
-   * Specify custom conditions for npm package exports.
-   *
-   * @see {@link https://docs.deno.com/go/conditional-exports Conditional exports}
-   */
+  /** Specify custom conditions for npm package exports. */
   conditions?: string[];
   /**
    * Load environment variables from local file.
@@ -449,8 +424,6 @@ export interface RuntimeOptions {
 /**
  * Options for commands that accept type checking flags, such as the
  * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
- *
- * @see {@link https://docs.deno.com/runtime/fundamentals/typescript/ TypeScript support}
  */
 export interface TypeCheckingOptions {
   /**
@@ -467,8 +440,6 @@ export interface TypeCheckingOptions {
 /**
  * Options for commands that accept file watching flags, such as the
  * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
- *
- * @see {@link https://docs.deno.com/runtime/getting_started/command_line_interface/#watch-mode Watch mode}
  */
 export interface FileWatchingOptions {
   /**
@@ -491,8 +462,6 @@ export interface FileWatchingOptions {
 /**
  * Options for commands that accept debugging flags, such as the
  * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
- *
- * @see {@link https://docs.deno.com/runtime/fundamentals/debugging/ Debugging}
  */
 export interface DebuggingOptions {
   /**
@@ -526,9 +495,6 @@ export interface DebuggingOptions {
 /**
  * Options for commands that accept dependency management flags, such as the
  * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
- *
- * @see {@link https://docs.deno.com/runtime/fundamentals/modules/ Modules and dependencies}
- * @see {@link https://docs.deno.com/runtime/fundamentals/node/ Node and npm Compatibility}
  */
 export interface DependendencyManagementOptions {
   /**
@@ -583,8 +549,6 @@ export interface DependendencyManagementOptions {
 /**
  * Options for commands that accept permission flags, such as the
  * {@linkcode Deno.run} and {@linkcode Deno.test} functions.
- *
- * @see {@link https://docs.deno.com/go/permissions Security and permissions}
  */
 export interface PermissionOptions {
   /**
