@@ -1,7 +1,18 @@
 // deno-lint-ignore-file no-console
-import { assert, assertEquals, assertFalse, assertThrows } from "@std/assert";
+import { assertArrayObjectMatch } from "@roka/assert";
+import { pool } from "@roka/async/pool";
+import {
+  assert,
+  assertEquals,
+  assertExists,
+  assertFalse,
+  assertNotEquals,
+  assertObjectMatch,
+  assertRejects,
+  assertThrows,
+} from "@std/assert";
 import { MockError } from "@std/testing/mock";
-import { fakeArgs, fakeConsole, fakeEnv } from "./fake.ts";
+import { fakeArgs, fakeCommand, fakeConsole, fakeEnv } from "./fake.ts";
 
 Deno.test("fakeArgs() provides fake script arguments", () => {
   const original = Deno.args;
@@ -70,6 +81,11 @@ Deno.test("fakeEnv() implements spy like interface", () => {
   assertThrows(() => env.restore(), MockError);
 });
 
+Deno.test("fakeEnv() rejects recursive use", () => {
+  using _ = fakeEnv({ FAKE_ENV: "value" });
+  assertThrows(() => fakeEnv({ FAKE_ENV: "other" }), MockError);
+});
+
 Deno.test("fakeEnv() handles variables without permissions", () => {
   using env = fakeEnv({ UNKNOWN1: "value" });
   assertEquals(env.get("UNKNOWN1"), "value");
@@ -93,11 +109,6 @@ Deno.test("fakeEnv() isolates from test environments", () => {
   } finally {
     Deno.env.delete("FAKE_ENV");
   }
-});
-
-Deno.test("fakeEnv() rejects recursive use", () => {
-  using _ = fakeEnv({ ENV: "value1" });
-  assertThrows(() => fakeEnv({ ENV: "value2" }), MockError);
 });
 
 Deno.test("fakeConsole() stubs console", () => {
@@ -136,6 +147,11 @@ Deno.test("fakeConsole() implements spy like interface", () => {
     console.restore();
     assertEquals(console.restored, true);
   }
+});
+
+Deno.test("fakeConsole() rejects recursive use", () => {
+  using _ = fakeConsole();
+  assertThrows(() => fakeConsole(), MockError);
 });
 
 Deno.test("fakeConsole() captures multiple calls", () => {
@@ -203,7 +219,220 @@ Deno.test("fakeConsole().output() can capture styling", () => {
   );
 });
 
-Deno.test("fakeConsole() rejects recursive use", () => {
-  using _ = fakeConsole();
-  assertThrows(() => fakeConsole(), MockError);
+Deno.test("fakeCommand() stubs Deno.Command", async () => {
+  using mock = fakeCommand({
+    echo: [{ code: 0, stdout: "output", stderr: "error" }],
+  });
+  const command = new Deno.Command("echo", { args: ["Hello, World!"] });
+  const output = await command.output();
+  assertObjectMatch(output, {
+    success: true,
+    code: 0,
+    signal: null,
+  });
+  assertEquals(new TextDecoder().decode(output.stdout), "output");
+  assertEquals(new TextDecoder().decode(output.stderr), "error");
+  assertArrayObjectMatch(mock.runs, [{
+    command: "echo",
+    options: { args: ["Hello, World!"] },
+    stdin: null,
+  }]);
+});
+
+Deno.test("fakeCommand() implements spy like interface", async () => {
+  const command = fakeCommand({
+    echo: [{ code: 0, stdout: "output", stderr: "error" }],
+  });
+  const cmd = new Deno.Command("echo", { args: ["Hello, World!"] });
+  assertFalse(command.restored);
+  assertEquals(command.runs, []);
+  await cmd.output();
+  assertArrayObjectMatch(command.runs, [{
+    command: "echo",
+    options: { args: ["Hello, World!"] },
+    stdin: null,
+  }]);
+  command.restore();
+  assertThrows(() => command.restore(), MockError);
+  assertEquals(command.restored, true);
+});
+
+Deno.test("fakeCommand() rejects recursive use", () => {
+  using _ = fakeCommand();
+  assertThrows(() => fakeCommand(), MockError);
+});
+
+Deno.test("fakeCommand() succeeds by default", async () => {
+  using command = fakeCommand();
+  assertEquals(command.runs, []);
+  const cmd = new Deno.Command("echo", { args: ["Hello, World!"] });
+  assertEquals(await cmd.output(), {
+    success: true,
+    code: 0,
+    signal: null,
+    stdout: new TextEncoder().encode(""),
+    stderr: new TextEncoder().encode(""),
+  });
+});
+
+Deno.test("fakeCommand() handles multiple commands", async () => {
+  using command = fakeCommand({
+    echo: [
+      { code: 0, stdout: new TextEncoder().encode("output"), stderr: "" },
+      { code: 1, stdout: "", stderr: new TextEncoder().encode("error") },
+    ],
+    ls: [{ code: 0, stdout: "list", stderr: "" }],
+  });
+  assertEquals(command.runs, []);
+  const cmd1 = new Deno.Command("echo", { args: ["Hello, World!"] });
+  const cmd2 = new Deno.Command("echo", { args: ["Hello, Mars!"] });
+  const cmd3 = new Deno.Command("echo", { args: ["Hello, Venus!"] });
+  const cmd4 = new Deno.Command("ls");
+  assertEquals(await cmd1.output(), {
+    success: true,
+    code: 0,
+    signal: null,
+    stdout: new TextEncoder().encode("output"),
+    stderr: new TextEncoder().encode(""),
+  });
+  assertEquals(await cmd2.output(), {
+    success: false,
+    code: 1,
+    signal: null,
+    stdout: new TextEncoder().encode(""),
+    stderr: new TextEncoder().encode("error"),
+  });
+  assertEquals(await cmd3.output(), {
+    success: true,
+    code: 0,
+    signal: null,
+    stdout: new TextEncoder().encode(""),
+    stderr: new TextEncoder().encode(""),
+  });
+  assertEquals(await cmd4.output(), {
+    success: true,
+    code: 0,
+    signal: null,
+    stdout: new TextEncoder().encode("list"),
+    stderr: new TextEncoder().encode(""),
+  });
+  assertArrayObjectMatch(command.runs, [
+    { command: "echo", options: { args: ["Hello, World!"] } },
+    { command: "echo", options: { args: ["Hello, Mars!"] } },
+    { command: "echo", options: { args: ["Hello, Venus!"] } },
+    { command: "ls" },
+  ]);
+});
+
+Deno.test("fakeCommand() handles multiple spawns", () => {
+  using mock = fakeCommand();
+  const cmd = new Deno.Command("sleep", { args: ["0.1"] });
+  const proc1 = cmd.spawn();
+  const proc2 = cmd.spawn();
+  const proc3 = cmd.spawn();
+  assertNotEquals(proc1.pid, proc2.pid);
+  assertNotEquals(proc2.pid, proc3.pid);
+  assertArrayObjectMatch(
+    mock.runs,
+    [
+      { command: "sleep", options: { args: ["0.1"] } },
+      { command: "sleep", options: { args: ["0.1"] } },
+      { command: "sleep", options: { args: ["0.1"] } },
+    ],
+  );
+});
+
+Deno.test("fakeCommand() ends processes by default", async () => {
+  using command = fakeCommand();
+  assertEquals(command.runs, []);
+  const process = new Deno.Command("sleep", { args: ["1"] }).spawn();
+  assertEquals(await process.status, {
+    success: true,
+    code: 0,
+    signal: null,
+  });
+  assertThrows(() => process.kill(), MockError);
+});
+
+Deno.test("fakeCommand() can keep processes alive", async () => {
+  using command = fakeCommand({
+    sleep: [{ code: 0, keep: true }, { code: 1, keep: true }],
+  });
+  assertEquals(command.runs, []);
+  new Deno.Command("sleep", { args: ["10"], stdin: "piped" }).spawn();
+  new Deno.Command("sleep", { args: ["10"], stdin: "piped" }).spawn();
+  assertEquals(
+    await pool(command.runs, async (run) => {
+      ReadableStream
+        .from([
+          new TextEncoder().encode("Hello, "),
+          new TextEncoder().encode("World!"),
+        ])
+        .pipeTo(run.process.stdin);
+      let statusResolved = false;
+      const statusPromise = run.process.status.then((status) => {
+        statusResolved = true;
+        return status;
+      });
+      await Promise.resolve();
+      assertFalse(statusResolved);
+      run.process.kill();
+      await Promise.resolve();
+      assertFalse(statusResolved);
+      const status = await statusPromise;
+      assertExists(run.stdin);
+      assertEquals(new TextDecoder().decode(run.stdin), "Hello, World!");
+      assert(statusResolved);
+      assertThrows(() => run.process.kill(), MockError);
+      return status;
+    }, {
+      concurrency: 2,
+    }),
+    [
+      { success: true, code: 0, signal: "SIGTERM" },
+      { success: false, code: 1, signal: "SIGTERM" },
+    ],
+  );
+});
+
+Deno.test("fakeCommand() rejects piping when disabled", async () => {
+  using mock = fakeCommand();
+  const cmd = new Deno.Command("null", {
+    stdin: "null",
+    stdout: "null",
+    stderr: "null",
+  });
+  const proc = cmd.spawn();
+  assertThrows(() => proc.stdin, TypeError);
+  assertThrows(() => proc.stdout, TypeError);
+  assertThrows(() => proc.stderr, TypeError);
+  const output = await cmd.output();
+  assertThrows(() => output.stdout, TypeError);
+  assertThrows(() => output.stderr, TypeError);
+  assertArrayObjectMatch(mock.runs, [{
+    command: "null",
+    options: { stdin: "null", stdout: "null", stderr: "null" },
+    stdin: null,
+  }, {
+    command: "null",
+    options: { stdin: "null", stdout: "null", stderr: "null" },
+    stdin: null,
+  }]);
+});
+
+Deno.test("fakeCommand() rejects output() when stdin is piped", async () => {
+  using mock = fakeCommand();
+  const cmd = new Deno.Command("null", {
+    stdin: "piped",
+    stdout: "null",
+    stderr: "null",
+  });
+  const proc = cmd.spawn();
+  assertExists(proc.stdin);
+  await assertRejects(() => cmd.output(), TypeError);
+  assertArrayObjectMatch(mock.runs, [{
+    command: "null",
+    options: { stdin: "piped", stdout: "null", stderr: "null" },
+    stdin: new Uint8Array(),
+  }]);
 });
