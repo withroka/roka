@@ -55,7 +55,14 @@ export interface TempDirectoryOptions {
 export async function tempDirectory(
   options?: TempDirectoryOptions,
 ): Promise<TempDirectory & AsyncDisposable> {
-  const directory = await Deno.makeTempDir();
+  const tempDir = await Deno.makeTempDir();
+  let directory: string;
+  try {
+    directory = await Deno.realPath(tempDir);
+  } catch {
+    // If realPath fails (e.g., due to permissions), fall back to the original path
+    directory = tempDir;
+  }
   const cwd = options?.chdir ? Deno.cwd() : undefined;
 
   if (options?.chdir) Deno.chdir(directory);

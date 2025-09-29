@@ -21,7 +21,7 @@ Deno.test("tempDirectory({ chdir: true }) changes working directory", async () =
     await using directory = await tempDirectory({ chdir: true });
     assertEquals(
       await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(directory.path()),
+      directory.path(),
     );
     await Deno.writeTextFile("test.txt", "Hello, world!");
     assertEquals(
@@ -38,22 +38,22 @@ Deno.test("tempDirectory({ chdir: true }) works recursively", async () => {
     await using outer = await tempDirectory({ chdir: true });
     assertEquals(
       await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(outer.path()),
+      outer.path(),
     );
     {
       await using inner = await tempDirectory({ chdir: true });
       assertNotEquals(
-        await Deno.realPath(inner.path()),
-        await Deno.realPath(outer.path()),
+        inner.path(),
+        outer.path(),
       );
       assertEquals(
         await Deno.realPath(Deno.cwd()),
-        await Deno.realPath(inner.path()),
+        inner.path(),
       );
     }
     assertEquals(
       await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(outer.path()),
+      outer.path(),
     );
   }
   assertEquals(Deno.cwd(), cwd);
