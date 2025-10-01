@@ -243,7 +243,8 @@ export async function* find(
     if (
       (type === undefined || type === "dir" || !stat.isDirectory) &&
       (namePattern === undefined || namePattern?.exec(basename(path))) &&
-      (pathPattern === undefined || pathPattern?.exec(path))
+      (pathPattern === undefined || pathPattern?.exec(path)) &&
+      !ignorePatterns.some((p) => p.exec(path))
     ) yield path;
     if (stat.isDirectory) {
       for await (const entry of Deno.readDir(real)) {
