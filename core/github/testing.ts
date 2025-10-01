@@ -3,9 +3,9 @@
  *
  * ```ts
  * import {
- *   fakeRepository,
  *   fakePullRequest,
  *   fakeRelease,
+ *   fakeRepository,
  * } from "@roka/github/testing";
  * const repo = fakeRepository();
  * const pull = fakePullRequest({ repo, title: "title" });

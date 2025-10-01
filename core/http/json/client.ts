@@ -6,7 +6,10 @@
  * ```ts
  * import { client } from "@roka/http/json/client";
  * async function usage() {
- *   interface Issue { number: number; state: string; };
+ *   interface Issue {
+ *     number: number;
+ *     state: string;
+ *   }
  *   const api = client("https://api.github.com");
  *   await api.post<Issue>(
  *     "/repos/owner/repo/issues",
@@ -68,7 +71,10 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
  * ```ts
  * import { client } from "@roka/http/json/client";
  * async function usage() {
- *   interface Issue { number: number; state: string; };
+ *   interface Issue {
+ *     number: number;
+ *     state: string;
+ *   }
  *   const api = client("https://api.github.com");
  *   const issue = await api.get<Issue>("/repos/owner/repo/issues/1");
  * }
@@ -78,7 +84,10 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
  * ```ts
  * import { client } from "@roka/http/json/client";
  * async function usage() {
- *   interface Issue { number: number; state: string; };
+ *   interface Issue {
+ *     number: number;
+ *     state: string;
+ *   }
  *   const api = client("https://api.github.com", {
  *     token: "TOKEN",
  *   });

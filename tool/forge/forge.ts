@@ -24,7 +24,7 @@
  * {
  *   "name": "@roka/example",
  *   "version": "1.2.3",
- *   "exports": "./example.ts",
+ *   "exports": "./example.ts"
  * }
  * ```
  *
@@ -239,7 +239,7 @@
  *   "name": "@roka/example",
  *   "version": "2.0.0",
  *   "forge": {
-*      "main": "example.ts"
+ *     "main": "example.ts"
  *   },
  *   "compile": {
  *     "permissions": {

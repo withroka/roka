@@ -4,7 +4,7 @@
  *
  * ```ts
  * import { find } from "@roka/fs/find";
- * for await (const path of find(["."], { type: "file", name: "*.ts" } )) {
+ * for await (const path of find(["."], { type: "file", name: "*.ts" })) {
  *   // do something with path
  * }
  * ```
@@ -116,7 +116,7 @@ export interface FindOptions {
  * await Deno.writeTextFile("b/c.md", "c");
  * assertSameElements(
  *   await Array.fromAsync(find(["."], { name: "*.{txt,md}", type: "file" })),
- *   [ "a.txt", "b/c.md"],
+ *   ["a.txt", "b/c.md"],
  * );
  * ```
  *
@@ -131,7 +131,7 @@ export interface FindOptions {
  * await Deno.writeTextFile("b/c.md", "c");
  * assertSameElements(
  *   await Array.fromAsync(find(["."], { path: "!(b)", type: "dir" })),
- *   [ "." ],
+ *   ["."],
  * );
  * ```
  *

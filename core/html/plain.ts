@@ -4,7 +4,7 @@
  *
  * ```ts
  * import { plain } from "@roka/html/plain";
- * const text = plain("<p>Hello, <b>world</b>!</p>");  // "Hello, world!"
+ * const text = plain("<p>Hello, <b>world</b>!</p>"); // "Hello, world!"
  * ```
  *
  * @module plain

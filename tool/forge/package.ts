@@ -346,7 +346,7 @@ export async function workspace(
  *
  * @example Retrieve all releases of a package.
  * ```ts
- * import { releases, packageInfo } from "@roka/forge/package";
+ * import { packageInfo, releases } from "@roka/forge/package";
  *
  * async function usage() {
  *   const pkg = await packageInfo();

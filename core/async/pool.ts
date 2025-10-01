@@ -18,7 +18,7 @@
  * const results = pooled(
  *   [1, 2, 3],
  *   (x) => Promise.resolve(x * 2),
- *   { concurrency: 2 }
+ *   { concurrency: 2 },
  * );
  * for await (const result of results) {
  *   // ...
@@ -79,7 +79,7 @@ export interface PoolOptions {
  *     () => Promise.resolve(2),
  *     () => Promise.resolve(3),
  *   ],
- *   { concurrency: 2 }
+ *   { concurrency: 2 },
  * );
  * assertEquals(result, [1, 2, 3]);
  * ```
@@ -202,6 +202,7 @@ export async function pool<T, R>(
  *
  * @example Resolve an iterable of promises with a concurrency limit.
  * ```ts
+ *
  * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "jsr:@std/assert";
@@ -289,10 +290,12 @@ export function pooled<T>(
  *   yield 2;
  *   yield 3;
  * }
- * for await (const number of pooled(
- *   asyncIterable(),
- *   (value) => Promise.resolve(value * 2),
- * )) {
+ * for await (
+ *   const number of pooled(
+ *     asyncIterable(),
+ *     (value) => Promise.resolve(value * 2),
+ *   )
+ * ) {
  *   results.push(number);
  * }
  *

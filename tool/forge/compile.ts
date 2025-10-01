@@ -20,7 +20,7 @@
  * {
  *   "forge": {
  *     "main": "main.ts",
- *     "include": ["README.md", "LICENSE"],
+ *     "include": ["README.md", "LICENSE"]
  *   }
  * }
  * ```

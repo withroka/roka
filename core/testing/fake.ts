@@ -48,7 +48,7 @@
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
  * using command = fakeCommand({
- *   cat: [ { code: 0, stdout: "Hello, World!\n" } ],
+ *   cat: [{ code: 0, stdout: "Hello, World!\n" }],
  * });
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
  * const { stdout: output } = await cmd.output();
@@ -440,7 +440,7 @@ export interface FakeCommandOptions {
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- * using command = fakeCommand({ sleep: [ { keep: true } ] });
+ * using command = fakeCommand({ sleep: [{ keep: true }] });
  * const cmd = new Deno.Command("sleep", { args: ["1000"] });
  * const process = cmd.spawn();
  * assertEquals(process.pid, 1);

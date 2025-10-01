@@ -8,7 +8,7 @@
  *   [1, 2, 3, 4, 5, 6],
  *   (x) => Promise.resolve(x * 2),
  *   { concurrency: 2 },
- * );  // results will be [2, 4, 6, 8, 10, 12]
+ * ); // results will be [2, 4, 6, 8, 10, 12]
  * ```
  *
  * ```ts
@@ -17,7 +17,7 @@
  *   () => Promise.reject(new Error()),
  *   () => Promise.resolve().then(() => Promise.resolve("next tick")),
  *   () => Promise.resolve("first"),
- * ]);  // result will be "first"
+ * ]); // result will be "first"
  * ```
  *
  * ## Modules

@@ -4,7 +4,7 @@
  * additional functionality for handling errors and retries.
  *
  * ```ts
- * import { request, AGENT } from "@roka/http/request";
+ * import { AGENT, request } from "@roka/http/request";
  * async function usage() {
  *   const response = await request("https://www.example.com", {
  *     method: "GET",

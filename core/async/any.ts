@@ -8,7 +8,7 @@
  *   () => Promise.reject(new Error()),
  *   () => Promise.resolve().then(() => Promise.resolve("next tick")),
  *   () => Promise.resolve("first"),
- * ]);  // result will be "first"
+ * ]); // result will be "first"
  * ```
  *
  * If all promises reject, an `AggregateError` is thrown, containing all

@@ -8,7 +8,7 @@
  * ```ts
  * import { config } from "@roka/cli/config";
  * async function usage() {
- *   using cfg = config<{ username: string, email: string }>();
+ *   using cfg = config<{ username: string; email: string }>();
  *   const data = await cfg.get();
  *   console.log(data.username);
  *   console.log(data.email);
@@ -69,11 +69,11 @@ export interface ConfigOptions {
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
  * await using directory = await tempDirectory();
- * using cfg = config<{ foo: string, bar: number }>({
+ * using cfg = config<{ foo: string; bar: number }>({
  *   path: directory.path("config.db"),
  * });
  * await cfg.set({ foo: "value" });
- * await cfg.set({ bar: 42});
+ * await cfg.set({ bar: 42 });
  * assertEquals(await cfg.get(), { foo: "value", bar: 42 });
  * ```
  *
@@ -81,11 +81,11 @@ export interface ConfigOptions {
  * ```ts
  * import { config } from "@roka/cli/config";
  * import { assertEquals } from "@std/assert";
- * using cfg = config<{ foo: string, bar: number }>({
- *   path: ":memory:"
+ * using cfg = config<{ foo: string; bar: number }>({
+ *   path: ":memory:",
  * });
  * await cfg.set({ foo: "value" });
- * await cfg.set({ bar: 42});
+ * await cfg.set({ bar: 42 });
  * assertEquals(await cfg.get(), { foo: "value", bar: 42 });
  * ```
  *

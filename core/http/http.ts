@@ -10,7 +10,7 @@
  *
  * ```ts
  * import { request } from "@roka/http/request";
- * async function  usage() {
+ * async function usage() {
  *   const response = await request("https://www.example.com", {
  *     method: "GET",
  *     retry: { maxAttempts: 2 },
@@ -25,7 +25,7 @@
  * import { client } from "@roka/http/json/client";
  * async function usage() {
  *   const api = client("https://www.example.com");
- *   const data = await api.get<{ id: number; }>("/api/path");
+ *   const data = await api.get<{ id: number }>("/api/path");
  * }
  * ```
  *

@@ -70,7 +70,7 @@ export function maybe(
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
  * const { value, error } = await maybe(async () => {
- *   if(true) throw new Error("boom");
+ *   if (true) throw new Error("boom");
  *   return 42;
  * });
  * assertEquals(value, undefined);
@@ -82,10 +82,12 @@ export function maybe(
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
  * const { value, error, errors } = await maybe(async () => {
- *   if(true) throw new AggregateError(
- *     [new Error("boom"), new Error("boom")],
- *     "aggregate"
- *   );
+ *   if (true) {
+ *     throw new AggregateError(
+ *       [new Error("boom"), new Error("boom")],
+ *       "aggregate",
+ *     );
+ *   }
  *   return 42;
  * });
  * assertEquals(value, undefined);
@@ -111,9 +113,9 @@ export function maybe<T>(fn: () => Promise<T>): Promise<Maybe<T>>;
  * @example Failure case.
  * ```ts
  * import { maybe } from "@roka/maybe";
- * import {  assertEquals } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const { value, error } = maybe(() => {
- *   if(true) throw new Error("boom");
+ *   if (true) throw new Error("boom");
  *   return 42;
  * });
  * assertEquals(value, undefined);
