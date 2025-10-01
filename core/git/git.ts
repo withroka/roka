@@ -90,6 +90,8 @@ export interface Git {
   tags: Tags;
   /** Remote operations. */
   remotes: Remotes;
+  /** Gitignore operations. */
+  ignore: Ignore;
 }
 
 /** Index operations from {@linkcode Git.index}. */
@@ -155,6 +157,12 @@ export interface Remotes {
   add: (url: string, name?: string) => Promise<Remote>;
   /** Queries the default branch on the remote. */
   defaultBranch: (name?: string) => Promise<string | undefined>;
+}
+
+/** Gitignore operations from {@linkcode Git.ignore}. */
+export interface Ignore {
+  /** Checks if paths are ignored by gitignore patterns. */
+  check: (paths: string | string[]) => Promise<string[]>;
 }
 
 /** Configuration for a git repository. */
@@ -1029,6 +1037,26 @@ export function git(options?: GitOptions): Git {
         const { defaultBranch } = { ...match?.groups };
         assertExists(defaultBranch, "Cannot parse remote information");
         return defaultBranch === "(unknown)" ? undefined : defaultBranch;
+      },
+    },
+    ignore: {
+      async check(paths) {
+        const pathArray = typeof paths === "string" ? [paths] : paths;
+        if (pathArray.length === 0) return [];
+
+        try {
+          const output = await run(gitOptions, "check-ignore", pathArray);
+          return output.split("\n").filter((x) => x);
+        } catch (error) {
+          // git check-ignore returns exit code 1 when no paths are ignored
+          if (error instanceof GitError) {
+            const cause = error.cause as { code?: number } | undefined;
+            if (cause?.code === 1) {
+              return [];
+            }
+          }
+          throw error;
+        }
       },
     },
   };
