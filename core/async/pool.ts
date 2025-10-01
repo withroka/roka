@@ -211,7 +211,7 @@ export async function pool<T, R>(
  *     () => Promise.resolve(2),
  *     () => Promise.resolve(3),
  *   ],
- *   { concurrency: 2 }
+ *   { concurrency: 2 },
  * );
  * for await (const number of iterable) {
  *   results.push(number);
