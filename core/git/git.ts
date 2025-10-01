@@ -82,6 +82,8 @@ export interface Git {
   };
   /** Branch operations. */
   branches: Branches;
+  /** Ignore (exclusion) operations. */
+  ignore: Ignore;
   /** Index (staged area) operations. */
   index: Index;
   /** Commit operations. */
@@ -90,21 +92,6 @@ export interface Git {
   tags: Tags;
   /** Remote operations. */
   remotes: Remotes;
-  /** Gitignore operations. */
-  ignore: Ignore;
-}
-
-/** Index operations from {@linkcode Git.index}. */
-export interface Index {
-  /** Stages files for commit. */
-  add: (path: string | string[], options?: IndexAddOptions) => Promise<void>;
-  /** Removes files from the index. */
-  remove: (
-    path: string | string[],
-    options?: IndexRemoveOptions,
-  ) => Promise<void>;
-  /** Returns the status of the index and the local working tree. */
-  status: (options?: IndexStatusOptions) => Promise<Status>;
 }
 
 /** Branch operations from {@linkcode Git.branches}. */
@@ -119,6 +106,28 @@ export interface Branches {
   create: (name: string) => Promise<void>;
   /** Deletes a branch. */
   delete: (name: string, options?: BranchDeleteOptions) => Promise<void>;
+}
+
+/** Ignore operations from {@linkcode Git.ignore}. */
+export interface Ignore {
+  /** Checks paths against gitignore list and returns the ignored patterns. */
+  check: (
+    paths: string | string[],
+    options?: IgnoreCheckOptions,
+  ) => Promise<string[]>;
+}
+
+/** Index operations from {@linkcode Git.index}. */
+export interface Index {
+  /** Stages files for commit. */
+  add: (path: string | string[], options?: IndexAddOptions) => Promise<void>;
+  /** Removes files from the index. */
+  remove: (
+    path: string | string[],
+    options?: IndexRemoveOptions,
+  ) => Promise<void>;
+  /** Returns the status of the index and the local working tree. */
+  status: (options?: IndexStatusOptions) => Promise<Status>;
 }
 
 /** Commit operations from {@linkcode Git.commits}. */
@@ -157,12 +166,6 @@ export interface Remotes {
   add: (url: string, name?: string) => Promise<Remote>;
   /** Queries the default branch on the remote. */
   defaultBranch: (name?: string) => Promise<string | undefined>;
-}
-
-/** Gitignore operations from {@linkcode Git.ignore}. */
-export interface Ignore {
-  /** Checks if paths are ignored by gitignore patterns. */
-  check: (paths: string | string[]) => Promise<string[]>;
 }
 
 /** Configuration for a git repository. */
@@ -437,6 +440,14 @@ export interface BranchDeleteOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+export interface IgnoreCheckOptions {
+  /**
+   * Look in the index when undertaking the checks.
+   * @default {true}
+   */
+  index?: boolean;
 }
 
 /** Options for the {@linkcode Index.add} function. */
@@ -805,6 +816,19 @@ export function git(options?: GitOptions): Git {
         );
       },
     },
+    ignore: {
+      async check(paths, options) {
+        if (typeof paths === "string") paths = [paths];
+        if (paths.length === 0) return [];
+        const output = await run(
+          { ...gitOptions, allowCode: [1] },
+          "check-ignore",
+          options?.index === false && "--no-index",
+          paths,
+        );
+        return output.split("\n").filter((x) => x);
+      },
+    },
     index: {
       async add(path, options?: IndexAddOptions) {
         await run(
@@ -1039,32 +1063,12 @@ export function git(options?: GitOptions): Git {
         return defaultBranch === "(unknown)" ? undefined : defaultBranch;
       },
     },
-    ignore: {
-      async check(paths) {
-        const pathArray = typeof paths === "string" ? [paths] : paths;
-        if (pathArray.length === 0) return [];
-
-        try {
-          const output = await run(gitOptions, "check-ignore", pathArray);
-          return output.split("\n").filter((x) => x);
-        } catch (error) {
-          // git check-ignore returns exit code 1 when no paths are ignored
-          if (error instanceof GitError) {
-            const cause = error.cause as { code?: number } | undefined;
-            if (cause?.code === 1) {
-              return [];
-            }
-          }
-          throw error;
-        }
-      },
-    },
   };
   return git;
 }
 
 async function run(
-  options: GitOptions,
+  options: GitOptions & { allowCode?: number[] },
   ...commandArgs: (string | string[] | false | undefined)[]
 ): Promise<string> {
   const args = [
@@ -1081,7 +1085,7 @@ async function run(
   });
   try {
     const { code, stdout, stderr } = await command.output();
-    if (code !== 0) {
+    if (code !== 0 && !(options.allowCode?.includes(code))) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
       const args = commandArgs.filter((x) => x !== false && x !== undefined)
         .flat().map((x) => x.match(/\s/) ? `"${x}"` : x).join(" ");
