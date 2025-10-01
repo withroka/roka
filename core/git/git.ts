@@ -442,6 +442,7 @@ export interface BranchDeleteOptions {
   force?: boolean;
 }
 
+/** Options for the {@linkcode Ignore.check} function. */
 export interface IgnoreCheckOptions {
   /**
    * Look in the index when undertaking the checks.
