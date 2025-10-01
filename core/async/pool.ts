@@ -202,8 +202,6 @@ export async function pool<T, R>(
  *
  * @example Resolve an iterable of promises with a concurrency limit.
  * ```ts
- *
- * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "jsr:@std/assert";
  * const results: number[] = [];
