@@ -429,6 +429,59 @@ Deno.test("git().branches.delete() can force delete unmerged branch", async () =
   assertEquals(await repo.branches.list(), ["main"]);
 });
 
+Deno.test("git().ignore.check() returns empty array for non-ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.ignore.check("file.txt"), []);
+});
+
+Deno.test("git().ignore.check() returns ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  assertEquals(await repo.ignore.check(["file.txt", "file.log"]), ["file.log"]);
+});
+
+Deno.test("git().ignore.check() works with single path string", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  assertEquals(await repo.ignore.check("file.log"), ["file.log"]);
+});
+
+Deno.test("git().ignore.check() works with multiple patterns", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n*.tmp");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await Deno.writeTextFile(repo.path("temp.tmp"), "temp");
+  const result = await repo.ignore.check(["file.txt", "file.log", "temp.tmp"]);
+  assertEquals(result.sort(), ["file.log", "temp.tmp"]);
+});
+
+Deno.test("git().ignore.check() handles empty array", async () => {
+  await using repo = await tempRepository();
+  assertEquals(await repo.ignore.check([]), []);
+});
+
+Deno.test("git().ignore.check() works with nonexistent files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  assertEquals(await repo.ignore.check("nonexistent.log"), ["nonexistent.log"]);
+});
+
+Deno.test("git().ignore.check() considers index", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await repo.index.add("file.log", { force: true });
+  assertEquals(await repo.ignore.check("file.log"), []);
+  assertEquals(await repo.ignore.check("file.log", { index: false }), [
+    "file.log",
+  ]);
+});
+
 Deno.test("git().index.add() adds files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
