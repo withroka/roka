@@ -4,8 +4,8 @@
  *
  * ```ts
  * import { find } from "@roka/fs/find";
- * for await (const path of find(["."], { type: "file", name: "*.ts" })) {
- *   // do something with path
+ * for await (const _ of find(["."], { type: "file", name: "*.ts" })) {
+ *   // ...
  * }
  * ```
  *
@@ -139,11 +139,12 @@ export interface FindOptions {
  * ```ts
  * import { find } from "@roka/fs/find";
  * import { tempDirectory } from "@roka/fs/temp";
- * import { assertRejects } from "jsr:@std/assert";
+ * import { assertRejects } from "@std/assert";
  * await using _ = await tempDirectory({ chdir: true });
  * await assertRejects(
  *   async () => {
  *     for await (const _ of find(["non-existing"], { validate: true })) {
+ *       // ...
  *     }
  *   },
  *   Deno.errors.NotFound,

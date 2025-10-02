@@ -348,10 +348,10 @@ export async function workspace(
  * ```ts
  * import { packageInfo, releases } from "@roka/forge/package";
  *
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   return await releases(pkg, { prerelease: true });
- * }
+ * });
  * ```
  *
  * @param pkg Package to search releases for.
@@ -402,10 +402,10 @@ export async function releases(
  * ```ts
  * import { commits, packageInfo } from "@roka/forge/package";
  *
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, { type: ["feat", "fix"] });
- * }
+ * });
  * ```
  *
  * @example Get commits for a specific release.
@@ -413,12 +413,12 @@ export async function releases(
  * import { commits, packageInfo } from "@roka/forge/package";
  * import { assertExists } from "@std/assert";
  *
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, {
  *     ...pkg.latest ? { range: pkg.latest.range } : {},
  *   });
- * }
+ * });
  * ```
  *
  * @param pkg Package to generate changelog for.

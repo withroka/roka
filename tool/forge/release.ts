@@ -11,10 +11,10 @@
  * ```ts
  * import { release } from "@roka/forge/release";
  * import { packageInfo } from "@roka/forge/package";
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   await release(pkg, { draft: true });
- * }
+ * });
  * ```
  *
  * @module release

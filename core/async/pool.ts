@@ -14,13 +14,13 @@
  * and the results will be in the same order.
  *
  * ```ts
- * import { pool } from "@roka/async/pool";
+ * import { pooled } from "@roka/async/pool";
  * const results = pooled(
  *   [1, 2, 3],
  *   (x) => Promise.resolve(x * 2),
  *   { concurrency: 2 },
  * );
- * for await (const result of results) {
+ * for await (const _result of results) {
  *   // ...
  * }
  * ```
@@ -60,7 +60,7 @@ export interface PoolOptions {
  * @example Resolve an iterable of promises.
  * ```ts
  * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const result = await pool([
  *   () => Promise.resolve(1),
  *   () => Promise.resolve(2),
@@ -72,7 +72,7 @@ export interface PoolOptions {
  * @example Resolve an iterable of promises with a concurrency limit.
  * ```ts
  * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const result = await pool(
  *   [
  *     () => Promise.resolve(1),
@@ -87,7 +87,7 @@ export interface PoolOptions {
  * @example Eagerly resolve an async iterable of promises.
  * ```ts
  * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * async function* asyncGenerator() {
  *   yield Promise.resolve(1);
  *   yield Promise.resolve(2);
@@ -113,7 +113,7 @@ export async function pool<T>(
  * @example Resolve a mapping of promises.
  * ```ts
  * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const results = await pool(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
@@ -124,7 +124,7 @@ export async function pool<T>(
  * @example Resolve a mapping of promises with a concurrency limit.
  * ```ts
  * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const results = await pool(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
@@ -136,7 +136,7 @@ export async function pool<T>(
  * @example Eagerly resolve a mapping from an async iterable.
  * ```ts
  * import { pool } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * async function* asyncIterable() {
  *   yield 1;
  *   yield 2;
@@ -187,7 +187,7 @@ export async function pool<T, R>(
  * @example Resolve an iterable of promises.
  * ```ts
  * import { pooled } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
  * const iterable = pooled([
  *   () => Promise.resolve(1),
@@ -203,7 +203,7 @@ export async function pool<T, R>(
  * @example Resolve an iterable of promises with a concurrency limit.
  * ```ts
  * import { pooled } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
  * const iterable = pooled(
  *   [
@@ -222,7 +222,7 @@ export async function pool<T, R>(
  * @example Eagerly resolve an async iterable of promises.
  * ```ts
  * import { pooled } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * async function* asyncGenerator() {
  *   yield Promise.resolve(1);
  *   yield Promise.resolve(2);
@@ -249,7 +249,7 @@ export function pooled<T>(
  * @example Resolve a mapping of promises.
  * ```ts
  * import { pooled } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
  * const iterable = pooled(
  *   [1, 2, 3],
@@ -264,7 +264,7 @@ export function pooled<T>(
  * @example Resolve a mapping of promises with a concurrency limit.
  * ```ts
  * import { pooled } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
  * const iterable = pooled(
  *   [1, 2, 3],
@@ -281,7 +281,7 @@ export function pooled<T>(
  * @example Eagerly resolve a mapping from an async iterable.
  * ```ts
  * import { pooled } from "@roka/async/pool";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
  * async function* asyncIterable() {
  *   yield 1;

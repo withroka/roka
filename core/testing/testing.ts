@@ -13,8 +13,9 @@
  * object, but captures calls to its methods instead of logging to the console.
  *
  * ```ts
+ * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
- * Deno.test("fakeConsole()", async (t) => {
+ * Deno.test("fakeConsole()", () => {
  *   using console = fakeConsole();
  *   console.log("I won't be printed");
  * });
@@ -30,7 +31,7 @@
  * import { mock } from "@roka/testing/mock";
  * Deno.test("mock()", async (t) => {
  *   const mocked = {
- *     func: async () => "Hello, world!",
+ *     func: async () => await Promise.resolve("Hello, world!"),
  *   };
  *   using func = mock(t, mocked, "func", {
  *     path: "__mocks__/testing.ts.mock",

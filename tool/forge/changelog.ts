@@ -6,10 +6,10 @@
  * ```ts
  * import { changelog } from "@roka/forge/changelog";
  * import { packageInfo } from "@roka/forge/package";
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   console.log(changelog(pkg.changes ?? []));
- * }
+ * });
  * ```
  *
  * @module changelog
@@ -104,14 +104,14 @@ export interface ChangelogOptions {
  * import { packageInfo } from "@roka/forge/package";
  * import { assertExists } from "@std/assert";
  *
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   assertExists(pkg.changes);
  *   console.log(changelog(pkg.changes, {
  *     content: { title: "Changelog" },
  *     markdown: { heading: "# ", bullet: "* " },
  *   }));
- * }
+ * });
  * ```
  *
  * @param commits Commits that are used to generate the changelog.

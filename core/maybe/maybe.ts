@@ -21,14 +21,16 @@
  *
  * ```ts
  * import { maybe } from "@roka/maybe";
+ * import { assertEquals } from "@std/assert";
  * const { value, error } = maybe(() => {
  *   // some operation that may throw
  *   return 42;
  * });
  * if (error) {
- *   const failure = error.message;
+ *   // deno-lint-ignore no-console
+ *   console.error(error.message);
  * } else {
- *   const result = value;
+ *   assertEquals(value, 42);
  * }
  * ```
  *
@@ -70,8 +72,9 @@ export function maybe(
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
  * const { value, error } = await maybe(async () => {
+ *   // deno-lint-ignore no-constant-condition
  *   if (true) throw new Error("boom");
- *   return 42;
+ *   return await Promise.resolve(42);
  * });
  * assertEquals(value, undefined);
  * assertEquals(error?.message, "boom");
@@ -82,13 +85,14 @@ export function maybe(
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
  * const { value, error, errors } = await maybe(async () => {
+ *   // deno-lint-ignore no-constant-condition
  *   if (true) {
  *     throw new AggregateError(
  *       [new Error("boom"), new Error("boom")],
  *       "aggregate",
  *     );
  *   }
- *   return 42;
+ *   return await Promise.resolve(42);
  * });
  * assertEquals(value, undefined);
  * assertEquals(error?.message, "aggregate");
@@ -115,6 +119,7 @@ export function maybe<T>(fn: () => Promise<T>): Promise<Maybe<T>>;
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
  * const { value, error } = maybe(() => {
+ *   // deno-lint-ignore no-constant-condition
  *   if (true) throw new Error("boom");
  *   return 42;
  * });

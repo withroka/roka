@@ -4,11 +4,13 @@
  *
  * ```ts
  * import { any } from "@roka/async/any";
+ * import { assertEquals } from "@std/assert";
  * const result = await any([
  *   () => Promise.reject(new Error()),
  *   () => Promise.resolve().then(() => Promise.resolve("next tick")),
  *   () => Promise.resolve("first"),
- * ]); // result will be "first"
+ * ]);
+ * assertEquals(result, "first");
  * ```
  *
  * If all promises reject, an `AggregateError` is thrown, containing all
@@ -66,8 +68,8 @@ export function any<T>(
  * import { any } from "@roka/async/any";
  * import { assertEquals } from "@std/assert";
  * const result = await any([1, 2, 3], async (x) => {
- *   if (x !== 2) return Promise.reject(x);
- *   return Promise.resolve(x);
+ *   if (x !== 2) return await Promise.reject(x);
+ *   return await Promise.resolve(x);
  * });
  * assertEquals(result, 2);
  * ```

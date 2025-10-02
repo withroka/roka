@@ -11,14 +11,15 @@
  *
  * ```ts
  * import { git } from "@roka/git";
- * async function usage() {
+ * (async () => {
  *   const repo = git();
  *   const branch = await repo.branches.current();
+ *   await repo.branches.checkout({ target: branch });
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
- *   const commit = await repo.commits.create("Initial commit");
+ *   await repo.commits.create("Initial commit");
  *   await repo.tags.create("v1.0.0");
- * }
+ * });
  * ```
  *
  * ## Submodules
@@ -704,13 +705,19 @@ export interface TransportOptions {
  * @example Retrieve the last commit in a repository.
  * ```ts
  * import { git } from "@roka/git";
- * const commit = await git().commits.head();
+ * (async () => {
+ *   const commit = await git().commits.head();
+ *   return { commit };
+ * });
  * ```
  *
  * @example List all tags in a repository.
  * ```ts
  * import { git } from "@roka/git";
- * const tags = await git().tags.list();
+ * (async () => {
+ *   const tags = await git().tags.list();
+ *   return { tags };
+ * });
  * ```
  *
  * @example Create a new git repository and add a file.

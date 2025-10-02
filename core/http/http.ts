@@ -10,12 +10,13 @@
  *
  * ```ts
  * import { request } from "@roka/http/request";
- * async function usage() {
+ * (async () => {
  *   const response = await request("https://www.example.com", {
  *     method: "GET",
  *     retry: { maxAttempts: 2 },
  *   });
- * }
+ *   return { response };
+ * });
  * ```
  *
  * The {@link [json]} and {@link [graphql]} modules provide higher-level
@@ -23,10 +24,10 @@
  *
  * ```ts
  * import { client } from "@roka/http/json/client";
- * async function usage() {
+ * (async () => {
  *   const api = client("https://www.example.com");
- *   const data = await api.get<{ id: number }>("/api/path");
- * }
+ *   return await api.get<{ id: number }>("/api/path");
+ * });
  * ```
  *
  * ## Modules

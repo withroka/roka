@@ -6,14 +6,15 @@
  * longer needed, which can be achieved via the `using` keyword.
  *
  * ```ts
+ * // deno-lint-ignore-file no-console
  * import { config } from "@roka/cli/config";
- * async function usage() {
+ * (async () => {
  *   using cfg = config<{ username: string; email: string }>();
  *   const data = await cfg.get();
  *   console.log(data.username);
  *   console.log(data.email);
  *   await cfg.set({ email: "new-email@example.com" });
- * }
+ * });
  * ```
  *
  * The config system wraps the {@link https://deno.com/kv | Deno.Kv} API to

@@ -7,9 +7,12 @@
  *   fakeRelease,
  *   fakeRepository,
  * } from "@roka/github/testing";
+ * import { assertEquals } from "@std/assert";
  * const repo = fakeRepository();
  * const pull = fakePullRequest({ repo, title: "title" });
+ * assertEquals(pull.title, "title");
  * const release = fakeRelease({ repo, tag: "tag" });
+ * assertEquals(release.tag, "tag");
  * ```
  *
  * @module testing

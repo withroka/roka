@@ -6,12 +6,12 @@
  *
  * ```ts
  * import { config } from "@roka/cli/config";
- * async function usage() {
+ * (async () => {
  *   type AppConfig = { username: string };
  *   using cfg = config<AppConfig>();
  *   const data = await cfg.get();
- *   await cfg.set({ username: "USER" });
- * }
+ *   await cfg.set({ ...data, username: "USER" });
+ * });
  * ```
  *
  * ## Modules

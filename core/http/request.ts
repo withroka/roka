@@ -5,12 +5,13 @@
  *
  * ```ts
  * import { AGENT, request } from "@roka/http/request";
- * async function usage() {
+ * (async () => {
  *   const response = await request("https://www.example.com", {
  *     method: "GET",
  *     agent: AGENT.Browser,
  *   });
- * }
+ *   return { response };
+ * });
  * ```
  *
  * The function retries the fetch call on certain status codes, with
@@ -19,11 +20,12 @@
  *
  * ```ts
  * import { request } from "@roka/http/request";
- * async function usage() {
+ * (async () => {
  *   const response = await request("https://www.example.com", {
  *     retry: { maxAttempts: 2 },
  *   });
- * }
+ *   return { response };
+ * });
  * ```
  *
  * The function throws a {@linkcode RequestError} on error responses. Some
@@ -33,14 +35,15 @@
  * ```ts
  * import { request } from "@roka/http/request";
  * import { STATUS_CODE } from "@std/http/status";
- * async function usage() {
+ * (async () => {
  *   const response = await request("https://www.example.com", {
  *     allowedErrors: [STATUS_CODE.NotFound],
  *   });
  *   if (response.status === STATUS_CODE.NotFound) {
+ *     // deno-lint-ignore no-console
  *     console.log("Not found");
  *   }
- * }
+ * });
  * ```
  *
  * @module request

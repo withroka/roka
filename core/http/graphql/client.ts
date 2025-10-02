@@ -6,7 +6,7 @@
  * ```ts
  * import { client, gql } from "./client.ts";
  *
- * async function usage() {
+ * (async () => {
  *   const api = client("https://api.github.com/graphql");
  *   type Repository = { owner: { login: string }; name: string };
  *   const repo = await api.query<{ repository: Repository }>(
@@ -19,8 +19,9 @@
  *       }
  *     `,
  *   );
+ *   // deno-lint-ignore no-console
  *   console.log(repo?.repository);
- * }
+ * });
  * ```
  *
  * @module client
@@ -100,7 +101,7 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  *   description: string;
  * }
  *
- * async function usage() {
+ * (async () => {
  *   const api = client("https://api.github.com/graphql");
  *   const { repository } = await api.query(
  *     `
@@ -112,8 +113,10 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  *  `,
  *     { owner: "owner", name: "repo" },
  *   );
+ *
+ *   // deno-lint-ignore no-console
  *   console.log(repository.description);
- * }
+ * });
  * ```
  *
  * @example Make a paginated GraphQL query.
@@ -138,7 +141,7 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  *   };
  * }
  *
- * async function usage() {
+ * (async () => {
  *   const api = client("https://api.github.com/graphql");
  *   const issues: Issue[] = await api.queryPaginated(
  *     `
@@ -167,8 +170,9 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  *     },
  *     { owner: "owner", name: "name" },
  *   );
+ *   // deno-lint-ignore no-console
  *   console.log(issues);
- * }
+ * });
  * ```
  */
 export function client(url: string | URL, options?: ClientOptions): Client {

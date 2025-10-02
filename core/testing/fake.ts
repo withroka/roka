@@ -13,7 +13,7 @@
  * ```ts
  * import { fakeArgs } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- * using args = fakeArgs(["arg1", "arg2"]);
+ * using _ = fakeArgs(["arg1", "arg2"]);
  * assertEquals(Deno.args, ["arg1", "arg2"]);
  * ```
  *
@@ -33,6 +33,7 @@
  * from the code being tested.
  *
  * ```ts
+ * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
  * using console = fakeConsole();
@@ -47,7 +48,7 @@
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- * using command = fakeCommand({
+ * using _ = fakeCommand({
  *   cat: [{ code: 0, stdout: "Hello, World!\n" }],
  * });
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
@@ -82,7 +83,7 @@ export interface FakeArgs {
  * ```ts
  * import { fakeArgs } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- * using args = fakeArgs(["arg1", "arg2"]);
+ * using _ = fakeArgs(["arg1", "arg2"]);
  * assertEquals(Deno.args, ["arg1", "arg2"]);
  * ```
  */
@@ -241,6 +242,7 @@ export interface FakeConsoleOutputOptions {
  *
  * @example Verify console output.
  * ```ts
+ * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
  * using console = fakeConsole();
@@ -251,6 +253,7 @@ export interface FakeConsoleOutputOptions {
  *
  * @example Verify error output only.
  * ```ts
+ * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
  * using console = fakeConsole();
@@ -261,6 +264,7 @@ export interface FakeConsoleOutputOptions {
  *
  * @example Verify individual calls to the console.
  * ```ts
+ * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
  * using console = fakeConsole();
@@ -413,7 +417,7 @@ export interface FakeCommandOptions {
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- * using command = fakeCommand();
+ * using _ = fakeCommand();
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
  * const { code } = await cmd.output();
  * assertEquals(code, 0);
@@ -423,7 +427,7 @@ export interface FakeCommandOptions {
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- * using command = fakeCommand({
+ * using _ = fakeCommand({
  *   cat: [
  *     { code: 0, stdout: "Hello, World!\n" },
  *     { code: 1, stdout: "Hello, Mars!\n" },
@@ -440,7 +444,7 @@ export interface FakeCommandOptions {
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
- * using command = fakeCommand({ sleep: [{ keep: true }] });
+ * using _ = fakeCommand({ sleep: [{ keep: true }] });
  * const cmd = new Deno.Command("sleep", { args: ["1000"] });
  * const process = cmd.spawn();
  * assertEquals(process.pid, 1);

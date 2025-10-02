@@ -4,20 +4,24 @@
  *
  * ```ts
  * import { pool } from "@roka/async/pool";
+ * import { assertEquals } from "@std/assert";
  * const results = await pool(
  *   [1, 2, 3, 4, 5, 6],
  *   (x) => Promise.resolve(x * 2),
  *   { concurrency: 2 },
- * ); // results will be [2, 4, 6, 8, 10, 12]
+ * );
+ * assertEquals(results, [2, 4, 6, 8, 10, 12]);
  * ```
  *
  * ```ts
  * import { any } from "@roka/async/any";
+ * import { assertEquals } from "@std/assert";
  * const result = await any([
  *   () => Promise.reject(new Error()),
  *   () => Promise.resolve().then(() => Promise.resolve("next tick")),
  *   () => Promise.resolve("first"),
- * ]); // result will be "first"
+ * ]);
+ * assertEquals(result, "first");
  * ```
  *
  * ## Modules

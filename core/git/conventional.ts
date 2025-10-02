@@ -7,7 +7,7 @@
  * import { git } from "@roka/git";
  * import { conventional } from "@roka/git/conventional";
  * import { assertEquals, assertFalse } from "@std/assert";
- * async function usage() {
+ * (async () => {
  *   const repo = git();
  *   await repo.commits.create("feat(cli): add new command");
  *   const commit = conventional(await repo.commits.head());
@@ -15,7 +15,7 @@
  *   assertEquals(commit.scopes, ["cli"]);
  *   assertEquals(commit.description, "add new command");
  *   assertFalse(commit.breaking);
- * }
+ * });
  * ```
  *
  * This implementation adheres to the version 1.0.0 of the specification.

@@ -6,10 +6,10 @@
  * ```ts
  * import { compile } from "@roka/forge/compile";
  * import { packageInfo } from "@roka/forge/package";
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   await compile(pkg, { target: ["x86_64-unknown-linux-gnu"] });
- * }
+ * });
  * ```
  *
  * The package configuration file (`deno.json`) must contain an entry of
