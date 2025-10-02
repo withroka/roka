@@ -14,7 +14,7 @@
 
 import { maybe } from "@roka/maybe";
 import { basename, globToRegExp } from "@std/path";
-import { join } from "node:path";
+import { join } from "@std/path";
 
 /** Options for the {@linkcode find} function. */
 export interface FindOptions {
