@@ -14,7 +14,9 @@
  * (async () => {
  *   const repo = git();
  *   const branch = await repo.branches.current();
- *   if (branch === "main") await repo.branches.checkout({ new: "feature" });
+ *   if (branch === "main") {
+ *     await repo.branches.checkout({ new: "feature" });
+ *   }
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
  *   await repo.commits.create("Initial commit");
