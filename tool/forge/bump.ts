@@ -17,10 +17,10 @@
  * ```ts
  * import { bump } from "@roka/forge/bump";
  * import { workspace } from "@roka/forge/package";
- * async function usage() {
+ * (async () => {
  *   const packages = await workspace();
  *   await bump(packages, { pr: true });
- * }
+ * });
  * ```
  *
  * @todo Check if configuration files are dirty before modifying them.

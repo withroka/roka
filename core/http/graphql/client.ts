@@ -6,9 +6,9 @@
  * ```ts
  * import { client, gql } from "./client.ts";
  *
- * async function usage() {
+ * (async () => {
  *   const api = client("https://api.github.com/graphql");
- *   type Repository = { owner: { login: string }; name: string }
+ *   type Repository = { owner: { login: string }; name: string };
  *   const repo = await api.query<{ repository: Repository }>(
  *     gql`
  *       query {
@@ -19,8 +19,9 @@
  *       }
  *     `,
  *   );
+ *   // deno-lint-ignore no-console
  *   console.log(repo?.repository);
- * }
+ * });
  * ```
  *
  * @module client
@@ -100,18 +101,22 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  *   description: string;
  * }
  *
- * async function usage() {
+ * (async () => {
  *   const api = client("https://api.github.com/graphql");
- *   const { repository } = await api.query(`
+ *   const { repository } = await api.query(
+ *     `
  *     query($owner: String!, $name: String!) {
  *       repository(owner: $owner, name: $name) {
  *         description
  *       }
  *    }
  *  `,
- *  { owner: "owner", name: "repo" });
- *  console.log(repository.description);
- * };
+ *     { owner: "owner", name: "repo" },
+ *   );
+ *
+ *   // deno-lint-ignore no-console
+ *   console.log(repository.description);
+ * });
  * ```
  *
  * @example Make a paginated GraphQL query.
@@ -119,9 +124,9 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  * import { client } from "@roka/http/graphql/client";
  *
  * interface Issue {
- *  number: number;
- *  title: string;
- *  state: string;
+ *   number: number;
+ *   title: string;
+ *   state: string;
  * }
  *
  * interface Issues {
@@ -136,9 +141,10 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  *   };
  * }
  *
- * async function usage() {
+ * (async () => {
  *   const api = client("https://api.github.com/graphql");
- *   const issues: Issue[] = await api.queryPaginated(`
+ *   const issues: Issue[] = await api.queryPaginated(
+ *     `
  *     query($owner: String!, $name: String!) {
  *        repository(owner: "owner", name: $name) {
  *          issues(first: 1) {
@@ -156,15 +162,17 @@ export interface Paginator<Data, Node, Edge, PageInfo> {
  *        }
  *      }
  *  `,
- *  {
- *    edges: (issues: Issues) => issues.repository.issues.nodes,
- *    node: (edge) => edge,
- *    pageInfo: (issues) => issues.repository.issues.pageInfo,
- *    cursor: (pageInfo) => pageInfo.hasNextPage ? pageInfo.endCursor : null,
- *  },
- *  { owner: "owner", name: "name" });
- *  console.log(issues);
- * }
+ *     {
+ *       edges: (issues: Issues) => issues.repository.issues.nodes,
+ *       node: (edge) => edge,
+ *       pageInfo: (issues) => issues.repository.issues.pageInfo,
+ *       cursor: (pageInfo) => pageInfo.hasNextPage ? pageInfo.endCursor : null,
+ *     },
+ *     { owner: "owner", name: "name" },
+ *   );
+ *   // deno-lint-ignore no-console
+ *   console.log(issues);
+ * });
  * ```
  */
 export function client(url: string | URL, options?: ClientOptions): Client {

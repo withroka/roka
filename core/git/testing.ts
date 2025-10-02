@@ -3,7 +3,7 @@
  * testing.
  *
  * ```ts
- * import { testCommit, tempRepository } from "@roka/git/testing";
+ * import { tempRepository, testCommit } from "@roka/git/testing";
  *
  * await using repo = await tempRepository();
  * const commit = testCommit({ summary: "feat(cli): add command" });
@@ -26,7 +26,7 @@ import { type Commit, type Config, type Git, git } from "./git.ts";
  * import { testCommit } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
  *
- * const commit = testCommit({summary: "feat(cli): add command"});
+ * const commit = testCommit({ summary: "feat(cli): add command" });
  * assertEquals(commit.summary, "feat(cli): add command");
  * ```
  */

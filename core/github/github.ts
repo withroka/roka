@@ -9,13 +9,14 @@
  *
  * ```ts
  * import { github } from "@roka/github";
- * async function usage() {
+ * (async () => {
  *   const repo = await github().repos.get();
  *   const releases = await repo.releases.list();
  *   const pulls = await repo.pulls.create({
  *     title: "New pull request",
  *   });
- * }
+ *   return { pulls, releases };
+ * });
  * ```
  *
  * ## Submodules
@@ -230,37 +231,41 @@ export type ReleaseUpdateOptions = Partial<
  * @example Create a GitHub client to work on the current repository.
  * ```ts
  * import { github } from "@roka/github";
- * async function usage() {
+ * (async () => {
  *   const repo = await github().repos.get();
  *   const pulls = await repo.pulls.list();
- * }
+ *   return { pulls };
+ * });
  * ```
  *
  * @example Create a GitHub client with a personal access token.
  * ```ts
  * import { github } from "@roka/github";
- * async function usage() {
+ * (async () => {
  *   const repo = await github({ token: "TOKEN" }).repos.get();
  *   const pulls = await repo.pulls.list();
- * }
+ *   return { pulls };
+ * });
  * ```
  *
  * @example Create a GitHub client for a specific repository.
  * ```ts
  * import { github } from "@roka/github";
- * async function usage() {
+ * (async () => {
  *   const repo = github().repos.get("owner", "repo");
  *   const releases = await repo.releases.list();
- * }
+ *   return { releases };
+ * });
  * ```
  *
  * @example Create a pull request from the current local branch.
  * ```ts
  * import { github } from "@roka/github";
- * async function usage() {
+ * (async () => {
  *   const repo = await github().repos.get();
  *   const pr = await repo.pulls.create({ title: "New PR" });
- * }
+ *   return { pr };
+ * });
  * ```
  */
 export function github(options?: GitHubOptions): GitHub {

@@ -5,15 +5,19 @@
  *
  * ```ts
  * import { client } from "@roka/http/json/client";
- * async function usage() {
- *   interface Issue { number: number; state: string; };
+ * (async () => {
+ *   interface Issue {
+ *     number: number;
+ *     state: string;
+ *   }
  *   const api = client("https://api.github.com");
  *   await api.post<Issue>(
  *     "/repos/owner/repo/issues",
  *     { body: { title: "Test issue" } },
  *   );
  *   const issue = await api.get<Issue>("/repos/owner/repo/issues/1");
- * }
+ *   return { issue };
+ * });
  * ```
  *
  * @module client
@@ -67,18 +71,25 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
  * @example Make a JSON request.
  * ```ts
  * import { client } from "@roka/http/json/client";
- * async function usage() {
- *   interface Issue { number: number; state: string; };
+ * (async () => {
+ *   interface Issue {
+ *     number: number;
+ *     state: string;
+ *   }
  *   const api = client("https://api.github.com");
  *   const issue = await api.get<Issue>("/repos/owner/repo/issues/1");
- * }
+ *   return { issue };
+ * });
  * ```
  *
  * @example Make an authenticated JSON request.
  * ```ts
  * import { client } from "@roka/http/json/client";
- * async function usage() {
- *   interface Issue { number: number; state: string; };
+ * (async () => {
+ *   interface Issue {
+ *     number: number;
+ *     state: string;
+ *   }
  *   const api = client("https://api.github.com", {
  *     token: "TOKEN",
  *   });
@@ -86,7 +97,7 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
  *     "/repos/owner/repo/issues",
  *     { body: { title: "Test issue" } },
  *   );
- * }
+ * });
  * ```
  */
 export function client(

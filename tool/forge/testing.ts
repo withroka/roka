@@ -3,14 +3,14 @@
  *
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
- * await using pkg = await tempPackage({
+ * await using _ = await tempPackage({
  *   config: { name: "@scope/name" },
  * });
  * ```
  *
  * ```ts
  * import { tempWorkspace } from "@roka/forge/testing";
- * await using packages = await tempWorkspace({
+ * await using _ = await tempWorkspace({
  *   configs: [
  *     { name: "@scope/name1" },
  *     { name: "@scope/name2" },

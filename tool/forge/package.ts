@@ -6,8 +6,11 @@
  *
  * ```ts
  * import { packageInfo } from "@roka/forge/package";
- * const pkg = await packageInfo({
- *   directory: import.meta.dirname ?? ".",
+ * (async () => {
+ *   const pkg = await packageInfo({
+ *     directory: import.meta.dirname ?? ".",
+ *   });
+ *   return { pkg };
  * });
  * ```
  *
@@ -27,7 +30,10 @@
  * in a monorepo.
  *
  * ```ts
- * const packages = await workspace();
+ * (async () => {
+ *   const packages = await workspace();
+ *   return { packages };
+ * });
  * ```
  *
  * Commits are only attributed to a workspace member if they explicitly list
@@ -346,12 +352,12 @@ export async function workspace(
  *
  * @example Retrieve all releases of a package.
  * ```ts
- * import { releases, packageInfo } from "@roka/forge/package";
+ * import { packageInfo, releases } from "@roka/forge/package";
  *
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   return await releases(pkg, { prerelease: true });
- * }
+ * });
  * ```
  *
  * @param pkg Package to search releases for.
@@ -401,24 +407,21 @@ export async function releases(
  * @example Get commits since the last release.
  * ```ts
  * import { commits, packageInfo } from "@roka/forge/package";
- *
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, { type: ["feat", "fix"] });
- * }
+ * });
  * ```
  *
  * @example Get commits for a specific release.
  * ```ts
  * import { commits, packageInfo } from "@roka/forge/package";
- * import { assertExists } from "@std/assert";
- *
- * async function usage() {
+ * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, {
  *     ...pkg.latest ? { range: pkg.latest.range } : {},
  *   });
- * }
+ * });
  * ```
  *
  * @param pkg Package to generate changelog for.

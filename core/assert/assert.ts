@@ -39,7 +39,7 @@ export type PropertyKey = string | number | symbol;
  * ```ts
  * import { assertSameElements } from "@roka/assert";
  *
- * assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]);  // passes
+ * assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]); // passes
  * ```
  */
 export function assertSameElements<T>(
@@ -87,7 +87,7 @@ export function assertSameElements<T>(
  *   { id: 2, name: "Bob" },
  * ];
  *
- * assertArrayObjectMatch(actual, expected);  // passes
+ * assertArrayObjectMatch(actual, expected); // passes
  * ```
  *
  * @throws {AssertionError} If the arrays differ in length or if any object in

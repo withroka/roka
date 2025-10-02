@@ -4,7 +4,8 @@
  *
  * ```ts
  * import { plain } from "@roka/html/plain";
- * const text = plain("<p>Hello, <b>world</b>!</p>");  // "Hello, world!"
+ * import { assertEquals } from "@std/assert";
+ * assertEquals(plain("<p>Hello, <b>world</b>!</p>"), "Hello, world!");
  * ```
  *
  * @module plain

@@ -45,8 +45,8 @@ export interface TempDirectoryOptions {
  * ```ts
  * import { tempDirectory } from "@roka/fs/temp";
  * {
- *   await using dir = await tempDirectory({ chdir: true });
- *   Deno.cwd(); // dir.path()
+ *   await using _ = await tempDirectory({ chdir: true });
+ *   Deno.cwd(); // _.path()
  *   await Deno.writeTextFile("file.txt", "Hello!");
  * }
  * Deno.cwd(); // restored
