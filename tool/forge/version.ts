@@ -4,7 +4,9 @@
  *
  * ```ts
  * import { version } from "@roka/forge/version";
- * const appVersion = await version();
+ * (async () => {
+ *   return await version();
+ * });
  * ```
  *
  * @todo Detect when an app is run as a JSR module without version specifier.

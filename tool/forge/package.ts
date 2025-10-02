@@ -6,8 +6,11 @@
  *
  * ```ts
  * import { packageInfo } from "@roka/forge/package";
- * const pkg = await packageInfo({
- *   directory: import.meta.dirname ?? ".",
+ * (async () => {
+ *   const pkg = await packageInfo({
+ *     directory: import.meta.dirname ?? ".",
+ *   });
+ *   return { pkg };
  * });
  * ```
  *
@@ -27,7 +30,10 @@
  * in a monorepo.
  *
  * ```ts
- * const packages = await workspace();
+ * (async () => {
+ *   const packages = await workspace();
+ *   return { packages };
+ * });
  * ```
  *
  * Commits are only attributed to a workspace member if they explicitly list
@@ -401,7 +407,6 @@ export async function releases(
  * @example Get commits since the last release.
  * ```ts
  * import { commits, packageInfo } from "@roka/forge/package";
- *
  * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, { type: ["feat", "fix"] });
@@ -411,8 +416,6 @@ export async function releases(
  * @example Get commits for a specific release.
  * ```ts
  * import { commits, packageInfo } from "@roka/forge/package";
- * import { assertExists } from "@std/assert";
- *
  * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, {

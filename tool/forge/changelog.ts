@@ -4,11 +4,11 @@
  * {@link https://www.conventionalcommits.org | Conventional Commits}.
  *
  * ```ts
- * import { changelog } from "@roka/forge/changelog";
  * import { packageInfo } from "@roka/forge/package";
  * (async () => {
  *   const pkg = await packageInfo();
- *   console.log(changelog(pkg.changes ?? []));
+ *   const log = changelog(pkg.changes ?? []);
+ *   return { log };
  * });
  * ```
  *
@@ -103,14 +103,14 @@ export interface ChangelogOptions {
  * import { changelog } from "@roka/forge/changelog";
  * import { packageInfo } from "@roka/forge/package";
  * import { assertExists } from "@std/assert";
- *
  * (async () => {
  *   const pkg = await packageInfo();
  *   assertExists(pkg.changes);
- *   console.log(changelog(pkg.changes, {
+ *   const log = changelog(pkg.changes, {
  *     content: { title: "Changelog" },
  *     markdown: { heading: "# ", bullet: "* " },
- *   }));
+ *   });
+ *   return { log };
  * });
  * ```
  *
