@@ -138,34 +138,6 @@ Deno.test("find() returns absolute paths for absolute input", async () => {
   );
 });
 
-Deno.test("find() can limit maxDepth", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
-  assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 1 })), [
-    ".",
-    "a.txt",
-    "b",
-    "d",
-  ]);
-  assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 2 })), [
-    ".",
-    "a.txt",
-    "b",
-    "b/c.md",
-    "d",
-    "d/e",
-  ]);
-  assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 3 })), [
-    ".",
-    "a.txt",
-    "b",
-    "b/c.md",
-    "d",
-    "d/e",
-    "d/e/f.txt",
-  ]);
-});
-
 Deno.test("find() can filter files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
@@ -712,4 +684,80 @@ Deno.test("find() can exclude by path", async () => {
     await Array.fromAsync(find(["."], { path: "!(*.txt)", type: "file" })),
     [],
   );
+});
+
+Deno.test("find() can ignore paths", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md", "b/d/e.txt", "f/g/h.txt"]);
+  assertSameElements(
+    await Array.fromAsync(find(["."], { ignore: ["b"] })),
+    [
+      ".",
+      "a.txt",
+      "f",
+      "f/g",
+      "f/g/h.txt",
+    ],
+  );
+  assertSameElements(
+    await Array.fromAsync(find(["b"], { ignore: ["b"] })),
+    [],
+  );
+  assertSameElements(
+    await Array.fromAsync(find(["."], { ignore: ["**/*.md"] })),
+    [
+      ".",
+      "a.txt",
+      "b",
+      "b/d",
+      "b/d/e.txt",
+      "f",
+      "f/g",
+      "f/g/h.txt",
+    ],
+  );
+  assertSameElements(
+    await Array.fromAsync(find(["."], { ignore: ["**/d"] })),
+    [
+      ".",
+      "a.txt",
+      "b",
+      "b/c.md",
+      "f",
+      "f/g",
+      "f/g/h.txt",
+    ],
+  );
+  assertSameElements(
+    await Array.fromAsync(find(["."], { ignore: ["**"] })),
+    [],
+  );
+});
+
+Deno.test("find() can limit maxDepth", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
+  assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 1 })), [
+    ".",
+    "a.txt",
+    "b",
+    "d",
+  ]);
+  assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 2 })), [
+    ".",
+    "a.txt",
+    "b",
+    "b/c.md",
+    "d",
+    "d/e",
+  ]);
+  assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 3 })), [
+    ".",
+    "a.txt",
+    "b",
+    "b/c.md",
+    "d",
+    "d/e",
+    "d/e/f.txt",
+  ]);
 });
