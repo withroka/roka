@@ -68,7 +68,7 @@ export interface ChangelogOptions {
      * This provides a nicely formatted changelog for GitHub pull requests, and
      * avoids listing commit titles twice.
      *
-     * Changelogs for releases and markdown files should not use this option,
+     * Changelogs for releases and Markdown files should not use this option,
      * because GitHub does not provide the pull request title in those contexts.
      *
      * @default {false}
