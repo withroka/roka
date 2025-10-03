@@ -4,7 +4,13 @@
  *
  * ```ts
  * import { find } from "@roka/fs/find";
- * for await (const _ of find(["."], { type: "file", name: "*.ts" })) {
+ * for await (
+ *   const _ of find(["."], {
+ *     type: "file",
+ *     name: "*.ts",
+ *     ignore: ["node_modules"],
+ *   })
+ * ) {
  *   // ...
  * }
  * ```
@@ -13,35 +19,16 @@
  */
 
 import { maybe } from "@roka/maybe";
-import { basename, globToRegExp } from "@std/path";
-import { join } from "@std/path";
+import { basename, globToRegExp, join } from "@std/path";
 
 /** Options for the {@linkcode find} function. */
 export interface FindOptions {
-  /**
-   * The maximum depth of the file tree to be walked recursively.
-   * @default {Infinity}
-   */
-  maxDepth?: number;
-  /**
-   * Whether to validate the existence of the given paths.
-   *
-   * If `true`, an error will be thrown if any of the given paths do not exist.
-   *
-   * @default {false}
-   */
-  validate?: boolean;
   /**
    * Type of file system entry to find.
    *
    * If not specified, both files and directories are returned.
    */
   type?: "file" | "dir" | "symlink";
-  /**
-   * Whether to follow symbolic links.
-   * @default {false}
-   */
-  followSymlinks?: boolean;
   /**
    * Extended glob pattern to match file or directory names.
    *
@@ -65,6 +52,39 @@ export interface FindOptions {
    * If not specified, all paths are matched.
    */
   path?: string;
+  /**
+   * List of paths to ignore.
+   *
+   * This is an array of extended glob patterns applied both to intermediate
+   * and the result paths returned by the function. If a file matches any of
+   * the patterns, it will not be returned. If a directory matches any of
+   * the patterns, it and its contents will be skipped entirely.
+   *
+   * Similar to {@linkcode FindOptions.path | path}, if absolute paths are
+   * given as input, the patterns should match absolute paths, and if relative
+   * paths are given as input, the patterns should match relative paths.
+   *
+   * If not specified, no paths are ignored.
+   */
+  ignore?: string[];
+  /**
+   * Whether to follow symbolic links.
+   * @default {false}
+   */
+  followSymlinks?: boolean;
+  /**
+   * The maximum depth of the file tree to be walked recursively.
+   * @default {Infinity}
+   */
+  maxDepth?: number;
+  /**
+   * Whether to validate the existence of the given paths.
+   *
+   * If `true`, an error will be thrown if any of the given paths do not exist.
+   *
+   * @default {false}
+   */
+  validate?: boolean;
 }
 
 /**
@@ -135,6 +155,21 @@ export interface FindOptions {
  * );
  * ```
  *
+ * @example Ignore specific paths.
+ * ```ts
+ * import { find } from "@roka/fs/find";
+ * import { tempDirectory } from "@roka/fs/temp";
+ * import { assertSameElements } from "@roka/assert";
+ * await using _ = await tempDirectory({ chdir: true });
+ * await Deno.writeTextFile("a.txt", "a");
+ * await Deno.mkdir("b");
+ * await Deno.writeTextFile("b/c.md", "c");
+ * assertSameElements(
+ *   await Array.fromAsync(find(["."], { ignore: ["b"] })),
+ *   [".", "a.txt"],
+ * );
+ * ```
+ *
  * @example Handle non-existing paths with validation.
  * ```ts
  * import { find } from "@roka/fs/find";
@@ -172,6 +207,7 @@ export async function* find(
   } = options ?? {};
   const namePattern = options?.name ? globToRegExp(options.name) : undefined;
   const pathPattern = options?.path ? globToRegExp(options.path) : undefined;
+  const ignorePatterns = options?.ignore?.map((p) => globToRegExp(p)) ?? [];
   const found = new Set<string>();
   async function* internal(
     depth: number,
@@ -180,6 +216,7 @@ export async function* find(
     info?: { real: string; stat: Stat } | undefined,
   ): AsyncIterableIterator<string> {
     if (depth > maxDepth) return;
+    if (ignorePatterns.some((p) => p.exec(path))) return;
     const { value, error } = await maybe(async () => {
       if (info) return info;
       const [real, stat] = await Promise.all([
