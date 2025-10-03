@@ -448,6 +448,14 @@ export interface BranchDeleteOptions {
 /** Options for the {@linkcode Ignore.check} function. */
 export interface IgnoreCheckOptions {
   /**
+   * Return paths that match the ignore list.
+   *
+   * If set to `false`, returns paths that do not match the ignore list instead.
+   *
+   * @default {true}
+   */
+  matching?: boolean;
+  /**
    * Look in the index when undertaking the checks.
    * @default {true}
    */
@@ -833,10 +841,17 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           "check-ignore",
+          options?.matching === false && ["--non-matching", "--verbose"],
           options?.index === false && "--no-index",
           paths,
         );
-        return output.split("\n").filter((x) => x);
+        return output.split("\n")
+          .map((line) =>
+            (options?.matching !== false)
+              ? line
+              : (line.startsWith("::") ? (line.split("\t").at(-1) ?? "") : "")
+          )
+          .filter((line) => line);
       },
     },
     index: {
