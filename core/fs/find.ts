@@ -4,7 +4,13 @@
  *
  * ```ts
  * import { find } from "@roka/fs/find";
- * for await (const _ of find(["."], { type: "file", name: "*.ts" })) {
+ * for await (
+ *   const _ of find(["."], {
+ *     type: "file",
+ *     name: "*.ts",
+ *     ignore: ["node_modules"],
+ *   })
+ * ) {
  *   // ...
  * }
  * ```
@@ -159,8 +165,8 @@ export interface FindOptions {
  * await Deno.mkdir("b");
  * await Deno.writeTextFile("b/c.md", "c");
  * assertSameElements(
- *   await Array.fromAsync(find(["."], { ignore: ["b/*"] })),
- *   [".", "a.txt", "b"],
+ *   await Array.fromAsync(find(["."], { ignore: ["b"] })),
+ *   [".", "a.txt"],
  * );
  * ```
  *
