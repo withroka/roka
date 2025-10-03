@@ -240,7 +240,6 @@ export async function* find(
     }
     if (found.has(real)) return;
     found.add(real);
-    if (ignorePatterns.some((p) => p.exec(path))) return;
     if (
       (type === undefined || type === "dir" || !stat.isDirectory) &&
       (namePattern === undefined || namePattern?.exec(basename(path))) &&
