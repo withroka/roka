@@ -448,7 +448,7 @@ export interface BranchDeleteOptions {
 /** Options for the {@linkcode Ignore.check} function. */
 export interface IgnoreCheckOptions {
   /**
-   * Return paths that that match the ignore list.
+   * Return paths that match the ignore list.
    *
    * If set to `false`, returns paths that do not match the ignore list instead.
    *
