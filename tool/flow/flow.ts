@@ -44,11 +44,10 @@ export async function flow(): Promise<number> {
     .action(async (_, ...paths) => {
       const found = await files(paths);
       console.log(`✅ Formatted ${await fmt(found)} files.`);
-      console.log(`✅ Linted ${await lint(found)} files.`);
       if (paths.length === 0) {
         await doc(found, { lint: true });
-        console.log(`✅ Linted documentation.`);
       }
+      console.log(`✅ Linted ${await lint(found)} files.`);
     })
     .command("fmt", fmtCommand())
     .command("lint", lintCommand());
@@ -80,6 +79,9 @@ function lintCommand() {
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
       const found = await files(paths);
+      if (paths.length === 0) {
+        await doc(found, { lint: true });
+      }
       console.log(`✅ Linted ${await lint(found)} files.`);
     });
 }
