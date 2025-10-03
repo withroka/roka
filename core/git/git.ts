@@ -849,7 +849,7 @@ export function git(options?: GitOptions): Git {
           .map((line) =>
             (options?.matching !== false)
               ? line
-              : (line.startsWith("::") ? line.split("\t").at(-1) : "")
+              : (line.startsWith("::") ? (line.split("\t").at(-1) ?? "") : "")
           )
           .filter((line) => line);
       },
