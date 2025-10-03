@@ -4,6 +4,7 @@
     "./tool/*"
   ],
   "tasks": {
+    "flow": "deno run -P tool/flow/flow.ts",
     "forge": "deno run -P tool/forge/forge.ts",
     "test": "deno test -P --doc",
     "coverage": "deno task test --coverage && deno coverage --html",
