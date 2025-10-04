@@ -29,7 +29,7 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { assertEquals, assertExists } from "@std/assert";
+import { assertExists, assertFalse } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
 import { type Package, PackageError } from "./package.ts";
@@ -107,8 +107,8 @@ export async function compile(
         join(pkg.directory, main),
       ].flat();
       const command = new Deno.Command("deno", { args });
-      const { code, stderr, success } = await command.output();
-      if (!success) {
+      const { code, stderr } = await command.output();
+      if (code !== 0) {
         const error = new TextDecoder().decode(stderr);
         throw new PackageError(`Compile failed for ${pkg.name}`, {
           cause: { command: "deno", args, code, error },
@@ -145,7 +145,7 @@ export async function compile(
 export async function targets(): Promise<string[]> {
   const command = new Deno.Command("deno", { args: ["compile", "--target"] });
   const { success, stderr } = await command.output();
-  assertEquals(success, false, "Expected the command to fail");
+  assertFalse(success, "Expected the command to fail");
   const match = new TextDecoder().decode(stderr).match(
     /\[possible values: (?<targets>.+)\]/,
   );
@@ -156,8 +156,8 @@ export async function targets(): Promise<string[]> {
 async function tar(directory: string, output: string) {
   const args = ["-czf", output, "-C", directory, "."];
   const command = new Deno.Command("tar", { args });
-  const { code, stderr, success } = await command.output();
-  if (!success) {
+  const { code, stderr } = await command.output();
+  if (code !== 0) {
     const error = new TextDecoder().decode(stderr);
     throw new PackageError(`Bundle failed for ${output}`, {
       cause: { command: "tar", args, code, error },
@@ -168,8 +168,8 @@ async function tar(directory: string, output: string) {
 async function zip(cwd: string, output: string) {
   const args = ["-r", relative(cwd, output), "."];
   const command = new Deno.Command("zip", { cwd, args });
-  const { code, stderr, success } = await command.output();
-  if (!success) {
+  const { code, stderr } = await command.output();
+  if (code !== 0) {
     const error = new TextDecoder().decode(stderr);
     throw new PackageError(`Bundle failed for ${output}`, {
       cause: { command: "zip", cwd, args, code, error },
