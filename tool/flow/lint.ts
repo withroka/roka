@@ -19,26 +19,9 @@
  * @module lint
  */
 
-import { assert } from "@std/assert/assert";
-import { assertExists } from "@std/assert/exists";
-import { stripAnsiCode } from "@std/fmt/colors";
 import { deno, type Problem } from "./deno.ts";
 
 const EXTENSIONS = ["ts", "tsx", "js", "jsx", "mts", "mjs", "cts", "cjs", "md"];
-
-/** Problem reported by the {@linkcode lint} function. */
-export interface LintProblem extends Problem {
-  /** Failing lint rule. */
-  rule: string;
-  /** Reason for the lint failure. */
-  reason: string;
-  /** Path of the file with the issue. */
-  file: string;
-  /** Line number (1-based) of the issue. */
-  line: number;
-  /** Column number (0-based) of the issue. */
-  col: number;
-}
 
 /**
  * Lints given files using [`deno lint`](https://docs.deno.com/go/lint).
@@ -46,45 +29,14 @@ export interface LintProblem extends Problem {
  * Code blocks in documentation are also linted.
  *
  * @param files List of files to lint.
- * @yields Errors reported by the command.
+ * @yields Problems found linting.
  * @return The number of files processed.
  * @throws {DenoError} If the command fails with no error message.
  */
-export async function* lint(
-  files: string[],
-): AsyncGenerator<Problem | LintProblem, number> {
-  const command = deno("lint", files, {
+export async function* lint(files: string[]): AsyncGenerator<Problem, number> {
+  return yield* deno("lint", files, {
     doc: true,
     extensions: EXTENSIONS,
     ignore: [/^Error linting: .*$/],
   });
-  while (true) {
-    // deno-lint-ignore no-await-in-loop
-    const { value, done } = await command.next();
-    if (done) return value;
-    const lintProblemMatch = stripAnsiCode(value.error).match(
-      /^error\[(?<rule>.*?)\]:(?<reason>.*)\n *--> *(?<file>.*):(?<line>\d+):(?<col>\d+)/,
-    );
-    if (!lintProblemMatch) {
-      yield value;
-      continue;
-    }
-    assertExists(lintProblemMatch.groups);
-    const { rule, reason, file, line, col } = lintProblemMatch.groups;
-    assertExists(rule);
-    assertExists(reason);
-    assertExists(file);
-    assertExists(line);
-    assertExists(col);
-    assert(!isNaN(Number(line)) && Number(line) > 0);
-    assert(!isNaN(Number(col)) && Number(col) >= 0);
-    yield {
-      ...value,
-      rule,
-      reason,
-      file,
-      line: Number(line),
-      col: Number(col),
-    };
-  }
 }

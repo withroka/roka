@@ -44,7 +44,7 @@ export async function flow(): Promise<number> {
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
       const found = await files(paths);
-      console.log(`✅ Formatted ${await fmt(found)} files.`);
+      await process(found, "Formatted", fmt);
       if (paths.length === 0) {
         await doc(found, { lint: true });
       }
@@ -68,7 +68,7 @@ function fmtCommand() {
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
       const found = await files(paths);
-      console.log(`✅ Formatted ${await fmt(found)} files.`);
+      await process(found, "Formatted", fmt);
     });
 }
 
@@ -116,7 +116,7 @@ async function process(
         console.log(`✅ ${task} ${countText(value, "file")}.`);
       } else {
         console.error(
-          `❌ ${task} ${countText(value, "file")}`,
+          `❌ ${task} ${countText(value, "file")},`,
           `found ${countText(problemCount, "problem")}.`,
         );
       }
