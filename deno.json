@@ -4,12 +4,12 @@
     "./tool/*"
   ],
   "tasks": {
-    "flow": "deno run -P tool/flow/flow.ts",
-    "forge": "deno run -P tool/forge/forge.ts",
-    "test": "deno test -P --doc",
-    "coverage": "deno task test --coverage && deno coverage --html",
-    "lint": "deno fmt -q --check && deno lint -q && deno doc --lint **/*.ts",
-    "ok": "deno task lint && deno task test"
+    "flow": "deno run -Pq tool/flow/flow.ts",
+    "forge": "deno run -Pq tool/forge/forge.ts",
+    "test": "deno test -Pq --doc",
+    "coverage": "deno task -q test --coverage && deno coverage -q --html",
+    "lint": "deno fmt -q --check && deno lint -q && deno doc -q --lint **/*.ts",
+    "ok": "deno task -q lint && deno task -q test"
   },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,

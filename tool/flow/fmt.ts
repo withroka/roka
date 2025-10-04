@@ -10,6 +10,7 @@
  *   try {
  *     await fmt(["file1.ts", "file2.md"]);
  *   } catch (error) {
+ *     // deno-lint-ignore no-console
  *     console.error("Formatting failed:", error);
  *   }
  * });
