@@ -1,5 +1,6 @@
 import { tempDirectory } from "@roka/fs/temp";
 import {
+  assert,
   assertEquals,
   assertExists,
   assertMatch,
@@ -58,8 +59,8 @@ Deno.test("compile() compiles and installs a binary", async () => {
     new TextDecoder().decode(await Deno.readFile(artifacts[0])),
   );
   const command = new Deno.Command(artifacts[0], { stderr: "inherit" });
-  const { code, stdout } = await command.output();
-  assertEquals(code, 0);
+  const { success, stdout } = await command.output();
+  assert(success);
   assertEquals(new TextDecoder().decode(stdout), "1.2.3\n");
 });
 

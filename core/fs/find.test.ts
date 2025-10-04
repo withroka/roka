@@ -2,7 +2,7 @@ import { assertSameElements } from "@roka/assert";
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
-import { assertEquals, assertRejects } from "@std/assert";
+import { assert, assertRejects } from "@std/assert";
 import { distinct } from "@std/collections/distinct";
 import { dirname } from "@std/path";
 
@@ -436,8 +436,8 @@ Deno.test("find() can return types other than file, directory or symlink", {
     stdout: "null",
     stderr: "null",
   });
-  const { code } = await command.output();
-  assertEquals(code, 0);
+  const { success } = await command.output();
+  assert(success);
   try {
     assertSameElements(
       await Array.fromAsync(find(["."])),

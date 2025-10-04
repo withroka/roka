@@ -52,8 +52,8 @@
  *   cat: [{ code: 0, stdout: "Hello, World!\n" }],
  * });
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
- * const { stdout: output } = await cmd.output();
- * assertEquals(new TextDecoder().decode(output), "Hello, World!\n");
+ * const { stdout } = await cmd.output();
+ * assertEquals(new TextDecoder().decode(stdout), "Hello, World!\n");
  * ```
  *
  * @module fake
@@ -416,11 +416,11 @@ export interface FakeCommandOptions {
  * @example Use fake commands for testing.
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
- * import { assertEquals } from "@std/assert";
+ * import { assert } from "@std/assert";
  * using _ = fakeCommand();
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
- * const { code } = await cmd.output();
- * assertEquals(code, 0);
+ * const { success } = await cmd.output();
+ * assert(success);
  * ```
  *
  * @example Control the result of fake commands.

@@ -29,7 +29,7 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { assertExists, assertNotEquals } from "@std/assert";
+import { assertExists, assertFalse } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
 import { type Package, PackageError } from "./package.ts";
@@ -144,8 +144,8 @@ export async function compile(
 /** Return all compile targets supported by `deno compile`. */
 export async function targets(): Promise<string[]> {
   const command = new Deno.Command("deno", { args: ["compile", "--target"] });
-  const { code, stderr } = await command.output();
-  assertNotEquals(code, 0, "Expected the command to fail");
+  const { success, stderr } = await command.output();
+  assertFalse(success, "Expected the command to fail");
   const match = new TextDecoder().decode(stderr).match(
     /\[possible values: (?<targets>.+)\]/,
   );
