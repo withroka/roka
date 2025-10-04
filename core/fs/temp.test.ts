@@ -1,4 +1,5 @@
 import { assertEquals, assertNotEquals, assertRejects } from "@std/assert";
+import { resolve } from "@std/path";
 import { tempDirectory } from "./temp.ts";
 
 Deno.test("tempDirectory() creates a disposable directory", async () => {
@@ -20,8 +21,8 @@ Deno.test("tempDirectory({ chdir: true }) changes working directory", async () =
   {
     await using directory = await tempDirectory({ chdir: true });
     assertEquals(
-      await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(directory.path()),
+      resolve(Deno.cwd()),
+      resolve(directory.path()),
     );
     await Deno.writeTextFile("test.txt", "Hello, world!");
     assertEquals(
@@ -37,23 +38,23 @@ Deno.test("tempDirectory({ chdir: true }) works recursively", async () => {
   {
     await using outer = await tempDirectory({ chdir: true });
     assertEquals(
-      await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(outer.path()),
+      resolve(Deno.cwd()),
+      resolve(outer.path()),
     );
     {
       await using inner = await tempDirectory({ chdir: true });
       assertNotEquals(
-        await Deno.realPath(inner.path()),
-        await Deno.realPath(outer.path()),
+        resolve(inner.path()),
+        resolve(outer.path()),
       );
       assertEquals(
-        await Deno.realPath(Deno.cwd()),
-        await Deno.realPath(inner.path()),
+        resolve(Deno.cwd()),
+        resolve(inner.path()),
       );
     }
     assertEquals(
-      await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(outer.path()),
+      resolve(Deno.cwd()),
+      resolve(outer.path()),
     );
   }
   assertEquals(Deno.cwd(), cwd);
