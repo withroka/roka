@@ -1109,8 +1109,8 @@ async function run(
     env: { GIT_EDITOR: "true" },
   });
   try {
-    const { code, stdout, stderr, success } = await command.output();
-    if (!success && !(options.allowCode?.includes(code))) {
+    const { code, stdout, stderr } = await command.output();
+    if (code !== 0 && !(options.allowCode?.includes(code))) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
       const args = commandArgs.filter((x) => x !== false && x !== undefined)
         .flat().map((x) => x.match(/\s/) ? `"${x}"` : x).join(" ");
