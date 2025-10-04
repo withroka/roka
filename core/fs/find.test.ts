@@ -436,8 +436,8 @@ Deno.test("find() can return types other than file, directory or symlink", {
     stdout: "null",
     stderr: "null",
   });
-  const { code } = await command.output();
-  assertEquals(code, 0);
+  const { success } = await command.output();
+  assertEquals(success, true);
   try {
     assertSameElements(
       await Array.fromAsync(find(["."])),
