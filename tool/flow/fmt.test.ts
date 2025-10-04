@@ -1,6 +1,6 @@
 import { tempDirectory } from "@roka/fs/temp";
 import { fakeCommand } from "@roka/testing/fake";
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertStringIncludes } from "@std/assert";
 import { fmt } from "./fmt.ts";
 
 Deno.test("fmt() accepts empty array", async () => {
@@ -176,5 +176,53 @@ Deno.test("fmt() ignores Markdown code blocks with no extension specified", asyn
   ].join("\n");
   await Deno.writeTextFile("file.md", content);
   assertEquals(await Array.fromAsync(fmt(["file.md"])), []);
+  assertEquals(await Deno.readTextFile("file.md"), content);
+});
+
+Deno.test("fmt() reports syntax errors", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile("file.ts", "function f( {");
+  const problems = await Array.fromAsync(fmt(["file.ts"]));
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0]?.message ?? "", "Unexpected token");
+});
+
+Deno.test("fmt() reports syntax errors in JSDoc code blocks", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "/**",
+    " * Some text",
+    " * ```ts",
+    " * function f( {",
+    " * ```",
+    " */",
+    "export const y = 1;",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const problems = await Array.fromAsync(fmt(["file.ts"]));
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0]?.message ?? "", "Unexpected token");
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("fmt() reports syntax errors in Markdown code blocks", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "# Title",
+    "",
+    "Some text",
+    "",
+    "```ts",
+    "function f( {",
+    "```",
+    "",
+    "End of file",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.md", content);
+  const problems = await Array.fromAsync(fmt(["file.md"]));
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0]?.message ?? "", "Unexpected token");
   assertEquals(await Deno.readTextFile("file.md"), content);
 });

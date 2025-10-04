@@ -54,6 +54,8 @@ Deno.test("lint() reports lint errors in JSDoc code blocks", async () => {
     " * if (true) {}",
     " * ```",
     " */",
+    "export const y = 1;",
+    "",
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   const problems = await Array.fromAsync(lint(["file.ts"]));
@@ -96,6 +98,8 @@ Deno.test("lint() ignores code blocks in JSDoc with no extension specified", asy
     " * if (true) {}",
     " * ```",
     " */",
+    "export const y = 1;",
+    "",
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   assertEquals(await Array.fromAsync(lint(["file.ts"])), []);
@@ -118,6 +122,54 @@ Deno.test("lint() ignores code blocks in Markdown with no extension specified", 
   ].join("\n");
   await Deno.writeTextFile("file.md", content);
   assertEquals(await Array.fromAsync(lint(["file.md"])), []);
+  assertEquals(await Deno.readTextFile("file.md"), content);
+});
+
+Deno.test("lint() reports syntax errors", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile("file.ts", "function f( {");
+  const problems = await Array.fromAsync(lint(["file.ts"]));
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0]?.message ?? "", "Unexpected token");
+});
+
+Deno.test("lint() reports syntax errors in JSDoc code blocks", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "/**",
+    " * Some text",
+    " * ```ts",
+    " * function f( {",
+    " * ```",
+    " */",
+    "export const y = 1;",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const problems = await Array.fromAsync(lint(["file.ts"]));
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0]?.message ?? "", "Unexpected token");
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("lint() reports syntax errors in Markdown code blocks", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "# Title",
+    "",
+    "Some text",
+    "",
+    "```ts",
+    "function f( {",
+    "```",
+    "",
+    "End of file",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.md", content);
+  const problems = await Array.fromAsync(lint(["file.md"]));
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0]?.message ?? "", "Unexpected token");
   assertEquals(await Deno.readTextFile("file.md"), content);
 });
 

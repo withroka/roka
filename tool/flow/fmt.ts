@@ -34,5 +34,6 @@ export async function* fmt(files: string[]): AsyncIterableIterator<Problem> {
   yield* deno("fmt", files, {
     args: ["--quiet", "--permit-no-files"],
     doc: "replace",
+    ignore: [/^Error formatting: .*$/, /^error: Failed to format .*$/],
   });
 }
