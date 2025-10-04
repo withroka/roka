@@ -51,7 +51,7 @@ export async function* deno(
   command: string,
   files: string[],
   options?: DenoOptions,
-): AsyncIterableIterator<Problem> {
+): AsyncGenerator<Problem, number> {
   // input validation
   const { args = [], doc = false, extensions, ignore = [] } = options ?? {};
   files = files
@@ -59,7 +59,7 @@ export async function* deno(
       extensions === undefined ||
       extensions.includes(extname(x).slice(1).toLowerCase())
     );
-  if (files.length === 0) return;
+  if (files.length === 0) return 0;
   // if doc processing is requested, extract code blocks to temp files
   await using dir = doc ? await tempDirectory() : undefined;
   const codeBlocks = dir && Object.fromEntries(
@@ -94,6 +94,7 @@ export async function* deno(
     stderr: "piped",
   }).spawn();
   // handle errors, mapping temp file locations back to original files
+  let errorCount = 0;
   for await (const chunk of process.stderr.values()) {
     let error = new TextDecoder().decode(chunk);
     if (dir && codeBlocks) {
@@ -117,7 +118,7 @@ export async function* deno(
         );
       }, error);
     }
-    yield* error
+    const errors = error
       .split("\n")
       .filter((x) => x && !ignore.some((r) => r.test(stripAnsiCode(x))))
       .join("\n")
@@ -125,10 +126,12 @@ export async function* deno(
       .map((x) => x.trimEnd())
       .filter((x) => x)
       .map((x) => ({ error: x }));
+    errorCount += errors.length;
+    yield* errors;
   }
   const status = await process.status;
   if (!status.success) {
-    throw new Error(`Command "deno ${command}" failed.`);
+    if (!errorCount) throw new Error(`Command "deno ${command}" failed.`);
   }
   // if requested, replace code blocks in original files
   if (doc === "replace" && dir && codeBlocks) {
@@ -165,6 +168,7 @@ export async function* deno(
       { concurrency: 4 },
     );
   }
+  return files.length;
 }
 
 interface Block {

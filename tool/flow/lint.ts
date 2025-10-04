@@ -47,18 +47,21 @@ export interface LintProblem extends Problem {
  */
 export async function* lint(
   files: string[],
-): AsyncIterableIterator<Problem | LintProblem> {
+): AsyncGenerator<Problem | LintProblem, number> {
   const command = deno("lint", files, {
     doc: true,
     extensions: EXTENSIONS,
     ignore: [/^Error linting: .*$/],
   });
-  for await (const problem of command) {
-    const lintProblemMatch = stripAnsiCode(problem.error).match(
+  while (true) {
+    // deno-lint-ignore no-await-in-loop
+    const { value, done } = await command.next();
+    if (done) return value;
+    const lintProblemMatch = stripAnsiCode(value.error).match(
       /^error\[(?<rule>.*?)\]:(?<reason>.*)\n *--> *(?<file>.*):(?<line>\d+):(?<col>\d+)/,
     );
     if (!lintProblemMatch) {
-      yield problem;
+      yield value;
       continue;
     }
     assertExists(lintProblemMatch.groups);
@@ -71,7 +74,7 @@ export async function* lint(
     assert(!isNaN(Number(line)) && Number(line) > 0);
     assert(!isNaN(Number(col)) && Number(col) >= 0);
     yield {
-      ...problem,
+      ...value,
       rule,
       reason,
       file,
@@ -79,5 +82,4 @@ export async function* lint(
       col: Number(col),
     };
   }
-  return files.length;
 }

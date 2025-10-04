@@ -6,7 +6,7 @@ import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
 import { intersect } from "@std/collections";
 import { bold } from "@std/fmt/colors";
-import { Problem } from "./deno.ts";
+import type { Problem } from "./deno.ts";
 import { doc } from "./doc.ts";
 import { fmt } from "./fmt.ts";
 import { lint } from "./lint.ts";
@@ -83,8 +83,7 @@ function lintCommand() {
       if (paths.length === 0) {
         await doc(found, { lint: true });
       }
-      await process(found, lint);
-      console.log(`✅ Linted ${2} files.`);
+      await process(found, "Linted", lint);
     });
 }
 
@@ -102,19 +101,31 @@ async function files(paths: string[]): Promise<string[]> {
 
 async function process(
   files: string[],
-  fn: (files: string[]) => AsyncIterableIterator<Problem>,
+  task: string,
+  fn: (files: string[]) => AsyncGenerator<Problem, number>,
 ): Promise<void> {
-  const problems: Problem[] = [];
-  try {
-    for await (const problem of fn(files)) {
-      problems.push(problem);
-      console.error();
-      console.error(problem.error);
-      console.error();
+  const countText = (value: number, name: string) =>
+    `${value} ${name}${value === 1 ? "" : "s"}`;
+  const problems = fn(files);
+  let problemCount = 0;
+  while (true) {
+    // deno-lint-ignore no-await-in-loop
+    const { value, done } = await problems.next();
+    if (done) {
+      if (problemCount === 0) {
+        console.log(`✅ ${task} ${countText(value, "file")}.`);
+      } else {
+        console.error(
+          `❌ ${task} ${countText(value, "file")}`,
+          `found ${countText(problemCount, "problem")}.`,
+        );
+      }
+      return;
     }
-  } finally {
-    console.error(`✅ Found ${problems.length} problems.`);
-    console.error(`✅ Processed ${files.length} files.`);
+    problemCount++;
+    console.error();
+    console.error(value.error);
+    console.error();
   }
 }
 
