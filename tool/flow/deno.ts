@@ -1,7 +1,14 @@
 import { pool } from "@roka/async/pool";
 import { tempDirectory } from "@roka/fs/temp";
 import { assertExists } from "@std/assert";
-import { basename, extname, fromFileUrl, resolve, SEPARATOR } from "@std/path";
+import { stripAnsiCode } from "@std/fmt/colors";
+import { basename, extname, resolve, SEPARATOR } from "@std/path";
+
+/** A problem reported from `deno` and returned by {@linkcode deno} function. */
+export interface Problem {
+  /** Error message from `deno`. */
+  error: string;
+}
 
 /** Options for the {@linkcode deno} function. */
 export interface DenoOptions {
@@ -31,6 +38,7 @@ export interface DenoOptions {
    * @example ["ts", "js", "md"]
    */
   extensions?: string[];
+  ignore?: RegExp[];
 }
 
 /**
@@ -39,13 +47,13 @@ export interface DenoOptions {
  * The same command will be applied to all code blocks in documentation or
  * Markdown files, if requested.
  */
-export async function deno(
+export async function* deno(
   command: string,
   files: string[],
   options?: DenoOptions,
-) {
+): AsyncIterableIterator<Problem> {
   // input validation
-  const { args = [], doc = false, extensions } = options ?? {};
+  const { args = [], doc = false, extensions, ignore = [] } = options ?? {};
   files = files
     .filter((x) =>
       extensions === undefined ||
@@ -72,7 +80,7 @@ export async function deno(
     ),
   );
   // run the requested deno command
-  const { success, stderr } = await new Deno.Command("deno", {
+  const process = new Deno.Command("deno", {
     args: [
       command,
       "--quiet",
@@ -82,23 +90,23 @@ export async function deno(
       ...dir ? [dir.path()] : [],
     ],
     stdin: "null",
-    stdout: "null",
+    stdout: "piped",
     stderr: "piped",
-  }).output();
+  }).spawn();
   // handle errors, mapping temp file locations back to original files
-  if (!success) {
-    let error = new TextDecoder().decode(stderr);
+  for await (const chunk of process.stderr.values()) {
+    let error = new TextDecoder().decode(chunk);
     if (dir && codeBlocks) {
-      error.replaceAll(dir.path() + SEPARATOR, "%%%/");
+      error = error.replaceAll(dir.path() + SEPARATOR, "%%%&");
       error = error.matchAll(
-        /%%%\/(?<file>.*\.\w+)((?<tail>.*?):(?<line>\d+):(?<col>\d+))?/g,
+        /%%%&(?<file>.*\.\w+)((?<tail>.*?):(?<line>\d+):(?<col>\d+))?/g,
       ).reduce((error, m) => {
         assertExists(m.groups);
         const { file, tail, line, col } = m?.groups;
         assertExists(file);
         const block = codeBlocks[file];
         assertExists(block);
-        const originalFile = fromFileUrl(block.file);
+        const originalFile = block.file;
         return error.replace(
           m[0],
           (line === undefined || col === undefined)
@@ -109,7 +117,18 @@ export async function deno(
         );
       }, error);
     }
-    throw new Error(`Deno command "${command}" failed\n\n${error}`);
+    yield* error
+      .split("\n")
+      .filter((x) => x && !ignore.some((r) => r.test(stripAnsiCode(x))))
+      .join("\n")
+      .split("\n\n\n")
+      .map((x) => x.trimEnd())
+      .filter((x) => x)
+      .map((x) => ({ error: x }));
+  }
+  const status = await process.status;
+  if (!status.success) {
+    throw new Error(`Command "deno ${command}" failed.`);
   }
   // if requested, replace code blocks in original files
   if (doc === "replace" && dir && codeBlocks) {

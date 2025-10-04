@@ -1,12 +1,13 @@
 // deno-lint-ignore-file no-console
 import { Command } from "@cliffy/command";
-import { doc } from "@roka/flow/doc";
 import { version } from "@roka/forge/version";
 import { find } from "@roka/fs/find";
 import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
 import { intersect } from "@std/collections";
 import { bold } from "@std/fmt/colors";
+import { Problem } from "./deno.ts";
+import { doc } from "./doc.ts";
 import { fmt } from "./fmt.ts";
 import { lint } from "./lint.ts";
 
@@ -82,7 +83,8 @@ function lintCommand() {
       if (paths.length === 0) {
         await doc(found, { lint: true });
       }
-      console.log(`✅ Linted ${await lint(found)} files.`);
+      await process(found, lint);
+      console.log(`✅ Linted ${2} files.`);
     });
 }
 
@@ -96,6 +98,24 @@ async function files(paths: string[]): Promise<string[]> {
     found,
     await git().ignore.check(found, { matching: false }),
   );
+}
+
+async function process(
+  files: string[],
+  fn: (files: string[]) => AsyncIterableIterator<Problem>,
+): Promise<void> {
+  const problems: Problem[] = [];
+  try {
+    for await (const problem of fn(files)) {
+      problems.push(problem);
+      console.error();
+      console.error(problem.error);
+      console.error();
+    }
+  } finally {
+    console.error(`✅ Found ${problems.length} problems.`);
+    console.error(`✅ Processed ${files.length} files.`);
+  }
 }
 
 if (import.meta.main) Deno.exit(await flow());

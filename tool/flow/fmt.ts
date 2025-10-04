@@ -10,7 +10,6 @@
  *   try {
  *     await fmt(["file1.ts", "file2.md"]);
  *   } catch (error) {
- *     // deno-lint-ignore no-console
  *     console.error("Formatting failed:", error);
  *   }
  * });
@@ -56,7 +55,9 @@ const EXTENSIONS = [
  */
 export async function fmt(files: string[]): Promise<number> {
   try {
-    await deno("fmt", files, { doc: "replace", extensions: EXTENSIONS });
+    await Array.fromAsync(
+      deno("fmt", files, { doc: "replace", extensions: EXTENSIONS }),
+    );
   } catch (cause) {
     throw new Error("Formatting failed", { cause });
   }
