@@ -4,7 +4,7 @@ import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
 import { assert, assertRejects } from "@std/assert";
 import { distinct } from "@std/collections/distinct";
-import { dirname } from "@std/path";
+import { dirname, resolve } from "@std/path";
 
 async function createFiles(files: string[]) {
   const directories = distinct(files.map(dirname)).filter((x) => x !== ".");
@@ -122,19 +122,16 @@ Deno.test("find() returns absolute paths for absolute input", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
   assertSameElements(
-    await Array.fromAsync(find([await Deno.realPath(".")])),
-    await pool(
-      [
-        ".",
-        "a.txt",
-        "b",
-        "b/c.md",
-        "d",
-        "d/e",
-        "d/e/f.txt",
-      ],
-      Deno.realPath,
-    ),
+    await Array.fromAsync(find([resolve(".")])),
+    [
+      ".",
+      "a.txt",
+      "b",
+      "b/c.md",
+      "d",
+      "d/e",
+      "d/e/f.txt",
+    ].map((path) => resolve(path)),
   );
 });
 
@@ -646,18 +643,18 @@ Deno.test("find() can find by path glob with absolute paths", async () => {
   await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
   assertSameElements(
     await Array.fromAsync(
-      find([await Deno.realPath(".")], { path: "*.txt" }),
+      find([resolve(".")], { path: "*.txt" }),
     ),
     [],
   );
   await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
   assertSameElements(
     await Array.fromAsync(
-      find([await Deno.realPath(".")], { path: "**/*.txt" }),
+      find([resolve(".")], { path: "**/*.txt" }),
     ),
     [
-      await Deno.realPath("a.txt"),
-      await Deno.realPath("b/d/e.txt"),
+      resolve("a.txt"),
+      resolve("b/d/e.txt"),
     ],
   );
 });
