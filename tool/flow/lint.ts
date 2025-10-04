@@ -21,8 +21,6 @@
 
 import { deno, type Problem } from "./deno.ts";
 
-const EXTENSIONS = ["ts", "tsx", "js", "jsx", "mts", "mjs", "cts", "cjs", "md"];
-
 /**
  * Lints given files using [`deno lint`](https://docs.deno.com/go/lint).
  *
@@ -30,13 +28,12 @@ const EXTENSIONS = ["ts", "tsx", "js", "jsx", "mts", "mjs", "cts", "cjs", "md"];
  *
  * @param files List of files to lint.
  * @yields Problems found linting.
- * @return The number of files processed.
  * @throws {DenoError} If the command fails with no error message.
  */
-export async function* lint(files: string[]): AsyncGenerator<Problem, number> {
-  return yield* deno("lint", files, {
+export async function* lint(files: string[]): AsyncIterableIterator<Problem> {
+  yield* deno("lint", files, {
+    args: ["--quiet", "--permit-no-files"],
     doc: true,
-    extensions: EXTENSIONS,
     ignore: [/^Error linting: .*$/],
   });
 }

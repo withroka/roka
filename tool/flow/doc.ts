@@ -15,6 +15,7 @@
 
 import { assertEquals } from "@std/assert";
 import { extname } from "@std/path/extname";
+import { deno, type Problem } from "./deno.ts";
 
 const EXTENSIONS = [
   "ts",
@@ -114,4 +115,20 @@ export async function doc(
       node.kind === "moduleDoc" ||
       !node.jsDoc?.tags?.some((tag) => tag.kind === "module")
     );
+}
+
+/**
+ * Lints JSDoc in given files using
+ * [`deno doc --lint`](https://docs.deno.com/go/doc).
+ *
+ * @param files List of files to lint documentation for.
+ * @yields Problems found linting documentation.
+ * @throws {DenoError} If the command fails with no error message.
+ */
+export async function* docLint(
+  files: string[],
+): AsyncIterableIterator<Problem> {
+  yield* deno("doc", files, {
+    args: ["--quiet", "--lint"],
+  });
 }

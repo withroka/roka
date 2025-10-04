@@ -6,10 +6,11 @@ import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
 import { intersect } from "@std/collections";
 import { bold } from "@std/fmt/colors";
+import { extname } from "@std/path";
 import type { Problem } from "./deno.ts";
-import { doc } from "./doc.ts";
+import { deno } from "./deno.ts";
+import { docLint } from "./doc.ts";
 import { fmt } from "./fmt.ts";
-import { lint } from "./lint.ts";
 
 const DESCRIPTION = `
   ${bold("🍃 flow")}
@@ -17,6 +18,40 @@ const DESCRIPTION = `
   An assistant tool to eliminate chore work in your Deno projects. Current
   functionality is limited to extending "deno fmt".
 `;
+
+const SCRIPT_EXTENSIONS = [
+  "ts",
+  "tsx",
+  "js",
+  "jsx",
+  "mts",
+  "mjs",
+  "cts",
+  "cjs",
+];
+const CODE_EXTENSIONS = [
+  ...SCRIPT_EXTENSIONS,
+  "md",
+];
+const SOURCE_EXTENSIONS = [
+  ...CODE_EXTENSIONS,
+  "json",
+  "jsonc",
+  "css",
+  "scss",
+  "sass",
+  "less",
+  "html",
+  "svelte",
+  "vue",
+  "astro",
+  "yml",
+  "yaml",
+  "ipynb",
+  "sql",
+  "vto",
+  "njk",
+];
 
 /**
  * Run the `flow` CLI tool.
@@ -33,8 +68,9 @@ export async function flow(): Promise<number> {
     .meta("typescript", Deno.version.typescript)
     .description(DESCRIPTION)
     .example("flow", "TODO")
-    .example("forge fmt", "Format code, including code blocks in JSDoc.")
-    .example("forge lint", "Lint code.")
+    .example("forge doc", "Lint documentation.")
+    .example("forge fmt", "Format code, including code blocks in docs.")
+    .example("forge lint", "Lint code, including code blocks in docs.")
     .usage("<command> [options]")
     .option("--verbose", "Print additional information.", {
       hidden: true,
@@ -44,12 +80,16 @@ export async function flow(): Promise<number> {
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
       const found = await files(paths);
-      await process(found, "Formatted", fmt);
-      if (paths.length === 0) {
-        await doc(found, { lint: true });
-      }
-      await process(found, "Linted", lint);
+      await process(found, SOURCE_EXTENSIONS, "Formatted", fmt);
+      await process(
+        found,
+        SCRIPT_EXTENSIONS,
+        "Linted documentation for",
+        docLint,
+      );
+      await process(found, CODE_EXTENSIONS, "Linted", lint);
     })
+    .command("doc", docCommand())
     .command("fmt", fmtCommand())
     .command("lint", lintCommand());
   const { errors } = await maybe(() => cmd.parse());
@@ -60,6 +100,22 @@ export async function flow(): Promise<number> {
   return errors ? 1 : 0;
 }
 
+function docCommand() {
+  return new Command()
+    .description("Lint documentation.")
+    .example("forge doc", "Lint documentation for all files.")
+    .example("forge doc **/*.ts", "Lint JSDoc for all TypeScript files.")
+    .arguments("[paths...:file]")
+    .action(async (_, ...paths) => {
+      await process(
+        await files(paths),
+        SCRIPT_EXTENSIONS,
+        "Linted documentation for",
+        docLint,
+      );
+    });
+}
+
 function fmtCommand() {
   return new Command()
     .description("Format code, including code blocks in JSDoc.")
@@ -67,8 +123,7 @@ function fmtCommand() {
     .example("forge fmt **/*.ts", "Format all TypeScript files.")
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
-      const found = await files(paths);
-      await process(found, "Formatted", fmt);
+      await process(await files(paths), SOURCE_EXTENSIONS, "Formatted", fmt);
     });
 }
 
@@ -79,53 +134,59 @@ function lintCommand() {
     .example("forge lint **/*.ts", "Lint all TypeScript files.")
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
-      const found = await files(paths);
-      if (paths.length === 0) {
-        await doc(found, { lint: true });
-      }
-      await process(found, "Linted", lint);
+      await process(await files(paths), CODE_EXTENSIONS, "Linted", lint);
     });
 }
 
 async function files(paths: string[]): Promise<string[]> {
   const explicit = paths.length > 0;
-  const found = await Array.fromAsync(find(explicit ? paths : ["."], {
+  let found = await Array.fromAsync(find(explicit ? paths : ["."], {
     type: "file",
     ignore: ["**/.git", "**/node_modules"],
   }));
-  return explicit ? found : intersect(
+  found = explicit ? found : intersect(
     found,
     await git().ignore.check(found, { matching: false }),
   );
+  if (found.length === 0) throw new Error("No files found");
+  return found;
+}
+
+async function* lint(files: string[]): AsyncIterableIterator<Problem> {
+  yield* deno("lint", files, {
+    args: ["--quiet", "--permit-no-files"],
+    doc: true,
+    ignore: [/^Error linting: .*$/],
+  });
 }
 
 async function process(
   files: string[],
+  extensions: string[],
   task: string,
-  fn: (files: string[]) => AsyncGenerator<Problem, number>,
+  fn: (files: string[]) => AsyncIterableIterator<Problem>,
 ): Promise<void> {
+  files = files
+    .filter((x) =>
+      extensions === undefined ||
+      extensions.includes(extname(x).slice(1).toLowerCase())
+    );
   const countText = (value: number, name: string) =>
     `${value} ${name}${value === 1 ? "" : "s"}`;
-  const problems = fn(files);
-  let problemCount = 0;
-  while (true) {
-    // deno-lint-ignore no-await-in-loop
-    const { value, done } = await problems.next();
-    if (done) {
-      if (problemCount === 0) {
-        console.log(`✅ ${task} ${countText(value, "file")}.`);
-      } else {
-        console.error(
-          `❌ ${task} ${countText(value, "file")},`,
-          `found ${countText(problemCount, "problem")}.`,
-        );
-      }
-      return;
-    }
-    problemCount++;
+  const problems: Problem[] = [];
+  for await (const problem of fn(files)) {
+    problems.push(problem);
     console.error();
-    console.error(value.error);
+    console.error(problem.message);
     console.error();
+  }
+  if (problems.length === 0) {
+    console.log(`✅ ${task} ${countText(files.length, "file")}.`);
+  } else {
+    console.error(
+      `❌ ${task} ${countText(files.length, "file")},`,
+      `found ${countText(problems.length, "problem")}.`,
+    );
   }
 }
 

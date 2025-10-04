@@ -81,8 +81,6 @@ export async function* deno(
   const process = new Deno.Command("deno", {
     args: [
       command,
-      "--quiet",
-      "--permit-no-files",
       ...args,
       ...files,
       ...dir ? [dir.path()] : [],
