@@ -4,7 +4,6 @@
   "exports": {
     ".": "./http.ts",
     "./json/client": "./json/client.ts",
-    "./graphql/client": "./graphql/client.ts",
     "./request": "./request.ts",
     "./testing": "./testing.ts"
   },

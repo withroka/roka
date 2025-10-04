@@ -19,8 +19,8 @@
  * });
  * ```
  *
- * The {@link [json]} and {@link [graphql]} modules provide higher-level
- * abstractions for making JSON and GraphQL requests, respectively.
+ * The {@link [json]} module provides higher-level
+ * abstractions for making JSON requests.
  *
  * ```ts
  * import { client } from "@roka/http/json/client";
@@ -34,7 +34,6 @@
  *
  *  -  {@link [request]}: Make simple HTTP requests.
  *  -  {@link [json/client]}: Make JSON requests.
- *  -  {@link [graphql/client]}: Make GraphQL requests.
  *  -  {@link [testing]}: Test with mock requests.
  *
  * @module http
