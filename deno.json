@@ -51,9 +51,7 @@
     "@std/path": "jsr:@std/path@^1.1.2",
     "@std/semver": "jsr:@std/semver@^1.0.5",
     "@std/streams": "jsr:@std/streams@^1.0.12",
-    "@std/testing": "jsr:@std/testing@^1.0.15",
-    "@urql/core": "npm:@urql/core@^6.0.1",
-    "@urql/exchange-retry": "npm:@urql/exchange-retry@^2.0.0"
+    "@std/testing": "jsr:@std/testing@^1.0.15"
   },
   "unstable": ["kv"]
 }

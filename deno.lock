@@ -52,9 +52,7 @@
     "jsr:@std/text@~1.0.7": "1.0.16",
     "npm:@octokit/openapi-types@^25.1.0": "25.1.0",
     "npm:@octokit/rest@22": "22.0.0_@octokit+core@7.0.3",
-    "npm:@types/node@*": "24.2.0",
-    "npm:@urql/core@^6.0.1": "6.0.1",
-    "npm:@urql/exchange-retry@2": "2.0.0_@urql+core@6.0.1"
+    "npm:@types/node@*": "24.2.0"
   },
   "jsr": {
     "@b-fuze/deno-dom@0.1.56": {
@@ -228,9 +226,6 @@
     }
   },
   "npm": {
-    "@0no-co/graphql.web@1.2.0": {
-      "integrity": "sha512-/1iHy9TTr63gE1YcR5idjx8UREz1s0kFhydf3bBLCXyqjhkIc6igAzTOx3zPifCwFR87tsh/4Pa9cNts6d2otw=="
-    },
     "@octokit/auth-token@6.0.0": {
       "integrity": "sha512-P4YJBPdPSpWTQ1NU4XYdvHvXJJDxM6YwpS0FZHRgP7YFkdVxsWcpWGy/NVqlAA7PcPCnMacXlRm1y2PFZRWL/w=="
     },
@@ -321,20 +316,6 @@
         "undici-types"
       ]
     },
-    "@urql/core@6.0.1": {
-      "integrity": "sha512-FZDiQk6jxbj5hixf2rEPv0jI+IZz0EqqGW8mJBEug68/zHTtT+f34guZDmyjJZyiWbj0vL165LoMr/TkeDHaug==",
-      "dependencies": [
-        "@0no-co/graphql.web",
-        "wonka"
-      ]
-    },
-    "@urql/exchange-retry@2.0.0_@urql+core@6.0.1": {
-      "integrity": "sha512-VdSMCiOptd6Ah6g5Bo+MzrNMAGzgRMC775W86strLRQN7lvvNlhx1LwU0gzb2h/z0atcJFAmDJEbMyvupkT+7A==",
-      "dependencies": [
-        "@urql/core",
-        "wonka"
-      ]
-    },
     "before-after-hook@4.0.0": {
       "integrity": "sha512-q6tR3RPqIB1pMiTRMFcZwuG5T8vwp+vUvEG0vuI6B+Rikh5BfPp2fQ82c925FOs+b0lcFQ8CFrL+KbilfZFhOQ=="
     },
@@ -346,9 +327,6 @@
     },
     "universal-user-agent@7.0.3": {
       "integrity": "sha512-TmnEAEAsBJVZM/AADELsK76llnwcf9vMKuPz8JflO1frO8Lchitr0fNaN9d+Ap0BjKtqWqd/J17qeDnXh8CL2A=="
-    },
-    "wonka@6.3.5": {
-      "integrity": "sha512-SSil+ecw6B4/Dm7Pf2sAshKQ5hWFvfyGlfPbEd6A14dOH6VDjrmbY86u6nZvy9omGwwIPFR8V41+of1EezgoUw=="
     }
   },
   "redirects": {
@@ -408,9 +386,7 @@
       "jsr:@std/streams@^1.0.12",
       "jsr:@std/testing@^1.0.15",
       "npm:@octokit/openapi-types@^25.1.0",
-      "npm:@octokit/rest@22",
-      "npm:@urql/core@^6.0.1",
-      "npm:@urql/exchange-retry@2"
+      "npm:@octokit/rest@22"
     ]
   }
 }
