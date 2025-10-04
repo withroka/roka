@@ -11,7 +11,7 @@ export class DenoError extends Error {
   /** The exit status code of the command. */
   readonly code: number;
 
-  /** Construct GitError. */
+  /** Construct DenoError. */
   constructor(message: string, code: number) {
     super(message);
     this.code = code;
@@ -146,25 +146,25 @@ export async function* deno(
       Object.entries(Object.groupBy(updatedBlocks, (b) => b.file)),
       async ([file, blocks]) => {
         if (blocks === undefined) return;
-        const updates = blocks
-          .sort((a, b) => b.byteIndex - a.byteIndex);
-        const lines = updates.reduce(
-          (lines, block) => {
-            const content = [
-              "```" + block.lang,
-              ...block.formatted.trimEnd().split("\n"),
-              "```",
-            ];
-            lines.splice(
-              block.line - 1,
-              block.content.trimEnd().split("\n").length + 2,
-              ...content.map((l) => block.indent + l),
+        const content = blocks.reduce(
+          (content, block) => {
+            // file may have been formatted, and line numbers may have changed
+            return content.replaceAll(
+              [
+                "```" + block.lang,
+                ...block.content.trimEnd().split("\n"),
+                "```",
+              ].map((l) => block.indent + l).join("\n"),
+              [
+                "```" + block.lang,
+                ...block.formatted.trimEnd().split("\n"),
+                "```",
+              ].map((l) => block.indent + l).join("\n"),
             );
-            return lines;
           },
-          (await Deno.readTextFile(file)).split("\n"),
+          await Deno.readTextFile(file),
         );
-        await Deno.writeTextFile(file, lines.join("\n"));
+        await Deno.writeTextFile(file, content);
       },
       { concurrency: 4 },
     );
@@ -175,7 +175,6 @@ interface Block {
   file: string;
   line: number;
   col: number;
-  byteIndex: number;
   indent: string;
   lang?: string;
   content: string;
@@ -196,7 +195,6 @@ async function blocks(files: string[]): Promise<Block[]> {
           file: resolve(Deno.cwd(), file),
           line: fileContent.slice(0, m.index).split("\n").length,
           col: indent.length,
-          byteIndex: m.index,
           indent,
           ...lang && { lang },
           content: content

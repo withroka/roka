@@ -1,23 +1,37 @@
 import { tempDirectory } from "@roka/fs/temp";
 import { fakeCommand } from "@roka/testing/fake";
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals } from "@std/assert";
 import { fmt } from "./fmt.ts";
 
 Deno.test("fmt() accepts empty array", async () => {
   using command = fakeCommand();
-  await fmt([]);
+  assertEquals(await Array.fromAsync(fmt([])), []);
   assertEquals(command.runs, []);
 });
 
 Deno.test("fmt() formats code", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile("file.ts", "export   const y= 1");
-  await fmt(["file.ts"]);
-  const formatted = await Deno.readTextFile("file.ts");
-  assertEquals(formatted, "export const y = 1;\n");
+  await Deno.writeTextFile(
+    "file.ts",
+    [
+      "export   const y= 1",
+      "function f(){return 42}",
+    ].join("\n"),
+  );
+  assertEquals(await Array.fromAsync(fmt(["file.ts"])), []);
+  assertEquals(
+    await Deno.readTextFile("file.ts"),
+    [
+      "export const y = 1;",
+      "function f() {",
+      "  return 42;",
+      "}",
+      "",
+    ].join("\n"),
+  );
 });
 
-Deno.test("fmt() formats code blocks and file content", async () => {
+Deno.test("fmt() formats JSDoc code blocks", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await Deno.writeTextFile(
     "file.ts",
@@ -25,24 +39,25 @@ Deno.test("fmt() formats code blocks and file content", async () => {
       "/**",
       " * Example",
       " * ```ts",
-      " * const   x= {a:1}",
-      " * console.log(  x )",
+      " * export   const y= 1",
+      " * function f(){return 42}",
       " * ```",
       " */",
       "export   const y= 1",
       "",
     ].join("\n"),
   );
-  await fmt(["file.ts"]);
-  const formatted = await Deno.readTextFile("file.ts");
+  assertEquals(await Array.fromAsync(fmt(["file.ts"])), []);
   assertEquals(
-    formatted,
+    await Deno.readTextFile("file.ts"),
     [
       "/**",
       " * Example",
       " * ```ts",
-      " * const x = { a: 1 };",
-      " * console.log(x);",
+      " * export const y = 1;",
+      " * function f() {",
+      " *   return 42;",
+      " * }",
       " * ```",
       " */",
       "export const y = 1;",
@@ -51,7 +66,46 @@ Deno.test("fmt() formats code blocks and file content", async () => {
   );
 });
 
-Deno.test("fmt() leaves already formatted code block unchanged", async () => {
+Deno.test("fmt() formats Markdown code blocks", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile(
+    "file.md",
+    [
+      "# Title",
+      "",
+      "Some text",
+      "",
+      "```ts",
+      "export   const y= 1",
+      "function f(){return 42}",
+      "```",
+      "",
+      "End of file",
+      "",
+    ].join("\n"),
+  );
+  assertEquals(await Array.fromAsync(fmt(["file.md"])), []);
+  assertEquals(
+    await Deno.readTextFile("file.md"),
+    [
+      "# Title",
+      "",
+      "Some text",
+      "",
+      "```ts",
+      "export const y = 1;",
+      "function f() {",
+      "  return 42;",
+      "}",
+      "```",
+      "",
+      "End of file",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("fmt() leaves already formatted JSDoc code block unchanged", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
     "/**",
@@ -64,29 +118,48 @@ Deno.test("fmt() leaves already formatted code block unchanged", async () => {
     "",
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
-  await fmt(["file.ts"]);
-  const formatted = await Deno.readTextFile("file.ts");
-  assertEquals(formatted, content);
+  assertEquals(await Array.fromAsync(fmt(["file.ts"])), []);
+  assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
-Deno.test("fmt() ignores code blocks with no extension specified", async () => {
+Deno.test("fmt() leaves already formatted Markdown code block unchanged", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "# Title",
+    "",
+    "Some text",
+    "",
+    "```ts",
+    "const x = 1;",
+    "```",
+    "",
+    "End of file",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.md", content);
+  assertEquals(await Array.fromAsync(fmt(["file.md"])), []);
+  assertEquals(await Deno.readTextFile("file.md"), content);
+});
+
+Deno.test("fmt() ignores JSDoc code blocks with no extension specified", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
     "/**",
-    " * Some text",
+    " * Example",
     " * ```",
-    " * const   x= 2;",
+    " * const x = {a:1}",
+    " * console.log(  x )",
     " * ```",
     " */",
+    "export const y = 1;",
     "",
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
-  await fmt(["file.ts"]);
-  const formatted = await Deno.readTextFile("file.ts");
-  assertEquals(formatted, content);
+  assertEquals(await Array.fromAsync(fmt(["file.ts"])), []);
+  assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
-Deno.test("fmt() ignores code blocks in Markdown with no extension specified", async () => {
+Deno.test("fmt() ignores Markdown code blocks with no extension specified", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
     "# Title",
@@ -94,39 +167,14 @@ Deno.test("fmt() ignores code blocks in Markdown with no extension specified", a
     "Some text",
     "",
     "```",
-    "not really a code",
+    "const x = {a:1}",
+    "console.log(  x )",
     "```",
     "",
     "End of file",
     "",
   ].join("\n");
   await Deno.writeTextFile("file.md", content);
-  await fmt(["file.md"]);
-  const formatted = await Deno.readTextFile("file.md");
-  assertEquals(formatted, content);
-});
-
-Deno.test("fmt() rejects file with invalid code block", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile("file.ts", "const x = {");
-  await assertRejects(() => fmt(["file.ts"]), Error, "Formatting failed");
-});
-
-Deno.test("fmt() rejects Markdown file with invalid code block", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile(
-    "file.md",
-    [
-      "# Title",
-      "",
-      "Some text",
-      "",
-      "```ts",
-      "if (true) {",
-      "```",
-      "",
-      "End of file",
-    ].join("\n"),
-  );
-  await assertRejects(() => fmt(["file.md"]), Error, "Formatting failed");
+  assertEquals(await Array.fromAsync(fmt(["file.md"])), []);
+  assertEquals(await Deno.readTextFile("file.md"), content);
 });
