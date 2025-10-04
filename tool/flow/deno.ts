@@ -2,7 +2,7 @@ import { pool } from "@roka/async/pool";
 import { tempDirectory } from "@roka/fs/temp";
 import { assertExists } from "@std/assert";
 import { stripAnsiCode } from "@std/fmt/colors";
-import { basename, extname, resolve, SEPARATOR } from "@std/path";
+import { basename, resolve, SEPARATOR } from "@std/path";
 
 /**
  * An error thrown by the `deno` command.
@@ -22,7 +22,7 @@ export class DenoError extends Error {
 /** A problem reported from `deno` and returned by {@linkcode deno} function. */
 export interface Problem {
   /** Error message from `deno`. */
-  error: string;
+  message: string;
 }
 
 /** Options for the {@linkcode deno} function. */
@@ -41,18 +41,6 @@ export interface DenoOptions {
    * @default {false}
    */
   doc?: boolean | "replace";
-  /**
-   * File extensions to fitler inputs.
-   *
-   * By default all files are accepted. If provided, only files with the given
-   * extensions (case-insensitive, without the dot) are processed.
-   *
-   * Code blocks in documentation or Markdown files are also filtered
-   * if {@linkcode DenoOptions.doc | doc} is set to `true` or `"replace"`.
-   *
-   * @example ["ts", "js", "md"]
-   */
-  extensions?: string[];
   /** Ignore error messages matching any of the given patterns. */
   ignore?: RegExp[];
 }
@@ -67,40 +55,27 @@ export interface DenoOptions {
  * @param files List of files to process.
  * @param options Options for the command.
  * @yields Errors reported by the command.
- * @return The number of files processed.
  * @throws {DenoError} If the command fails with no error message.
  */
 export async function* deno(
   command: string,
   files: string[],
   options?: DenoOptions,
-): AsyncGenerator<Problem, number> {
+): AsyncIterableIterator<Problem> {
   // input validation
-  const { args = [], doc = false, extensions, ignore = [] } = options ?? {};
-  files = files
-    .filter((x) =>
-      extensions === undefined ||
-      extensions.includes(extname(x).slice(1).toLowerCase())
-    );
-  if (files.length === 0) return 0;
+  const { args = [], doc = false, ignore = [] } = options ?? {};
+  if (files.length === 0) return;
   // if doc processing is requested, extract code blocks to temp files
   await using dir = doc ? await tempDirectory() : undefined;
   const codeBlocks = dir && Object.fromEntries(
-    await pool(
-      (await blocks(files))
-        .filter((x) =>
-          extensions === undefined ||
-          x.lang && extensions.includes(x.lang) && x.lang !== "md"
-        ),
-      async (block) => {
-        const path = await Deno.makeTempFile({
-          dir: dir.path(),
-          suffix: `.${block.lang}`,
-        });
-        await Deno.writeTextFile(path, block.content);
-        return [basename(path), { ...block, path }];
-      },
-    ),
+    await pool((await blocks(files)).filter((x) => x.lang), async (block) => {
+      const path = await Deno.makeTempFile({
+        dir: dir.path(),
+        suffix: `.${block.lang}`,
+      });
+      await Deno.writeTextFile(path, block.content);
+      return [basename(path), { ...block, path }];
+    }),
   );
   // run the requested deno command
   const process = new Deno.Command("deno", {
@@ -112,8 +87,13 @@ export async function* deno(
       ...files,
       ...dir ? [dir.path()] : [],
     ],
+    // passthrough for testing
+    env: {
+      NO_COLOR: Deno.env.get("NO_COLOR") ?? "",
+      FORCE_COLOR: Deno.env.get("FORCE_COLOR") ?? "",
+    },
     stdin: "null",
-    stdout: "piped",
+    stdout: "null",
     stderr: "piped",
   }).spawn();
   // handle errors, mapping temp file locations back to original files
@@ -141,16 +121,16 @@ export async function* deno(
         );
       }, error);
     }
-    const errors = error
+    const problems = error
       .split("\n")
-      .filter((x) => x && !ignore.some((r) => r.test(stripAnsiCode(x))))
+      .filter((x) => !ignore.some((r) => r.test(stripAnsiCode(x))))
       .join("\n")
       .split("\n\n\n")
       .map((x) => x.trimEnd())
       .filter((x) => x)
-      .map((x) => ({ error: x }));
-    errorCount += errors.length;
-    yield* errors;
+      .map((message) => ({ message }));
+    errorCount += problems.length;
+    yield* problems;
   }
   const status = await process.status;
   if (!status.success) {
@@ -191,7 +171,6 @@ export async function* deno(
       { concurrency: 4 },
     );
   }
-  return files.length;
 }
 
 interface Block {
