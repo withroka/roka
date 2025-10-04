@@ -48,7 +48,7 @@ export async function flow(): Promise<number> {
       if (paths.length === 0) {
         await doc(found, { lint: true });
       }
-      console.log(`✅ Linted ${await lint(found)} files.`);
+      await process(found, "Linted", lint);
     })
     .command("fmt", fmtCommand())
     .command("lint", lintCommand());

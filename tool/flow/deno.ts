@@ -4,6 +4,21 @@ import { assertExists } from "@std/assert";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { basename, extname, resolve, SEPARATOR } from "@std/path";
 
+/**
+ * An error thrown by the `deno` command.
+ */
+export class DenoError extends Error {
+  /** The exit status code of the command. */
+  readonly code: number;
+
+  /** Construct GitError. */
+  constructor(message: string, code: number) {
+    super(message);
+    this.code = code;
+    this.name = "DenoError";
+  }
+}
+
 /** A problem reported from `deno` and returned by {@linkcode deno} function. */
 export interface Problem {
   /** Error message from `deno`. */
@@ -38,6 +53,7 @@ export interface DenoOptions {
    * @example ["ts", "js", "md"]
    */
   extensions?: string[];
+  /** Ignore error messages matching any of the given patterns. */
   ignore?: RegExp[];
 }
 
@@ -46,6 +62,13 @@ export interface DenoOptions {
  *
  * The same command will be applied to all code blocks in documentation or
  * Markdown files, if requested.
+ *
+ * @param command Deno command to run (e.g., `"fmt"`, `"lint"`).
+ * @param files List of files to process.
+ * @param options Options for the command.
+ * @yields Errors reported by the command.
+ * @return The number of files processed.
+ * @throws {DenoError} If the command fails with no error message.
  */
 export async function* deno(
   command: string,

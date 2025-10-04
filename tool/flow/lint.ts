@@ -44,6 +44,11 @@ export interface LintProblem extends Problem {
  * Lints given files using [`deno lint`](https://docs.deno.com/go/lint).
  *
  * Code blocks in documentation are also linted.
+ *
+ * @param files List of files to lint.
+ * @yields Errors reported by the command.
+ * @return The number of files processed.
+ * @throws {DenoError} If the command fails with no error message.
  */
 export async function* lint(
   files: string[],
