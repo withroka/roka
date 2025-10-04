@@ -416,7 +416,7 @@ export interface FakeCommandOptions {
  * @example Use fake commands for testing.
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
- * import { assertEquals } from "@std/assert";
+ * import { assert } from "@std/assert";
  * using _ = fakeCommand();
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
  * const { success } = await cmd.output();
