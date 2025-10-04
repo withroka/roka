@@ -3,7 +3,7 @@
   "version": "0.2.2",
   "exports": {
     ".": "./http.ts",
-    "./json/client": "./json/client.ts",
+    "./json": "./json.ts",
     "./request": "./request.ts",
     "./testing": "./testing.ts"
   },

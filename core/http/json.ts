@@ -4,7 +4,7 @@
  * API clients.
  *
  * ```ts
- * import { client } from "@roka/http/json/client";
+ * import { client } from "@roka/http/json";
  * (async () => {
  *   interface Issue {
  *     number: number;
@@ -20,10 +20,10 @@
  * });
  * ```
  *
- * @module client
+ * @module json
  */
 
-import { request, type RequestOptions } from "../request.ts";
+import { request, type RequestOptions } from "./request.ts";
 
 /** A JSON client returned by the {@linkcode client} function. */
 export interface Client {
@@ -70,7 +70,7 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
  *
  * @example Make a JSON request.
  * ```ts
- * import { client } from "@roka/http/json/client";
+ * import { client } from "@roka/http/json";
  * (async () => {
  *   interface Issue {
  *     number: number;
@@ -84,7 +84,7 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
  *
  * @example Make an authenticated JSON request.
  * ```ts
- * import { client } from "@roka/http/json/client";
+ * import { client } from "@roka/http/json";
  * (async () => {
  *   interface Issue {
  *     number: number;

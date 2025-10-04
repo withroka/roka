@@ -23,7 +23,7 @@
  * abstractions for making JSON requests.
  *
  * ```ts
- * import { client } from "@roka/http/json/client";
+ * import { client } from "@roka/http/json";
  * (async () => {
  *   const api = client("https://www.example.com");
  *   return await api.get<{ id: number }>("/api/path");
@@ -33,7 +33,7 @@
  * ## Modules
  *
  *  -  {@link [request]}: Make simple HTTP requests.
- *  -  {@link [json/client]}: Make JSON requests.
+ *  -  {@link [json]}: Make JSON requests.
  *  -  {@link [testing]}: Test with mock requests.
  *
  * @module http
