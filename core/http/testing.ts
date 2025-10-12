@@ -5,7 +5,7 @@
  *
  * ```ts
  * import { mockFetch } from "@roka/http/testing";
- * Deno.test("mockFetch()", async (t) => {
+ * Deno.test("mockFetch() example", async (t) => {
  *   using fetch = mockFetch(t, {
  *     path: "__mocks__/testing.ts.mock",
  *     ignore: { headers: true },
@@ -67,7 +67,7 @@ export interface MockFetchOptions extends MockOptions {
  * import { mockFetch } from "@roka/http/testing";
  * import { assertEquals } from "@std/assert";
  *
- * Deno.test("mockFetch()", async (t) => {
+ * Deno.test("mockFetch() example", async (t) => {
  *   using fetch = mockFetch(t, {
  *     path: "__mocks__/testing.ts.mock",
  *     ignore: { headers: true },
