@@ -19,6 +19,7 @@
  * ```
  *
  * @module testing
+ * @internal
  */
 
 import { tempRepository, type TempRepositoryOptions } from "@roka/git/testing";

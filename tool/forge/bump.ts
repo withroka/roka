@@ -26,6 +26,7 @@
  * @todo Check if configuration files are dirty before modifying them.
  *
  * @module bump
+ * @internal
  */
 
 import { pool } from "@roka/async/pool";
