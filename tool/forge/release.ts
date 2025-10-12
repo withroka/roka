@@ -18,6 +18,7 @@
  * ```
  *
  * @module release
+ * @internal
  */
 
 import { pool } from "@roka/async/pool";

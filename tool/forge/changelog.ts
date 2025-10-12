@@ -13,6 +13,7 @@
  * ```
  *
  * @module changelog
+ * @internal
  */
 
 import type { Commit } from "@roka/git";

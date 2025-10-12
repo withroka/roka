@@ -43,6 +43,7 @@
  * package.
  *
  * @module package
+ * @internal
  */
 
 import { pool } from "@roka/async/pool";
