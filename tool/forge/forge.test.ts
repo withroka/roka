@@ -79,13 +79,16 @@ async function run(context: Deno.TestContext) {
   const cwd = Deno.cwd();
   try {
     Deno.chdir(root);
-    await forge({ repo });
-    // deno-lint-ignore no-console
-    return console
-      .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
-      .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
-      .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
-      .replaceAll(root, "<directory>");
+    const code = await forge({ repo });
+    return {
+      code,
+      // deno-lint-ignore no-console
+      output: console
+        .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
+        .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
+        .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
+        .replaceAll(root, "<directory>"),
+    };
   } finally {
     Deno.chdir(cwd);
   }
