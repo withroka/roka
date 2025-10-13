@@ -3,10 +3,12 @@
  * {@link https://jsr.io/@std/assert | **@std/assert**} library.
  *
  * ```ts
+ * import { assertSameElements } from "@roka/assert";
  * assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]);
  * ```
  *
  * ```ts
+ * import { assertArrayObjectMatch } from "@roka/assert";
  * assertArrayObjectMatch(
  *   [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }],
  *   [{ name: "Alice" }, { name: "Bob" }],

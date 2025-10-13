@@ -4,6 +4,7 @@
  * {@link https://www.conventionalcommits.org | Conventional Commits}.
  *
  * ```ts
+ * import { changelog } from "@roka/forge/changelog";
  * import { packageInfo } from "@roka/forge/package";
  * (async () => {
  *   const pkg = await packageInfo();
