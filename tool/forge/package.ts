@@ -30,6 +30,7 @@
  * in a monorepo.
  *
  * ```ts
+ * import { workspace } from "@roka/forge/package";
  * (async () => {
  *   const packages = await workspace();
  *   return { packages };

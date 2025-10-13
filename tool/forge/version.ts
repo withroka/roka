@@ -53,12 +53,14 @@ export interface VersionOptions {
  *
  * @example Retrieve the version of the current package.
  * ```ts
+ * import { version } from "@roka/forge/version";
  * await version();
  * // 1.0.0
  * ```
  *
  * @example Retrieve the version with meta information.
  * ```ts
+ * import { version } from "@roka/forge/version";
  * await version({ release: true, target: true });
  * // 1.0.0 (release, aarch64-apple-darwin)
  * ```
