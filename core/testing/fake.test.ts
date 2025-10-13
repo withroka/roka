@@ -204,6 +204,18 @@ Deno.test("fakeConsole().output() can wrap output", () => {
   assertEquals(console.output({ wrap: "'" }), "'first\nsecond'");
 });
 
+Deno.test("fakeConsole().output() ignores ANSI escape codes by default", () => {
+  using console = fakeConsole();
+  console.log("\u001b[31mred\u001b[0m");
+  assertEquals(console.output(), "red");
+});
+
+Deno.test("fakeConsole().output() can capture ANSI escape codes", () => {
+  using console = fakeConsole();
+  console.log("\u001b[31mred\u001b[0m");
+  assertEquals(console.output({ ansi: true }), "\u001b[31mred\u001b[0m");
+});
+
 Deno.test("fakeConsole().output() ignores styling by default", () => {
   using console = fakeConsole();
   console.log("%clog", "color: red", "font-weight: bold");
