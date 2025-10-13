@@ -49,7 +49,7 @@ const WORKSPACE = {
   ],
 };
 
-async function test(context: Deno.TestContext) {
+async function run(context: Deno.TestContext) {
   await using remote = await tempRepository();
   await using packages = await tempWorkspace({
     ...WORKSPACE,
@@ -80,19 +80,22 @@ async function test(context: Deno.TestContext) {
   try {
     Deno.chdir(root);
     await forge({ repo });
+    // deno-lint-ignore no-console
+    return console
+      .output({ trimEnd: true, wrap: "\n" })
+      .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)*(?:-.*)?/g, "$1<version>")
+      .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
+      .replaceAll(root, "<directory>");
   } finally {
     Deno.chdir(cwd);
   }
-  await assertSnapshot(
-    context,
-    // deno-lint-ignore no-console
-    console
-      .output({ trimEnd: true, wrap: "\n" })
-      .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
-      .replaceAll(root, "<directory>"),
-  );
 }
 
+async function test(t: Deno.TestContext) {
+  await assertSnapshot(t, await run(t));
+}
+
+Deno.test("forge --help", test);
 Deno.test("forge list", test);
 Deno.test("forge list --modules [packages...]", test);
 Deno.test("forge list [pattern]", test);

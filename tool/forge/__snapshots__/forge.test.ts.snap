@@ -1,5 +1,48 @@
 export const snapshot = {};
 
+snapshot[`forge --help 1`] = `
+"
+
+Usage:   forge <command> [options] [packages...]
+Version: <version>
+
+deno: <version>
+v8: <version>
+typescript: <version>
+
+Description:
+
+  🛠️ forge
+
+  A Deno monorepo tool that manages packages on GitHub and JSR, including
+  versioning, releases, and compilation. It works on a git repository using
+  Conventional Commits.
+
+Options:
+
+  -h, --help     - Show this help.
+  -V, --version  - Show the version number for this program.
+
+Commands:
+
+  list       [packages...]  - List packages and versions.
+  changelog  [packages...]  - Generate changelogs.
+  compile    [packages...]  - Compile packages into binary executables.
+  bump       [packages...]  - Bump versions on package config files.
+  release    [packages...]  - Creates releases for updated packages.
+
+Examples:
+
+  forge                   List all packages.
+  forge list 'core/*'     List packages in the 'core' directory.
+  forge compile --install Compile and install all binaries.
+  forge bump --pr         Bump versions and create a bump PR.
+  forge release --draft   Create releases with compiled assets.
+
+❌ Test case attempted to exit with exit code: <version>
+"
+`;
+
 snapshot[`forge list 1`] = `
 "
 🚨 @scope/name1     0.0.0 👉 1.0.0
