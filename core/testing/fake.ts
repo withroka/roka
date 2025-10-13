@@ -219,13 +219,6 @@ export interface FakeConsoleOutputOptions {
   /** Filter for the log level of output. */
   level?: "debug" | "log" | "info" | "warn" | "error";
   /**
-   * Trim horizontal whitespace from output lines.
-   * @default {false}
-   */
-  trimEnd?: boolean;
-  /** Wrap output with a string on both sides before returning it. */
-  wrap?: string;
-  /**
    * Strip ANSI escape codes from output.
    *
    * @see {@link https://en.wikipedia.org/wiki/ANSI_escape_code ANSI escape code}
@@ -241,6 +234,13 @@ export interface FakeConsoleOutputOptions {
    * @default {false}
    */
   stripCss?: boolean;
+  /**
+   * Trim horizontal whitespace from output lines.
+   * @default {false}
+   */
+  trimEnd?: boolean;
+  /** Wrap output with a string on both sides before returning it. */
+  wrap?: string;
 }
 
 /**

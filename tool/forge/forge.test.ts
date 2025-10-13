@@ -82,7 +82,7 @@ async function run(context: Deno.TestContext) {
     await forge({ repo });
     // deno-lint-ignore no-console
     return console
-      .output({ stripCss: true, stripAnsi: true, trimEnd: true, wrap: "\n" })
+      .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
       .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
       .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
       .replaceAll(root, "<directory>");
