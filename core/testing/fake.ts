@@ -61,9 +61,9 @@
 
 import { assertExists } from "@std/assert";
 import { waitFor } from "@std/async/unstable-wait-for";
-import { stripAnsiCode } from "@std/fmt/colors";
 import { toArrayBuffer, toJson, toText } from "@std/streams";
 import { MockError, stub } from "@std/testing/mock";
+import { stripAnsiCode } from "jsr:@std/internal@^1.0.9/styles";
 
 /** Fake script arguments returned by the {@linkcode fakeArgs} function. */
 export interface FakeArgs {
@@ -328,22 +328,23 @@ export function fakeConsole(): FakeConsole & Disposable {
     warn: warn.fake,
     error: error.fake,
     output(options?: FakeConsoleOutputOptions) {
-      const { ansi = false, color = false } = options ?? {};
+      const { trimEnd = false, wrap, ansi = false, color = false } = options ??
+        {};
       const output = calls
         .filter((call) => !options?.level || call.level === options?.level)
         .map((call) => {
           if (
-            !color &&
-            typeof call.data[0] === "string" && call.data[0].startsWith?.("%c")
-          ) return [call.data[0].slice(2)];
-          const output = call.data.map((x) => `${x}`).join(" ");
-          return ansi ? output : stripAnsiCode(output);
+            !color && typeof call.data[0] === "string" &&
+            call.data[0].startsWith?.("%c")
+          ) return call.data[0].slice(2);
+          return call.data.map((x) => `${x}`).join(" ");
         })
-        .join("\n").split("\n").map((line) =>
-          options?.trimEnd ? line.replace(/[^\S\r\n]+$/, "") : line
+        .map((log) => ansi ? log : stripAnsiCode(log))
+        .map((log) =>
+          trimEnd ? log.split("\n").map((x) => x.trimEnd()).join("\n") : log
         )
         .join("\n");
-      return options?.wrap ? `${options.wrap}${output}${options.wrap}` : output;
+      return wrap ? `${wrap}${output}${wrap}` : output;
     },
     calls,
     get restored() {
