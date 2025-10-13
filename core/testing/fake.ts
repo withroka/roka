@@ -61,6 +61,7 @@
 
 import { assertExists } from "@std/assert";
 import { waitFor } from "@std/async/unstable-wait-for";
+import { stripAnsiCode } from "@std/fmt/colors";
 import { toArrayBuffer, toJson, toText } from "@std/streams";
 import { MockError, stub } from "@std/testing/mock";
 
@@ -225,11 +226,19 @@ export interface FakeConsoleOutputOptions {
   /** Wrap the output with a string on both sides before returning it. */
   wrap?: string;
   /**
-   * Keep CSS styling in the output.
+   * Keep ANSI escape codes in output.
+   *
+   * @see {@link https://en.wikipedia.org/wiki/ANSI_escape_code ANSI escape code}
    *
    * @default {false}
+   */
+  ansi?: boolean;
+  /**
+   * Keep CSS styling in the output.
    *
    * @see {@link https://docs.deno.com/examples/color_logging/ Color logging}
+   *
+   * @default {false}
    */
   color?: boolean;
 }
@@ -319,14 +328,16 @@ export function fakeConsole(): FakeConsole & Disposable {
     warn: warn.fake,
     error: error.fake,
     output(options?: FakeConsoleOutputOptions) {
+      const { ansi = false, color = false } = options ?? {};
       const output = calls
         .filter((call) => !options?.level || call.level === options?.level)
         .map((call) => {
           if (
-            !options?.color &&
+            !color &&
             typeof call.data[0] === "string" && call.data[0].startsWith?.("%c")
           ) return [call.data[0].slice(2)];
-          return call.data.map((x) => `${x}`).join(" ");
+          const output = call.data.map((x) => `${x}`).join(" ");
+          return ansi ? output : stripAnsiCode(output);
         })
         .join("\n").split("\n").map((line) =>
           options?.trimEnd ? line.replace(/[^\S\r\n]+$/, "") : line
