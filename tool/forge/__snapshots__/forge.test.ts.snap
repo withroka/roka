@@ -39,7 +39,7 @@ Examples:
   forge bump --pr         Bump versions and create a bump PR.
   forge release --draft   Create releases with compiled assets.
 
-❌ Test case attempted to exit with exit code: <version>
+❌ Test case attempted to exit with exit code: 0
 "
 `;
 

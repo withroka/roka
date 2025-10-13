@@ -83,7 +83,7 @@ async function run(context: Deno.TestContext) {
     // deno-lint-ignore no-console
     return console
       .output({ trimEnd: true, wrap: "\n" })
-      .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)*(?:-.*)?/g, "$1<version>")
+      // .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
       .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
       .replaceAll(root, "<directory>");
   } finally {
