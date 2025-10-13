@@ -204,31 +204,28 @@ Deno.test("fakeConsole().output() can wrap output", () => {
   assertEquals(console.output({ wrap: "'" }), "'first\nsecond'");
 });
 
-Deno.test("fakeConsole().output() ignores ANSI escape codes by default", () => {
+Deno.test("fakeConsole().output() captures ANSI escape codes by default", () => {
   using console = fakeConsole();
   console.log("\u001b[31mred\u001b[0m");
-  assertEquals(console.output(), "red");
+  assertEquals(console.output(), "\u001b[31mred\u001b[0m");
 });
 
-Deno.test("fakeConsole().output() can capture ANSI escape codes", () => {
+Deno.test("fakeConsole().output() can strip ANSI escape codes", () => {
   using console = fakeConsole();
   console.log("\u001b[31mred\u001b[0m");
-  assertEquals(console.output({ ansi: true }), "\u001b[31mred\u001b[0m");
+  assertEquals(console.output({ stripAnsi: true }), "red");
 });
 
-Deno.test("fakeConsole().output() ignores styling by default", () => {
+Deno.test("fakeConsole().output() captures CSS styling by default", () => {
   using console = fakeConsole();
   console.log("%clog", "color: red", "font-weight: bold");
-  assertEquals(console.output(), "log");
+  assertEquals(console.output(), "%clog color: red font-weight: bold");
 });
 
-Deno.test("fakeConsole().output() can capture styling", () => {
+Deno.test("fakeConsole().output() can strip CSS styling", () => {
   using console = fakeConsole();
   console.log("%clog", "color: red", "font-weight: bold");
-  assertEquals(
-    console.output({ color: true }),
-    "%clog color: red font-weight: bold",
-  );
+  assertEquals(console.output({ stripCss: true }), "log");
 });
 
 Deno.test("fakeCommand() stubs Deno.Command", async () => {

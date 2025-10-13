@@ -61,9 +61,9 @@
 
 import { assertExists } from "@std/assert";
 import { waitFor } from "@std/async/unstable-wait-for";
+import { stripAnsiCode } from "@std/fmt/colors";
 import { toArrayBuffer, toJson, toText } from "@std/streams";
 import { MockError, stub } from "@std/testing/mock";
-import { stripAnsiCode } from "jsr:@std/internal@^1.0.9/styles";
 
 /** Fake script arguments returned by the {@linkcode fakeArgs} function. */
 export interface FakeArgs {
@@ -216,31 +216,31 @@ export interface FakeConsole {
 
 /** Options for the {@linkcode fakeConsole} function. */
 export interface FakeConsoleOutputOptions {
-  /** Filter for the log level of the output. */
+  /** Filter for the log level of output. */
   level?: "debug" | "log" | "info" | "warn" | "error";
   /**
    * Trim horizontal whitespace from output lines.
    * @default {false}
    */
   trimEnd?: boolean;
-  /** Wrap the output with a string on both sides before returning it. */
+  /** Wrap output with a string on both sides before returning it. */
   wrap?: string;
   /**
-   * Keep ANSI escape codes in output.
+   * Strip ANSI escape codes from output.
    *
    * @see {@link https://en.wikipedia.org/wiki/ANSI_escape_code ANSI escape code}
    *
    * @default {false}
    */
-  ansi?: boolean;
+  stripAnsi?: boolean;
   /**
-   * Keep CSS styling in the output.
+   * Strip CSS styling from output.
    *
    * @see {@link https://docs.deno.com/examples/color_logging/ Color logging}
    *
    * @default {false}
    */
-  color?: boolean;
+  stripCss?: boolean;
 }
 
 /**
@@ -328,18 +328,23 @@ export function fakeConsole(): FakeConsole & Disposable {
     warn: warn.fake,
     error: error.fake,
     output(options?: FakeConsoleOutputOptions) {
-      const { trimEnd = false, wrap, ansi = false, color = false } = options ??
+      const {
+        trimEnd = false,
+        wrap,
+        stripAnsi = false,
+        stripCss = false,
+      } = options ??
         {};
       const output = calls
         .filter((call) => !options?.level || call.level === options?.level)
         .map((call) => {
           if (
-            !color && typeof call.data[0] === "string" &&
+            stripCss && typeof call.data[0] === "string" &&
             call.data[0].startsWith?.("%c")
           ) return call.data[0].slice(2);
           return call.data.map((x) => `${x}`).join(" ");
         })
-        .map((log) => ansi ? log : stripAnsiCode(log))
+        .map((log) => stripAnsi ? stripAnsiCode(log) : log)
         .map((log) =>
           trimEnd ? log.split("\n").map((x) => x.trimEnd()).join("\n") : log
         )
