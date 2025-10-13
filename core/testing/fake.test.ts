@@ -187,23 +187,6 @@ Deno.test("fakeConsole().output() can filter by level", () => {
   assertEquals(console.output({ level: "error" }), "");
 });
 
-Deno.test("fakeConsole().output() can trim line ends", () => {
-  using console = fakeConsole();
-  console.info("first ");
-  console.debug("second  \n ");
-  console.log();
-  assertEquals(console.output({ trimEnd: false }), "first \nsecond  \n \n");
-  assertEquals(console.output({ trimEnd: true }), "first\nsecond\n\n");
-});
-
-Deno.test("fakeConsole().output() can wrap output", () => {
-  using console = fakeConsole();
-  console.info("first");
-  console.debug("second");
-  assertEquals(console.output({ wrap: "\n" }), "\nfirst\nsecond\n");
-  assertEquals(console.output({ wrap: "'" }), "'first\nsecond'");
-});
-
 Deno.test("fakeConsole().output() captures ANSI escape codes by default", () => {
   using console = fakeConsole();
   console.log("\u001b[31mred\u001b[0m");
@@ -226,6 +209,23 @@ Deno.test("fakeConsole().output() can strip CSS styling", () => {
   using console = fakeConsole();
   console.log("%clog", "color: red", "font-weight: bold");
   assertEquals(console.output({ stripCss: true }), "log");
+});
+
+Deno.test("fakeConsole().output() can trim line ends", () => {
+  using console = fakeConsole();
+  console.info("first ");
+  console.debug("second  \n ");
+  console.log();
+  assertEquals(console.output({ trimEnd: false }), "first \nsecond  \n \n");
+  assertEquals(console.output({ trimEnd: true }), "first\nsecond\n\n");
+});
+
+Deno.test("fakeConsole().output() can wrap output", () => {
+  using console = fakeConsole();
+  console.info("first");
+  console.debug("second");
+  assertEquals(console.output({ wrap: "\n" }), "\nfirst\nsecond\n");
+  assertEquals(console.output({ wrap: "'" }), "'first\nsecond'");
 });
 
 Deno.test("fakeCommand() stubs Deno.Command", async () => {
