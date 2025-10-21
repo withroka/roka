@@ -57,7 +57,10 @@ export interface BumpOptions {
   name?: string;
   /** Email of the git user. */
   email?: string;
-  /** Bump to the next release version, instead of a pre-release of it. */
+  /**
+   * Bump to the next release version, instead of a pre-release of it.
+   * @default {false}
+   */
   release?: boolean;
   /**
    * Update given file with the generated changelog.
@@ -66,7 +69,10 @@ export interface BumpOptions {
    * working directory.
    */
   changelog?: string;
-  /** Create a pull request. */
+  /**
+   * Create a pull request.
+   * @default {false}
+   */
   pr?: boolean;
   /**
    * Make the newly created pull request a draft.
@@ -74,10 +80,14 @@ export interface BumpOptions {
    * Requires {@linkcode BumpOptions.pr | pr} to be set.
    *
    * If a pull request already exists, this flag won't affect it.
+   *
    * @default {false}
    */
   draft?: boolean;
-  /** Use emoji in commit summaries. */
+  /**
+   * Use emoji in commit summaries.
+   * @default {false}
+   */
   emoji?: boolean;
 }
 
@@ -134,31 +144,26 @@ async function updateChangelog(
   packages: Package[],
   options: BumpOptions | undefined,
 ) {
-  assertExists(options?.changelog, "Changelog file was not passed");
+  const { changelog: file, emoji = false } = options ?? {};
+  assertExists(file, "Changelog file was not passed");
   const prepend = packages.map((pkg) =>
     changelog(pkg.changes ?? [], {
       content: { title: `${pkg.name}@${pkg.version}` },
-      commit: {
-        sort: "importance",
-        ...options?.emoji && { emoji: options?.emoji },
-      },
+      commit: { sort: "importance", emoji },
     })
   ).join("\n");
   let existing = "";
   try {
-    existing = await Deno.readTextFile(options?.changelog);
+    existing = await Deno.readTextFile(file);
   } catch (e: unknown) {
     if (!(e instanceof Deno.errors.NotFound)) throw e;
   }
   await Deno.writeTextFile(
-    options?.changelog,
+    file,
     [prepend, ...existing && [existing]].join("\n"),
   );
   // best effort formatting for the changelog file
-  await maybe(async () => {
-    assertExists(options?.changelog);
-    await deno({ cwd: dirname(options.changelog) }).fmt([options.changelog]);
-  });
+  await maybe(() => deno({ cwd: dirname(file) }).fmt([file]));
 }
 
 async function createPullRequest(
