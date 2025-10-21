@@ -15,7 +15,7 @@ Deno.test("tempDirectory() creates a disposable directory", async () => {
   assertEquals(Deno.cwd(), cwd);
 });
 
-Deno.test("tempDirectory({ chdir: true }) changes working directory", async () => {
+Deno.test("tempDirectory({ chdir }) changes working directory", async () => {
   const cwd = Deno.cwd();
   {
     await using directory = await tempDirectory({ chdir: true });
@@ -32,7 +32,7 @@ Deno.test("tempDirectory({ chdir: true }) changes working directory", async () =
   assertEquals(Deno.cwd(), cwd);
 });
 
-Deno.test("tempDirectory({ chdir: true }) works recursively", async () => {
+Deno.test("tempDirectory({ chdir }) works recursively", async () => {
   const cwd = Deno.cwd();
   {
     await using outer = await tempDirectory({ chdir: true });

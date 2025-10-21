@@ -178,7 +178,7 @@ Deno.test("fakeConsole().output() formats captured arguments", () => {
   assertEquals(console.output(), "first second");
 });
 
-Deno.test("fakeConsole().output() can filter by level", () => {
+Deno.test("fakeConsole().output({ level }) filters by level", () => {
   using console = fakeConsole();
   console.info("first");
   console.debug("second");
@@ -187,31 +187,21 @@ Deno.test("fakeConsole().output() can filter by level", () => {
   assertEquals(console.output({ level: "error" }), "");
 });
 
-Deno.test("fakeConsole().output() captures ANSI escape codes by default", () => {
+Deno.test("fakeConsole().output({ stripAnsi }) strips ANSI escape codes", () => {
   using console = fakeConsole();
   console.log("\u001b[31mred\u001b[0m");
   assertEquals(console.output(), "\u001b[31mred\u001b[0m");
-});
-
-Deno.test("fakeConsole().output() can strip ANSI escape codes", () => {
-  using console = fakeConsole();
-  console.log("\u001b[31mred\u001b[0m");
   assertEquals(console.output({ stripAnsi: true }), "red");
 });
 
-Deno.test("fakeConsole().output() captures CSS styling by default", () => {
+Deno.test("fakeConsole().output({ stripCss }) strips CSS styling", () => {
   using console = fakeConsole();
   console.log("%clog", "color: red", "font-weight: bold");
   assertEquals(console.output(), "%clog color: red font-weight: bold");
-});
-
-Deno.test("fakeConsole().output() can strip CSS styling", () => {
-  using console = fakeConsole();
-  console.log("%clog", "color: red", "font-weight: bold");
   assertEquals(console.output({ stripCss: true }), "log");
 });
 
-Deno.test("fakeConsole().output() can trim line ends", () => {
+Deno.test("fakeConsole().output({ trimEnd }) trims line ends", () => {
   using console = fakeConsole();
   console.info("first ");
   console.debug("second  \n ");
@@ -220,7 +210,7 @@ Deno.test("fakeConsole().output() can trim line ends", () => {
   assertEquals(console.output({ trimEnd: true }), "first\nsecond\n\n");
 });
 
-Deno.test("fakeConsole().output() can wrap output", () => {
+Deno.test("fakeConsole().output({ wrap }) wraps output with text", () => {
   using console = fakeConsole();
   console.info("first");
   console.debug("second");
@@ -351,59 +341,6 @@ Deno.test("fakeCommand() handles multiple spawns", () => {
   );
 });
 
-Deno.test("fakeCommand() ends processes by default", async () => {
-  using command = fakeCommand();
-  assertEquals(command.runs, []);
-  const process = new Deno.Command("sleep", { args: ["1"] }).spawn();
-  assertEquals(await process.status, {
-    success: true,
-    code: 0,
-    signal: null,
-  });
-  assertThrows(() => process.kill(), MockError);
-});
-
-Deno.test("fakeCommand() can keep processes alive", async () => {
-  using command = fakeCommand({
-    sleep: [{ code: 0, keep: true }, { code: 1, keep: true }],
-  });
-  assertEquals(command.runs, []);
-  new Deno.Command("sleep", { args: ["10"], stdin: "piped" }).spawn();
-  new Deno.Command("sleep", { args: ["10"], stdin: "piped" }).spawn();
-  assertEquals(
-    await pool(command.runs, async (run) => {
-      ReadableStream
-        .from([
-          new TextEncoder().encode("Hello, "),
-          new TextEncoder().encode("World!"),
-        ])
-        .pipeTo(run.process.stdin);
-      let statusResolved = false;
-      const statusPromise = run.process.status.then((status) => {
-        statusResolved = true;
-        return status;
-      });
-      await Promise.resolve();
-      assertFalse(statusResolved);
-      run.process.kill();
-      await Promise.resolve();
-      assertFalse(statusResolved);
-      const status = await statusPromise;
-      assertExists(run.stdin);
-      assertEquals(new TextDecoder().decode(run.stdin), "Hello, World!");
-      assert(statusResolved);
-      assertThrows(() => run.process.kill(), MockError);
-      return status;
-    }, {
-      concurrency: 2,
-    }),
-    [
-      { success: true, code: 0, signal: "SIGTERM" },
-      { success: false, code: 1, signal: "SIGTERM" },
-    ],
-  );
-});
-
 Deno.test("fakeCommand() rejects piping when disabled", async () => {
   using mock = fakeCommand();
   const cmd = new Deno.Command("null", {
@@ -444,4 +381,57 @@ Deno.test("fakeCommand() rejects output() when stdin is piped", async () => {
     options: { stdin: "piped", stdout: "null", stderr: "null" },
     stdin: new Uint8Array(),
   }]);
+});
+
+Deno.test("fakeCommand() ends processes by default", async () => {
+  using command = fakeCommand();
+  assertEquals(command.runs, []);
+  const process = new Deno.Command("sleep", { args: ["1"] }).spawn();
+  assertEquals(await process.status, {
+    success: true,
+    code: 0,
+    signal: null,
+  });
+  assertThrows(() => process.kill(), MockError);
+});
+
+Deno.test("fakeCommand({ keep }) can keep processes alive", async () => {
+  using command = fakeCommand({
+    sleep: [{ code: 0, keep: true }, { code: 1, keep: true }],
+  });
+  assertEquals(command.runs, []);
+  new Deno.Command("sleep", { args: ["10"], stdin: "piped" }).spawn();
+  new Deno.Command("sleep", { args: ["10"], stdin: "piped" }).spawn();
+  assertEquals(
+    await pool(command.runs, async (run) => {
+      ReadableStream
+        .from([
+          new TextEncoder().encode("Hello, "),
+          new TextEncoder().encode("World!"),
+        ])
+        .pipeTo(run.process.stdin);
+      let statusResolved = false;
+      const statusPromise = run.process.status.then((status) => {
+        statusResolved = true;
+        return status;
+      });
+      await Promise.resolve();
+      assertFalse(statusResolved);
+      run.process.kill();
+      await Promise.resolve();
+      assertFalse(statusResolved);
+      const status = await statusPromise;
+      assertExists(run.stdin);
+      assertEquals(new TextDecoder().decode(run.stdin), "Hello, World!");
+      assert(statusResolved);
+      assertThrows(() => run.process.kill(), MockError);
+      return status;
+    }, {
+      concurrency: 2,
+    }),
+    [
+      { success: true, code: 0, signal: "SIGTERM" },
+      { success: false, code: 1, signal: "SIGTERM" },
+    ],
+  );
 });

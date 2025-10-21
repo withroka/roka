@@ -123,7 +123,7 @@ Deno.test("mockFetch() matches async iterable body", async (t) => {
   });
 });
 
-Deno.test("mockFetch() can ignore headers", async (t) => {
+Deno.test("mockFetch({ ignore }) can ignore headers", async (t) => {
   using fetch = mockFetch(t, { ignore: { headers: true } });
   let response: Response | undefined = undefined;
   if (fetch.mode === "update") {
