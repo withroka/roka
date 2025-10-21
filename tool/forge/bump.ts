@@ -30,7 +30,9 @@
  */
 
 import { pool } from "@roka/async/pool";
+import { deno } from "@roka/deno";
 import { github, type PullRequest, type Repository } from "@roka/github";
+import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
 import { pick } from "@std/collections";
 import { common, dirname, join } from "@std/path";
@@ -152,17 +154,11 @@ async function updateChangelog(
     options?.changelog,
     [prepend, ...existing && [existing]].join("\n"),
   );
-  // best effort to format the changelog file
-  try {
-    const command = new Deno.Command("deno", {
-      cwd: dirname(options?.changelog),
-      args: ["fmt", options?.changelog],
-    });
-    await command.output();
-  } catch (e: unknown) {
-    if (e instanceof Deno.errors.NotFound) return;
-    throw e;
-  }
+  // best effort formatting for the changelog file
+  await maybe(async () => {
+    assertExists(options?.changelog);
+    await deno({ cwd: dirname(options.changelog) }).fmt([options.changelog]);
+  });
 }
 
 async function createPullRequest(
