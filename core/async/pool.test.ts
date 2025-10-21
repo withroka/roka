@@ -105,7 +105,7 @@ Deno.test("pool({ concurrency }) maintains execution order", async () => {
   await pool([1, 2, 3], async (number) => {
     order.push(number);
     order.push(number);
-    await Promise.resolve(number);
+    return await Promise.resolve(number);
   }, { concurrency: 1 });
   assertEquals(order, [1, 1, 2, 2, 3, 3]);
 });
@@ -229,7 +229,7 @@ Deno.test("pooled({ concurrency }) maintains execution order", async () => {
   await Array.fromAsync(pooled([1, 2, 3], async (number) => {
     order.push(number);
     order.push(number);
-    await Promise.resolve(number);
+    return await Promise.resolve(number);
   }, { concurrency: 1 }));
   assertEquals(order, [1, 1, 2, 2, 3, 3]);
 });
