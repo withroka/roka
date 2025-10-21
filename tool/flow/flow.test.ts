@@ -32,6 +32,7 @@ async function run(context: Deno.TestContext) {
     output: console
       .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
       .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
+      .replace(/\(\d+ms\)/g, "(?ms)")
       .replaceAll(Deno.cwd(), "<directory>"),
   };
 }

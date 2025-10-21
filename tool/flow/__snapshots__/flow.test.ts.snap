@@ -53,7 +53,7 @@ snapshot[`flow [valid] 1`] = `
   output: "
 ✅ Checked 1 file
 
-example test ... ok (0ms)
+example test ... ok (?ms)
 
 ✅ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
@@ -66,7 +66,7 @@ snapshot[`flow --check [valid] 1`] = `
   output: "
 ✅ Checked 1 file
 
-example test ... ok (0ms)
+example test ... ok (?ms)
 
 ✅ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
@@ -540,7 +540,7 @@ snapshot[`flow test [valid] 1`] = `
   code: 0,
   output: "
 
-example test ... ok (0ms)
+example test ... ok (?ms)
 
 ✅ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
@@ -552,7 +552,7 @@ snapshot[`flow test [invalid-code] 1`] = `
   code: 1,
   output: '
 
-example test ... FAILED (0ms)
+example test ... FAILED (?ms)
 
 example test => ./invalid-code.ts:3:6
 error: Error: fail
@@ -571,7 +571,7 @@ snapshot[`flow test [invalid-comment] 1`] = `
   code: 1,
   output: '
 
-file://<directory>/invalid-comment.ts\$4-12.ts ... FAILED (0ms)
+file://<directory>/invalid-comment.ts\$4-12.ts ... FAILED (?ms)
 
 file://<directory>/invalid-comment.ts\$4-12.ts => ./invalid-comment.ts:4:2
 error: Error: fail
@@ -590,7 +590,7 @@ snapshot[`flow test [invalid-doc] 1`] = `
   code: 1,
   output: '
 
-file://<directory>/invalid-doc.md\$3-11.ts ... FAILED (0ms)
+file://<directory>/invalid-doc.md\$3-11.ts ... FAILED (?ms)
 
 file://<directory>/invalid-doc.md\$3-11.ts => ./invalid-doc.md:3:2
 error: Error: fail
