@@ -284,7 +284,7 @@ export interface CompileOptions {
 }
 
 /**
- * Creates a new {@linkcode DenoCommands} instance for for running `deno` commands.
+ * Creates a new {@linkcode DenoCommands} instance for running `deno` commands.
  *
  * @example Type-check files and their code blocks.
  * ```ts
