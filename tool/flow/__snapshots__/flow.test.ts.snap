@@ -1,0 +1,605 @@
+export const snapshot = {};
+
+snapshot[`flow --help 1`] = `
+{
+  code: 1,
+  output: "
+
+Usage:   flow <command> [options]
+Version: <version>
+
+deno: <version>
+v8: <version>
+typescript: <version>
+
+Description:
+
+  🍃 flow
+
+  An assistant tool for Deno projects that formats, type-checks,
+  lints, and tests code.
+
+Options:
+
+  -h, --help     - Show this help.
+  -V, --version  - Show the version number for this program.
+  --check        - Check for problems only.                   (Default: false)
+
+Commands:
+
+  fmt    [paths...]  - Format code, including code blocks in JSDoc.
+  check  [paths...]  - Type-check code.
+  lint   [paths...]  - Lint code.
+  test   [paths...]  - Run tests using Deno's built-in test runner.
+
+Examples:
+
+  flow         Format code and run all checks.
+  flow --check Check for problems without making changes.
+  flow core/   Format and check files in the core directory.
+  flow check   Type-check code.
+  flow fmt     Format code.
+  flow lint    Lint code.
+  flow test    Run tests.
+
+❌ Test case attempted to exit with exit code: 0
+",
+}
+`;
+
+snapshot[`flow [valid] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Checked 1 file
+
+example test ... ok (0ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow --check [valid] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Checked 1 file
+
+example test ... ok (0ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow fmt [invalid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Formatted 1 file
+",
+}
+`;
+
+snapshot[`flow fmt [invalid-comment] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Formatted 1 file
+",
+}
+`;
+
+snapshot[`flow fmt [invalid-doc] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Formatted 1 file
+",
+}
+`;
+
+snapshot[`flow fmt --check [valid] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Checked formatting in 1 file
+",
+}
+`;
+
+snapshot[`flow fmt --check [invalid-code] 1`] = `
+{
+  code: 1,
+  output: '
+
+from <directory>/invalid-code.ts:
+ 7 | -function example( ): number {
+ 7 | +function example(): number {
+ 8 | -   const a: string = window?.location;
+ 8 | +  const a: string = window?.location;
+ 9 | -   return "42";
+ 9 | +  return "42";
+
+❌ Checked formatting in 1 file, found 1 problem
+',
+}
+`;
+
+snapshot[`flow fmt --check [invalid-comment] 1`] = `
+{
+  code: 1,
+  output: '
+
+from <directory>/invalid-comment.ts:4:4:
+3 | -function example( ): number {
+3 | +function example(): number {
+4 | -   const a: string = window?.location;
+4 | +  const a: string = window?.location;
+5 | -   return "42";
+5 | +  return "42";
+
+❌ Checked formatting in 1 file, found 1 problem
+',
+}
+`;
+
+snapshot[`flow fmt --check [invalid-doc] 1`] = `
+{
+  code: 1,
+  output: '
+
+from <directory>/invalid-doc.md:
+ 6 | -function example( ): number {
+ 6 | +function example(): number {
+ 7 | -   const a: string = window?.location;
+ 7 | +  const a: string = window?.location;
+ 8 | -   return "42";
+ 8 | +  return "42";
+
+❌ Checked formatting in 1 file, found 1 problem
+',
+}
+`;
+
+snapshot[`flow check [valid] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Type-checked 1 file
+",
+}
+`;
+
+snapshot[`flow check [invalid-code] 1`] = `
+{
+  code: 1,
+  output: \`
+
+TS2367 [ERROR]: This comparison appears to be unintentional because the types '42' and '43' have no overlap.
+  if (42 !== 43) throw new Error("fail");
+      ~~~~~~~~~
+    at file://<directory>/invalid-code.ts:4:7
+
+
+TS2322 [ERROR]: Type 'Location' is not assignable to type 'string'.
+   const a: string = window?.location;
+         ^
+    at file://<directory>/invalid-code.ts:8:10
+
+
+TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
+   return "42";
+   ~~~~~~
+    at file://<directory>/invalid-code.ts:9:4
+
+❌ Type-checked 1 file, found 3 problems
+\`,
+}
+`;
+
+snapshot[`flow check [invalid-comment] 1`] = `
+{
+  code: 1,
+  output: \`
+
+TS2367 [ERROR]: This comparison appears to be unintentional because the types '42' and '43' have no overlap.
+if (42 !== 43) throw new Error("fail");
+    ~~~~~~~~~
+    at file://<directory>/invalid-comment.ts:5:8
+
+
+TS2322 [ERROR]: Type 'Location' is not assignable to type 'string'.
+   const a: string = window?.location;
+         ^
+    at file://<directory>/invalid-comment.ts:8:13
+
+
+TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
+   return "42";
+   ~~~~~~
+    at file://<directory>/invalid-comment.ts:9:7
+
+❌ Type-checked 1 file, found 3 problems
+\`,
+}
+`;
+
+snapshot[`flow check [invalid-doc] 1`] = `
+{
+  code: 1,
+  output: \`
+
+TS2367 [ERROR]: This comparison appears to be unintentional because the types '42' and '43' have no overlap.
+if (42 !== 43) throw new Error("fail");
+    ~~~~~~~~~
+    at file://<directory>/invalid-doc.md:4:5
+
+
+TS2322 [ERROR]: Type 'Location' is not assignable to type 'string'.
+   const a: string = window?.location;
+         ^
+    at file://<directory>/invalid-doc.md:7:10
+
+
+TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
+   return "42";
+   ~~~~~~
+    at file://<directory>/invalid-doc.md:8:4
+
+❌ Type-checked 1 file, found 3 problems
+\`,
+}
+`;
+
+snapshot[`flow lint [valid] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Linted 1 file
+",
+}
+`;
+
+snapshot[`flow lint [invalid-code] 1`] = `
+{
+  code: 1,
+  output: '
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-code.ts:4:7
+  |
+4 |   if (42 !== 43) throw new Error("fail");
+  |       ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`example\` is never used
+ --> <directory>/invalid-code.ts:7:10
+  |
+7 | function example( ): number {
+  |          ^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like \`_example\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-code.ts:8:10
+  |
+8 |    const a: string = window?.location;
+  |          ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-window]: Window is no longer available in Deno
+ --> <directory>/invalid-code.ts:8:22
+  |
+8 |    const a: string = window?.location;
+  |                      ^^^^^^
+  = hint: Instead, use \`globalThis\`
+
+  docs: https://docs.deno.com/lint/rules/no-window
+
+❌ Linted 1 file, found 4 problems
+',
+}
+`;
+
+snapshot[`flow lint [invalid-comment] 1`] = `
+{
+  code: 1,
+  output: '
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-comment.ts:5:8
+  |
+1 | if (42 !== 43) throw new Error("fail");
+  |     ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`example\` is never used
+ --> <directory>/invalid-comment.ts:7:13
+  |
+3 | function example( ): number {
+  |          ^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like \`_example\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-comment.ts:8:13
+  |
+4 |    const a: string = window?.location;
+  |          ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-window]: Window is no longer available in Deno
+ --> <directory>/invalid-comment.ts:8:25
+  |
+4 |    const a: string = window?.location;
+  |                      ^^^^^^
+  = hint: Instead, use \`globalThis\`
+
+  docs: https://docs.deno.com/lint/rules/no-window
+
+❌ Linted 1 file, found 4 problems
+',
+}
+`;
+
+snapshot[`flow lint [invalid-doc] 1`] = `
+{
+  code: 1,
+  output: '
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-doc.md:4:5
+  |
+1 | if (42 !== 43) throw new Error("fail");
+  |     ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`example\` is never used
+ --> <directory>/invalid-doc.md:6:10
+  |
+3 | function example( ): number {
+  |          ^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like \`_example\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-doc.md:7:10
+  |
+4 |    const a: string = window?.location;
+  |          ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-window]: Window is no longer available in Deno
+ --> <directory>/invalid-doc.md:7:22
+  |
+4 |    const a: string = window?.location;
+  |                      ^^^^^^
+  = hint: Instead, use \`globalThis\`
+
+  docs: https://docs.deno.com/lint/rules/no-window
+
+❌ Linted 1 file, found 4 problems
+',
+}
+`;
+
+snapshot[`flow lint --fix [valid] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Linted 1 file
+",
+}
+`;
+
+snapshot[`flow lint --fix [invalid-code] 1`] = `
+{
+  code: 1,
+  output: '
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-code.ts:4:7
+  |
+4 |   if (42 !== 43) throw new Error("fail");
+  |       ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`example\` is never used
+ --> <directory>/invalid-code.ts:7:10
+  |
+7 | function example( ): number {
+  |          ^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like \`_example\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-code.ts:8:10
+  |
+8 |    const a: string = globalThis?.location;
+  |          ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+❌ Linted 1 file, found 3 problems
+',
+}
+`;
+
+snapshot[`flow lint --fix [invalid-comment] 1`] = `
+{
+  code: 1,
+  output: '
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-comment.ts:5:8
+  |
+1 | if (42 !== 43) throw new Error("fail");
+  |     ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`example\` is never used
+ --> <directory>/invalid-comment.ts:7:13
+  |
+3 | function example( ): number {
+  |          ^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like \`_example\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-comment.ts:8:13
+  |
+4 |    const a: string = globalThis?.location;
+  |          ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+❌ Linted 1 file, found 3 problems
+',
+}
+`;
+
+snapshot[`flow lint --fix [invalid-doc] 1`] = `
+{
+  code: 1,
+  output: '
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-doc.md:4:5
+  |
+1 | if (42 !== 43) throw new Error("fail");
+  |     ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`example\` is never used
+ --> <directory>/invalid-doc.md:6:10
+  |
+3 | function example( ): number {
+  |          ^^^^^^^
+  = hint: If this is intentional, prefix it with an underscore like \`_example\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-doc.md:7:10
+  |
+4 |    const a: string = globalThis?.location;
+  |          ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+❌ Linted 1 file, found 3 problems
+',
+}
+`;
+
+snapshot[`flow test [valid] 1`] = `
+{
+  code: 0,
+  output: "
+
+example test ... ok (0ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow test [invalid-code] 1`] = `
+{
+  code: 1,
+  output: '
+
+example test ... FAILED (0ms)
+
+example test => ./invalid-code.ts:3:6
+error: Error: fail
+  if (42 !== 43) throw new Error("fail");
+                       ^
+    at file://<directory>/invalid-code.ts:4:24
+
+
+❌ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
+',
+}
+`;
+
+snapshot[`flow test [invalid-comment] 1`] = `
+{
+  code: 1,
+  output: '
+
+file://<directory>/invalid-comment.ts\$4-12.ts ... FAILED (0ms)
+
+file://<directory>/invalid-comment.ts\$4-12.ts => ./invalid-comment.ts:4:2
+error: Error: fail
+    if (42 !== 43) throw new Error("fail");
+                         ^
+    at file://<directory>/invalid-comment.ts:5:25
+
+
+❌ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
+',
+}
+`;
+
+snapshot[`flow test [invalid-doc] 1`] = `
+{
+  code: 1,
+  output: '
+
+file://<directory>/invalid-doc.md\$3-11.ts ... FAILED (0ms)
+
+file://<directory>/invalid-doc.md\$3-11.ts => ./invalid-doc.md:3:2
+error: Error: fail
+    if (42 !== 43) throw new Error("fail");
+                         ^
+    at file://<directory>/invalid-doc.md:4:22
+
+
+❌ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
+',
+}
+`;

@@ -21,7 +21,7 @@ more significant changes, start a discussion with a new issue first. The
 [documentation](https://jsr.io/@roka) can be a great resource to help you
 navigate the code.
 
-When working on the code, you can run all checks by running `deno task ok` in
+When working on the code, you can run all checks by running `deno task flow` in
 the root of the repository. For coding style, try to match the surrounding code.
 If you’re unsure, see the code conventions section below.
 

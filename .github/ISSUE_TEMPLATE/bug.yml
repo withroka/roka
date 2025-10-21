@@ -14,6 +14,7 @@ body:
       description: What component did this bug occur in?
       options:
         - core
+        - flow
         - forge
     validations:
       required: true
