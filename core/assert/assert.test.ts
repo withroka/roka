@@ -11,6 +11,14 @@ Deno.test("assertSameElements() handles empty arrays", () => {
 
 Deno.test("assertSameElements() rejects arrays with different lengths", () => {
   assertThrows(
+    () => assertSameElements(["Alice"], []),
+    AssertionError,
+  );
+  assertThrows(
+    () => assertSameElements([], ["Bob"]),
+    AssertionError,
+  );
+  assertThrows(
     () => assertSameElements(["Alice", "Bob"], ["Alice"]),
     AssertionError,
   );
@@ -47,6 +55,38 @@ Deno.test("assertSameElements() handles non-comparable elements", () => {
     [{ id: 1 }, { id: 2 }],
     [{ id: 2 }, { id: 1 }],
   );
+  assertThrows(() =>
+    assertSameElements(
+      [{ id: 1 }, { id: 2 }, { id: 1 }],
+      [{ id: 2 }, { id: 1 }],
+    ), AssertionError);
+  assertThrows(() =>
+    assertSameElements(
+      [{ id: 2 }, { id: 1 }],
+      [{ id: 1 }, { id: 2 }, { id: 1 }],
+    ), AssertionError);
+});
+
+Deno.test("assertSameElements() asserts array elements are exact", () => {
+  assertSameElements(
+    [[1, 2], [3, 4]],
+    [[3, 4], [1, 2]],
+  );
+  assertThrows(() =>
+    assertSameElements(
+      [[1, 2], [3]],
+      [[3, 4], [1, 2]],
+    ), AssertionError);
+  assertThrows(() =>
+    assertSameElements(
+      [[1, 2], [3, 4], [1, 2]],
+      [[3, 4], [1, 2]],
+    ), AssertionError);
+  assertThrows(() =>
+    assertSameElements(
+      [[3, 4], [1, 2]],
+      [[1, 2], [3, 4], [1, 2]],
+    ), AssertionError);
 });
 
 Deno.test("assertSameElements() fails with custom message", () => {
@@ -72,6 +112,27 @@ Deno.test("assertArrayObjectMatch() asserts expected objects are subsets of actu
 
 Deno.test("assertArrayObjectMatch() handles empty arrays", () => {
   assertArrayObjectMatch([], []);
+});
+
+Deno.test("assertArrayObjectMatch() asserts expected arrays are subsets of actual arrays ", () => {
+  assertArrayObjectMatch([
+    { id: 1, data: [1, 2, 3] },
+    { id: 2, data: [4, 5, 6] },
+  ], [
+    { id: 1, data: [1, 2, 3] },
+    { id: 2, data: [4, 5, 6] },
+  ]);
+  assertArrayObjectMatch([
+    { id: 1, data: [1, 2, 3, 4] },
+  ], [
+    { id: 1, data: [1, 2, 3] },
+  ]);
+  assertThrows(() =>
+    assertArrayObjectMatch([
+      { id: 1, data: [1, 2, 3] },
+    ], [
+      { id: 1, data: [1, 2, 3, 4] },
+    ]), AssertionError);
 });
 
 Deno.test("assertArrayObjectMatch() rejects length mismatch", () => {
