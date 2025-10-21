@@ -3,7 +3,7 @@ import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
 import { assert, assertRejects } from "@std/assert";
-import { distinct } from "@std/collections/distinct";
+import { distinct } from "@std/collections";
 import { dirname, resolve } from "@std/path";
 
 async function createFiles(files: string[]) {

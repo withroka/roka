@@ -53,7 +53,7 @@ import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
 import { distinct } from "@std/collections";
-import { expandGlob } from "@std/fs/expand-glob";
+import { expandGlob } from "@std/fs";
 import {
   basename,
   dirname,
