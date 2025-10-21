@@ -34,7 +34,7 @@
  * Tests use {@link https://docs.deno.com/go/config/#permissions | permissions}
  * from the `deno.json` file. {@link https://jsr.io/@roka/testing/doc/mock | Mocks}
  * and {@link https://jsr.io/@std/testing/doc/snapshot | snapshots} are
- * generated with all permissions enabled when `—update` is passed.
+ * generated with all permissions enabled when `--update` is passed.
  *
  * ```sh
  * flow test --update
