@@ -41,7 +41,7 @@
  * ```
  *
  * _**WARNING**: This tool serves the Roka project. Feel free to make
- * contributions if it is useul to you. The API is unstable and may change._
+ * contributions if it is useful to you. The API is unstable and may change._
  *
  * @module flow
  */
