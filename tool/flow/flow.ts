@@ -240,7 +240,6 @@ function options(): DenoOptions {
       if (!reported) console.log();
       reported = true;
       (report.success ? console.log : console.warn)(testLine(report));
-      reported = true;
     },
   };
   return options;
