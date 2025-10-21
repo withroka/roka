@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import { pool, pooled } from "./pool.ts";
 
 Deno.test("pool() resolves all promises", async () => {
@@ -104,11 +104,26 @@ Deno.test("pool({ concurrency }) maintains execution order", async () => {
   const order: number[] = [];
   await pool([1, 2, 3], async (number) => {
     order.push(number);
-    await Promise.resolve();
     order.push(number);
-    return number;
+    await Promise.resolve(number);
   }, { concurrency: 1 });
   assertEquals(order, [1, 1, 2, 2, 3, 3]);
+});
+
+Deno.test("pool({ concurrency }) rejects zero", async () => {
+  await assertRejects(
+    () => pool([], (x) => Promise.resolve(x), { concurrency: 0 }),
+    TypeError,
+    "concurrency",
+  );
+});
+
+Deno.test("pool({ concurrency }) rejects negative numbers", async () => {
+  await assertRejects(
+    () => pool([], (x) => Promise.resolve(x), { concurrency: -1 }),
+    TypeError,
+    "concurrency",
+  );
 });
 
 Deno.test("pooled() resolves all promises", async () => {
@@ -213,9 +228,24 @@ Deno.test("pooled({ concurrency }) maintains execution order", async () => {
   const order: number[] = [];
   await Array.fromAsync(pooled([1, 2, 3], async (number) => {
     order.push(number);
-    await Promise.resolve();
     order.push(number);
-    return number;
+    await Promise.resolve(number);
   }, { concurrency: 1 }));
   assertEquals(order, [1, 1, 2, 2, 3, 3]);
+});
+
+Deno.test("pooled({ concurrency }) rejects zero", () => {
+  assertThrows(
+    () => pooled([], (x) => Promise.resolve(x), { concurrency: 0 }),
+    TypeError,
+    "concurrency",
+  );
+});
+
+Deno.test("pooled({ concurrency }) rejects negative numbers", () => {
+  assertThrows(
+    () => pooled([], (x) => Promise.resolve(x), { concurrency: -1 }),
+    TypeError,
+    "concurrency",
+  );
 });

@@ -327,6 +327,9 @@ export function pooled<T, R>(
       );
   }
   const { concurrency = Infinity } = options ?? {};
+  if (concurrency <= 0) {
+    throw new TypeError(`Invalid concurrency value: ${concurrency}`);
+  }
   return pooledMap(
     concurrency,
     array as Iterable<T> | AsyncIterable<T>,

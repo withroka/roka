@@ -205,6 +205,7 @@ export async function* find(
     type,
     followSymlinks = false,
   } = options ?? {};
+  if (maxDepth < 0) throw new TypeError(`Invalid maxDepth value: ${maxDepth}`);
   const namePattern = options?.name ? globToRegExp(options.name) : undefined;
   const pathPattern = options?.path ? globToRegExp(options.path) : undefined;
   const ignorePatterns = options?.ignore?.map((p) => globToRegExp(p)) ?? [];

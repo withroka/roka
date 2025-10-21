@@ -683,6 +683,19 @@ Deno.test("find({ maxDepth }) limit search depth", async () => {
     "d/e",
     "d/e/f.txt",
   ]);
+  assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 0 })), [
+    ".",
+  ]);
+});
+
+Deno.test("find({ maxDepth }) rejects negative numbers", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
+  await assertRejects(
+    () => Array.fromAsync(find(["."], { maxDepth: -1 })),
+    TypeError,
+    "maxDepth",
+  );
 });
 
 Deno.test("find({ validate }) rejects missing input", async () => {

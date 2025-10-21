@@ -79,6 +79,20 @@ Deno.test("compile() rejects scripts with errors", async () => {
   );
 });
 
+Deno.test("compile({ concurrency }) rejects negative numbers ", async () => {
+  const config = { forge: { main: "./main.ts" } };
+  await using pkg = await tempPackage({ config });
+  await Deno.writeTextFile(
+    join(pkg.directory, "main.ts"),
+    "console.log('Hello, World!');",
+  );
+  await assertRejects(
+    () => compile(pkg, { concurrency: -1 }),
+    TypeError,
+    "concurrency",
+  );
+});
+
 Deno.test("compile({ bundle }) creates release bundles", async () => {
   await using pkg = await tempPackage({
     config: {
