@@ -1,6 +1,6 @@
 export const mock = {};
 
-mock[`mock() records in custom mode > func 1`] =
+mock[`mock({ mode }) records in custom mode > func 1`] =
 [
   {
     input: [],

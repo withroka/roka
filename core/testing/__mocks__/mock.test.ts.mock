@@ -124,103 +124,6 @@ mock[`mock() matches arguments > func 1`] =
   },
 ];
 
-mock[`mock() can convert input synchronously > func 1`] =
-[
-  {
-    input: [
-      "HELLO",
-    ],
-    output: "hello",
-  },
-];
-
-mock[`mock() can convert input asynchronously > func 1`] =
-[
-  {
-    input: [
-      "HELLO",
-    ],
-    output: "hello",
-  },
-];
-
-mock[`mock() can convert output synchronously > func 1`] =
-[
-  {
-    input: [
-      "hello",
-    ],
-    output: "HELLO",
-  },
-];
-
-mock[`mock() can convert output asynchronously > func 1`] =
-[
-  {
-    input: [
-      "hello",
-    ],
-    output: "HELLO",
-  },
-];
-
-mock[`mock() can revert output synchronously > func 1`] =
-[
-  {
-    input: [
-      "HELLO",
-    ],
-    output: "HELLO",
-  },
-];
-
-mock[`mock() can revert output asynchronously > func 1`] =
-[
-  {
-    input: [
-      "HELLO",
-    ],
-    output: "HELLO",
-  },
-];
-
-mock[`mock() can store modified input > pop 1`] =
-[
-  {
-    input: [
-      [
-        1,
-        2,
-        3,
-      ],
-    ],
-    output: [
-      1,
-      2,
-    ],
-  },
-];
-
-mock[`mock() can store consumable input > body 1`] =
-[
-  {
-    input: [
-      "body",
-    ],
-    output: "body",
-  },
-];
-
-mock[`mock() can store consumable output > resp 1`] =
-[
-  {
-    input: [
-      "body",
-    ],
-    output: "body",
-  },
-];
-
 mock[`mock() does not record errors > func 1`] =
 [];
 
@@ -243,14 +146,6 @@ mock[`mock() disposes silently after missing call > func 1`] =
       2,
     ],
     output: 2,
-  },
-];
-
-mock[`custom name`] =
-[
-  {
-    input: [],
-    output: 42,
   },
 ];
 
@@ -307,5 +202,110 @@ mock[`mock() can mock a function multiple times > func 3`] =
   {
     input: [],
     output: 42,
+  },
+];
+
+mock[`custom name`] =
+[
+  {
+    input: [],
+    output: 42,
+  },
+];
+
+mock[`mock({ conversion }) can convert input synchronously > func 1`] =
+[
+  {
+    input: [
+      "HELLO",
+    ],
+    output: "hello",
+  },
+];
+
+mock[`mock({ conversion }) can convert input asynchronously > func 1`] =
+[
+  {
+    input: [
+      "HELLO",
+    ],
+    output: "hello",
+  },
+];
+
+mock[`mock({ conversion }) can convert output synchronously > func 1`] =
+[
+  {
+    input: [
+      "hello",
+    ],
+    output: "HELLO",
+  },
+];
+
+mock[`mock({ conversion }) can convert output asynchronously > func 1`] =
+[
+  {
+    input: [
+      "hello",
+    ],
+    output: "HELLO",
+  },
+];
+
+mock[`mock({ conversion }) can revert output synchronously > func 1`] =
+[
+  {
+    input: [
+      "HELLO",
+    ],
+    output: "HELLO",
+  },
+];
+
+mock[`mock({ conversion }) can revert output asynchronously > func 1`] =
+[
+  {
+    input: [
+      "HELLO",
+    ],
+    output: "HELLO",
+  },
+];
+
+mock[`mock({ conversion }) can store modified input > pop 1`] =
+[
+  {
+    input: [
+      [
+        1,
+        2,
+        3,
+      ],
+    ],
+    output: [
+      1,
+      2,
+    ],
+  },
+];
+
+mock[`mock({ conversion }) can store consumable input > body 1`] =
+[
+  {
+    input: [
+      "body",
+    ],
+    output: "body",
+  },
+];
+
+mock[`mock({ conversion }) can store consumable output > resp 1`] =
+[
+  {
+    input: [
+      "body",
+    ],
+    output: "body",
   },
 ];

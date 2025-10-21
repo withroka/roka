@@ -10,12 +10,12 @@ function token(mock?: Mock<typeof fetch>) {
   return mock?.mode === "update" ? Deno.env.get("GITHUB_TOKEN") ?? "" : "token";
 }
 
-Deno.test("github().repos.get() can use named repository", () => {
+Deno.test("github().repos.get() uses a named repository", () => {
   const repo = github({ token: token() }).repos.get("withroka", "test");
   assertObjectMatch(repo, { owner: "withroka", repo: "test" });
 });
 
-Deno.test("github().repos.get() can use local repository", async () => {
+Deno.test("github().repos.get({ directory }) uses a local repository", async () => {
   await using git = await tempRepository();
   await git.remotes.add("https://github.com/withroka/test.git");
   const repo = await github({ token: token() }).repos.get({
@@ -24,7 +24,7 @@ Deno.test("github().repos.get() can use local repository", async () => {
   assertObjectMatch(repo, { owner: "withroka", repo: "test" });
 });
 
-Deno.test("github().repos.pulls", async (t) => {
+Deno.test("github().repos.get().pulls", async (t) => {
   using _fetch = mockFetch(t, { ignore: { headers: true } });
   const repo = github({ token: token(_fetch) }).repos.get("withroka", "test");
   let pull: PullRequest;
@@ -75,7 +75,7 @@ Deno.test("github().repos.pulls", async (t) => {
   });
 });
 
-Deno.test("github().repos.releases", async (t) => {
+Deno.test("github().repos.get().releases", async (t) => {
   using _fetch = mockFetch(t, { ignore: { headers: true } });
   const repo = github({ token: token(_fetch) }).repos.get("withroka", "test");
   let release: Release;

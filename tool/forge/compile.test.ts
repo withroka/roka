@@ -64,7 +64,22 @@ Deno.test("compile() compiles and installs a binary", async () => {
   assertEquals(new TextDecoder().decode(stdout), "1.2.3\n");
 });
 
-Deno.test("compile() can create release bundles", async () => {
+Deno.test("compile() rejects scripts with errors", async () => {
+  const config = { forge: { main: "./main.ts" } };
+  await using pkg = await tempPackage({ config });
+  await Deno.writeTextFile(
+    join(pkg.directory, "main.ts"),
+    [
+      "#include <iostream>",
+      'int main() { std::cout << "Hello, World!"; return 0; }',
+    ].join("\n"),
+  );
+  await assertRejects(
+    () => compile(pkg, { concurrency: 1, dist: join(pkg.directory, "dist") }),
+  );
+});
+
+Deno.test("compile({ bundle }) creates release bundles", async () => {
   await using pkg = await tempPackage({
     config: {
       name: "@scope/name",
@@ -107,20 +122,5 @@ Deno.test("compile() can create release bundles", async () => {
   assertMatch(
     checksumContent,
     /[A-Fa-f0-9]{64}\s+x86_64-pc-windows-msvc.zip/,
-  );
-});
-
-Deno.test("compile() rejects code with errors", async () => {
-  const config = { forge: { main: "./main.ts" } };
-  await using pkg = await tempPackage({ config });
-  await Deno.writeTextFile(
-    join(pkg.directory, "main.ts"),
-    [
-      "#include <iostream>",
-      'int main() { std::cout << "Hello, World!"; return 0; }',
-    ].join("\n"),
-  );
-  await assertRejects(
-    () => compile(pkg, { concurrency: 1, dist: join(pkg.directory, "dist") }),
   );
 });

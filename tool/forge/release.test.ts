@@ -102,20 +102,7 @@ Deno.test("release() creates update release", async () => {
   assertEquals(assets, []);
 });
 
-Deno.test("release() creates draft release", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: "1.3.0" },
-    commits: [
-      { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
-    ],
-  });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  const [rls] = await release(pkg, { repo, draft: true });
-  assertEquals(rls.draft, true);
-});
-
-Deno.test("release() creates pre-release", async () => {
+Deno.test("release() can create a pre-release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.3.0-pre.1+fedcba9` },
     commits: [
@@ -124,15 +111,14 @@ Deno.test("release() creates pre-release", async () => {
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  const [rls] = await release(pkg, { repo, draft: true });
+  const [rls] = await release(pkg, { repo });
   assertObjectMatch(rls, {
     name: `name@1.3.0-pre.1+fedcba9`,
     prerelease: true,
-    draft: true,
   });
 });
 
-Deno.test("release() updates existing release", async () => {
+Deno.test("release() can update an existing release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.3.0` },
     commits: [
@@ -195,4 +181,17 @@ Deno.test("release() can compile and upload release assets", async () => {
     { release: rls, name: "x86_64-pc-windows-msvc.zip" },
     { release: rls, name: "sha256.txt" },
   ]);
+});
+
+Deno.test("release({ draft }) creates draft release", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.3.0" },
+    commits: [
+      { summary: "initial", tags: ["name@1.2.3"] },
+      { summary: "feat: new feature" },
+    ],
+  });
+  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const [rls] = await release(pkg, { repo, draft: true });
+  assertEquals(rls.draft, true);
 });

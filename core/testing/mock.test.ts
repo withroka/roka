@@ -92,108 +92,6 @@ Deno.test("mock() matches arguments", async (t) => {
   );
 });
 
-Deno.test("mock() can convert input synchronously", async (t) => {
-  const self = { func: async (a: string) => await Promise.resolve(a) };
-  using mocked = mock(t, self, "func", {
-    conversion: { input: { convert: (a: string) => [a.toUpperCase()] } },
-  });
-  if (mocked.mode === "update") assertEquals(await mocked("hello"), "hello");
-  if (mocked.mode === "replay") assertEquals(await mocked("HELLO"), "hello");
-});
-
-Deno.test("mock() can convert input asynchronously", async (t) => {
-  const self = { func: async (a: string) => await Promise.resolve(a) };
-  using mocked = mock(t, self, "func", {
-    conversion: {
-      input: {
-        convert: async (a: string) => await Promise.resolve([a.toUpperCase()]),
-      },
-    },
-  });
-  if (mocked.mode === "update") assertEquals(await mocked("hello"), "hello");
-  if (mocked.mode === "replay") assertEquals(await mocked("HELLO"), "hello");
-});
-
-Deno.test("mock() can convert output synchronously", async (t) => {
-  const self = { func: async (a: string) => await Promise.resolve(a) };
-  using mocked = mock(t, self, "func", {
-    conversion: { output: { convert: (a: string) => a.toUpperCase() } },
-  });
-  assertEquals(await mocked("hello"), "HELLO");
-});
-
-Deno.test("mock() can convert output asynchronously", async (t) => {
-  const self = { func: async (a: string) => await Promise.resolve(a) };
-  using mocked = mock(t, self, "func", {
-    conversion: {
-      output: {
-        convert: async (a: string) => await Promise.resolve(a.toUpperCase()),
-      },
-    },
-  });
-  assertEquals(await mocked("hello"), "HELLO");
-});
-
-Deno.test("mock() can revert output synchronously", async (t) => {
-  const self = { func: async (a: string) => await Promise.resolve(a) };
-  using mocked = mock(t, self, "func", {
-    conversion: { output: { revert: (a: string) => a.toLowerCase() } },
-  });
-  assertEquals(await mocked("HELLO"), "hello");
-});
-
-Deno.test("mock() can revert output asynchronously", async (t) => {
-  const self = { func: async (a: string) => await Promise.resolve(a) };
-  using mocked = mock(t, self, "func", {
-    conversion: {
-      output: {
-        revert: async (a: string) => await Promise.resolve(a.toLowerCase()),
-      },
-    },
-  });
-  assertEquals(await mocked("HELLO"), "hello");
-});
-
-Deno.test("mock() can store modified input", async (t) => {
-  const self = {
-    async pop(a: number[]) {
-      a.pop();
-      return await Promise.resolve(a);
-    },
-  };
-  using mocked = mock(t, self, "pop", {
-    conversion: { input: { convert: (a) => [a.slice()] } },
-  });
-  assertEquals(await mocked([1, 2, 3]), [1, 2]);
-});
-
-Deno.test("mock() can store consumable input", async (t) => {
-  const self = { body: async (response: Response) => await response.text() };
-  using mocked = mock(t, self, "body", {
-    conversion: {
-      input: {
-        convert: async (response: Response) => [await response.clone().text()],
-      },
-    },
-  });
-  assertEquals(await mocked(new Response("body")), "body");
-});
-
-Deno.test("mock() can store consumable output", async (t) => {
-  const self = {
-    resp: async (body: string) => await Promise.resolve(new Response(body)),
-  };
-  using mocked = mock(t, self, "resp", {
-    conversion: {
-      output: {
-        convert: async (resp) => await resp.clone().text(),
-        revert: (body) => new Response(body),
-      },
-    },
-  });
-  assertEquals(await (await mocked("body")).text(), "body");
-});
-
 Deno.test("mock() checks missing mock file", async (t) => {
   const self = { func: async () => await Promise.resolve() };
   using mocked = mock(t, self, "func", {
@@ -253,46 +151,6 @@ Deno.test("mock() disposes silently after missing call", async (t) => {
   using mocked = mock(t, self, "func");
   if (mocked.mode === "update") await mocked(2);
   if (mocked.mode === "replay") await assertRejects(() => mocked(5), MockError);
-});
-
-Deno.test("mock() records in custom directory", async (t) => {
-  const self = { func: async () => await Promise.resolve(42) };
-  using mocked = mock(t, self, "func", { dir: "__mocks__/custom" });
-  assertEquals(await mocked(), 42);
-});
-
-Deno.test("mock() records in relative custom path", async (t) => {
-  const self = { func: async () => await Promise.resolve(42) };
-  using mocked = mock(t, self, "func", {
-    path: "__mocks__/custom/mock.test.path.ts.mock",
-  });
-  assertEquals(await mocked(), 42);
-});
-
-Deno.test("mock() records in absolute custom path", async (t) => {
-  const self = { func: async () => await Promise.resolve(42) };
-  using mocked = mock(t, self, "func", {
-    path: join(
-      dirname(fromFileUrl(t.origin)),
-      "__mocks__/custom/mock.test.path.ts.mock",
-    ),
-  });
-  assertEquals(await mocked(), 42);
-});
-
-Deno.test("mock() records in custom name", async (t) => {
-  const self = { func: async () => await Promise.resolve(42) };
-  using mocked = mock(t, self, "func", { name: "custom name" });
-  assertEquals(await mocked(), 42);
-});
-
-Deno.test("mock() records in custom mode", async (t) => {
-  const self = { func: async () => await Promise.resolve(0) };
-  using mocked = mock(t, self, "func", {
-    mode: "replay",
-    path: "__mocks__/custom/mock.test.mode.ts.mock",
-  });
-  assertEquals(await mocked(), 42);
 });
 
 Deno.test("mock() can mock multiple functions", async (t) => {
@@ -360,4 +218,146 @@ Deno.test("mock() writes mocks on unload event", async (t) => {
   const content = await Deno.readTextFile(path);
   assertEquals(content.includes("export const mock = {};"), true);
   assertEquals(content.includes("mock[`unload write`]"), true);
+});
+
+Deno.test("mock({ dir }) records in custom directory", async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  using mocked = mock(t, self, "func", { dir: "__mocks__/custom" });
+  assertEquals(await mocked(), 42);
+});
+
+Deno.test("mock({ path }) can record in relative custom path", async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  using mocked = mock(t, self, "func", {
+    path: "__mocks__/custom/mock.test.path.ts.mock",
+  });
+  assertEquals(await mocked(), 42);
+});
+
+Deno.test("mock({ path }) can record in absolute custom path", async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  using mocked = mock(t, self, "func", {
+    path: join(
+      dirname(fromFileUrl(t.origin)),
+      "__mocks__/custom/mock.test.path.ts.mock",
+    ),
+  });
+  assertEquals(await mocked(), 42);
+});
+
+Deno.test("mock({ name }) records in custom name", async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  using mocked = mock(t, self, "func", { name: "custom name" });
+  assertEquals(await mocked(), 42);
+});
+
+Deno.test("mock({ mode }) records in custom mode", async (t) => {
+  const self = { func: async () => await Promise.resolve(0) };
+  using mocked = mock(t, self, "func", {
+    mode: "replay",
+    path: "__mocks__/custom/mock.test.mode.ts.mock",
+  });
+  assertEquals(await mocked(), 42);
+});
+
+Deno.test("mock({ conversion }) can convert input synchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: { input: { convert: (a: string) => [a.toUpperCase()] } },
+  });
+  if (mocked.mode === "update") assertEquals(await mocked("hello"), "hello");
+  if (mocked.mode === "replay") assertEquals(await mocked("HELLO"), "hello");
+});
+
+Deno.test("mock({ conversion }) can convert input asynchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: {
+      input: {
+        convert: async (a: string) => await Promise.resolve([a.toUpperCase()]),
+      },
+    },
+  });
+  if (mocked.mode === "update") assertEquals(await mocked("hello"), "hello");
+  if (mocked.mode === "replay") assertEquals(await mocked("HELLO"), "hello");
+});
+
+Deno.test("mock({ conversion }) can convert output synchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: { output: { convert: (a: string) => a.toUpperCase() } },
+  });
+  assertEquals(await mocked("hello"), "HELLO");
+});
+
+Deno.test("mock({ conversion }) can convert output asynchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: {
+      output: {
+        convert: async (a: string) => await Promise.resolve(a.toUpperCase()),
+      },
+    },
+  });
+  assertEquals(await mocked("hello"), "HELLO");
+});
+
+Deno.test("mock({ conversion }) can revert output synchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: { output: { revert: (a: string) => a.toLowerCase() } },
+  });
+  assertEquals(await mocked("HELLO"), "hello");
+});
+
+Deno.test("mock({ conversion }) can revert output asynchronously", async (t) => {
+  const self = { func: async (a: string) => await Promise.resolve(a) };
+  using mocked = mock(t, self, "func", {
+    conversion: {
+      output: {
+        revert: async (a: string) => await Promise.resolve(a.toLowerCase()),
+      },
+    },
+  });
+  assertEquals(await mocked("HELLO"), "hello");
+});
+
+Deno.test("mock({ conversion }) can store modified input", async (t) => {
+  const self = {
+    async pop(a: number[]) {
+      a.pop();
+      return await Promise.resolve(a);
+    },
+  };
+  using mocked = mock(t, self, "pop", {
+    conversion: { input: { convert: (a) => [a.slice()] } },
+  });
+  assertEquals(await mocked([1, 2, 3]), [1, 2]);
+});
+
+Deno.test("mock({ conversion }) can store consumable input", async (t) => {
+  const self = { body: async (response: Response) => await response.text() };
+  using mocked = mock(t, self, "body", {
+    conversion: {
+      input: {
+        convert: async (response: Response) => [await response.clone().text()],
+      },
+    },
+  });
+  assertEquals(await mocked(new Response("body")), "body");
+});
+
+Deno.test("mock({ conversion }) can store consumable output", async (t) => {
+  const self = {
+    resp: async (body: string) => await Promise.resolve(new Response(body)),
+  };
+  using mocked = mock(t, self, "resp", {
+    conversion: {
+      output: {
+        convert: async (resp) => await resp.clone().text(),
+        revert: (body) => new Response(body),
+      },
+    },
+  });
+  assertEquals(await (await mocked("body")).text(), "body");
 });

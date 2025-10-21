@@ -60,18 +60,6 @@ Deno.test("bump() patch updates package with unstable changes", async () => {
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
 });
 
-Deno.test("bump() bumps to release version", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: `1.2.3` },
-    commits: [
-      { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
-    ],
-  });
-  await bump([pkg], { release: true });
-  assertEquals(pkg.config.version, "1.3.0");
-});
-
 Deno.test("bump() does not mutate package on failure", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.0.1" },
@@ -114,7 +102,19 @@ Deno.test("bump() updates workspace", async () => {
   ]);
 });
 
-Deno.test("bump() creates a changelog file", async () => {
+Deno.test("bump({ release }) bumps to release version", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: `1.2.3` },
+    commits: [
+      { summary: "initial", tags: ["name@1.2.3"] },
+      { summary: "feat: new feature" },
+    ],
+  });
+  await bump([pkg], { release: true });
+  assertEquals(pkg.config.version, "1.3.0");
+});
+
+Deno.test("bump({ changelog }) creates a changelog file", async () => {
   const packages = await tempWorkspace({
     configs: [
       { name: "@scope/name1" },
@@ -154,7 +154,7 @@ Deno.test("bump() creates a changelog file", async () => {
   );
 });
 
-Deno.test("bump() updates changelog file", async () => {
+Deno.test("bump({ changelog }) can update a changelog file", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     commits: [{ summary: "fix: bug (#42)" }],
@@ -185,31 +185,7 @@ Deno.test("bump() updates changelog file", async () => {
   );
 });
 
-Deno.test("bump() rejects pull request without update", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ summary: "feat: new feature", tags: ["name@0.1.0"] }],
-  });
-  await assertRejects(() => bump([pkg], { pr: true }), PackageError);
-});
-
-Deno.test("bump() rejects if pull request branch exists locally", async () => {
-  await using remote = await tempRepository({ bare: true });
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: "1.2.3" },
-    repo: { clone: remote },
-    commits: [
-      { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature (#42)" },
-      { summary: "fix: force pushed" },
-    ],
-  });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  await repo.git.branches.create(`automated/bump-${pkg.name}`);
-  await assertRejects(() => bump([pkg], { repo, pr: true }), GitError);
-});
-
-Deno.test("bump() creates a pull request", async () => {
+Deno.test("bump({ pr }) creates a pull request", async () => {
   await using remote = await tempRepository();
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
@@ -264,7 +240,7 @@ Deno.test("bump() creates a pull request", async () => {
   );
 });
 
-Deno.test("bump() updates pull request", async () => {
+Deno.test("bump({ pr }) can update a pull request", async () => {
   await using remote = await tempRepository({ bare: true });
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
@@ -302,7 +278,51 @@ Deno.test("bump() updates pull request", async () => {
   );
 });
 
-Deno.test("bump() can create a draft pull request", async () => {
+Deno.test("bump({ pr }) creates a pull request against the current branch", async () => {
+  await using remote = await tempRepository();
+  await remote.branches.checkout({ new: "release" });
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    repo: { clone: remote },
+    commits: [{ summary: "feat: new feature" }],
+  });
+  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const pr = await bump([pkg], {
+    release: true,
+    pr: true,
+    repo,
+    name: "bump-name",
+    email: "bump-email",
+  });
+  assertExists(pr);
+  assertEquals(pr.base, "release");
+});
+
+Deno.test("bump({ pr }) rejects pull request without update", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "0.1.0" },
+    commits: [{ summary: "feat: new feature", tags: ["name@0.1.0"] }],
+  });
+  await assertRejects(() => bump([pkg], { pr: true }), PackageError);
+});
+
+Deno.test("bump({ pr }) rejects if pull request branch exists locally", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    repo: { clone: remote },
+    commits: [
+      { summary: "initial", tags: ["name@1.2.3"] },
+      { summary: "feat: new feature (#42)" },
+      { summary: "fix: force pushed" },
+    ],
+  });
+  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  await repo.git.branches.create(`automated/bump-${pkg.name}`);
+  await assertRejects(() => bump([pkg], { repo, pr: true }), GitError);
+});
+
+Deno.test("bump({ draft }) can create a draft pull request", async () => {
   await using remote = await tempRepository();
   await remote.branches.checkout({ new: "release" });
   await using pkg = await tempPackage({
@@ -321,24 +341,4 @@ Deno.test("bump() can create a draft pull request", async () => {
   });
   assertExists(pr);
   assertEquals(pr.draft, true);
-});
-
-Deno.test("bump() creates a pull request against the current branch", async () => {
-  await using remote = await tempRepository();
-  await remote.branches.checkout({ new: "release" });
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    repo: { clone: remote },
-    commits: [{ summary: "feat: new feature" }],
-  });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  const pr = await bump([pkg], {
-    release: true,
-    pr: true,
-    repo,
-    name: "bump-name",
-    email: "bump-email",
-  });
-  assertExists(pr);
-  assertEquals(pr.base, "release");
 });

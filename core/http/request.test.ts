@@ -19,7 +19,16 @@ Deno.test("request() rejects failed response", async (t) => {
   );
 });
 
-Deno.test("request() can ignore errors", async (t) => {
+Deno.test("request() passes common headers", async (t) => {
+  using _fetch = mockFetch(t);
+  const response = await request(
+    "https://example.com",
+    { agent: "agent", token: "token", cache: "no-store", referrer: "referrer" },
+  );
+  assertEquals(response.status, STATUS_CODE.OK);
+});
+
+Deno.test("request({ allowedErrors }) can ignore errors", async (t) => {
   using _fetch = mockFetch(t);
   const response = await request(
     "https://example.com/not-found",
@@ -28,16 +37,7 @@ Deno.test("request() can ignore errors", async (t) => {
   assertEquals(response.status, STATUS_CODE.NotFound);
 });
 
-Deno.test("request() can pass certain headers", async (t) => {
-  using _fetch = mockFetch(t);
-  const response = await request(
-    "https://example.com",
-    { agent: "agent", token: "token", cache: "no-store" },
-  );
-  assertEquals(response.status, STATUS_CODE.OK);
-});
-
-Deno.test("request() can cache response", async (t) => {
+Deno.test("request({ cache }) can cache response", async (t) => {
   const cacheStore = t.name;
   await t.step("reload", async (t) => {
     using _fetch = mockFetch(t);

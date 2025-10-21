@@ -396,32 +396,6 @@ Deno.test("workspace() does not recurse path patterns", async () => {
   assertEquals(await workspace({ root }), [pkg1]);
 });
 
-Deno.test("workspace() filters packages", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "dir1/pkg1" },
-      { name: "dir2/pkg2" },
-      { name: "dir2/pkg3" },
-    ],
-  });
-  const [pkg1, pkg2, pkg3] = temp;
-  assertExists(pkg1);
-  assertExists(pkg2);
-  assertExists(pkg3);
-  const root = pkg1.root;
-  assertEquals(await workspace({ root, filters: ["pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ root, filters: ["*1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["pk*"] }), [pkg1, pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["dir1/pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["*1/*"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["*2/pkg?"] }), [pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["dir2/*"] }), [pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["*/pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ root, filters: ["none*"] }), []);
-  assertEquals(await workspace({ root, filters: ["*2", "*3"] }), [pkg2, pkg3]);
-});
-
 Deno.test("workspace() matches commit scope", async () => {
   await using temp = await tempWorkspace({
     configs: [
@@ -500,6 +474,32 @@ Deno.test("workspace() considers unstable changes", async () => {
   ]);
 });
 
+Deno.test("workspace({ filters }) filters packages", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "dir1/pkg1" },
+      { name: "dir2/pkg2" },
+      { name: "dir2/pkg3" },
+    ],
+  });
+  const [pkg1, pkg2, pkg3] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  assertExists(pkg3);
+  const root = pkg1.root;
+  assertEquals(await workspace({ root, filters: ["pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filters: ["*1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["pk*"] }), [pkg1, pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["dir1/pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["*1/*"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["*2/pkg?"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["dir2/*"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["*/pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filters: ["none*"] }), []);
+  assertEquals(await workspace({ root, filters: ["*2", "*3"] }), [pkg2, pkg3]);
+});
+
 Deno.test("releases() returns releases for a package", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
@@ -517,7 +517,30 @@ Deno.test("releases() returns releases for a package", async () => {
   ]);
 });
 
-Deno.test("releases() excludes pre-releases", async () => {
+Deno.test("releases() ignores unknown tag format", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "first", tags: ["beta"] },
+      { summary: "second", tags: ["1.2.3"] },
+    ],
+  });
+  assertEquals(await releases(pkg), []);
+});
+
+Deno.test("releases() rejects non-repository", async () => {
+  await using directory = await tempDirectory();
+  const pkg: Package = {
+    name: "name",
+    version: "0.0.0",
+    directory: directory.path(),
+    root: directory.path(),
+    config: { name: "name" },
+  };
+  await assertRejects(() => releases(pkg), GitError);
+});
+
+Deno.test("releases({ prerelease }) include pre-releases", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     commits: [
@@ -530,17 +553,6 @@ Deno.test("releases() excludes pre-releases", async () => {
     { version: "2.0.0", range: { from: "name@1.2.3", to: "name@2.0.0" } },
     { version: "1.2.3", range: { to: "name@1.2.3" } },
   ]);
-});
-
-Deno.test("releases() can include pre-releases", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { summary: "1.2.3", tags: ["name@1.2.3"] },
-      { summary: "2.0.0-pre", tags: ["name@2.0.0-pre.42+fedcba9"] },
-      { summary: "2.0.0", tags: ["name@2.0.0"] },
-    ],
-  });
   assertEquals(await releases(pkg, { prerelease: true }), [
     { version: "2.0.0", range: { from: "name@1.2.3", to: "name@2.0.0" } },
     {
@@ -549,29 +561,6 @@ Deno.test("releases() can include pre-releases", async () => {
     },
     { version: "1.2.3", range: { to: "name@1.2.3" } },
   ]);
-});
-
-Deno.test("releases() ignores unknown tag format", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { summary: "first", tags: ["beta"] },
-      { summary: "second", tags: ["1.2.3"] },
-    ],
-  });
-  assertEquals(await releases(pkg), []);
-});
-
-Deno.test("releases() fails on non-repository", async () => {
-  await using directory = await tempDirectory();
-  const pkg: Package = {
-    name: "name",
-    version: "0.0.0",
-    directory: directory.path(),
-    root: directory.path(),
-    config: { name: "name" },
-  };
-  await assertRejects(() => releases(pkg), GitError);
 });
 
 Deno.test("commits() returns all history", async () => {
@@ -590,95 +579,6 @@ Deno.test("commits() returns all history", async () => {
   assertEquals(
     await commits(pkg),
     [conventional(docs), conventional(fix), conventional(feat)],
-  );
-});
-
-Deno.test("commits() can return from a range", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { summary: "feat: new feature" },
-      { summary: "fix!: fix bug", tags: ["name@1.2.3"] },
-      { summary: "docs: add docs" },
-    ],
-  });
-  assertExists(pkg.latest);
-  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
-  assertExists(fix);
-  assertExists(feat);
-  assertEquals(
-    await commits(pkg, { range: pkg.latest?.range }),
-    [conventional(fix), conventional(feat)],
-  );
-});
-
-Deno.test("commits() filters by type", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { summary: "feat: new feature" },
-      { summary: "fix!: fix bug" },
-      { summary: "docs: add docs" },
-    ],
-  });
-  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
-  assertExists(fix);
-  assertExists(feat);
-  assertEquals(
-    await commits(pkg, { type: ["feat", "fix"] }),
-    [conventional(fix), conventional(feat)],
-  );
-});
-
-Deno.test("commits() includes breaking changes", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { summary: "feat: new feature" },
-      { summary: "fix!: fix bug" },
-      { summary: "docs: add docs" },
-    ],
-  });
-  const [docs, fix] = await git({ cwd: pkg.root }).commits.log();
-  assertExists(docs);
-  assertExists(fix);
-  assertEquals(
-    await commits(pkg, { type: ["docs"] }),
-    [conventional(docs), conventional(fix)],
-  );
-});
-
-Deno.test("commits() can filter breaking changes", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { summary: "feat: new feature" },
-      { summary: "fix!: fix bug" },
-      { summary: "docs: add docs" },
-    ],
-  });
-  const [_, fix] = await git({ cwd: pkg.root }).commits.log();
-  assertExists(fix);
-  assertEquals(
-    await commits(pkg, { breaking: true }),
-    [conventional(fix)],
-  );
-});
-
-Deno.test("commits() can filter non-breaking changes", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { summary: "feat: new feature" },
-      { summary: "fix!: fix bug" },
-      { summary: "docs: add docs" },
-    ],
-  });
-  const [docs] = await git({ cwd: pkg.root }).commits.log();
-  assertExists(docs);
-  assertEquals(
-    await commits(pkg, { type: ["docs"], breaking: false }),
-    [conventional(docs)],
   );
 });
 
@@ -701,4 +601,93 @@ Deno.test("commits() enforces scope for workspace members", async () => {
   assertExists(fix);
   assertEquals(await commits(pkg1), [conventional(fix)]);
   assertEquals(await commits(pkg2), [conventional(docs)]);
+});
+
+Deno.test("commits({ range }) returns from a range", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "feat: new feature" },
+      { summary: "fix!: fix bug", tags: ["name@1.2.3"] },
+      { summary: "docs: add docs" },
+    ],
+  });
+  assertExists(pkg.latest);
+  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
+  assertExists(fix);
+  assertExists(feat);
+  assertEquals(
+    await commits(pkg, { range: pkg.latest?.range }),
+    [conventional(fix), conventional(feat)],
+  );
+});
+
+Deno.test("commits({ type }) filters by type", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "feat: new feature" },
+      { summary: "fix!: fix bug" },
+      { summary: "docs: add docs" },
+    ],
+  });
+  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
+  assertExists(fix);
+  assertExists(feat);
+  assertEquals(
+    await commits(pkg, { type: ["feat", "fix"] }),
+    [conventional(fix), conventional(feat)],
+  );
+});
+
+Deno.test("commits({ type }) always includes breaking changes", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "feat: new feature" },
+      { summary: "fix!: fix bug" },
+      { summary: "docs: add docs" },
+    ],
+  });
+  const [docs, fix] = await git({ cwd: pkg.root }).commits.log();
+  assertExists(docs);
+  assertExists(fix);
+  assertEquals(
+    await commits(pkg, { type: ["docs"] }),
+    [conventional(docs), conventional(fix)],
+  );
+});
+
+Deno.test("commits({ breaking }) can filter breaking changes", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "feat: new feature" },
+      { summary: "fix!: fix bug" },
+      { summary: "docs: add docs" },
+    ],
+  });
+  const [_, fix] = await git({ cwd: pkg.root }).commits.log();
+  assertExists(fix);
+  assertEquals(
+    await commits(pkg, { breaking: true }),
+    [conventional(fix)],
+  );
+});
+
+Deno.test("commits({ breaking }) can filter non-breaking changes", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commits: [
+      { summary: "feat: new feature" },
+      { summary: "fix!: fix bug" },
+      { summary: "docs: add docs" },
+    ],
+  });
+  const [docs] = await git({ cwd: pkg.root }).commits.log();
+  assertExists(docs);
+  assertEquals(
+    await commits(pkg, { type: ["docs"], breaking: false }),
+    [conventional(docs)],
+  );
 });

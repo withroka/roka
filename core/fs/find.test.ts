@@ -32,16 +32,6 @@ Deno.test("find() skips non-existing file", async () => {
   assertSameElements(await Array.fromAsync(find(["b.txt"])), []);
 });
 
-Deno.test("find() can reject non-existing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt"]);
-  assertRejects(
-    () => Array.fromAsync(find(["b.txt"], { validate: true })),
-    Deno.errors.NotFound,
-    "b.txt",
-  );
-});
-
 Deno.test("find() can find multiple files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b.txt", "c.md"]);
@@ -135,87 +125,6 @@ Deno.test("find() returns absolute paths for absolute input", async () => {
   );
 });
 
-Deno.test("find() can filter files", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
-  assertSameElements(await Array.fromAsync(find(["."], { type: "file" })), [
-    "a.txt",
-    "b/c.md",
-    "d/e/f.txt",
-  ]);
-});
-
-Deno.test("find() can filter files as input", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  assertSameElements(
-    await Array.fromAsync(find(["a.txt", "b"], { type: "file" })),
-    [
-      "a.txt",
-      "b/c.md",
-    ],
-  );
-});
-
-Deno.test("find() can filter directories", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
-  assertSameElements(await Array.fromAsync(find(["."], { type: "dir" })), [
-    ".",
-    "b",
-    "d",
-    "d/e",
-  ]);
-});
-
-Deno.test("find() can filter directories as input", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  assertSameElements(
-    await Array.fromAsync(find(["a.txt", "b"], { type: "dir" })),
-    [
-      "b",
-    ],
-  );
-});
-
-Deno.test("find() rejects missing input", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  await assertRejects(
-    () => Array.fromAsync(find(["missing-input", "b"], { validate: true })),
-    Deno.errors.NotFound,
-    "missing-input",
-  );
-});
-
-Deno.test("find() rejects input file if files are excluded", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  await assertRejects(
-    () =>
-      Array.fromAsync(
-        find(["a.txt", "b"], { type: "dir", validate: true }),
-      ),
-    Deno.errors.NotFound,
-    "a.txt",
-  );
-});
-
-Deno.test("find() does not reject input directory even if directories are excluded", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  assertSameElements(
-    await Array.fromAsync(
-      find(["a.txt", "b"], { type: "file", validate: true }),
-    ),
-    [
-      "a.txt",
-      "b/c.md",
-    ],
-  );
-});
-
 Deno.test("find() does not follow symlinks by default", async () => {
   await using other = await tempDirectory({ chdir: true });
   await createFiles(["d/e.txt"]);
@@ -251,176 +160,6 @@ Deno.test("find() does not follow input symlinks by default", async () => {
       ],
     );
   }
-});
-
-Deno.test("find() can filter symlinks", async () => {
-  await using other = await tempDirectory({ chdir: true });
-  await createFiles(["d/e.txt"]);
-  {
-    await using _ = await tempDirectory({ chdir: true });
-    await createFiles(["a.txt", "b/c.md"]);
-    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
-    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
-    assertSameElements(
-      await Array.fromAsync(find(["."], { type: "symlink" })),
-      [
-        "dir-symlink",
-        "file-symlink",
-      ],
-    );
-  }
-});
-
-Deno.test("find() can filter symlinks as input", async () => {
-  await using other = await tempDirectory({ chdir: true });
-  await createFiles(["d/e.txt"]);
-  {
-    await using _ = await tempDirectory({ chdir: true });
-    await createFiles(["a.txt", "b/c.md"]);
-    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
-    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
-    assertSameElements(
-      await Array.fromAsync(find(["dir-symlink"], { type: "symlink" })),
-      [
-        "dir-symlink",
-      ],
-    );
-    assertSameElements(
-      await Array.fromAsync(find(["file-symlink"], { type: "symlink" })),
-      [
-        "file-symlink",
-      ],
-    );
-  }
-});
-
-Deno.test("find() can reject input symlink if symlinks are excluded", async () => {
-  await using other = await tempDirectory({ chdir: true });
-  await createFiles(["d/e.txt"]);
-  {
-    await using _ = await tempDirectory({ chdir: true });
-    await createFiles(["a.txt", "b/c.md"]);
-    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
-    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
-    await assertRejects(
-      () =>
-        Array.fromAsync(
-          find(["dir-symlink"], { type: "file", validate: true }),
-        ),
-      Deno.errors.NotFound,
-      "dir-symlink",
-    );
-    await assertRejects(
-      () =>
-        Array.fromAsync(
-          find(["file-symlink"], { type: "dir", validate: true }),
-        ),
-      Deno.errors.NotFound,
-      "file-symlink",
-    );
-  }
-});
-
-Deno.test("find() can follow symlinks", async () => {
-  await using other = await tempDirectory({ chdir: true });
-  await createFiles(["d/e.txt", "f/g.txt"]);
-  {
-    await using _ = await tempDirectory({ chdir: true });
-    await createFiles(["a.txt", "b/c.md"]);
-    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
-    await Deno.symlink(other.path("f/g.txt"), "file-symlink", { type: "file" });
-    assertSameElements(
-      await Array.fromAsync(find(["."], { followSymlinks: true })),
-      [
-        ".",
-        "a.txt",
-        "b",
-        "b/c.md",
-        "dir-symlink",
-        "dir-symlink/e.txt",
-        "file-symlink",
-      ],
-    );
-  }
-});
-
-Deno.test("find() can follow input symlink", async () => {
-  await using other = await tempDirectory({ chdir: true });
-  await createFiles(["d/e.txt"]);
-  {
-    await using _ = await tempDirectory({ chdir: true });
-    await createFiles(["a.txt", "b/c.md"]);
-    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
-    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
-    assertSameElements(
-      await Array.fromAsync(find(["dir-symlink"], { followSymlinks: true })),
-      [
-        "dir-symlink",
-        "dir-symlink/e.txt",
-      ],
-    );
-    assertSameElements(
-      await Array.fromAsync(find(["file-symlink"], { followSymlinks: true })),
-      [
-        "file-symlink",
-      ],
-    );
-  }
-});
-
-Deno.test("find() deduplicates symlink results", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  await Deno.symlink("a.txt", "file-symlink.txt", { type: "file" });
-  await Deno.symlink("b", "dir-symlink", { type: "dir" });
-  assertSameElements(
-    await pool(find(["."], { followSymlinks: true }), Deno.realPath),
-    await pool([
-      ".",
-      "a.txt",
-      "b",
-      "b/c.md",
-    ], Deno.realPath),
-  );
-});
-
-Deno.test("find() handles loops with symlinks", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  await Deno.symlink(".", "loop", { type: "dir" });
-  assertSameElements(
-    await Array.fromAsync(find(["."], { followSymlinks: true })),
-    [
-      ".",
-      "a.txt",
-      "b",
-      "b/c.md",
-    ],
-  );
-});
-
-Deno.test("find() skips broken symlinks", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await createFiles(["a.txt", "b/c.md"]);
-  await Deno.symlink("missing.txt", "broken-symlink.txt", { type: "file" });
-  await Deno.symlink("missing-dir", "broken-symlink-dir", { type: "dir" });
-  assertSameElements(await Array.fromAsync(find(["."], { validate: true })), [
-    ".",
-    "a.txt",
-    "b",
-    "b/c.md",
-  ]);
-  assertSameElements(
-    await Array.fromAsync(
-      find(["."], { followSymlinks: true, validate: true }),
-    ),
-    [
-      ".",
-      "a.txt",
-      "b",
-      "b/c.md",
-    ],
-  );
 });
 
 Deno.test("find() can return types other than file, directory or symlink", {
@@ -465,7 +204,92 @@ Deno.test("find() can return types other than file, directory or symlink", {
   }
 });
 
-Deno.test("find() can find by name", async () => {
+Deno.test("find({ type }) can filter files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
+  assertSameElements(await Array.fromAsync(find(["."], { type: "file" })), [
+    "a.txt",
+    "b/c.md",
+    "d/e/f.txt",
+  ]);
+});
+
+Deno.test("find({ type }) can filter files as input", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  assertSameElements(
+    await Array.fromAsync(find(["a.txt", "b"], { type: "file" })),
+    [
+      "a.txt",
+      "b/c.md",
+    ],
+  );
+});
+
+Deno.test("find({ type }) can filter directories", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
+  assertSameElements(await Array.fromAsync(find(["."], { type: "dir" })), [
+    ".",
+    "b",
+    "d",
+    "d/e",
+  ]);
+});
+
+Deno.test("find({ type }) can filter directories as input", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  assertSameElements(
+    await Array.fromAsync(find(["a.txt", "b"], { type: "dir" })),
+    [
+      "b",
+    ],
+  );
+});
+
+Deno.test("find({ type }) can filter symlinks", async () => {
+  await using other = await tempDirectory({ chdir: true });
+  await createFiles(["d/e.txt"]);
+  {
+    await using _ = await tempDirectory({ chdir: true });
+    await createFiles(["a.txt", "b/c.md"]);
+    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
+    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
+    assertSameElements(
+      await Array.fromAsync(find(["."], { type: "symlink" })),
+      [
+        "dir-symlink",
+        "file-symlink",
+      ],
+    );
+  }
+});
+
+Deno.test("find({ type }) can filter symlinks as input", async () => {
+  await using other = await tempDirectory({ chdir: true });
+  await createFiles(["d/e.txt"]);
+  {
+    await using _ = await tempDirectory({ chdir: true });
+    await createFiles(["a.txt", "b/c.md"]);
+    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
+    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
+    assertSameElements(
+      await Array.fromAsync(find(["dir-symlink"], { type: "symlink" })),
+      [
+        "dir-symlink",
+      ],
+    );
+    assertSameElements(
+      await Array.fromAsync(find(["file-symlink"], { type: "symlink" })),
+      [
+        "file-symlink",
+      ],
+    );
+  }
+});
+
+Deno.test("find({ name }) finds by name", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md"]);
   assertSameElements(await Array.fromAsync(find(["."], { name: "a.txt" })), [
@@ -480,7 +304,7 @@ Deno.test("find() can find by name", async () => {
   assertSameElements(await Array.fromAsync(find(["."], { name: "d.txt" })), []);
 });
 
-Deno.test("find() can find by name glob", async () => {
+Deno.test("find({ name }) can find by name glob", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md"]);
   assertSameElements(
@@ -505,7 +329,7 @@ Deno.test("find() can find by name glob", async () => {
   ]);
 });
 
-Deno.test("find() can find by alternative names", async () => {
+Deno.test("find({ name }) can find by alternative names", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md"]);
   assertSameElements(
@@ -532,7 +356,7 @@ Deno.test("find() can find by alternative names", async () => {
   );
 });
 
-Deno.test("find() can exclude by name", async () => {
+Deno.test("find({ name }) can exclude by name", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md"]);
   assertSameElements(
@@ -566,13 +390,13 @@ Deno.test("find() can exclude by name", async () => {
   );
 });
 
-Deno.test("find() finds by name only on basename", async () => {
+Deno.test("find({ name }) finds by name only on basename", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["b/c.md"]);
   assertSameElements(await Array.fromAsync(find(["."], { name: "b/*" })), []);
 });
 
-Deno.test("find() can find by path", async () => {
+Deno.test("find({ path }) finds by path", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
   assertSameElements(await Array.fromAsync(find(["."], { path: "a.txt" })), [
@@ -599,7 +423,7 @@ Deno.test("find() can find by path", async () => {
   );
 });
 
-Deno.test("find() can find by path glob", async () => {
+Deno.test("find({ path }) can find by path glob", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
   assertSameElements(await Array.fromAsync(find(["."], { path: "*.txt" })), [
@@ -638,7 +462,7 @@ Deno.test("find() can find by path glob", async () => {
   );
 });
 
-Deno.test("find() can find by path glob with absolute paths", async () => {
+Deno.test("find({ path }) can find by path glob with absolute paths", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
   assertSameElements(
@@ -659,7 +483,7 @@ Deno.test("find() can find by path glob with absolute paths", async () => {
   );
 });
 
-Deno.test("find() can exclude by path", async () => {
+Deno.test("find({ path }) can exclude by path", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "b/d/e.txt"]);
   assertSameElements(
@@ -683,7 +507,7 @@ Deno.test("find() can exclude by path", async () => {
   );
 });
 
-Deno.test("find() can ignore paths", async () => {
+Deno.test("find({ path }) can ignore paths", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "b/d/e.txt", "f/g/h.txt"]);
   assertSameElements(
@@ -731,7 +555,109 @@ Deno.test("find() can ignore paths", async () => {
   );
 });
 
-Deno.test("find() can limit maxDepth", async () => {
+Deno.test("find({ followSymlinks }) follows symlinks", async () => {
+  await using other = await tempDirectory({ chdir: true });
+  await createFiles(["d/e.txt", "f/g.txt"]);
+  {
+    await using _ = await tempDirectory({ chdir: true });
+    await createFiles(["a.txt", "b/c.md"]);
+    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
+    await Deno.symlink(other.path("f/g.txt"), "file-symlink", { type: "file" });
+    assertSameElements(
+      await Array.fromAsync(find(["."], { followSymlinks: true })),
+      [
+        ".",
+        "a.txt",
+        "b",
+        "b/c.md",
+        "dir-symlink",
+        "dir-symlink/e.txt",
+        "file-symlink",
+      ],
+    );
+  }
+});
+
+Deno.test("find({ followSymlinks }) follows input symlink", async () => {
+  await using other = await tempDirectory({ chdir: true });
+  await createFiles(["d/e.txt"]);
+  {
+    await using _ = await tempDirectory({ chdir: true });
+    await createFiles(["a.txt", "b/c.md"]);
+    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
+    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
+    assertSameElements(
+      await Array.fromAsync(find(["dir-symlink"], { followSymlinks: true })),
+      [
+        "dir-symlink",
+        "dir-symlink/e.txt",
+      ],
+    );
+    assertSameElements(
+      await Array.fromAsync(find(["file-symlink"], { followSymlinks: true })),
+      [
+        "file-symlink",
+      ],
+    );
+  }
+});
+
+Deno.test("find({ followSymlinks }) deduplicates symlink results", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  await Deno.symlink("a.txt", "file-symlink.txt", { type: "file" });
+  await Deno.symlink("b", "dir-symlink", { type: "dir" });
+  assertSameElements(
+    await pool(find(["."], { followSymlinks: true }), Deno.realPath),
+    await pool([
+      ".",
+      "a.txt",
+      "b",
+      "b/c.md",
+    ], Deno.realPath),
+  );
+});
+
+Deno.test("find({ followSymlinks }) handles loops with symlinks", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  await Deno.symlink(".", "loop", { type: "dir" });
+  assertSameElements(
+    await Array.fromAsync(find(["."], { followSymlinks: true })),
+    [
+      ".",
+      "a.txt",
+      "b",
+      "b/c.md",
+    ],
+  );
+});
+
+Deno.test("find({ followSymlinks }) skips broken symlinks", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  await Deno.symlink("missing.txt", "broken-symlink.txt", { type: "file" });
+  await Deno.symlink("missing-dir", "broken-symlink-dir", { type: "dir" });
+  assertSameElements(await Array.fromAsync(find(["."], { validate: true })), [
+    ".",
+    "a.txt",
+    "b",
+    "b/c.md",
+  ]);
+  assertSameElements(
+    await Array.fromAsync(
+      find(["."], { followSymlinks: true, validate: true }),
+    ),
+    [
+      ".",
+      "a.txt",
+      "b",
+      "b/c.md",
+    ],
+  );
+});
+
+Deno.test("find({ maxDepth }) limit search depth", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await createFiles(["a.txt", "b/c.md", "d/e/f.txt"]);
   assertSameElements(await Array.fromAsync(find(["."], { maxDepth: 1 })), [
@@ -757,4 +683,68 @@ Deno.test("find() can limit maxDepth", async () => {
     "d/e",
     "d/e/f.txt",
   ]);
+});
+
+Deno.test("find({ validate }) rejects missing input", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  await assertRejects(
+    () => Array.fromAsync(find(["missing-input", "b"], { validate: true })),
+    Deno.errors.NotFound,
+    "missing-input",
+  );
+});
+
+Deno.test("find({ validate }) rejects input file if files are excluded", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  await assertRejects(
+    () =>
+      Array.fromAsync(
+        find(["a.txt", "b"], { type: "dir", validate: true }),
+      ),
+    Deno.errors.NotFound,
+    "a.txt",
+  );
+});
+
+Deno.test("find({ validate } does not reject input directory even if directories are excluded", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await createFiles(["a.txt", "b/c.md"]);
+  assertSameElements(
+    await Array.fromAsync(
+      find(["a.txt", "b"], { type: "file", validate: true }),
+    ),
+    [
+      "a.txt",
+      "b/c.md",
+    ],
+  );
+});
+
+Deno.test("find({ validate }) can reject input symlink if symlinks are excluded", async () => {
+  await using other = await tempDirectory({ chdir: true });
+  await createFiles(["d/e.txt"]);
+  {
+    await using _ = await tempDirectory({ chdir: true });
+    await createFiles(["a.txt", "b/c.md"]);
+    await Deno.symlink(other.path("d"), "dir-symlink", { type: "dir" });
+    await Deno.symlink(other.path("d/e.txt"), "file-symlink", { type: "file" });
+    await assertRejects(
+      () =>
+        Array.fromAsync(
+          find(["dir-symlink"], { type: "file", validate: true }),
+        ),
+      Deno.errors.NotFound,
+      "dir-symlink",
+    );
+    await assertRejects(
+      () =>
+        Array.fromAsync(
+          find(["file-symlink"], { type: "dir", validate: true }),
+        ),
+      Deno.errors.NotFound,
+      "file-symlink",
+    );
+  }
 });
