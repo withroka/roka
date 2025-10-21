@@ -100,7 +100,7 @@ export interface DenoCommands {
    *
    * @param files List of files to run tests from.
    * @param options Options for testing.
-   * @returns Problems found type testing.
+   * @returns Problems found testing.
    * @throws {DenoError} If the command fails with no error message.
    */
   test(files: string[], options?: TestOptions): Promise<FileResult[]>;
