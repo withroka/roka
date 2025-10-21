@@ -23,6 +23,13 @@ testing. It’s the backbone of the **Roka** project. You can use the published
 packages independently with Deno. Take a look at the
 [documentation](https://jsr.io/@roka) on JSR for more details.
 
+### 🍃 flow
+
+This is a command-line application for running quality checks and unit tests for
+Deno projects. Running without any arguments will verify that all checks and
+tests are passing in the code and documentation. See the
+[documentation](https://jsr.io/@roka/flow) for more details.
+
 ### ⚒️ forge
 
 This is a command-line application for managing Deno packages hosted on GitHub.
