@@ -52,6 +52,7 @@ import { version } from "@roka/forge/version";
 import { find } from "@roka/fs/find";
 import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
+import { assertEquals } from "@std/assert";
 import { assertExists } from "@std/assert/exists";
 import {
   moveCursorUp,
@@ -198,7 +199,7 @@ function testCommand() {
 function options(): DenoOptions {
   let reported = false;
   function testLine(report: Partial<Info>) {
-    assertExists(report.kind === "test");
+    assertEquals(report.kind, "test");
     assertExists(report.test);
     const pad = "   ".repeat(report.test.length - 1);
     let line = `${pad}${report.test.at(-1)} ...`;
