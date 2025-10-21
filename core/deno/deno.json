@@ -1,0 +1,14 @@
+{
+  "name": "@roka/deno",
+  "version": "0.0.0",
+  "exports": {
+    ".": "./deno.ts"
+  },
+  "test": {
+    "permissions": {
+      "read": true,
+      "write": true,
+      "run": true
+    }
+  }
+}
