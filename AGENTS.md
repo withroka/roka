@@ -13,9 +13,8 @@
 
 ## Commands
 
-- Formatting: `deno fmt`
-- Testing: `deno test -P <package_folder>`
-- All checks: `deno task ok`
+- Testing: `deno task flow <file_or_dir>`
+- All checks: `deno task flow`
   - must be passing before committing
 - Behind a firewall: `export DENO_TLS_CA_STORE=system`
   - to resolve firewall and certificate related problems

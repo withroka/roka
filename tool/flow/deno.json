@@ -1,0 +1,17 @@
+{
+  "name": "@roka/flow",
+  "version": "0.0.0",
+  "exports": {
+    ".": "./flow.ts"
+  },
+  "forge": {
+    "main": "flow.ts"
+  },
+  "permissions": {
+    "default": {
+      "read": true,
+      "write": true,
+      "run": ["deno", "git"]
+    }
+  }
+}

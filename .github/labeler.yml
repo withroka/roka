@@ -1,6 +1,9 @@
 core:
   - changed-files:
       - any-glob-to-any-file: core/**
+flow:
+  - changed-files:
+      - any-glob-to-any-file: tool/flow/**
 forge:
   - changed-files:
       - any-glob-to-any-file: tool/forge/**
