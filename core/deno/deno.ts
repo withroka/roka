@@ -20,10 +20,10 @@ import { pool } from "@roka/async/pool";
 import { type TempDirectory, tempDirectory } from "@roka/fs/temp";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { omit } from "@std/collections/omit";
+import { omit } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { extname, fromFileUrl, resolve } from "@std/path";
-import { mergeReadableStreams } from "@std/streams/merge-readable-streams";
+import { mergeReadableStreams } from "@std/streams";
 
 /**
  * An error thrown by the `deno` command.

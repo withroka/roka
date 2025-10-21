@@ -52,8 +52,7 @@ import { version } from "@roka/forge/version";
 import { find } from "@roka/fs/find";
 import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
-import { assertEquals } from "@std/assert";
-import { assertExists } from "@std/assert/exists";
+import { assertEquals, assertExists } from "@std/assert";
 import {
   moveCursorUp,
   RESTORE_CURSOR,
