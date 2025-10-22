@@ -46,7 +46,7 @@ export interface MockFetchOptions extends MockOptions {
      *
      * @default {false}
      */
-    headers?: true;
+    headers?: boolean;
   };
 }
 

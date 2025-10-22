@@ -48,17 +48,29 @@ export interface CompileOptions {
    * @default {[Deno.build.target]}
    */
   target?: string[];
-  /** Bundle artifacts. */
+  /**
+   * Bundle artifacts.
+   * @default {false}
+   */
   bundle?: boolean;
-  /** Create a checksum file. */
+  /**
+   * Create a checksum file.
+   * @default {false}
+   */
   checksum?: boolean;
   /**
-   * Install at the given directory.
+   * Install compiled executable.
    *
    * If set to `true`, the artifacts will be installed to `$HOME/.local/bin`.
+   * Alternatively, a custom install directory can be provided.
+   *
+   * @default {false}
    */
-  install?: string | true;
-  /** Max concurrent compilations. */
+  install?: boolean | string;
+  /**
+   * Max concurrent compilations.
+   * @default {navigator.hardwareConcurrency}
+   */
   concurrency?: number;
 }
 
