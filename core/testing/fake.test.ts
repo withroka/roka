@@ -174,8 +174,14 @@ Deno.test("fakeConsole() captures multiple arguments", () => {
 
 Deno.test("fakeConsole().output() formats captured arguments", () => {
   using console = fakeConsole();
-  console.debug("first", "second");
-  assertEquals(console.output(), "first second");
+  console.debug("first", "second", 3);
+  assertEquals(console.output(), "first second 3");
+});
+
+Deno.test("fakeConsole().output() formats captured object", () => {
+  using console = fakeConsole();
+  console.debug({ first: 1, second: 2 });
+  assertEquals(console.output(), "{ first: 1, second: 2 }");
 });
 
 Deno.test("fakeConsole().output({ level }) filters by level", () => {

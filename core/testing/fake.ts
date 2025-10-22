@@ -342,7 +342,9 @@ export function fakeConsole(): FakeConsole & Disposable {
             stripCss && typeof call.data[0] === "string" &&
             call.data[0].startsWith?.("%c")
           ) return call.data[0].slice(2);
-          return call.data.map((x) => `${x}`).join(" ");
+          return call.data.map((x) =>
+            typeof x === "string" ? x : Deno.inspect(x)
+          ).join(" ");
         })
         .map((log) => stripAnsi ? stripAnsiCode(log) : log)
         .map((log) =>
