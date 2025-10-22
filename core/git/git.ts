@@ -1240,10 +1240,10 @@ function commitArg(commit: Commitish | undefined): string | undefined {
   if (commit === undefined) return undefined;
   return typeof commit === "string"
     ? commit
-    : "commit" in commit
-    ? commit.commit.hash
     : "hash" in commit
     ? commit.hash
+    : "commit" in commit && commit.commit !== undefined
+    ? commit.commit.hash
     : commit.name;
 }
 
