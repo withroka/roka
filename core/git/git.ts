@@ -59,8 +59,8 @@ import { basename, join, normalize } from "@std/path";
 /**
  * An error thrown by the `git` package.
  *
- * If the error is from running a git command, the message will include the
- * command and its output.
+ * If the error is from running a `git` command, the message will include the
+ * command, the exit code, and the command output.
  */
 export class GitError extends Error {
   /** Construct GitError. */
@@ -1102,11 +1102,10 @@ async function run(
     const { code, stdout, stderr } = await command.output();
     if (code !== 0 && !(options.allowCode?.includes(code))) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
-      const args = commandArgs.filter((x) => x !== undefined)
-        .flat().map((x) => x.match(/\s/) ? `"${x}"` : x).join(" ");
-      throw new GitError(`Error running git command: git ${args}`, {
-        cause: { command: "git", args, code, error },
-      });
+      throw new GitError(
+        `Error running git command: ${commandArgs[0]}\n\n${error}`,
+        { cause: { command: "git", args, code } },
+      );
     }
     return new TextDecoder().decode(stdout).trimEnd();
   } catch (e: unknown) {
