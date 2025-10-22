@@ -55,6 +55,7 @@ import {
 } from "@std/assert";
 import { mapValues, slidingWindows } from "@std/collections";
 import { basename, join, normalize } from "@std/path";
+import { resolve } from "node:path";
 
 /**
  * An error thrown by the `git` package.
@@ -74,10 +75,18 @@ export class GitError extends Error {
 export interface Git {
   /** Returns the repository directory, with optional relative children. */
   path(...parts: string[]): string;
-  /** Initializes a new git repository. */
-  init(options?: InitOptions): Promise<void>;
-  /** Clones a remote repository. */
-  clone(url: string, options?: CloneOptions): Promise<void>;
+  /**
+   * Initializes a new git repository.
+   *
+   * @returns The initialized repository.
+   */
+  init(options?: InitOptions): Promise<Git>;
+  /**
+   * Clones a remote repository.
+   *
+   * @returns The cloned repository.
+   */
+  clone(url: string, options?: CloneOptions): Promise<Git>;
   /** Config operations. */
   config: {
     /** Configures repository options. */
@@ -380,10 +389,12 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
    */
   depth?: number;
   /**
-   * Directory to clone into.
+   * The name of a new directory to clone into.
    *
-   * If not specified, git will create a directory named after the repository.
-   * If set to ".", will clone into the current directory.
+   * If not set, the directory name is derived from the repository name.
+   *
+   * Cloning into an existing directory is only allowed if the directory is
+   * empty.
    */
   directory?: string;
   /**
@@ -755,7 +766,7 @@ export interface TransportOptions {
 export function git(options?: GitOptions): Git {
   const directory = options?.cwd ?? ".";
   const gitOptions = options ?? {};
-  const git: Git = {
+  const repo: Git = {
     path(...parts: string[]) {
       return join(directory, ...parts);
     },
@@ -766,11 +777,12 @@ export function git(options?: GitOptions): Git {
         flag("--bare", options?.bare),
         flag("--initial-branch", options?.branch),
       );
+      return repo;
     },
     async clone(url, options) {
-      await run(
-        gitOptions,
-        ["clone", url, ...(options?.directory ? [options.directory] : [])],
+      const output = await run(
+        { ...gitOptions, stderr: true },
+        ["clone", url],
         configFlags(options?.config, "--config").flat(),
         flag("--bare", options?.bare),
         flag("--depth", options?.depth),
@@ -778,7 +790,21 @@ export function git(options?: GitOptions): Git {
         flag("--origin", options?.remote),
         flag("--branch", options?.branch),
         flag(["--single-branch", "--no-single-branch"], options?.singleBranch),
+        options?.directory,
       );
+      const match = output.match(
+        /Cloning into '(?<directory>.+?)'...(?:.|\n)*/,
+      );
+      assertExists(
+        match?.groups?.directory,
+        "Cannot determine cloned directory",
+      );
+      const cwd = options?.directory ??
+        resolve(...[
+          ...gitOptions.cwd ? [gitOptions.cwd] : [],
+          match.groups.directory,
+        ]);
+      return git({ ...gitOptions, cwd });
     },
     config: {
       async set(config) {
@@ -962,7 +988,7 @@ export function git(options?: GitOptions): Git {
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
-        const [commit] = await git.commits.log({
+        const [commit] = await repo.commits.log({
           maxCount: 1,
           range: { to: hash },
         });
@@ -970,7 +996,7 @@ export function git(options?: GitOptions): Git {
         return commit;
       },
       async head() {
-        const [commit] = await git.commits.log({ maxCount: 1 });
+        const [commit] = await repo.commits.log({ maxCount: 1 });
         assertExists(commit, "No HEAD commit.");
         return commit;
       },
@@ -1021,7 +1047,7 @@ export function git(options?: GitOptions): Git {
           flag("--force", options?.force),
           signFlag("tag", options?.sign),
         );
-        const [tag] = await git.tags.list({ name });
+        const [tag] = await repo.tags.list({ name });
         assertExists(tag, "Cannot find created tag");
         return tag;
       },
@@ -1039,7 +1065,7 @@ export function git(options?: GitOptions): Git {
         return await Promise.all(tags.map(async (tag) => {
           assertExists(tag.name, "Tag name not filled");
           assertExists(tag.commit?.hash, "Commit hash not filled for tag");
-          const [commit] = await git.commits.log({
+          const [commit] = await repo.commits.log({
             maxCount: 1,
             range: { to: tag.commit.hash },
           });
@@ -1073,7 +1099,7 @@ export function git(options?: GitOptions): Git {
       },
       async add(url, name = "origin") {
         await run(gitOptions, ["remote", "add"], name, url);
-        return git.remotes.get(name);
+        return repo.remotes.get(name);
       },
       async defaultBranch(name = "origin") {
         const info = await run(gitOptions, ["remote", "show", name]);
@@ -1086,11 +1112,11 @@ export function git(options?: GitOptions): Git {
       },
     },
   };
-  return git;
+  return repo;
 }
 
 async function run(
-  options: GitOptions & { allowCode?: number[] },
+  options: GitOptions & { allowCode?: number[]; stderr?: boolean },
   ...commandArgs: (string | string[] | undefined)[]
 ): Promise<string> {
   const args = [
@@ -1114,7 +1140,8 @@ async function run(
         { cause: { command: "git", args, code } },
       );
     }
-    return new TextDecoder().decode(stdout).trimEnd();
+    return new TextDecoder().decode(options?.stderr ? stderr : stdout)
+      .trimEnd();
   } catch (e: unknown) {
     if (e instanceof Deno.errors.NotCapable) {
       throw new GitError("Permission error (use `--allow-run=git`)", {
