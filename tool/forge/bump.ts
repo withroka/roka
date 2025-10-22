@@ -174,9 +174,14 @@ async function createPullRequest(
   const directory = common(packages.map((pkg) => pkg.root));
   const { repo = await github(options).repos.get({ directory }) } = options ??
     {};
-  const branch = await repo.git.branches.current();
+  const [branch, remote] = await Promise.all([
+    repo.git.branches.current(),
+    repo.git.remotes.get(),
+  ]);
   if (!branch) throw new PackageError("Cannot determine base branch");
-  const base = branch.push ?? branch.name;
+  const base = branch.push?.startsWith(remote.name)
+    ? branch.push.slice(remote.name.length + 1)
+    : branch.name;
   const head = packages.length === 1
     ? `${BUMP_BRANCH}-${packages[0]?.name}`
     : BUMP_BRANCH;
