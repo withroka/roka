@@ -92,28 +92,46 @@ export class RequestError extends Error {
 
 /** Options for the {@linkcode request} function. */
 export interface RequestOptions extends RequestInit {
-  /** Errors that would not cause a {@linkcode RequestError}. */
+  /**
+   * Errors that would not cause a {@linkcode RequestError}.
+   *
+   * @default {[]}
+   *
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status HTTP response status codes}
+   */
   allowedErrors?: number[];
   /** Retry options. */
   retry?: RetryOptions;
-  /** The user agent to be sent with the request headers. */
+  /**
+   * The user agent to be sent with the request headers.
+   *
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/User-Agent User-Agent header}
+   */
   agent?: string;
-  /** The referrer to be sent with the request headers. */
+  /**
+   * The referrer to be sent with the request headers.
+   *
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Request/referrer Request: referrer property}
+   */
   referrer?: string;
-  /** The authorization token to be sent with the request headers. */
+  /**
+   * The authorization token to be sent with the request headers.
+   *
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Authorization Authorization header}
+   */
   token?: string;
   /**
    * Client cache behavior.
    * @default {"default"}
    *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Request/cache
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Request/cache Request: cache property}
    */
   cache?: RequestCache;
   /**
    * The cache expiration time in seconds. By default, the `max-age` from the
    * `Cache-Control` header of the response is used.
    *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Request/cache
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Request/cache Request: cache property}
    */
   cacheMaxAge?: number;
   /**
@@ -122,7 +140,7 @@ export interface RequestOptions extends RequestInit {
    * By default, client cache is shared across all requests. This parameter
    * allows to create separate cache stores.
    *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Request/cache
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Request/cache Request: cache property}
    */
   cacheStore?: string;
 }
