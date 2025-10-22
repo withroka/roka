@@ -431,7 +431,7 @@ Deno.test("git().branches.delete({ force }) can delete unmerged branch", async (
 Deno.test("git().ignore.check() returns empty array for non-ignored files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file.txt"), "content");
-  assertEquals(await repo.ignore.check(["file.txt"]), []);
+  assertEquals(await repo.ignore.check("file.txt"), []);
 });
 
 Deno.test("git().ignore.check() returns ignored files", async () => {
@@ -1126,7 +1126,7 @@ Deno.test("git().commits.log({ skip }) skips a number of commits", async () => {
   assertEquals(await repo.commits.log({ skip: 1, maxCount: 1 }), [commit]);
 });
 
-Deno.test("git().commits.log({ paths }) returns changes to a file", async () => {
+Deno.test("git().commits.log({ path }) returns changes to a file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content");
   await repo.index.add("file1");
@@ -1134,9 +1134,10 @@ Deno.test("git().commits.log({ paths }) returns changes to a file", async () => 
   await Deno.writeTextFile(repo.path("file2"), "content");
   await repo.index.add("file2");
   const commit2 = await repo.commits.create("second");
-  assertEquals(await repo.commits.log({ paths: ["file1"] }), [commit1]);
-  assertEquals(await repo.commits.log({ paths: ["file2"] }), [commit2]);
-  assertEquals(await repo.commits.log({ paths: ["file1", "file2"] }), [
+  assertEquals(await repo.commits.log({ path: "file1" }), [commit1]);
+  assertEquals(await repo.commits.log({ path: ["file1"] }), [commit1]);
+  assertEquals(await repo.commits.log({ path: "file2" }), [commit2]);
+  assertEquals(await repo.commits.log({ path: ["file1", "file2"] }), [
     commit2,
     commit1,
   ]);
@@ -1173,10 +1174,10 @@ Deno.test("git().commits.log({ text }) returns blame from specific file", async 
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
   const commit2 = await repo.commits.create("second");
-  assertEquals(await repo.commits.log({ paths: ["file1"], text: "content" }), [
+  assertEquals(await repo.commits.log({ path: ["file1"], text: "content" }), [
     commit1,
   ]);
-  assertEquals(await repo.commits.log({ paths: ["file2"], text: "content" }), [
+  assertEquals(await repo.commits.log({ path: ["file2"], text: "content" }), [
     commit2,
   ]);
 });
