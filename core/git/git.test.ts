@@ -6,7 +6,7 @@ import {
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
-import { basename } from "node:path";
+import { basename, resolve } from "@std/path";
 import { git, GitError } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
@@ -55,6 +55,32 @@ Deno.test("git() configures for each command", async () => {
     (await repo.tags.list({ sort: "version" })).map((tag) => tag.name),
     ["1.2.3", "1.2.3-rc", "1.2.3-beta", "1.2.3-alpha"],
   );
+});
+
+Deno.test("git() keeps cwd with absolute path", async () => {
+  await using directory = await tempDirectory();
+  const repo = git({ cwd: directory.path() });
+  assertEquals(repo.path(), directory.path());
+  {
+    const _ = await tempDirectory({ chdir: true });
+    assertEquals(resolve(repo.path()), directory.path());
+  }
+});
+
+Deno.test("git() keeps cwd with relative path", async () => {
+  await using directory = await tempDirectory({ chdir: true });
+  const repo = git({ cwd: "." });
+  assertEquals(
+    await Deno.realPath(repo.path()),
+    await Deno.realPath(directory.path()),
+  );
+  {
+    const _ = await tempDirectory({ chdir: true });
+    assertEquals(
+      await Deno.realPath(repo.path()),
+      await Deno.realPath(directory.path()),
+    );
+  }
 });
 
 Deno.test("git().init() creates a repo", async () => {

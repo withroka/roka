@@ -763,7 +763,7 @@ export interface TransportOptions {
  * ```
  */
 export function git(options?: GitOptions): Git {
-  const directory = options?.cwd ?? ".";
+  const directory = resolve(options?.cwd ?? ".");
   const gitOptions = options ?? {};
   const repo: Git = {
     path(...parts: string[]) {
