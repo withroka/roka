@@ -85,7 +85,7 @@ export async function tempRepository(
   const repo = git({ cwd });
   if (clone) {
     const target = typeof clone === "string" ? clone : clone.path();
-    await git({ cwd }).clone(target, { bare, config });
+    await git({ cwd }).clone(target, ".", { bare, config });
   } else {
     await git({ cwd, config }).init({ bare });
     await repo.config.set(config);
