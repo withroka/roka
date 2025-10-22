@@ -28,17 +28,13 @@ import { mergeReadableStreams } from "@std/streams";
 /**
  * An error thrown by the `deno` command.
  *
- * If the failure is from `deno` itself, the `code` property contains the exit
- * status code of the command.
+ * If the error is from running a `deno` command, the message will include the
+ * command, the exit code, and the command output.
  */
 export class DenoError extends Error {
-  /** The exit status code of the command. */
-  readonly code: number | undefined;
-
   /** Construct DenoError. */
-  constructor(message: string, code?: number) {
-    super(message);
-    this.code = code;
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
     this.name = "DenoError";
   }
 }
@@ -700,7 +696,6 @@ class Runner implements AsyncDisposable {
       cwd = Deno.cwd(),
       allowNone,
       extensions,
-      args = [],
       scriptArgs = [],
       doc = false,
       parse,
@@ -726,18 +721,19 @@ class Runner implements AsyncDisposable {
     if (files.length === 0 && Object.keys(this.blocksByPath).length === 0) {
       return results.values().toArray();
     }
+    const args = [
+      this.command,
+      ...this.options?.args ?? [],
+      ...files,
+      ...this.blocksDir &&
+          Object.keys(this.blocksByPath).length > 0
+        ? [this.blocksDir.path()]
+        : [],
+      ...scriptArgs,
+    ];
     const process = new Deno.Command("deno", {
       cwd,
-      args: [
-        this.command,
-        ...args,
-        ...files,
-        ...this.blocksDir &&
-            Object.keys(this.blocksByPath).length > 0
-          ? [this.blocksDir.path()]
-          : [],
-        ...scriptArgs,
-      ],
+      args,
       // passthrough for testing
       env: {
         NO_COLOR: Deno.env.get("NO_COLOR") ?? "",
@@ -783,13 +779,15 @@ class Runner implements AsyncDisposable {
     for await (const output of stream.values()) {
       errors.push(stripAnsiCode(output));
     }
-    const status = await process.status;
+    const { success, code } = await process.status;
     report?.done?.();
-    if (!status.success) {
+    if (!success) {
       if (errors.length > 0) {
         throw new DenoError(
-          `Command "deno ${this.command}" failed:\n\n${errors.join("\n\n")}`,
-          status.code,
+          `Error running deno command: ${this.command}:\n\n${
+            errors.join("\n\n")
+          }`,
+          { cause: { command: "deno", cwd, args, code } },
         );
       }
     }

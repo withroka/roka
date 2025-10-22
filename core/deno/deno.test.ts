@@ -1,11 +1,6 @@
 import { assertArrayObjectMatch } from "@roka/assert";
 import { tempDirectory } from "@roka/fs/temp";
-import {
-  assertEquals,
-  assertExists,
-  assertGreater,
-  assertRejects,
-} from "@std/assert";
+import { assertEquals, assertRejects } from "@std/assert";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { deno, DenoError, type FileResult } from "./deno.ts";
 
@@ -54,9 +49,7 @@ Deno.test("deno().check() rejects empty array", async () => {
 
 Deno.test("deno().check() rejects missing file", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  const error = await assertRejects(() => deno().check(["file.ts"]), DenoError);
-  assertExists(error.code);
-  assertGreater(error.code, 0);
+  await assertRejects(() => deno().check(["file.ts"]), DenoError);
 });
 
 Deno.test("deno().check() rejects non-script file", async () => {
@@ -513,13 +506,11 @@ Deno.test("deno().fmt() rejects empty array", async () => {
 
 Deno.test("deno().fmt() rejects missing file", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  const error = await assertRejects(
+  await assertRejects(
     () => deno().fmt(["file.ts"]),
     DenoError,
     "No target files found",
   );
-  assertExists(error.code);
-  assertGreater(error.code, 0);
 });
 
 Deno.test("deno().fmt() rejects non-script file", async () => {
@@ -879,9 +870,7 @@ Deno.test("deno().doc() rejects empty array", async () => {
 
 Deno.test("deno().doc() rejects missing file", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  const error = await assertRejects(() => deno().doc(["file.ts"]), DenoError);
-  assertExists(error.code);
-  assertGreater(error.code, 0);
+  await assertRejects(() => deno().doc(["file.ts"]), DenoError);
 });
 
 Deno.test("deno().doc() rejects non-script file", async () => {
@@ -1088,13 +1077,11 @@ Deno.test("deno().lint() rejects empty array", async () => {
 
 Deno.test("deno().lint() rejects missing file", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  const error = await assertRejects(
+  await assertRejects(
     () => deno().lint(["file.ts"]),
     DenoError,
     "No target files found",
   );
-  assertExists(error.code);
-  assertGreater(error.code, 0);
 });
 
 Deno.test("deno().lint() rejects non-script file", async () => {
@@ -1632,9 +1619,7 @@ Deno.test("deno().test() rejects empty array", async () => {
 
 Deno.test("deno().test() reports missing file", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  const error = await assertRejects(() => deno().test(["file.ts"]), DenoError);
-  assertExists(error.code);
-  assertGreater(error.code, 0);
+  await assertRejects(() => deno().test(["file.ts"]), DenoError);
 });
 
 Deno.test("deno().test() rejects non-script file", async () => {
@@ -2569,12 +2554,10 @@ Deno.test("deno().test({ update }) updates mocks", async () => {
 
 Deno.test("deno().compile() rejects missing file", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  const error = await assertRejects(
+  await assertRejects(
     () => deno().compile("file.ts"),
     DenoError,
   );
-  assertExists(error.code);
-  assertGreater(error.code, 0);
 });
 
 Deno.test("deno().compile() rejects non-script file", async () => {

@@ -17,7 +17,7 @@ Deno.test("git() mentions failed command on error", async () => {
   await assertRejects(
     () => repo.tags.create("no commit"),
     GitError,
-    'Error running git command: git tag "no commit"',
+    "Error running git command: tag",
   );
 });
 
