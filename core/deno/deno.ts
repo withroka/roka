@@ -22,7 +22,7 @@ import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
 import { omit } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
-import { extname, fromFileUrl, resolve } from "@std/path";
+import { extname, fromFileUrl, join, resolve } from "@std/path";
 import { mergeReadableStreams } from "@std/streams";
 
 /**
@@ -41,6 +41,8 @@ export class DenoError extends Error {
 
 /** Functionality returned by the {@linkcode deno} function. */
 export interface DenoCommands {
+  /** Returns the working directory, with optional relative children. */
+  path(...parts: string[]): string;
   /**
    * Type check given files using [`deno check`](https://docs.deno.com/go/check).
    *
@@ -190,7 +192,10 @@ export type Error =
 
 /** Callback options for `deno` commands. */
 export interface DenoOptions {
-  /** The current working directory to run the commands in. */
+  /**
+   * Change the working directory for deno commands.
+   * @default {"."}
+   */
   cwd?: string;
   /** A function that is called for each error message. */
   onError?: (error: Error) => unknown;
@@ -338,7 +343,6 @@ export interface CompileOptions {
  */
 export function deno(options?: DenoOptions): DenoCommands {
   const {
-    cwd,
     onError,
     onPartialError,
     onInfo,
@@ -346,6 +350,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     onDebug,
     onPartialDebug,
   } = options ?? {};
+  const directory = resolve(options?.cwd ?? Deno.cwd());
   function debugTransform(data: ReportData, done: boolean): Report[] {
     const error = {
       message: data.message.trimEnd(),
@@ -358,9 +363,11 @@ export function deno(options?: DenoOptions): DenoCommands {
     return [error];
   }
   return {
+    path(...parts: string[]) {
+      return join(directory, ...parts);
+    },
     async check(files) {
-      return await new Runner("check", {
-        ...cwd && { cwd },
+      return await new Runner(directory, "check", {
         extensions: [...TYPESCRIPT_EXTENSIONS, "md"],
         doc: { only: ["md"] },
         args: ["--quiet"],
@@ -396,8 +403,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     },
     async fmt(files, options) {
       const { check = false } = options ?? {};
-      return await new Runner("fmt", {
-        ...cwd && { cwd },
+      return await new Runner(directory, "fmt", {
         doc: { skip: ["md"] },
         args: [...(check ? ["--check"] : ["--quiet"])],
         parse: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
@@ -423,8 +429,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     },
     async doc(files, options) {
       const { json = false, lint = false } = options ?? {};
-      return await new Runner("doc", {
-        ...cwd && { cwd },
+      return await new Runner(directory, "doc", {
         extensions: SCRIPT_EXTENSIONS,
         args: [
           "--quiet",
@@ -465,8 +470,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     },
     async lint(files, options) {
       const { fix = false } = options ?? {};
-      return await new Runner("lint", {
-        ...cwd && { cwd },
+      return await new Runner(directory, "lint", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
         doc: { only: ["md"] },
         args: [
@@ -500,8 +504,7 @@ export function deno(options?: DenoOptions): DenoCommands {
       const { update = false } = options ?? {};
       let lastFile: Partial<Info> = {};
       const test: string[] = [];
-      return await new Runner("test", {
-        ...cwd && { cwd },
+      return await new Runner(directory, "test", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
         args: [
           "--quiet",
@@ -606,8 +609,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     },
     async compile(script, options) {
       const { args = [], target, include, output } = options ?? {};
-      return await new Runner("compile", {
-        ...cwd && { cwd },
+      return await new Runner(directory, "compile", {
         args: [
           "--quiet",
           "--permission-set",
@@ -687,13 +689,13 @@ class Runner implements AsyncDisposable {
   private blocksByPath: Record<string, Block & { path: string }> = {};
 
   constructor(
+    private readonly directory: string,
     private readonly command: string,
     private readonly options?: RunOptions,
   ) {}
 
   async run(files: string[]): Promise<FileResult[]> {
     const {
-      cwd = Deno.cwd(),
       allowNone,
       extensions,
       scriptArgs = [],
@@ -721,6 +723,7 @@ class Runner implements AsyncDisposable {
     if (files.length === 0 && Object.keys(this.blocksByPath).length === 0) {
       return results.values().toArray();
     }
+    const cwd = this.directory;
     const args = [
       this.command,
       ...this.options?.args ?? [],

@@ -2,6 +2,7 @@ import { assertArrayObjectMatch } from "@roka/assert";
 import { tempDirectory } from "@roka/fs/temp";
 import { assertEquals, assertRejects } from "@std/assert";
 import { stripAnsiCode } from "@std/fmt/colors";
+import { resolve } from "@std/path";
 import { deno, DenoError, type FileResult } from "./deno.ts";
 
 function assertResults(
@@ -37,6 +38,26 @@ function assertResults(
     expected,
   );
 }
+
+Deno.test("deno() keeps cwd with absolute path", async () => {
+  await using directory = await tempDirectory();
+  const repo = deno({ cwd: directory.path() });
+  assertEquals(repo.path(), directory.path());
+  {
+    const _ = await tempDirectory({ chdir: true });
+    assertEquals(resolve(repo.path()), directory.path());
+  }
+});
+
+Deno.test("deno() keeps cwd with relative path", async () => {
+  await using directory = await tempDirectory();
+  const repo = deno({ cwd: "." });
+  assertEquals(resolve(repo.path()), resolve(directory.path()));
+  {
+    const _ = await tempDirectory({ chdir: true });
+    assertEquals(resolve(repo.path()), resolve(directory.path()));
+  }
+});
 
 Deno.test("deno().check() rejects empty array", async () => {
   await using _ = await tempDirectory({ chdir: true });
