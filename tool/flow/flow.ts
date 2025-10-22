@@ -25,15 +25,15 @@
  * flow test   # run tests, and generate coverage report
  * ```
  *
- * {@link https://docs.deno.com/go/config/#formatting | Formatting} and
- * {@link https://docs.deno.com/go/config/#linting | linting} are configured
+ * {@link https://docs.deno.com/go/config/#formatting Formatting} and
+ * {@link https://docs.deno.com/go/config/#linting linting} are configured
  * in `deno.json`. The
- * {@link https://docs.deno.com/go/doc/#linting | documentation linter} runs
+ * {@link https://docs.deno.com/go/doc/#linting documentation linter} runs
  * when run at the project root with no arguments.
  *
- * Tests use {@link https://docs.deno.com/go/config/#permissions | permissions}
- * from the `deno.json` file. {@link https://jsr.io/@roka/testing/doc/mock | Mocks}
- * and {@link https://jsr.io/@std/testing/doc/snapshot | snapshots} are
+ * Tests use {@link https://docs.deno.com/go/config/#permissions permissions}
+ * from the `deno.json` file. {@link https://jsr.io/@roka/testing/doc/mock Mocks}
+ * and {@link https://jsr.io/@std/testing/doc/snapshot snapshots} are
  * generated with all permissions enabled when `--update` is passed.
  *
  * ```sh

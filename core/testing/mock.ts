@@ -70,7 +70,7 @@
  * ```
  *
  * **Note**: A ready-to-use mock for the Web API `fetch` is provided by the
- * {@link https://jsr.io/@roka/http | **@roka/http**} module.
+ * {@link https://jsr.io/@roka/http **@roka/http**} module.
  *
  * @module mock
  */
@@ -124,7 +124,7 @@ export interface MockOptions {
   /**
    * Mock output path.
    *
-   * If both {@linkcode MockOptions.dir | dir} and `path` are specified, the
+   * If both {@linkcode MockOptions.dir dir} and `path` are specified, the
    * `dir` option will be ignored, and the `path` option will be handled as
    * normal.
    */

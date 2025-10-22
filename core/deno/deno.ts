@@ -91,7 +91,7 @@ export interface DenoCommands {
    * Test permissions need to be specified in the `deno.json` configuration
    * file, as they are not passed through from this function.
    *
-   * In {@linkcode TestOptions.update | update} mode, all permissions are
+   * In {@linkcode TestOptions.update update} mode, all permissions are
    * granted.
    *
    * @param files List of files to run tests from.

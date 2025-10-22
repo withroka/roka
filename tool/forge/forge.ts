@@ -52,11 +52,11 @@
  * ## Versions
  *
  * Versioning in **forge** is only effective when the repository adheres to
- * {@link https://www.conventionalcommits.org | Conventional Commits}. Any bug
+ * {@link https://www.conventionalcommits.org Conventional Commits}. Any bug
  * fix results in a patch version, while a new feature is introduced in a minor
  * version. Commits marked as _breaking changes_ trigger a new major version.
  *
- * A {@link https://semver.org | semantic version} is calculated for every
+ * A {@link https://semver.org semantic version} is calculated for every
  * package at every commit. The new version begins with the latest release, or
  * “0.0.0” if the package has no releases. It then tracks the commits made
  * since that release.

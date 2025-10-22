@@ -4,7 +4,7 @@
  * This package provides convenience utilities for making HTTP requests and
  * testing requests with mocks.
  *
- * The {@linkcode [request].request | request} function is the core of the
+ * The {@linkcode [request].request request} function is the core of the
  * package, providing a wrapper around the `fetch` API, while handling errors
  * and retries.
  *

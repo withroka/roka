@@ -5,7 +5,7 @@
  *
  * The release is created for the configuration version (`deno.json`) of the
  * package. The {@link [bump]} module updates the configuration version using
- * {@link https://www.conventionalcommits.org | Conventional Commits} since
+ * {@link https://www.conventionalcommits.org Conventional Commits} since
  * the last release.
  *
  * ```ts
