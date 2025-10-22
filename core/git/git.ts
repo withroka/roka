@@ -77,7 +77,7 @@ export interface Git {
   /** Initializes a new git repository. */
   init(options?: InitOptions): Promise<void>;
   /** Clones a remote repository. */
-  clone(url: string, directory?: string, options?: CloneOptions): Promise<void>;
+  clone(url: string, options?: CloneOptions): Promise<void>;
   /** Config operations. */
   config: {
     /** Configures repository options. */
@@ -379,6 +379,13 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
    * set to `false` to fetch from the tip of all branches.
    */
   depth?: number;
+  /**
+   * Directory to clone into.
+   *
+   * If not specified, git will create a directory named after the repository.
+   * If set to ".", will clone into the current directory.
+   */
+  directory?: string;
   /**
    * Bypasses local transport optimization when set to `false`.
    *
@@ -760,13 +767,10 @@ export function git(options?: GitOptions): Git {
         flag("--initial-branch", options?.branch),
       );
     },
-    async clone(url, directory, options) {
-      // If directory is not provided, derive it from the URL (like standard git)
-      const targetDir = directory ?? extractRepoName(url);
-
+    async clone(url, options) {
       await run(
         gitOptions,
-        ["clone", url, targetDir],
+        ["clone", url, ...(options?.directory ? [options.directory] : [])],
         configFlags(options?.config, "--config").flat(),
         flag("--bare", options?.bare),
         flag("--depth", options?.depth),
@@ -1420,35 +1424,4 @@ function parseOutput<T>(
       .trimStart();
   }
   return result;
-}
-
-function extractRepoName(url: string): string {
-  // Extract the "humanish" part of the repository URL as git does
-  // Examples:
-  // - "/path/to/repo.git" -> "repo"
-  // - "host.xz:foo/.git" -> "foo"
-  // - "https://github.com/user/repo.git" -> "repo"
-  // - "git@github.com:user/repo.git" -> "repo"
-
-  // Remove .git suffix if present
-  let name = url.endsWith(".git") ? url.slice(0, -4) : url;
-
-  // Remove trailing slashes first
-  name = name.replace(/\/+$/, "");
-
-  // Get the last part after / or :
-  const lastSlash = name.lastIndexOf("/");
-  const lastColon = name.lastIndexOf(":");
-  const lastSeparator = Math.max(lastSlash, lastColon);
-
-  if (lastSeparator >= 0) {
-    name = name.slice(lastSeparator + 1);
-  }
-
-  // If name is empty or just dots, fall back to a default
-  if (!name || name === "." || name === "..") {
-    return "repository";
-  }
-
-  return name;
 }
