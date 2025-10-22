@@ -57,7 +57,7 @@ Deno.test("git() configures for each command", async () => {
   );
 });
 
-Deno.test("git() keeps cwd with absolute path", async () => {
+Deno.test("git().path() is persistent with absolute path", async () => {
   await using directory = await tempDirectory();
   const repo = git({ cwd: directory.path() });
   assertEquals(repo.path(), directory.path());
@@ -67,7 +67,7 @@ Deno.test("git() keeps cwd with absolute path", async () => {
   }
 });
 
-Deno.test("git() keeps cwd with relative path", async () => {
+Deno.test("git().path() is persistent with relative path", async () => {
   await using directory = await tempDirectory({ chdir: true });
   const repo = git({ cwd: "." });
   assertEquals(
