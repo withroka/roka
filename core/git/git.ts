@@ -115,7 +115,7 @@ export interface Branches {
 export interface Ignore {
   /** Checks paths against gitignore list and returns the ignored patterns. */
   check(
-    paths: string | string[],
+    path: string | string[],
     options?: IgnoreCheckOptions,
   ): Promise<string[]>;
 }
@@ -557,7 +557,7 @@ export interface CommitLogOptions {
   /** Only commits by a committer. */
   committer?: User;
   /** Only commits that modified any of the given paths. */
-  paths?: string[];
+  path?: string | string[];
   /** Only commits in a range. */
   range?: RevisionRange;
   /** Maximum number of commits to return. */
@@ -829,13 +829,13 @@ export function git(options?: GitOptions): Git {
       },
     },
     ignore: {
-      async check(paths, options) {
-        if (typeof paths === "string") paths = [paths];
-        if (paths.length === 0) return [];
+      async check(path, options) {
+        if (typeof path === "string") path = [path];
+        if (path.length === 0) return [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           "check-ignore",
-          paths,
+          path,
           flag("--verbose", options?.matching === false),
           flag("--non-matching", options?.matching === false),
           flag("--no-index", options?.index === false),
@@ -977,7 +977,7 @@ export function git(options?: GitOptions): Git {
           flag("--skip", options?.skip),
           flag("--pickaxe-regex", options?.text !== undefined),
           flag("-S", options?.text),
-          flag("--", options?.paths),
+          flag("--", options?.path),
           rangeArg(options?.range),
         );
         return parseOutput(LOG_FORMAT, output) as Commit[];
