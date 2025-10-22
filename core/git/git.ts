@@ -800,10 +800,7 @@ export function git(options?: GitOptions): Git {
         "Cannot determine cloned directory",
       );
       const cwd = options?.directory ??
-        resolve(...[
-          ...gitOptions.cwd ? [gitOptions.cwd] : [],
-          match.groups.directory,
-        ]);
+        resolve(gitOptions.cwd ?? '.', match.groups.directory);
       return git({ ...gitOptions, cwd });
     },
     config: {
