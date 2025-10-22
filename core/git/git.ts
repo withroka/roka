@@ -798,8 +798,10 @@ export function git(options?: GitOptions): Git {
         match?.groups?.directory,
         "Cannot determine cloned directory",
       );
-      const cwd = options?.directory ??
-        resolve(gitOptions.cwd ?? ".", match.groups.directory);
+      const cwd = resolve(
+        directory,
+        options?.directory ?? match.groups.directory,
+      );
       return git({ ...gitOptions, cwd });
     },
     config: {

@@ -6,6 +6,7 @@ import {
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
+import { basename } from "node:path";
 import { git, GitError } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
@@ -77,6 +78,7 @@ Deno.test("git().clone() clones a repo", async () => {
   await remote.commits.create("second", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).clone(remote.path());
+  assertEquals(repo.path(), directory.path(basename(remote.path())));
   assertEquals(await repo.commits.log(), await remote.commits.log());
 });
 
@@ -85,10 +87,10 @@ Deno.test("git().clone({ directory }) clones into specified directory", async ()
   await remote.commits.create("first", { allowEmpty: true });
   await remote.commits.create("second", { allowEmpty: true });
   await using directory = await tempDirectory();
-  await git({ cwd: directory.path() }).clone(remote.path(), {
+  const repo = await git({ cwd: directory.path() }).clone(remote.path(), {
     directory: "directory",
   });
-  const repo = git({ cwd: directory.path("directory") });
+  assertEquals(repo.path(), directory.path("directory"));
   assertEquals(await repo.commits.log(), await remote.commits.log());
 });
 
