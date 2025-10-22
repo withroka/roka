@@ -174,11 +174,12 @@ async function createPullRequest(
   const directory = common(packages.map((pkg) => pkg.root));
   const { repo = await github(options).repos.get({ directory }) } = options ??
     {};
-  const base = await repo.git.branches.current();
+  const branch = await repo.git.branches.current();
+  if (!branch) throw new PackageError("Cannot determine base branch");
+  const base = branch.push ?? branch.name;
   const head = packages.length === 1
     ? `${BUMP_BRANCH}-${packages[0]?.name}`
     : BUMP_BRANCH;
-  if (!base) throw new PackageError("Cannot determine base branch");
   const title = packages.length === 1
     ? `chore: bump ${packages[0]?.name} to ${packages[0]?.version}`
     : "chore: bump versions";
@@ -223,7 +224,7 @@ async function createPullRequest(
     }
     return pr;
   } finally {
-    await repo.git.branches.checkout({ target: base });
+    await repo.git.branches.checkout({ target: branch });
     await repo.git.branches.delete(head, { force: true });
   }
 }

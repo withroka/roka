@@ -14,7 +14,7 @@
  * (async () => {
  *   const repo = git();
  *   const branch = await repo.branches.current();
- *   if (branch === "main") {
+ *   if (branch?.name === "main") {
  *     await repo.branches.checkout({ new: "feature" });
  *   }
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
@@ -33,7 +33,6 @@
  * @todo Extend `git().config.set()` with more configurations.
  * @todo Add `git().config.get()`
  * @todo Add stash management.
- * @todo Introduce the `Branch` object type.
  * @todo Add `git().branches.copy()`
  * @todo Add `git().branches.move()`
  * @todo Add `git().branches.track()`
@@ -54,7 +53,7 @@ import {
   assertGreater,
 } from "@std/assert";
 import { mapValues, slidingWindows } from "@std/collections";
-import { basename, join, normalize, resolve } from "@std/path";
+import { join, normalize, resolve } from "@std/path";
 
 /**
  * An error thrown by the `git` package.
@@ -108,15 +107,15 @@ export interface Git {
 /** Branch operations from {@linkcode Git.branches}. */
 export interface Branches {
   /** Returns the current branch name. */
-  current(): Promise<string | undefined>;
+  current(): Promise<Branch | undefined>;
   /** List branches in the repository alphabetically. */
-  list(options?: BranchListOptions): Promise<string[]>;
+  list(options?: BranchListOptions): Promise<Branch[]>;
   /** Switches to a commit, or an existing or new branch. */
   checkout(options?: BranchCheckoutOptions): Promise<void>;
   /** Creates a branch. */
   create(name: string): Promise<void>;
   /** Deletes a branch. */
-  delete(name: string, options?: BranchDeleteOptions): Promise<void>;
+  delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
@@ -231,6 +230,18 @@ export interface User {
   email: string;
 }
 
+/** A branch in a git repository. */
+export interface Branch {
+  /** Short name of the branch. */
+  name: string;
+  /** Remote push branch name, if set. */
+  push?: string;
+  /** Remote upstream branch name, if set. */
+  upstream?: string;
+  /** Commit at the tip of the branch, if branch has any commits. */
+  commit?: Commit;
+}
+
 /** Status of files in the index and the working tree. */
 export interface Status {
   /** Files that are staged for commit (the index). */
@@ -303,7 +314,7 @@ export interface Tag {
 }
 
 /** A ref that points to a commit object in a git repository. */
-export type Commitish = Commit | Tag | string;
+export type Commitish = Commit | Branch | Tag | string;
 
 /** A remote tracked in a git repository. */
 export interface Remote {
@@ -588,7 +599,7 @@ export interface CommitLogOptions {
 /** Options for the {@linkcode Git.commits.push} function. */
 export interface CommitPushOptions extends TransportOptions, RemoteOptions {
   /** Remote branch to push to. The default is the current branch. */
-  branch?: string;
+  branch?: string | Branch;
   /** Force push to remote. */
   force?: boolean;
 }
@@ -597,7 +608,7 @@ export interface CommitPushOptions extends TransportOptions, RemoteOptions {
 export interface CommitPullOptions
   extends RemoteOptions, TransportOptions, SignOptions {
   /** Remote branch to pull from. The default is the tracked remote branch. */
-  branch?: string;
+  branch?: string | Branch;
 }
 
 /** Options for the {@linkcode Tags.create} function. */
@@ -814,13 +825,15 @@ export function git(options?: GitOptions): Git {
     },
     branches: {
       async current() {
-        const branch = await run(gitOptions, "branch", "--show-current");
-        return branch ? branch : undefined;
+        const name = await run(gitOptions, "branch", "--show-current");
+        if (!name) return undefined;
+        const [branch] = await repo.branches.list({ name });
+        return branch ? branch : { name };
       },
       async list(options) {
-        const branches = await run(
+        const output = await run(
           gitOptions,
-          ["branch", "--list", "--format=%(refname)"],
+          ["branch", "--list", `--format=${formatArg(BRANCH_FORMAT)}`],
           options?.name,
           flag("--all", options?.all),
           flag("--remotes", options?.remotes),
@@ -828,16 +841,23 @@ export function git(options?: GitOptions): Git {
           flag("--no-contains", commitArg(options?.noContains)),
           flag("--points-at", commitArg(options?.pointsAt)),
         );
-        // Reimplementing `refname:short`, which behaves differently on
-        // different git versions. This has a bug when a branch name really
-        // ends with `/HEAD`. This will be fixed when branches are objects.
-        return branches
-          .split("\n")
-          .filter((x) => x)
-          .filter((x) => basename(x) !== "HEAD")
-          .filter((x) => !x.includes(" "))
-          .map((x) => x.replace(/^refs\/heads\//, ""))
-          .map((x) => x.replace(/^refs\/remotes\//, ""));
+        const branches = parseOutput(BRANCH_FORMAT, output);
+        return await Promise.all(
+          branches
+            .filter((branch) => !branch?.name?.includes(" "))
+            .map(async (branch) => {
+              assertExists(branch.name, "Branch name not filled");
+              let commit: Commit | undefined = undefined;
+              if (branch.commit?.hash) {
+                [commit] = await repo.commits.log({
+                  maxCount: 1,
+                  range: { to: branch.commit.hash },
+                });
+              }
+              const name: string = branch.name;
+              return { ...branch, name, ...commit && { commit } };
+            }),
+        );
       },
       async checkout(options) {
         await run(
@@ -851,7 +871,8 @@ export function git(options?: GitOptions): Git {
       async create(name) {
         await run(gitOptions, "branch", name);
       },
-      async delete(name, options) {
+      async delete(branch, options) {
+        const name = typeof branch === "string" ? branch : branch.name;
         await run(
           gitOptions,
           ["branch", name],
@@ -1014,20 +1035,26 @@ export function git(options?: GitOptions): Git {
         return parseOutput(LOG_FORMAT, output) as Commit[];
       },
       async push(options) {
+        const branch = typeof options?.branch === "string"
+          ? options?.branch
+          : options?.branch?.name;
         await run(
           gitOptions,
           ["push", options?.remote ?? "origin"],
-          options?.branch,
+          branch,
           flag(["--atomic", "--no-atomic"], options?.atomic),
           flag("--force", options?.force),
           flag("--tags", options?.tags),
         );
       },
       async pull(options) {
+        const branch = typeof options?.branch === "string"
+          ? options?.branch
+          : options?.branch?.name;
         await run(
           gitOptions,
           ["pull", options?.remote ?? "origin"],
-          options?.branch,
+          branch,
           flag("--atomic", options?.atomic),
           flag(["--tags", "--no-tags"], options?.tags),
           signFlag("commit", options?.sign),
@@ -1215,7 +1242,9 @@ function commitArg(commit: Commitish | undefined): string | undefined {
     ? commit
     : "commit" in commit
     ? commit.commit.hash
-    : commit.hash;
+    : "hash" in commit
+    ? commit.hash
+    : commit.name;
 }
 
 function tagArg(tag: Tag | string | undefined): string | undefined {
@@ -1322,6 +1351,43 @@ const LOG_FORMAT: FormatDescriptor<Commit> = {
     },
   },
 } satisfies FormatDescriptor<Commit>;
+
+const BRANCH_FORMAT: FormatDescriptor<Branch> = {
+  delimiter: "<%(objectname)>",
+  kind: "object",
+  fields: {
+    name: {
+      kind: "string",
+      format: "%(refname:short)",
+    },
+    push: {
+      kind: "string",
+      format: "%(if)%(push:short)%(then)%(push:short)%(else)%00%(end)",
+      optional: true,
+    },
+    upstream: {
+      kind: "string",
+      format: "%(if)%(upstream:short)%(then)%(upstream:short)%(else)%00%(end)",
+      optional: true,
+    },
+    commit: {
+      kind: "object",
+      fields: {
+        hash: {
+          kind: "string",
+          format: "%(if)%(object)%(then)%(object)%(else)%(objectname)%(end)",
+        },
+        short: { kind: "skip" },
+        summary: { kind: "skip" },
+        body: { kind: "skip" },
+        trailers: { kind: "skip" },
+        author: { kind: "skip" },
+        committer: { kind: "skip" },
+      },
+      optional: true,
+    },
+  },
+} satisfies FormatDescriptor<Branch>;
 
 const TAG_FORMAT: FormatDescriptor<Tag> = {
   delimiter: "<%(objectname)>",
