@@ -53,7 +53,7 @@ import {
   assertFalse,
   assertGreater,
 } from "@std/assert";
-import { slidingWindows } from "@std/collections";
+import { mapValues, slidingWindows } from "@std/collections";
 import { basename, join, normalize } from "@std/path";
 
 /**
@@ -1216,17 +1216,6 @@ function rangeArg(range: RevisionRange | undefined): string | undefined {
   return `${from}${range.symmetric ? "..." : ".."}${to ?? "HEAD"}`;
 }
 
-type FormatField = { kind: "skip" } | {
-  kind: "string";
-  optional?: boolean;
-  transform?(value: string, parent: Record<string, string>): unknown;
-  format: string;
-} | {
-  kind: "object";
-  optional?: boolean;
-  fields: { [key: string]: FormatField };
-};
-
 type FormatFieldDescriptor<T> =
   | { kind: "skip" }
   | (
@@ -1357,10 +1346,12 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
   },
 } satisfies FormatDescriptor<Tag>;
 
-function formatFields(format: FormatField): string[] {
+function formatFields<T>(format: FormatFieldDescriptor<T>): string[] {
   if (format.kind === "skip") return [];
   if (format.kind === "object") {
-    return Object.values(format.fields).map((f) => formatFields(f)).flat();
+    return Object.values(mapValues(format.fields, (field) => {
+      return formatFields(field);
+    })).flat();
   }
   return [format.format];
 }
@@ -1374,19 +1365,19 @@ function formatArg<T>(format: FormatDescriptor<T>): string {
 
 function formattedObject<T>(
   parent: Record<string, string>,
-  format: FormatField,
+  format: FormatFieldDescriptor<T>,
   parts: string[],
 ): [Partial<T> | undefined, string | undefined, number] {
   if (format.kind === "skip") return [undefined, undefined, 0];
   if (format.kind === "object") {
     const parsed: Record<string, string> = {};
     const result: Record<string, unknown> = {};
-    const length = Object.entries(format.fields).reduce((sum, [key, field]) => {
+    const length = Object.values(mapValues(format.fields, (field, key) => {
       const [value, raw, length] = formattedObject(parsed, field, parts);
       if (value !== undefined) result[key] = value;
       if (raw !== undefined) parsed[key] = raw;
-      return sum + length;
-    }, 0);
+      return length;
+    })).reduce((a, b) => a + b, 0);
     if (
       format.optional &&
       Object.values(result).every((v) => v === undefined || v === "\x00")
@@ -1395,14 +1386,15 @@ function formattedObject<T>(
     }
     return [result as Partial<T>, undefined, length];
   }
-
   const value = parts.shift();
   assertExists(value, "Cannot parse git output");
   if (format.optional && value === "\x00") {
     return [undefined, value, value.length];
   }
-  const result = format.transform ? format.transform(value, parent) : value;
-  return [result as Partial<T>, value, value.length];
+  const result = ("transform" in format)
+    ? format.transform(value, parent)
+    : value as T;
+  return [result, value, value.length];
 }
 
 function parseOutput<T>(
