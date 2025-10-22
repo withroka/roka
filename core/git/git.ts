@@ -54,8 +54,7 @@ import {
   assertGreater,
 } from "@std/assert";
 import { mapValues, slidingWindows } from "@std/collections";
-import { basename, join, normalize } from "@std/path";
-import { resolve } from "node:path";
+import { basename, join, normalize, resolve } from "@std/path";
 
 /**
  * An error thrown by the `git` package.
