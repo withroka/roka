@@ -9,7 +9,7 @@
  * ```
  *
  * The maximum concurrency is not limited by default, but it can be set using
- * the {@linkcode PoolOptions.concurrency | concurrency} option. The promises
+ * the {@linkcode PoolOptions.concurrency concurrency} option. The promises
  * will be executed based on the order that they are passed to the function,
  * and the results will be in the same order.
  *
@@ -37,7 +37,7 @@
  *
  * This module is a thin wrapper with a more convenient API around the
  * `pooledMap` function from the standard
- * {@link https://jsr.io/@std/async | **@std/async**} library.
+ * {@link https://jsr.io/@std/async **@std/async**} library.
  *
  * @module pool
  */

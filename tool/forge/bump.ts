@@ -2,14 +2,14 @@
  * This module provides the {@linkcode bump} function, which updates the
  * version string in package configuration file (`deno.json`). The version is
  * calculated based on the
- * {@link https://www.conventionalcommits.org | Conventional Commits} since
- * the last release and {@link https://semver.org | semantic versioning}.
+ * {@link https://www.conventionalcommits.org Conventional Commits} since
+ * the last release and {@link https://semver.org semantic versioning}.
  *
- * If the {@linkcode BumpOptions.release | release} option is set, the next
+ * If the {@linkcode BumpOptions.release release} option is set, the next
  * release version is written to the package configuration. Otherwise, the
  * current pre-release version is written.
  *
- * If the {@linkcode BumpOptions.pr | pr} option is set, a pull request is
+ * If the {@linkcode BumpOptions.pr pr} option is set, a pull request is
  * created with the updated version information on GitHub. Once this pull
  * request is merged, a release can be created using the {@linkcode [release]}
  * module.
@@ -77,7 +77,7 @@ export interface BumpOptions {
   /**
    * Make the newly created pull request a draft.
    *
-   * Requires {@linkcode BumpOptions.pr | pr} to be set.
+   * Requires {@linkcode BumpOptions.pr pr} to be set.
    *
    * If a pull request already exists, this flag won't affect it.
    *
@@ -95,9 +95,9 @@ export interface BumpOptions {
  * Updates the version numbers on package configuration files (`deno.json`).
  *
  * The version for the package is calculated using the latest release tag and
- * the {@link https://www.conventionalcommits.org | Conventional Commits} for
+ * the {@link https://www.conventionalcommits.org Conventional Commits} for
  * the package since that release. If the changelog is not empty, the version
- * will be a pre-release version. If {@linkcode BumpOptions.release | release}
+ * will be a pre-release version. If {@linkcode BumpOptions.release release}
  * is set, the version of the next release will be written, dropping prerelase
  * and build information from the version string.
  *

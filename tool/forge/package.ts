@@ -22,9 +22,9 @@
  *    member.
  *  - Package configuration (`deno.json`).
  *  - The latest package release from git tags.
- *  - {@link https://www.conventionalcommits.org | Conventional Commits} since
+ *  - {@link https://www.conventionalcommits.org Conventional Commits} since
  *    the latest release.
- *  - Calculated {@link https://semver.org | semantic version}.
+ *  - Calculated {@link https://semver.org semantic version}.
  *
  * Use the {@linkcode workspace} function to fetch all the workspace packages
  * in a monorepo.
@@ -99,7 +99,7 @@ export interface Package {
    *
    * The semantic version of the package calculated from the latest release.
    * The release tag version is incremented based on the
-   * {@link https://www.conventionalcommits.org | Conventional Commits} for
+   * {@link https://www.conventionalcommits.org Conventional Commits} for
    * this package since the latest release. If there was no release for this
    * package, the version will start from `0.0.0`.
    *
@@ -118,7 +118,7 @@ export interface Package {
    *
    * When the package is retrieved with the {@linkcode packageInfo} function,
    * this will be the package directory, unless it is set with the
-   * {@linkcode PackageOptions.root | root} option.
+   * {@linkcode PackageOptions.root root} option.
    *
    * The {@linkcode workspace} function will set this to the workspace root.
    */
@@ -199,7 +199,7 @@ export interface PackageOptions {
    * a workspace member.
    *
    * If not set, the root defaults to the value of
-   * {@linkcode Package.directory | directory}.
+   * {@linkcode Package.directory directory}.
    */
   root?: string;
 }
@@ -250,13 +250,13 @@ export interface CommitOptions {
    * All types are returned by default.
    *
    * Breaking changes whose types are not included are returned by default.
-   * Setting {@linkcode CommitOptions.breaking | breaking} to `false` will skip
+   * Setting {@linkcode CommitOptions.breaking breaking} to `false` will skip
    * these commits.
    */
   type?: string[];
   /**
    * If `true`, returns only breaking changes. If `false`, breaking changes are
-   * subject to the {@linkcode CommitOptions.type | type} filter.
+   * subject to the {@linkcode CommitOptions.type type} filter.
    */
   breaking?: boolean;
 }
@@ -350,7 +350,7 @@ export async function workspace(
  * Returns releases of a package based on its git tags.
  *
  * Pre-release versions are not included by default. Use the
- * {@linkcode ReleaseOptions.prerelease | prerelease} option to include them.
+ * {@linkcode ReleaseOptions.prerelease prerelease} option to include them.
  *
  * @example Retrieve all releases of a package.
  * ```ts
@@ -403,7 +403,7 @@ export async function releases(
  * Returns the commits for a particular release.
  *
  * By default, commits from the entire git history are returned. The
- * {@linkcode CommitOptions.range | range} option can be used to return
+ * {@linkcode CommitOptions.range range} option can be used to return
  * the commits of a specific range.
  *
  * @example Get commits since the last release.

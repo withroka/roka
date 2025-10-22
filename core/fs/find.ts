@@ -60,7 +60,7 @@ export interface FindOptions {
    * the patterns, it will not be returned. If a directory matches any of
    * the patterns, it and its contents will be skipped entirely.
    *
-   * Similar to {@linkcode FindOptions.path | path}, if absolute paths are
+   * Similar to {@linkcode FindOptions.path path}, if absolute paths are
    * given as input, the patterns should match absolute paths, and if relative
    * paths are given as input, the patterns should match relative paths.
    *

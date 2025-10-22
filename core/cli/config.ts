@@ -17,7 +17,7 @@
  * });
  * ```
  *
- * The config system wraps the {@link https://deno.com/kv | Deno.Kv} API to
+ * The config system wraps the {@link https://deno.com/kv Deno.Kv} API to
  * provide a simple key-value store for the running application. This API is
  * still experimental, and code using the config module needs the
  * `--unstable-kv` flag enabled.
@@ -61,7 +61,7 @@ export interface ConfigOptions {
  * or retrieve object-based data. It is a disposable resource that should be
  * used with the `using` keyword.
  *
- * Setting {@linkcode ConfigOptions.path | path} to `":memory:"` will create a
+ * Setting {@linkcode ConfigOptions.path path} to `":memory:"` will create a
  * configuration that persists until the process ends.
  *
  * @example Use a file-based user configuration.

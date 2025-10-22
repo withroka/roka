@@ -1,7 +1,7 @@
 /**
  * This module provides the {@linkcode changelog} function to generate a
  * changelog for a package using
- * {@link https://www.conventionalcommits.org | Conventional Commits}.
+ * {@link https://www.conventionalcommits.org Conventional Commits}.
  *
  * ```ts
  * import { changelog } from "@roka/forge/changelog";
@@ -44,7 +44,7 @@ export interface ChangelogOptions {
      * Sort commits in the generated changelog.
      *
      * If set to `importance`, the commits are sorted by their
-     * {@link https://www.conventionalcommits.org | Conventional Commits} details.
+     * {@link https://www.conventionalcommits.org Conventional Commits} details.
      * Breaking changes are followed by features, and then fixes. Commits of other
      * types come last and they are grouped by their type.
      */

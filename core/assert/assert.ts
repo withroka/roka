@@ -1,6 +1,6 @@
 /**
  * A library for making assertions, complementary to the standard
- * {@link https://jsr.io/@std/assert | **@std/assert**} library.
+ * {@link https://jsr.io/@std/assert **@std/assert**} library.
  *
  * ```ts
  * import { assertSameElements } from "@roka/assert";
@@ -32,7 +32,7 @@ export type PropertyKey = string | number | symbol;
  *
  * This function counts the number of times each element appears in both arrays
  * and then compares these tallies using `assertEquals` from the standard
- * {@link https://jsr.io/@std/assert | **@std/assert**} library.
+ * {@link https://jsr.io/@std/assert **@std/assert**} library.
  *
  * @throws {AssertionError} If the arrays differ in length or if the arrays
  * contain different groups of elements.
@@ -73,7 +73,7 @@ export function assertSameElements<T>(
  * Extra keys in the `actual` objects are ignored.
  *
  * This function is an array variant of the `assertObjectMatch` function from
- * the standard {@link https://jsr.io/@std/assert | **@std/assert**}
+ * the standard {@link https://jsr.io/@std/assert **@std/assert**}
  * library.
  *
  * @example Using `assertArrayObjectMatch()`.

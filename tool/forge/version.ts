@@ -45,7 +45,7 @@ export interface VersionOptions {
  *
  *  - JSR version, if running as a JSR module
  *  - release tags and
- *    {@link https://www.conventionalcommits.org | Conventional Commits}
+ *    {@link https://www.conventionalcommits.org Conventional Commits}
  *    (local development)
  *  - config version from `deno.json` (deno run)
  *  - config version from `deno.json` in the dist directory (deno compile)

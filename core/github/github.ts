@@ -2,7 +2,7 @@
  * A library for interacting with GitHub.
  *
  * This package provides an incomplete and opinionated interface to the
- * {@link https://docs.github.com/en/rest | GitHub REST API}.
+ * {@link https://docs.github.com/en/rest GitHub REST API}.
  *
  * The main module provides the {@linkcode github} function to create a client
  * for the GitHub API. If a token is provided, the client will be authenticated.

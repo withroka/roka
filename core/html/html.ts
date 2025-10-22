@@ -1,6 +1,6 @@
 /**
  * A library for working with HTML content, complementary to the standard
- * {@link https://jsr.io/@std/html | **@std/html**} library.
+ * {@link https://jsr.io/@std/html **@std/html**} library.
  *
  * This package only provides the {@link [plain]} module to remove HTML tags
  * from text input.

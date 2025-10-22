@@ -1,7 +1,7 @@
 /**
  * This module provides the {@linkcode conventional} function to convert a
  * {@linkcode Commit} object to a
- * {@link https://www.conventionalcommits.org | Conventional Commit}.
+ * {@link https://www.conventionalcommits.org Conventional Commit}.
  *
  * ```ts
  * import { git } from "@roka/git";
@@ -27,7 +27,7 @@ import { assertExists } from "@std/assert";
 import type { Commit } from "./git.ts";
 
 /**
- * A {@link https://www.conventionalcommits.org | Conventional Commit} returned
+ * A {@link https://www.conventionalcommits.org Conventional Commit} returned
  * by {@linkcode conventional}.
  */
 export interface ConventionalCommit extends Commit {
@@ -45,7 +45,7 @@ export interface ConventionalCommit extends Commit {
 
 /**
  * Creates a commit object with
- * {@link https://www.conventionalcommits.org | Conventional Commit} details.
+ * {@link https://www.conventionalcommits.org Conventional Commit} details.
  *
  * @example Retrieve conventional commit details from a commit.
  * ```ts

@@ -27,7 +27,7 @@
  * ## Submodules
  *
  *  -  {@link [conventional]}: Work with
- *     {@link https://www.conventionalcommits.org | Conventional Commits}.
+ *     {@link https://www.conventionalcommits.org Conventional Commits}.
  *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
  * @todo Extend `git().config.set()` with more configurations.
@@ -375,7 +375,7 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
   /**
    * Number of commits to clone at the tip.
    *
-   * Implies {@linkcode CloneOptions.singleBranch | singleBranch}, unless it is
+   * Implies {@linkcode CloneOptions.singleBranch singleBranch}, unless it is
    * set to `false` to fetch from the tip of all branches.
    */
   depth?: number;
@@ -410,7 +410,7 @@ export interface BranchListOptions extends RefListOptions {
   /**
    * Only remote branches.
    *
-   * Implies {@linkcode BranchListOptions.all | all} to be `true`.
+   * Implies {@linkcode BranchListOptions.all all} to be `true`.
    *
    * @default {false}
    */
@@ -510,7 +510,7 @@ export interface IndexStatusOptions {
    *
    * If set to `true`, ignored files and directories are included. In
    * this mode, files under ignored directories are shown if
-   * {@linkcode IndexStatusOptions.untracked | untracked} is set to `"all"`. If
+   * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`. If
    * set to `false`, ignored files are not included.
    *
    * @default {false}
@@ -603,12 +603,12 @@ export interface TagListOptions extends RefListOptions {
   /**
    * Sort option.
    *
-   * Setting to `version` uses {@link https://semver.org | semantic version}
+   * Setting to `version` uses {@link https://semver.org semantic version}
    * order, returning the latest versions first.
    *
    * By default, pre-release versions are sorted lexically, and they are
    * considered newer than the release versions. To change this behavior, set
-   * the {@linkcode Config.versionsort.suffix | versionsort.suffix} config
+   * the {@linkcode Config.versionsort.suffix versionsort.suffix} config
    * option to the pre-release suffixes.
    *
    * ```ts
