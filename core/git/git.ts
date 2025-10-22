@@ -756,28 +756,26 @@ export function git(options?: GitOptions): Git {
       await run(
         gitOptions,
         "init",
-        options?.bare && "--bare",
-        options?.branch !== undefined && ["--initial-branch", options.branch],
+        flag("--bare", options?.bare),
+        flag("--initial-branch", options?.branch),
       );
     },
     async clone(url, options) {
       await run(
         gitOptions,
         ["clone", url, "."],
-        options?.bare && "--bare",
-        options?.config && configArgs(options.config, "--config").flat(),
-        options?.depth !== undefined && ["--depth", `${options.depth}`],
-        options?.local === false && "--no-local",
-        options?.local === true && "--local",
-        options?.remote !== undefined && ["--origin", options.remote],
-        options?.branch !== undefined && ["--branch", options.branch],
-        options?.singleBranch === false && "--no-single-branch",
-        options?.singleBranch === true && "--single-branch",
+        configFlags(options?.config, "--config").flat(),
+        flag("--bare", options?.bare),
+        flag("--depth", options?.depth),
+        flag(["--local", "--no-local"], options?.local),
+        flag("--origin", options?.remote),
+        flag("--branch", options?.branch),
+        flag(["--single-branch", "--no-single-branch"], options?.singleBranch),
       );
     },
     config: {
       async set(config) {
-        for (const cfg of configArgs(config)) {
+        for (const cfg of configFlags(config)) {
           // deno-lint-ignore no-await-in-loop
           await run(gitOptions, "config", cfg);
         }
@@ -793,14 +791,11 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["branch", "--list", "--format=%(refname)"],
           options?.name,
-          options?.all && "--all",
-          options?.remotes && "--remotes",
-          options?.contains !== undefined &&
-            ["--contains", commitArg(options.contains)],
-          options?.noContains !== undefined &&
-            ["--no-contains", commitArg(options.noContains)],
-          options?.pointsAt !== undefined &&
-            ["--points-at", commitArg(options.pointsAt)],
+          flag("--all", options?.all),
+          flag("--remotes", options?.remotes),
+          flag("--contains", commitArg(options?.contains)),
+          flag("--no-contains", commitArg(options?.noContains)),
+          flag("--points-at", commitArg(options?.pointsAt)),
         );
         // Reimplementing `refname:short`, which behaves differently on
         // different git versions. This has a bug when a branch name really
@@ -817,9 +812,9 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "checkout",
-          options?.detach && "--detach",
-          options?.new !== undefined && ["-b", options.new],
-          options?.target !== undefined && commitArg(options.target),
+          flag("--detach", options?.detach),
+          flag("-b", options?.new),
+          commitArg(options?.target),
         );
       },
       async create(name) {
@@ -828,9 +823,8 @@ export function git(options?: GitOptions): Git {
       async delete(name, options) {
         await run(
           gitOptions,
-          "branch",
-          options?.force ? "-D" : "-d",
-          name,
+          ["branch", name],
+          flag(["-D", "-d"], options?.force ?? false),
         );
       },
     },
@@ -841,9 +835,10 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           "check-ignore",
-          options?.matching === false && ["--non-matching", "--verbose"],
-          options?.index === false && "--no-index",
           paths,
+          flag("--verbose", options?.matching === false),
+          flag("--non-matching", options?.matching === false),
+          flag("--no-index", options?.index === false),
         );
         return output.split("\n")
           .map((line) =>
@@ -859,30 +854,31 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "add",
-          options?.force && "--force",
-          options?.executable === false && "--chmod=-x",
-          options?.executable === true && "--chmod=+x",
           path,
+          flag("--force", options?.force),
+          flag(["--chmod=+x", "--chmod=-x"], options?.executable),
         );
       },
       async remove(path, options?: IndexRemoveOptions) {
-        await run(gitOptions, "rm", options?.force && "--force", path);
+        await run(
+          gitOptions,
+          "rm",
+          path,
+          flag("--force", options?.force),
+        );
       },
       async status(options?: IndexStatusOptions) {
-        const { path, untracked = true, ignored = false, renames = true } =
-          options ?? {};
         const output = await run(
           gitOptions,
           "status",
           ["--porcelain=1", "-z"],
-          path && ["--", ...typeof path === "string" ? [path] : path],
-          untracked === false && "--untracked-files=no",
-          untracked === true && "--untracked-files=normal",
-          untracked === "all" && "--untracked-files=all",
-          ignored === false && "--ignored=no",
-          ignored === true && "--ignored=traditional",
-          renames === false && "--no-renames",
-          renames === true && "--renames",
+          flag("--untracked-files=normal", options?.untracked === true),
+          flag("--ignored=traditional", options?.ignored === true),
+          flag("--ignored=no", options?.ignored === false),
+          flag("--untracked-files=no", options?.untracked === false),
+          flag("--untracked-files=all", options?.untracked === "all"),
+          flag(["--renames", "--no-renames"], options?.renames ?? true),
+          flag("--", options?.path),
         );
         const lines = output.split("\0").filter((x) => x);
         const status: Status = {
@@ -948,14 +944,14 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           "commit",
-          ["-m", summary],
-          options?.body !== undefined && ["-m", options?.body],
-          options?.trailers && trailerArg(options.trailers),
-          options?.all && "--all",
-          options?.allowEmpty && "--allow-empty",
-          options?.amend && "--amend",
-          options?.author && ["--author", userArg(options.author)],
-          options?.sign !== undefined && signArg(options.sign, "commit"),
+          flag("-m", summary),
+          flag("-m", options?.body),
+          trailerFlag(options?.trailers),
+          flag("--all", options?.all),
+          flag("--allow-empty", options?.allowEmpty),
+          flag("--amend", options?.amend),
+          flag("--author", userArg(options?.author)),
+          signFlag("commit", options?.sign),
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
@@ -975,15 +971,14 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["log", `--format=${formatArg(LOG_FORMAT)}`],
-          options?.author && ["--author", userArg(options.author)],
-          options?.committer && ["--committer", userArg(options.committer)],
-          options?.maxCount !== undefined &&
-            ["--max-count", `${options.maxCount}`],
-          options?.paths && ["--", ...options.paths],
-          options?.range !== undefined && rangeArg(options.range),
-          options?.skip !== undefined && ["--skip", `${options.skip}`],
-          options?.text !== undefined &&
-            ["-S", options.text, "--pickaxe-regex"],
+          flag("--author", userArg(options?.author)),
+          flag("--committer", userArg(options?.committer)),
+          flag("--max-count", options?.maxCount),
+          flag("--skip", options?.skip),
+          flag("--pickaxe-regex", options?.text !== undefined),
+          flag("-S", options?.text),
+          flag("--", options?.paths),
+          rangeArg(options?.range),
         );
         return parseOutput(LOG_FORMAT, output) as Commit[];
       },
@@ -992,22 +987,19 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["push", options?.remote ?? "origin"],
           options?.branch,
-          options?.atomic === false && "--no-atomic",
-          options?.atomic === true && "--atomic",
-          options?.force && "--force",
-          options?.tags && "--tags",
+          flag(["--atomic", "--no-atomic"], options?.atomic),
+          flag("--force", options?.force),
+          flag("--tags", options?.tags),
         );
       },
       async pull(options) {
         await run(
           gitOptions,
-          "pull",
-          options?.remote ?? "origin",
+          ["pull", options?.remote ?? "origin"],
           options?.branch,
-          options?.atomic && "--atomic",
-          options?.sign !== undefined && signArg(options.sign, "commit"),
-          options?.tags === false && "--no-tags",
-          options?.tags === true && "--tags",
+          flag("--atomic", options?.atomic),
+          flag(["--tags", "--no-tags"], options?.tags),
+          signFlag("commit", options?.sign),
         );
       },
     },
@@ -1016,11 +1008,11 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           ["tag", name],
-          options?.commit && commitArg(options.commit),
-          options?.subject && ["-m", options.subject],
-          options?.body !== undefined && ["-m", options.body],
-          options?.force && "--force",
-          options?.sign !== undefined && signArg(options.sign, "tag"),
+          commitArg(options?.commit),
+          flag("-m", options?.subject),
+          flag("-m", options?.body),
+          flag("--force", options?.force),
+          signFlag("tag", options?.sign),
         );
         const [tag] = await git.tags.list({ name });
         assertExists(tag, "Cannot find created tag");
@@ -1031,13 +1023,10 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["tag", "--list", `--format=${formatArg(TAG_FORMAT)}`],
           options?.name,
-          options?.contains !== undefined &&
-            ["--contains", commitArg(options.contains)],
-          options?.noContains !== undefined &&
-            ["--no-contains", commitArg(options.noContains)],
-          options?.pointsAt !== undefined &&
-            ["--points-at", commitArg(options.pointsAt)],
-          options?.sort === "version" && "--sort=-version:refname",
+          flag("--contains", commitArg(options?.contains)),
+          flag("--no-contains", commitArg(options?.noContains)),
+          flag("--points-at", commitArg(options?.pointsAt)),
+          flag("--sort=-version:refname", options?.sort === "version"),
         );
         const tags = parseOutput(TAG_FORMAT, output);
         return await Promise.all(tags.map(async (tag) => {
@@ -1055,8 +1044,9 @@ export function git(options?: GitOptions): Git {
       async push(tag: Tag | string, options?: TagPushOptions) {
         await run(
           gitOptions,
-          ["push", options?.remote ?? "origin", "tag", tagArg(tag)],
-          options?.force && "--force",
+          ["push", options?.remote ?? "origin", "tag"],
+          tagArg(tag),
+          flag("--force", options?.force),
         );
       },
     },
@@ -1094,14 +1084,14 @@ export function git(options?: GitOptions): Git {
 
 async function run(
   options: GitOptions & { allowCode?: number[] },
-  ...commandArgs: (string | string[] | false | undefined)[]
+  ...commandArgs: (string | string[] | undefined)[]
 ): Promise<string> {
   const args = [
     options.cwd !== undefined ? ["-C", normalize(options.cwd)] : [],
-    options.config && configArgs(options.config, "-c").flat(),
+    configFlags(options.config, "-c").flat(),
     "--no-pager",
     ...commandArgs,
-  ].filter((x) => x !== false && x !== undefined).flat();
+  ].flat().filter((x) => x !== undefined);
   const command = new Deno.Command("git", {
     args,
     stdin: "null",
@@ -1112,7 +1102,7 @@ async function run(
     const { code, stdout, stderr } = await command.output();
     if (code !== 0 && !(options.allowCode?.includes(code))) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
-      const args = commandArgs.filter((x) => x !== false && x !== undefined)
+      const args = commandArgs.filter((x) => x !== undefined)
         .flat().map((x) => x.match(/\s/) ? `"${x}"` : x).join(" ");
       throw new GitError(`Error running git command: git ${args}`, {
         cause: { command: "git", args, code, error },
@@ -1129,11 +1119,33 @@ async function run(
   }
 }
 
-function configArgs(config: Config, flag?: string): string[][] {
+function flag(
+  flag: string | [string, string],
+  value: boolean | undefined,
+): string[];
+function flag(
+  flag: string,
+  value: number | string | string[] | undefined,
+): string[];
+function flag(
+  flag: string | [string, string],
+  value: boolean | number | string | string[] | undefined,
+): string[] {
+  if (typeof flag === "string") flag = [flag, ""];
+  if (value === true) return [flag[0]];
+  if (value === false && flag[1]) return [flag[1]];
+  if (typeof value === "number") return [flag[0], value.toString()];
+  if (typeof value === "string") return [flag[0], value];
+  if (Array.isArray(value)) return [flag[0], ...value];
+  return [];
+}
+
+function configFlags(config: Config | undefined, flag?: string): string[][] {
+  if (config === undefined) return [];
   function args(
-    cfg: object,
+    config: Config,
   ): { key: string; value: string; opt: string | undefined }[] {
-    return Object.entries(cfg).map(([key, value]) => {
+    return Object.entries(config).map(([key, value]) => {
       if (Array.isArray(value)) {
         return value.map((value, index) => ({
           key,
@@ -1155,16 +1167,19 @@ function configArgs(config: Config, flag?: string): string[][] {
   });
 }
 
-function userArg(user: User): string {
+function userArg(user: User | undefined): string | undefined {
+  if (user === undefined) return undefined;
   return `${user.name} <${user.email}>`;
 }
 
-function trailerArg(trailers: Record<string, string>): string[] {
+function trailerFlag(trailers: Record<string, string> | undefined): string[] {
+  if (trailers === undefined) return [];
   return Object.entries(trailers)
     .map(([token, value]) => `--trailer=${token}: ${value}`);
 }
 
-function commitArg(commit: Commitish): string {
+function commitArg(commit: Commitish | undefined): string | undefined {
+  if (commit === undefined) return undefined;
   return typeof commit === "string"
     ? commit
     : "commit" in commit
@@ -1172,22 +1187,28 @@ function commitArg(commit: Commitish): string {
     : commit.hash;
 }
 
-function tagArg(tag: Tag | string): string {
+function tagArg(tag: Tag | string | undefined): string | undefined {
+  if (tag === undefined) return undefined;
   return typeof tag === "string" ? tag : tag.name;
 }
 
-function signArg(sign: boolean | string, type: "commit" | "tag"): string {
+function signFlag(
+  type: "commit" | "tag",
+  sign: boolean | string | undefined,
+): string[] {
+  if (sign === undefined) return [];
   if (type === "tag") {
-    if (sign === false) return "--no-sign";
-    if (sign === true) return "--sign";
-    return `--local-user=${sign}`;
+    if (sign === false) return ["--no-sign"];
+    if (sign === true) return ["--sign"];
+    return [`--local-user=${sign}`];
   }
-  if (sign === false) return "--no-gpg-sign";
-  if (sign === true) return "--gpg-sign";
-  return `--gpg-sign=${sign}`;
+  if (sign === false) return ["--no-gpg-sign"];
+  if (sign === true) return ["--gpg-sign"];
+  return [`--gpg-sign=${sign}`];
 }
 
-function rangeArg(range: RevisionRange): string | undefined {
+function rangeArg(range: RevisionRange | undefined): string | undefined {
+  if (range === undefined) return undefined;
   const from = range.from && commitArg(range.from);
   const to = range.to && commitArg(range.to);
   if (from === undefined && to === undefined) return undefined;
