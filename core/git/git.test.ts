@@ -86,10 +86,27 @@ Deno.test("git().clone({ directory }) clones into specified directory", async ()
   await remote.commits.create("second", { allowEmpty: true });
   await using directory = await tempDirectory();
   await git({ cwd: directory.path() }).clone(remote.path(), {
-    directory: "repository",
+    directory: "directory",
   });
-  const repo = git({ cwd: directory.path("repository") });
+  const repo = git({ cwd: directory.path("directory") });
   assertEquals(await repo.commits.log(), await remote.commits.log());
+});
+
+Deno.test("git().clone({ directory }) rejects non-empty directory", async () => {
+  await using remote = await tempRepository();
+  await remote.commits.create("first", { allowEmpty: true });
+  await remote.commits.create("second", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  await Deno.mkdir(directory.path("directory"));
+  await Deno.writeTextFile(directory.path("directory/file.txt"), "content");
+  await assertRejects(
+    () =>
+      git({ cwd: directory.path() }).clone(remote.path(), {
+        directory: "directory",
+      }),
+    GitError,
+    "not an empty directory",
+  );
 });
 
 Deno.test("git().clone({ remote }) clones a repo with remote name", async () => {
