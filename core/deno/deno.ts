@@ -197,17 +197,17 @@ export interface DenoOptions {
   /** The current working directory to run the commands in. */
   cwd?: string;
   /** A function that is called for each error message. */
-  onError?(error: Error): unknown;
+  onError?: (error: Error) => unknown;
   /** A function that is called for each informational message. */
-  onInfo?(info: Info): unknown;
+  onInfo?: (info: Info) => unknown;
   /** A function that is called for each debug message. */
-  onDebug?(debug: Report): unknown;
+  onDebug?: (debug: Report) => unknown;
   /** A function that is called for each partial error message. */
-  onPartialError?(info: Partial<Error>): unknown;
+  onPartialError?: (info: Partial<Error>) => unknown;
   /** A function that is called for each partial informational message. */
-  onPartialInfo?(info: Partial<Info>): unknown;
+  onPartialInfo?: (info: Partial<Info>) => unknown;
   /** A function that is called for each partial debug message. */
-  onPartialDebug?(info: Partial<Report>): unknown;
+  onPartialDebug?: (info: Partial<Report>) => unknown;
 }
 
 /** Options for the {@linkcode Deno.doc} function. */
@@ -362,7 +362,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     return [error];
   }
   return {
-    check: async (files) => {
+    async check(files) {
       return await new Runner("check", {
         ...cwd && { cwd },
         extensions: [...TYPESCRIPT_EXTENSIONS, "md"],
@@ -398,7 +398,7 @@ export function deno(options?: DenoOptions): DenoCommands {
         },
       }).run(files);
     },
-    fmt: async (files, options) => {
+    async fmt(files, options) {
       const { check = false } = options ?? {};
       return await new Runner("fmt", {
         ...cwd && { cwd },
@@ -425,7 +425,7 @@ export function deno(options?: DenoOptions): DenoCommands {
         },
       }).run(files);
     },
-    doc: async (files, options) => {
+    async doc(files, options) {
       const { json = false, lint = false } = options ?? {};
       return await new Runner("doc", {
         ...cwd && { cwd },
@@ -467,7 +467,7 @@ export function deno(options?: DenoOptions): DenoCommands {
         },
       }).run(files);
     },
-    lint: async (files, options) => {
+    async lint(files, options) {
       const { fix = false } = options ?? {};
       return await new Runner("lint", {
         ...cwd && { cwd },
@@ -500,7 +500,7 @@ export function deno(options?: DenoOptions): DenoCommands {
         },
       }).run(files);
     },
-    test: async (files, options) => {
+    async test(files, options) {
       const { update = false } = options ?? {};
       let lastFile: Partial<Info> = {};
       const test: string[] = [];
@@ -608,7 +608,7 @@ export function deno(options?: DenoOptions): DenoCommands {
         },
       }).run(files);
     },
-    compile: async (script, options) => {
+    async compile(script, options) {
       const { args = [], target, include, output } = options ?? {};
       return await new Runner("compile", {
         ...cwd && { cwd },
@@ -649,15 +649,15 @@ interface RunOptions {
     done?: () => unknown;
     error?: {
       patterns: RegExp[];
-      transform(data: ReportData, done: boolean): Error[];
+      transform: (data: ReportData, done: boolean) => Error[];
     };
     info?: {
       patterns: RegExp[];
-      transform(data: ReportData, done: boolean): Info[];
+      transform: (data: ReportData, done: boolean) => Info[];
     };
     debug?: {
       patterns: RegExp[];
-      transform(data: ReportData, done: boolean): Report[];
+      transform: (data: ReportData, done: boolean) => Report[];
     };
     location?: {
       lineOffset?: number;
