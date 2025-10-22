@@ -1377,7 +1377,7 @@ function formattedObject<T>(
       if (value !== undefined) result[key] = value;
       if (raw !== undefined) parsed[key] = raw;
       return length;
-    })).reduce((a, b) => a + b);
+    })).reduce((a, b) => a + b, 0);
     if (
       format.optional &&
       Object.values(result).every((v) => v === undefined || v === "\x00")
