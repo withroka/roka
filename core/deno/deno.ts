@@ -784,7 +784,7 @@ class Runner implements AsyncDisposable {
     if (!success) {
       if (errors.length > 0) {
         throw new DenoError(
-          `Error running git command: ${this.command}:\n\n${
+          `Error running deno command: ${this.command}:\n\n${
             errors.join("\n\n")
           }`,
           { cause: { command: "deno", args, code } },
