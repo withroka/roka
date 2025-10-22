@@ -1,9 +1,9 @@
 /**
- * A library for interacting with local git repositories.
+ * A library for interacting with local Git repositories.
  *
- * This package provides incomplete functionality to run git commands. It is
- * intended to be used for simple operations like creating commits, tags, and
- * pushing to remotes.
+ * This package provides incomplete functionality to run
+ * {@link https://git-scm.com git} commands. It is intended to be used for
+ * simple operations like creating commits, tags, and pushing to remotes.
  *
  * The main module provides the {@linkcode git} function that exposes git
  * operations, as well as the {@linkcode Commit}, {@linkcode Tag}, and similar
