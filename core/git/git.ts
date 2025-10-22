@@ -1198,7 +1198,7 @@ function rangeArg(range: RevisionRange): string | undefined {
 type FormatField = { kind: "skip" } | {
   kind: "string";
   optional?: boolean;
-  transform?(value: string, parent: Record<string, string>): unknown;
+  transform?: (value: string, parent: Record<string, string>) => unknown;
   format: string;
 } | {
   kind: "object";
@@ -1213,7 +1213,7 @@ type FormatFieldDescriptor<T> =
       | {
         kind: "string";
         format: string;
-        transform(value: string, parent: Record<string, string>): T;
+        transform: (value: string, parent: Record<string, string>) => T;
       }
       | (T extends string ? {
           kind: "string";
