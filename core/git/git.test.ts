@@ -68,12 +68,18 @@ Deno.test("git() keeps cwd with absolute path", async () => {
 });
 
 Deno.test("git() keeps cwd with relative path", async () => {
-  await using directory = await tempDirectory();
+  await using directory = await tempDirectory({ chdir: true });
   const repo = git({ cwd: "." });
-  assertEquals(resolve(repo.path()), resolve(directory.path()));
+  assertEquals(
+    await Deno.realPath(repo.path()),
+    await Deno.realPath(directory.path()),
+  );
   {
     const _ = await tempDirectory({ chdir: true });
-    assertEquals(resolve(repo.path()), resolve(directory.path()));
+    assertEquals(
+      await Deno.realPath(repo.path()),
+      await Deno.realPath(directory.path()),
+    );
   }
 });
 
