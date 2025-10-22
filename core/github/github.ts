@@ -331,8 +331,17 @@ function repository(
           );
       },
       async create(options) {
-        const head = options?.head ?? await git.branches.current();
-        assertExists(head, "Cannot determine current branch");
+        let head = options?.head;
+        if (head === undefined) {
+          const [branch, remote] = await Promise.all([
+            git.branches.current(),
+            git.remotes.get(),
+          ]);
+          head = branch?.push?.startsWith(remote.name)
+            ? branch.push.slice(remote.name.length + 1)
+            : branch?.name;
+        }
+        assertExists(head, "Cannot determine remote push branch");
         const base = options?.base ?? await git.remotes.defaultBranch();
         assertExists(base, "Cannot determine remote base branch");
         const commit = !options?.title

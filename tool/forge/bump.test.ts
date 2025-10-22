@@ -207,7 +207,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
     email: "bump-email",
   });
   assertExists(pr);
-  assertEquals(pr.base, current);
+  assertEquals(pr.base, current?.name);
   assertEquals(pr.head, `automated/bump-${pkg.name}`);
   assertEquals(pr.draft, false);
   assertEquals(pr.title, "chore: bump name to 1.3.0");
