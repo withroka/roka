@@ -73,15 +73,15 @@ export class GitError extends Error {
 /** A local repository returned by the {@linkcode git} function. */
 export interface Git {
   /** Returns the repository directory, with optional relative children. */
-  path: (...parts: string[]) => string;
+  path(...parts: string[]): string;
   /** Initializes a new git repository. */
-  init: (options?: InitOptions) => Promise<void>;
+  init(options?: InitOptions): Promise<void>;
   /** Clones a remote repository. */
-  clone: (url: string, options?: CloneOptions) => Promise<void>;
+  clone(url: string, options?: CloneOptions): Promise<void>;
   /** Config operations. */
   config: {
     /** Configures repository options. */
-    set: (config: Config) => Promise<void>;
+    set(config: Config): Promise<void>;
   };
   /** Branch operations. */
   branches: Branches;
@@ -100,51 +100,51 @@ export interface Git {
 /** Branch operations from {@linkcode Git.branches}. */
 export interface Branches {
   /** Returns the current branch name. */
-  current: () => Promise<string | undefined>;
+  current(): Promise<string | undefined>;
   /** List branches in the repository alphabetically. */
-  list: (options?: BranchListOptions) => Promise<string[]>;
+  list(options?: BranchListOptions): Promise<string[]>;
   /** Switches to a commit, or an existing or new branch. */
-  checkout: (options?: BranchCheckoutOptions) => Promise<void>;
+  checkout(options?: BranchCheckoutOptions): Promise<void>;
   /** Creates a branch. */
-  create: (name: string) => Promise<void>;
+  create(name: string): Promise<void>;
   /** Deletes a branch. */
-  delete: (name: string, options?: BranchDeleteOptions) => Promise<void>;
+  delete(name: string, options?: BranchDeleteOptions): Promise<void>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
 export interface Ignore {
   /** Checks paths against gitignore list and returns the ignored patterns. */
-  check: (
+  check(
     paths: string | string[],
     options?: IgnoreCheckOptions,
-  ) => Promise<string[]>;
+  ): Promise<string[]>;
 }
 
 /** Index operations from {@linkcode Git.index}. */
 export interface Index {
   /** Stages files for commit. */
-  add: (path: string | string[], options?: IndexAddOptions) => Promise<void>;
+  add(path: string | string[], options?: IndexAddOptions): Promise<void>;
   /** Removes files from the index. */
-  remove: (
+  remove(
     path: string | string[],
     options?: IndexRemoveOptions,
-  ) => Promise<void>;
+  ): Promise<void>;
   /** Returns the status of the index and the local working tree. */
-  status: (options?: IndexStatusOptions) => Promise<Status>;
+  status(options?: IndexStatusOptions): Promise<Status>;
 }
 
 /** Commit operations from {@linkcode Git.commits}. */
 export interface Commits {
   /** Creates a new commit in the repository. */
-  create: (summary: string, options?: CommitCreateOptions) => Promise<Commit>;
+  create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
   /** Returns the commit at the tip of `HEAD`. */
-  head: () => Promise<Commit>;
+  head(): Promise<Commit>;
   /** Returns the history of commits in the repository. */
-  log: (options?: CommitLogOptions) => Promise<Commit[]>;
+  log(options?: CommitLogOptions): Promise<Commit[]>;
   /** Pushes commits to a remote. */
-  push: (options?: CommitPushOptions) => Promise<void>;
+  push(options?: CommitPushOptions): Promise<void>;
   /** Pulls commits and tags from a remote. */
-  pull: (options?: CommitPullOptions) => Promise<void>;
+  pull(options?: CommitPullOptions): Promise<void>;
 }
 
 /** Tag operations from {@linkcode Git.tags}. */
@@ -154,7 +154,7 @@ export interface Tags {
   /** Lists all tags in the repository. */
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Pushes a tag to a remote. */
-  push: (tag: Tag | string, options?: TagPushOptions) => Promise<void>;
+  push(tag: Tag | string, options?: TagPushOptions): Promise<void>;
 }
 
 /**
@@ -164,11 +164,11 @@ export interface Tags {
  */
 export interface Remotes {
   /** Returns the remote repository URL. */
-  get: (name?: string) => Promise<Remote>;
+  get(name?: string): Promise<Remote>;
   /** Adds a remote to the repository. */
-  add: (url: string, name?: string) => Promise<Remote>;
+  add(url: string, name?: string): Promise<Remote>;
   /** Queries the default branch on the remote. */
-  defaultBranch: (name?: string) => Promise<string | undefined>;
+  defaultBranch(name?: string): Promise<string | undefined>;
 }
 
 /** Configuration for a git repository. */
@@ -1257,7 +1257,7 @@ const LOG_FORMAT: FormatDescriptor<Commit> = {
       kind: "string",
       format: "%b%H%(trailers)",
       optional: true,
-      transform: (bodyAndTrailers: string, parent: Record<string, string>) => {
+      transform(bodyAndTrailers: string, parent: Record<string, string>) {
         const hash = parent["hash"];
         assertExists(hash, "Cannot parse git output");
         let [body, trailers] = bodyAndTrailers.split(hash, 2);
@@ -1271,7 +1271,7 @@ const LOG_FORMAT: FormatDescriptor<Commit> = {
     trailers: {
       kind: "string",
       format: "%(trailers:only=true,unfold=true,key_value_separator=: )",
-      transform: (trailers: string) => {
+      transform(trailers: string) {
         return trailers.split("\n").reduce((trailers, line) => {
           const [key, value] = line.split(": ", 2);
           if (key) trailers[key.trim()] = value?.trim() || "";
@@ -1328,7 +1328,7 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
       kind: "string",
       optional: true,
       format: "%(if)%(object)%(then)%(body)%(else)%00%(end)",
-      transform: (body: string) => {
+      transform(body: string) {
         body = body.trimEnd();
         return body || undefined;
       },
