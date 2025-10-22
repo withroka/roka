@@ -2,7 +2,7 @@
  * A library for running Deno commands.
  *
  * This package provides the {@linkcode deno} function for running
- * [`deno`](https://docs.deno.com/runtime/) commands.
+ * {@link https://docs.deno.com/runtime/ deno} commands.
  *
  * ```ts
  * import { deno } from "@roka/deno";
