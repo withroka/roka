@@ -6,8 +6,7 @@ import {
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
-import { resolve } from "@std/path";
-import { basename } from "node:path";
+import { basename, resolve } from "@std/path";
 import { git, GitError } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
