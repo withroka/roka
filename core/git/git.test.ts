@@ -1620,6 +1620,30 @@ Deno.test("git().diff.patch() generates patch", async () => {
   ]);
 });
 
+Deno.test("git().diff.patch() generates patch for file with whitespace in name", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file with spaces"), "old content\n");
+  await repo.index.add("file with spaces");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file with spaces"), "new content\n");
+  assertEquals(await repo.diff.patch(), [
+    {
+      path: "file with spaces",
+      status: "modified",
+      mode: { new: 0o100644 },
+      hunks: [
+        {
+          line: { old: 1, new: 1 },
+          lines: [
+            { type: "deleted", content: "old content" },
+            { type: "added", content: "new content" },
+          ],
+        },
+      ],
+    },
+  ]);
+});
+
 Deno.test("git().diff.patch() generates patch with multiple hunks", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
