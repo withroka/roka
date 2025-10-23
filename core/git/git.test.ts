@@ -1319,7 +1319,7 @@ Deno.test("git().diff.status({ renames }) can ignore renames", async () => {
   ]);
 });
 
-Deno.test("git().diff.status({ staged }) can detect copies", async () => {
+Deno.test("git().diff.status({ copies }) can detect copies", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("source.file"), "content");
   await repo.index.add("source.file");
