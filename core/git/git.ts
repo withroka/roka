@@ -1182,7 +1182,7 @@ export function git(options?: GitOptions): Git {
         const entries = output.split("\0").filter((x) => x);
         const statuses: TrackedPathStatus[] = [];
         let rename: string | undefined = undefined;
-        let status: TrackedPathStatus["status"] | undefined = undefined;
+        let status: Patch["status"] | undefined = undefined;
         for (
           const [entry, next] of slidingWindows(entries, 2, { partial: true })
         ) {
@@ -1566,7 +1566,7 @@ function rangeArg(range: RevisionRange | undefined): string | undefined {
   return `${from}${range.symmetric ? "..." : ".."}${to ?? "HEAD"}`;
 }
 
-function statusKind(code: string): TrackedPathStatus["status"] {
+function statusKind(code: string): Patch["status"] {
   switch (code[0]) {
     case "M":
       return "modified";
