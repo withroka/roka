@@ -56,7 +56,7 @@ export interface TempRepositoryOptions {
   config?: Config;
   /**
    * Automatically changes the current working directory to the
-   * temporary directory and restores it when disposed.
+   * temporary repository directory and restores it when disposed.
    *
    * @default {false}
    */
