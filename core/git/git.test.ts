@@ -100,8 +100,8 @@ Deno.test("git().init({ branch }) creates a repo with initial branch", async () 
 
 Deno.test("git().clone() clones a repo", async () => {
   await using remote = await tempRepository();
-  await remote.commits.create("first", { allowEmpty: true });
-  await remote.commits.create("second", { allowEmpty: true });
+  await remote.commits.create("commit1", { allowEmpty: true });
+  await remote.commits.create("commit2", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).clone(remote.path());
   assertEquals(repo.path(), directory.path(basename(remote.path())));
@@ -110,8 +110,8 @@ Deno.test("git().clone() clones a repo", async () => {
 
 Deno.test("git().clone({ directory }) clones into specified directory", async () => {
   await using remote = await tempRepository();
-  await remote.commits.create("first", { allowEmpty: true });
-  await remote.commits.create("second", { allowEmpty: true });
+  await remote.commits.create("commit1", { allowEmpty: true });
+  await remote.commits.create("commit2", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).clone(remote.path(), {
     directory: "directory",
@@ -122,8 +122,8 @@ Deno.test("git().clone({ directory }) clones into specified directory", async ()
 
 Deno.test("git().clone({ directory }) rejects non-empty directory", async () => {
   await using remote = await tempRepository();
-  await remote.commits.create("first", { allowEmpty: true });
-  await remote.commits.create("second", { allowEmpty: true });
+  await remote.commits.create("commit1", { allowEmpty: true });
+  await remote.commits.create("commit2", { allowEmpty: true });
   await using directory = await tempDirectory();
   await Deno.mkdir(directory.path("directory"));
   await Deno.writeTextFile(directory.path("directory/file.txt"), "content");
@@ -149,8 +149,8 @@ Deno.test("git().clone({ remote }) clones a repo with remote name", async () => 
 
 Deno.test("git().clone({ branch }) checks out a branch", async () => {
   await using remote = await tempRepository();
-  const target = await remote.commits.create("first", { allowEmpty: true });
-  await remote.commits.create("second", { allowEmpty: true });
+  const target = await remote.commits.create("commit1", { allowEmpty: true });
+  await remote.commits.create("commit2", { allowEmpty: true });
   await remote.branches.checkout({ target, new: "branch" });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).clone(remote.path(), {
@@ -161,9 +161,9 @@ Deno.test("git().clone({ branch }) checks out a branch", async () => {
 
 Deno.test("git().clone({ depth }) makes a shallow copy", async () => {
   await using remote = await tempRepository();
-  await remote.commits.create("first", { allowEmpty: true });
-  await remote.commits.create("second", { allowEmpty: true });
-  const third = await remote.commits.create("third", { allowEmpty: true });
+  await remote.commits.create("commit1", { allowEmpty: true });
+  await remote.commits.create("commit2", { allowEmpty: true });
+  const third = await remote.commits.create("commit3", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).clone(remote.path(), {
     depth: 1,
@@ -175,10 +175,10 @@ Deno.test("git().clone({ depth }) makes a shallow copy", async () => {
 Deno.test("git().clone({ depth }) can make a shallow copy of multiple branches", async () => {
   await using remote = await tempRepository();
   await remote.branches.checkout({ new: "branch1" });
-  const first = await remote.commits.create("first", { allowEmpty: true });
+  const first = await remote.commits.create("commit1", { allowEmpty: true });
   await remote.branches.checkout({ new: "branch2" });
-  await remote.commits.create("second", { allowEmpty: true });
-  const third = await remote.commits.create("third", { allowEmpty: true });
+  await remote.commits.create("commit2", { allowEmpty: true });
+  const third = await remote.commits.create("commit3", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).clone(remote.path(), {
     branch: "branch1",
@@ -206,12 +206,12 @@ Deno.test("git().clone({ local }) is no-op for local remote", async () => {
 Deno.test("git().clone({ singleBranch }) copies a single branch", async () => {
   await using remote = await tempRepository();
   await remote.branches.checkout({ new: "branch1" });
-  const first = await remote.commits.create("first", { allowEmpty: true });
-  const second = await remote.commits.create("second", {
+  const first = await remote.commits.create("commit1", { allowEmpty: true });
+  const second = await remote.commits.create("commit2", {
     allowEmpty: true,
   });
   await remote.branches.checkout({ new: "branch2" });
-  await remote.commits.create("third", { allowEmpty: true });
+  await remote.commits.create("commit3", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).clone(remote.path(), {
     branch: "branch1",
@@ -351,9 +351,9 @@ Deno.test("git().branches.list({ contains }) returns branches that contain commi
   await using repo = await tempRepository({
     config: { init: { defaultBranch: "main" } },
   });
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   await repo.branches.create("branch1");
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   await repo.branches.create("branch2");
   assertEquals(await repo.branches.list({ contains: commit1 }), [
     { name: "branch1", commit: commit1 },
@@ -368,11 +368,11 @@ Deno.test("git().branches.list({ contains }) returns branches that contain commi
 
 Deno.test("git().branches.list() returns branches that do not contain commit", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   await repo.branches.create("branch1");
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   await repo.branches.create("branch2");
-  await repo.commits.create("third", { allowEmpty: true });
+  await repo.commits.create("commit3", { allowEmpty: true });
   assertEquals(await repo.branches.list({ noContains: commit1 }), []);
   assertEquals(await repo.branches.list({ noContains: commit2 }), [
     { name: "branch1", commit: commit1 },
@@ -381,11 +381,11 @@ Deno.test("git().branches.list() returns branches that do not contain commit", a
 
 Deno.test("git().branches.list({ pointsAt }) returns branches that point to a commit", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   await repo.branches.create("branch1");
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   await repo.branches.create("branch2");
-  await repo.commits.create("third", { allowEmpty: true });
+  await repo.commits.create("commit3", { allowEmpty: true });
   assertEquals(await repo.branches.list({ pointsAt: commit1 }), [
     { name: "branch1", commit: commit1 },
   ]);
@@ -406,9 +406,9 @@ Deno.test("git().branches.checkout({ target }) can switch to branch", async () =
   await using repo = await tempRepository({
     config: { init: { defaultBranch: "main" } },
   });
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   await repo.branches.checkout({ new: "branch" });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   assertEquals(
     await repo.branches.current(),
     { name: "branch", commit: commit2 },
@@ -430,12 +430,12 @@ Deno.test("git().branches.checkout({ target }) can switch to branch", async () =
 
 Deno.test("git().branches.checkout({ target }) can switch to commit", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   await repo.branches.checkout({ target: commit1 });
   assertEquals(await repo.branches.current(), undefined);
   assertEquals(await repo.commits.log(), [commit1]);
   await repo.branches.checkout({ new: "branch" });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   await repo.branches.checkout({ target: commit1 });
   assertEquals(await repo.branches.current(), undefined);
   assertEquals(await repo.commits.log(), [commit1]);
@@ -682,11 +682,85 @@ Deno.test("git().index.add({ executable }) can add file as non-executable", asyn
   assertEquals((stat.mode ?? 0) & 0o111, 0o000);
 });
 
+Deno.test("git().index.move() moves files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await repo.index.move("old.file", "file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "renamed", from: "old.file" },
+  ]);
+});
+
+Deno.test("git().index.move() can move multiple files into a directory", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await Deno.mkdir(repo.path("directory"));
+  await repo.index.add(["file1", "file2"]);
+  await repo.commits.create("commit");
+  await repo.index.move(["file1", "file2"], "directory");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "directory/file1", status: "renamed", from: "file1" },
+    { path: "directory/file2", status: "renamed", from: "file2" },
+  ]);
+});
+
+Deno.test("git().index.move() rejects missing destination if moving multiple files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commits.create("commit");
+  await assertRejects(
+    () => repo.index.move(["file1", "file2"], "directory"),
+    GitError,
+    "not a directory",
+  );
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move() rejects non-existent source file", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(() => repo.index.move("old.file", "file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move() rejects untracked source file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await assertRejects(() => repo.index.move("old.file", "file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move() rejects existing destination file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await assertRejects(() => repo.index.move("old.file", "file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move({ force }) can overwrite existing destination file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await repo.index.move("old.file", "file", { force: true });
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "renamed", from: "old.file" },
+  ]);
+});
+
 Deno.test("git().index.remove() removes files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commits.create("first");
+  await repo.commits.create("commit");
   await repo.index.remove("file");
   assertEquals((await repo.index.status()).staged, [
     { path: "file", status: "deleted" },
@@ -782,9 +856,7 @@ Deno.test("git().index.status() lists staged renamed file", async () => {
   await Deno.writeTextFile(repo.path("old.file"), "content");
   await repo.index.add("old.file");
   await repo.commits.create("commit");
-  await Deno.rename(repo.path("old.file"), repo.path("file"));
-  await repo.index.add("file");
-  await repo.index.remove("old.file");
+  await repo.index.move("old.file", "file");
   assertEquals(await repo.index.status(), {
     staged: [{ path: "file", status: "renamed", from: "old.file" }],
     unstaged: [],
@@ -900,9 +972,7 @@ Deno.test("git().index.status({ renames }) can ignore renames", async () => {
   await Deno.writeTextFile(repo.path("old.file"), "content");
   await repo.index.add("old.file");
   await repo.commits.create("commit");
-  await Deno.rename(repo.path("old.file"), repo.path("file"));
-  await repo.index.add("file");
-  await repo.index.remove("old.file");
+  await repo.index.move("old.file", "file");
   assertEquals(
     await repo.index.status({ renames: true }),
     {
@@ -1096,19 +1166,18 @@ Deno.test("git().diff.status() does not list staged deleted file", async () => {
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commits.create("commit");
-  await Deno.remove(repo.path("file"));
   await repo.index.remove("file");
   assertEquals(await repo.diff.status(), []);
 });
 
 Deno.test("git().diff.status({ path }) filters by path", async () => {
   await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file1"), "content1");
-  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await Deno.writeTextFile(repo.path("file2"), "content");
   await repo.index.add(["file1", "file2"]);
   await repo.commits.create("commit");
-  await Deno.writeTextFile(repo.path("file1"), "modified content1");
-  await Deno.writeTextFile(repo.path("file2"), "modified content2");
+  await Deno.writeTextFile(repo.path("file1"), "modified content");
+  await Deno.writeTextFile(repo.path("file2"), "modified content");
   assertEquals(await repo.diff.status({ path: "file1" }), [
     { path: "file1", status: "modified" },
   ]);
@@ -1188,7 +1257,6 @@ Deno.test("git().diff.status({ staged }) lists staged deleted file", async () =>
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commits.create("commit");
-  await Deno.remove(repo.path("file"));
   await repo.index.remove("file");
   assertEquals(await repo.diff.status({ staged: true }), [
     { path: "file", status: "deleted" },
@@ -1209,9 +1277,7 @@ Deno.test("git().diff.status({ staged }) lists renamed file", async () => {
   await Deno.writeTextFile(repo.path("old.file"), "content");
   await repo.index.add("old.file");
   await repo.commits.create("commit");
-  await Deno.rename(repo.path("old.file"), repo.path("file"));
-  await repo.index.add("file");
-  await repo.index.remove("old.file");
+  await repo.index.move("old.file", "file");
   assertEquals(await repo.diff.status({ staged: true }), [
     { path: "file", status: "renamed", from: "old.file" },
   ]);
@@ -1222,9 +1288,7 @@ Deno.test("git().diff.status({ renames }) can ignore renames", async () => {
   await Deno.writeTextFile(repo.path("old.file"), "content");
   await repo.index.add("old.file");
   await repo.commits.create("commit");
-  await Deno.rename(repo.path("old.file"), repo.path("file"));
-  await repo.index.add("file");
-  await repo.index.remove("old.file");
+  await repo.index.move("old.file", "file");
   assertEquals(await repo.diff.status({ staged: true, renames: true }), [
     { path: "file", status: "renamed", from: "old.file" },
   ]);
@@ -1302,10 +1366,8 @@ Deno.test("git().diff.status({ target }) lists deleted files since commit", asyn
   await Deno.writeTextFile(repo.path("unstaged"), "content");
   await repo.index.add(["committed", "staged", "unstaged"]);
   const commit = await repo.commits.create("commit");
-  await Deno.remove(repo.path("committed"));
   await repo.index.remove("committed");
   await repo.commits.create("commit");
-  await Deno.remove(repo.path("staged"));
   await repo.index.remove("staged");
   await Deno.remove(repo.path("unstaged"));
   assertEquals(await repo.diff.status({ target: commit }), [
@@ -1321,19 +1383,9 @@ Deno.test("git().diff.status({ target }) lists renamed files since commit", asyn
   await Deno.writeTextFile(repo.path("old.staged.file"), "staged content");
   await repo.index.add(["old.comitted.file", "old.staged.file"]);
   const commit = await repo.commits.create("commit");
-  await Deno.rename(
-    repo.path("old.comitted.file"),
-    repo.path("new.comitted.file"),
-  );
-  await repo.index.add("new.comitted.file");
-  await repo.index.remove("old.comitted.file");
+  await repo.index.move("old.comitted.file", "new.comitted.file");
   await repo.commits.create("commit");
-  await Deno.rename(
-    repo.path("old.staged.file"),
-    repo.path("new.staged.file"),
-  );
-  await repo.index.add("new.staged.file");
-  await repo.index.remove("old.staged.file");
+  await repo.index.move("old.staged.file", "new.staged.file");
   assertEquals(await repo.diff.status({ target: commit }), [
     { path: "new.comitted.file", status: "renamed", from: "old.comitted.file" },
     { path: "new.staged.file", status: "renamed", from: "old.staged.file" },
@@ -1349,7 +1401,6 @@ Deno.test("git().diff.status({ range }) lists files changed in range", async () 
   await Deno.writeTextFile(repo.path("file"), "new content");
   await repo.index.add("file");
   const commit3 = await repo.commits.create("commit");
-  await Deno.remove(repo.path("file"));
   await repo.index.remove("file");
   const commit4 = await repo.commits.create("commit");
   assertEquals(
@@ -1526,9 +1577,7 @@ Deno.test("git().diff.patch() generates patch for renamed file", async () => {
   await Deno.writeTextFile(repo.path("old.file"), "content\n");
   await repo.index.add("old.file");
   await repo.commits.create("commit");
-  await Deno.rename(repo.path("old.file"), repo.path("file"));
-  await repo.index.add("file");
-  await repo.index.remove("old.file");
+  await repo.index.move("old.file", "file");
   assertEquals(await repo.diff.patch({ staged: true }), [
     {
       from: "old.file",
@@ -1543,9 +1592,7 @@ Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
   await Deno.writeTextFile(repo.path("old.file"), "content\n");
   await repo.index.add("old.file");
   await repo.commits.create("commit");
-  await Deno.rename(repo.path("old.file"), repo.path("file"));
-  await repo.index.add("file");
-  await repo.index.remove("old.file");
+  await repo.index.move("old.file", "file");
   assertEquals(
     await repo.diff.patch({ staged: true, renames: true }),
     [
@@ -1808,10 +1855,10 @@ Deno.test("git().commits.create({ trailers }) can create a commit with body and 
 
 Deno.test("git().commits.create() can automatically add files", async () => {
   await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content1");
+  await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commits.create("commit");
-  await Deno.writeTextFile(repo.path("file"), "content2");
+  await Deno.writeTextFile(repo.path("file"), "new content");
   const commit = await repo.commits.create("commit", { all: true });
   assertEquals(await repo.commits.head(), commit);
 });
@@ -1886,8 +1933,8 @@ Deno.test("git().commits.head() rejects empty repo", async () => {
 
 Deno.test("git().commits.head() returns head tip", async () => {
   await using repo = await tempRepository();
-  await repo.commits.create("first", { allowEmpty: true });
-  const commit = await repo.commits.create("second", { allowEmpty: true });
+  await repo.commits.create("commit1", { allowEmpty: true });
+  const commit = await repo.commits.create("commit2", { allowEmpty: true });
   assertEquals(await repo.commits.head(), commit);
 });
 
@@ -1904,8 +1951,8 @@ Deno.test("git().commits.log() returns single commit", async () => {
 
 Deno.test("git().commits.log() returns multiple commits", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   assertEquals(await repo.commits.log(), [commit2, commit1]);
 });
 
@@ -1937,16 +1984,16 @@ Deno.test("git().commits.log() can work with custom trailer separator", async ()
 
 Deno.test("git().commits.log({ maxCount }) limits number of commits", async () => {
   await using repo = await tempRepository();
-  await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("third", { allowEmpty: true });
+  await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
+  const commit3 = await repo.commits.create("commit3", { allowEmpty: true });
   assertEquals(await repo.commits.log({ maxCount: 2 }), [commit3, commit2]);
 });
 
 Deno.test("git().commits.log({ skip }) skips a number of commits", async () => {
   await using repo = await tempRepository();
-  const commit = await repo.commits.create("first", { allowEmpty: true });
-  await repo.commits.create("second", { allowEmpty: true });
+  const commit = await repo.commits.create("commit1", { allowEmpty: true });
+  await repo.commits.create("commit2", { allowEmpty: true });
   assertEquals(await repo.commits.log({ skip: 1, maxCount: 1 }), [commit]);
 });
 
@@ -1954,10 +2001,10 @@ Deno.test("git().commits.log({ path }) returns changes to a file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content");
   await repo.index.add("file1");
-  const commit1 = await repo.commits.create("first");
+  const commit1 = await repo.commits.create("commit1");
   await Deno.writeTextFile(repo.path("file2"), "content");
   await repo.index.add("file2");
-  const commit2 = await repo.commits.create("second");
+  const commit2 = await repo.commits.create("commit2");
   assertEquals(await repo.commits.log({ path: "file1" }), [commit1]);
   assertEquals(await repo.commits.log({ path: ["file1"] }), [commit1]);
   assertEquals(await repo.commits.log({ path: "file2" }), [commit2]);
@@ -1971,10 +2018,10 @@ Deno.test("git().commits.log({ text }) returns blame", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
-  const commit1 = await repo.commits.create("first");
+  const commit1 = await repo.commits.create("commit1");
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
-  const commit2 = await repo.commits.create("second");
+  const commit2 = await repo.commits.create("commit2");
   assertEquals(await repo.commits.log({ text: "content1" }), [commit1]);
   assertEquals(await repo.commits.log({ text: "content2" }), [commit2]);
 });
@@ -1983,10 +2030,10 @@ Deno.test("git().commits.log({ text }) returns blame from multiple files", async
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
-  const commit1 = await repo.commits.create("first");
+  const commit1 = await repo.commits.create("commit1");
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
-  const commit2 = await repo.commits.create("second");
+  const commit2 = await repo.commits.create("commit2");
   assertEquals(await repo.commits.log({ text: "content" }), [commit2, commit1]);
 });
 
@@ -1994,10 +2041,10 @@ Deno.test("git().commits.log({ text }) returns blame from specific file", async 
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
-  const commit1 = await repo.commits.create("first");
+  const commit1 = await repo.commits.create("commit1");
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
-  const commit2 = await repo.commits.create("second");
+  const commit2 = await repo.commits.create("commit2");
   assertEquals(await repo.commits.log({ path: ["file1"], text: "content" }), [
     commit1,
   ]);
@@ -2010,10 +2057,10 @@ Deno.test("git().commits.log({ text }) can match extended regexp", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
-  const commit1 = await repo.commits.create("first");
+  const commit1 = await repo.commits.create("commit1");
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
-  const commit2 = await repo.commits.create("second");
+  const commit2 = await repo.commits.create("commit2");
   assertEquals(await repo.commits.log({ text: "content[12]" }), [
     commit2,
     commit1,
@@ -2023,16 +2070,16 @@ Deno.test("git().commits.log({ text }) can match extended regexp", async () => {
 
 Deno.test("git().commits.log({ range }) returns commit descendants", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   assertEquals(await repo.commits.log({ range: { from: commit1 } }), [commit2]);
 });
 
 Deno.test("git().commits.log({ range }) returns commit ancestors", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
-  await repo.commits.create("third", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
+  await repo.commits.create("commit3", { allowEmpty: true });
   assertEquals(await repo.commits.log({ range: { to: commit2 } }), [
     commit2,
     commit1,
@@ -2041,10 +2088,10 @@ Deno.test("git().commits.log({ range }) returns commit ancestors", async () => {
 
 Deno.test("git().commits.log({ range }) returns commit range", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("third", { allowEmpty: true });
-  await repo.commits.create("third", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
+  const commit3 = await repo.commits.create("commit3", { allowEmpty: true });
+  await repo.commits.create("commit3", { allowEmpty: true });
   assertEquals(
     await repo.commits.log({ range: { from: commit1, to: commit3 } }),
     [
@@ -2056,10 +2103,10 @@ Deno.test("git().commits.log({ range }) returns commit range", async () => {
 
 Deno.test("git().commits.log({ range }) interprets range as asymmetric", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("third", { allowEmpty: true });
-  await repo.commits.create("fourth", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  await repo.commits.create("commit2", { allowEmpty: true });
+  const commit3 = await repo.commits.create("commit3", { allowEmpty: true });
+  await repo.commits.create("commit4", { allowEmpty: true });
   assertEquals(
     await repo.commits.log({ range: { from: commit3, to: commit1 } }),
     [],
@@ -2068,10 +2115,10 @@ Deno.test("git().commits.log({ range }) interprets range as asymmetric", async (
 
 Deno.test("git().commits.log({ range }) returns symmetric commit range", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("third", { allowEmpty: true });
-  await repo.commits.create("third", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
+  const commit3 = await repo.commits.create("commit3", { allowEmpty: true });
+  await repo.commits.create("commit3", { allowEmpty: true });
   assertEquals(
     await repo.commits.log({
       range: { from: commit3, to: commit1, symmetric: true },
@@ -2085,9 +2132,9 @@ Deno.test("git().commits.log({ range }) returns symmetric commit range", async (
 
 Deno.test("git().commits.log({ range }) ignores empty range", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
-  const commit3 = await repo.commits.create("third", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
+  const commit3 = await repo.commits.create("commit3", { allowEmpty: true });
   assertEquals(
     await repo.commits.log({ range: {} }),
     [
@@ -2100,11 +2147,11 @@ Deno.test("git().commits.log({ range }) ignores empty range", async () => {
 
 Deno.test("git().commits.log({ author }) filters by author", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", {
+  const commit1 = await repo.commits.create("commit1", {
     author: { name: "name1", email: "email1@example.com" },
     allowEmpty: true,
   });
-  const commit2 = await repo.commits.create("second", {
+  const commit2 = await repo.commits.create("commit2", {
     author: { name: "name2", email: "email2@example.com" },
     allowEmpty: true,
   });
@@ -2129,14 +2176,14 @@ Deno.test("git().commits.log({ committer }) filters by committer", {
   await repo.config.set({
     user: { name: "name1", email: "email1@example.com" },
   });
-  const commit1 = await repo.commits.create("first", {
+  const commit1 = await repo.commits.create("commit1", {
     author: { name: "other", email: "other@example.com" },
     allowEmpty: true,
   });
   await repo.config.set({
     user: { name: "name2", email: "email2@example.com" },
   });
-  const commit2 = await repo.commits.create("second", {
+  const commit2 = await repo.commits.create("commit2", {
     author: { name: "other", email: "other@example.com" },
     allowEmpty: true,
   });
@@ -2153,8 +2200,8 @@ Deno.test("git().commits.log({ committer }) filters by committer", {
 Deno.test("git().commits.push() pushes commits to remote", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   await repo.commits.push();
   assertEquals(await remote.commits.log(), [commit2, commit1]);
 });
@@ -2183,8 +2230,8 @@ Deno.test("git().commits.push() rejects unsynced push", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo1 = await tempRepository({ clone: remote });
   await using repo2 = await tempRepository({ clone: remote });
-  await repo1.commits.create("first", { allowEmpty: true });
-  await repo2.commits.create("second", { allowEmpty: true });
+  await repo1.commits.create("commit1", { allowEmpty: true });
+  await repo2.commits.create("commit2", { allowEmpty: true });
   await repo1.commits.push();
   await assertRejects(() => repo2.commits.push(), GitError);
 });
@@ -2193,8 +2240,8 @@ Deno.test("git().commits.push({ force }) force pushes", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo1 = await tempRepository({ clone: remote });
   await using repo2 = await tempRepository({ clone: remote });
-  await repo1.commits.create("first", { allowEmpty: true });
-  const commit2 = await repo2.commits.create("second", { allowEmpty: true });
+  await repo1.commits.create("commit1", { allowEmpty: true });
+  const commit2 = await repo2.commits.create("commit2", { allowEmpty: true });
   await repo1.commits.push();
   await repo2.commits.push({ force: true });
   assertEquals(await remote.commits.log(), [commit2]);
@@ -2235,7 +2282,7 @@ Deno.test("git().commits.pull() does not fetch all tags", async () => {
   await other.commits.push();
   await other.tags.push(tag1);
   await other.branches.checkout({ new: "branch" });
-  await other.commits.create("second", { allowEmpty: true });
+  await other.commits.create("commit2", { allowEmpty: true });
   const tag2 = await other.tags.create("tag2");
   await other.tags.push(tag2);
   await repo.commits.pull();
@@ -2265,7 +2312,7 @@ Deno.test("git().commits.pull({ tags }) can fetch all tags", async () => {
   await other.commits.push();
   await other.tags.push(tag1);
   await other.branches.checkout({ new: "branch" });
-  await other.commits.create("second", { allowEmpty: true });
+  await other.commits.create("commit2", { allowEmpty: true });
   const tag2 = await other.tags.create("tag2");
   await other.tags.push(tag2);
   await repo.commits.pull({ tags: true });
@@ -2356,9 +2403,9 @@ Deno.test("git().tags.create({ target }) can create a tag with another tag", asy
 
 Deno.test("git().tags.create({ force }) can force move a tag", async () => {
   await using repo = await tempRepository();
-  await repo.commits.create("first", { allowEmpty: true });
+  await repo.commits.create("commit1", { allowEmpty: true });
   await repo.tags.create("tag");
-  await repo.commits.create("second", { allowEmpty: true });
+  await repo.commits.create("commit2", { allowEmpty: true });
   await repo.tags.create("tag", { force: true });
 });
 
@@ -2444,9 +2491,9 @@ Deno.test("git().tags.list({ name }) can match tag pattern", async () => {
 
 Deno.test("git().tags.list() returns tags that contain commit", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   const tag1 = await repo.tags.create("tag1");
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   const tag2 = await repo.tags.create("tag2");
   assertEquals(await repo.tags.list({ contains: commit1 }), [tag1, tag2]);
   assertEquals(await repo.tags.list({ contains: commit2 }), [tag2]);
@@ -2454,9 +2501,9 @@ Deno.test("git().tags.list() returns tags that contain commit", async () => {
 
 Deno.test("git().tags.list({ noContains }) returns tags that do not contain commit", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   const tag1 = await repo.tags.create("tag1");
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   await repo.tags.create("tag2");
   assertEquals(await repo.tags.list({ noContains: commit1 }), []);
   assertEquals(await repo.tags.list({ noContains: commit2 }), [tag1]);
@@ -2464,9 +2511,9 @@ Deno.test("git().tags.list({ noContains }) returns tags that do not contain comm
 
 Deno.test("git().tags.list({ pointsAt }) returns tags that point to a commit", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commits.create("first", { allowEmpty: true });
+  const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   const tag1 = await repo.tags.create("tag1");
-  const commit2 = await repo.commits.create("second", { allowEmpty: true });
+  const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
   const tag2 = await repo.tags.create("tag2", { subject: "subject" });
   assertEquals(await repo.tags.list({ pointsAt: commit1 }), [tag1]);
   assertEquals(await repo.tags.list({ pointsAt: commit2 }), [tag2]);
@@ -2550,9 +2597,9 @@ Deno.test("git().remotes.defaultBranch() returns remote default branch", async (
 
 Deno.test("git().remotes.defaultBranch() detects detached remote head", async () => {
   await using remote = await tempRepository();
-  await remote.commits.create("first", { allowEmpty: true });
+  await remote.commits.create("commit1", { allowEmpty: true });
   await remote.branches.checkout({ detach: true });
-  await remote.commits.create("second", { allowEmpty: true });
+  await remote.commits.create("commit2", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   assertEquals(await repo.remotes.defaultBranch(), undefined);
 });

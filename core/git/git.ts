@@ -36,7 +36,6 @@
  * @todo Add `git().branches.copy()`
  * @todo Add `git().branches.move()`
  * @todo Add `git().branches.track()`
- * @todo Add `git().index.move()`
  * @todo Handle merges, rebases, conflicts.
  * @todo Handle submodules.
  * @todo Expose dates.
@@ -131,9 +130,15 @@ export interface Ignore {
 
 /** Index operations from {@linkcode Git.index}. */
 export interface Index {
-  /** Stages files for commit. */
+  /** Add file contents to the index. */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
-  /** Removes files from the index. */
+  /** Move or rename a file, a directory, or a symlink. */
+  move(
+    source: string | string[],
+    destination: string,
+    options?: IndexMoveOptions,
+  ): Promise<void>;
+  /** Removes files or directories from the working tree and index. */
   remove(
     path: string | string[],
     options?: IndexRemoveOptions,
@@ -543,6 +548,15 @@ export interface IndexAddOptions {
    * is set to the given value.
    */
   executable?: boolean;
+}
+
+/** Options for the {@linkcode Index.move} function. */
+export interface IndexMoveOptions {
+  /**
+   * Move files, even if the destination file already exists.
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode Index.remove} function. */
@@ -1033,6 +1047,15 @@ export function git(options?: GitOptions): Git {
           path,
           flag("--force", options?.force),
           flag(["--chmod=+x", "--chmod=-x"], options?.executable),
+        );
+      },
+      async move(source, destination, options?: IndexMoveOptions) {
+        await run(
+          gitOptions,
+          "mv",
+          source,
+          destination,
+          flag("--force", options?.force),
         );
       },
       async remove(path, options?: IndexRemoveOptions) {
