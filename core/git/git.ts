@@ -11,7 +11,7 @@
  *
  * All options adhere to default Git configurations and behaviors. If an option
  * is explicitly set, it will override any corresponding Git configuration.
- * Similarly, omitteds option can potentially be configured externally, even if
+ * Similarly, omitted option can potentially be configured externally, even if
  * a default is specified in the documentation.
  *
  * ```ts
