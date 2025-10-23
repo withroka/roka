@@ -1,7 +1,5 @@
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
-import { tempDirectory } from "@roka/fs/temp";
-import { git } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakeArgs, fakeConsole } from "@roka/testing/fake";
 import { basename, dirname, fromFileUrl, join } from "@std/path";
@@ -10,10 +8,11 @@ import { flow } from "./flow.ts";
 
 async function run(context: Deno.TestContext) {
   await using remote = await tempRepository();
-  await remote.commits.create("commit", { allowEmpty: true });
-  await using directory = await tempDirectory({ chdir: true });
-  const repo = await git({ cwd: directory.path() })
-    .clone(remote.path(), { directory: "." });
+  await remote.commits.create("initial", { allowEmpty: true });
+  await using repo = await tempRepository({
+    clone: remote.path(),
+    chdir: true,
+  });
   const dataDirectory = join(
     dirname(fromFileUrl(context.origin)),
     "__testdata__",
@@ -21,7 +20,7 @@ async function run(context: Deno.TestContext) {
   const files = await Array.fromAsync(find([dataDirectory], { type: "file" }));
   await pool(
     files,
-    (path) => Deno.copyFile(path, basename(directory.path(path))),
+    (path) => Deno.copyFile(path, basename(repo.path(path))),
   );
   await repo.index.add(files.map((path) => basename(path)));
   await repo.commits.create("commit");
