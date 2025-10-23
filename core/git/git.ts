@@ -615,7 +615,7 @@ export interface CommitPullOptions
 /** Options for the {@linkcode Tags.create} function. */
 export interface TagCreateOptions extends SignOptions {
   /**
-   * Commit to tag.
+   * Target reference (commit, branch, or tag) to tag.
    * @default {"HEAD"}
    */
   target?: Commitish;
