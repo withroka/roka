@@ -598,7 +598,7 @@ export interface TagCreateOptions extends SignOptions {
    * Commit to tag.
    * @default {"HEAD"}
    */
-  commit?: Commitish;
+  target?: Commitish;
   /** Tag message subject. */
   subject?: string;
   /** Tag message body. */
@@ -1047,7 +1047,7 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           ["tag", name],
-          commitArg(options?.commit),
+          commitArg(options?.target),
           flag("-m", options?.subject),
           flag("-m", options?.body),
           flag("--force", options?.force),
