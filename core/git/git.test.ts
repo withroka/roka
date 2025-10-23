@@ -903,6 +903,17 @@ Deno.test("git().index.status({ renames }) can ignore renames", async () => {
   await Deno.rename(repo.path("old.file"), repo.path("file"));
   await repo.index.add("file");
   await repo.index.remove("old.file");
+  assertEquals(
+    await repo.index.status({ renames: true }),
+    {
+      staged: [
+        { from: "old.file", path: "file", status: "renamed" },
+      ],
+      unstaged: [],
+      untracked: [],
+      ignored: [],
+    },
+  );
   assertEquals(await repo.index.status({ renames: false }), {
     staged: [
       { path: "file", status: "added" },
@@ -1214,6 +1225,9 @@ Deno.test("git().diff.status({ renames }) can ignore renames", async () => {
   await Deno.rename(repo.path("old.file"), repo.path("file"));
   await repo.index.add("file");
   await repo.index.remove("old.file");
+  assertEquals(await repo.diff.status({ staged: true, renames: true }), [
+    { path: "file", status: "renamed", from: "old.file" },
+  ]);
   assertEquals(await repo.diff.status({ staged: true, renames: false }), [
     { path: "file", status: "added" },
     { path: "old.file", status: "deleted" },
@@ -1517,9 +1531,9 @@ Deno.test("git().diff.patch() generates patch for renamed file", async () => {
   await repo.index.remove("old.file");
   assertEquals(await repo.diff.patch({ staged: true }), [
     {
-      from: "rename from old.file",
+      from: "old.file",
+      path: "file",
       hunks: [],
-      path: "rename to file",
     },
   ]);
 });
@@ -1532,6 +1546,16 @@ Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
   await Deno.rename(repo.path("old.file"), repo.path("file"));
   await repo.index.add("file");
   await repo.index.remove("old.file");
+  assertEquals(
+    await repo.diff.patch({ staged: true, renames: true }),
+    [
+      {
+        path: "file",
+        from: "old.file",
+        hunks: [],
+      },
+    ],
+  );
   assertEquals(
     await repo.diff.patch({ staged: true, renames: false }),
     [
