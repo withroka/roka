@@ -279,7 +279,7 @@ function options(): DenoOptions {
 
 async function files(paths: string[]): Promise<string[]> {
   if (paths.length === 0) {
-    // determined modified directories if in a Git repository
+    // determine modified directories if in a Git repository
     const { value } = await maybe(async () => {
       const repo = git();
       const target = await repo.remotes.defaultBranch();
