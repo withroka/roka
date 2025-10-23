@@ -130,7 +130,7 @@ export interface Ignore {
 
 /** Index operations from {@linkcode Git.index}. */
 export interface Index {
-  /** Add file contents to the index. */
+  /** Stages files for commit. */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
   /** Move or rename a file, a directory, or a symlink. */
   move(
