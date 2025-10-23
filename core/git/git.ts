@@ -96,6 +96,8 @@ export interface Git {
   ignore: Ignore;
   /** Index (staged area) operations. */
   index: Index;
+  /** Difference (diff) operations. */
+  diff: Diff;
   /** Commit operations. */
   commits: Commits;
   /** Tag operations. */
@@ -138,6 +140,14 @@ export interface Index {
   ): Promise<void>;
   /** Returns the status of the index and the local working tree. */
   status(options?: IndexStatusOptions): Promise<Status>;
+}
+
+/** Difference operations from {@linkcode Git.diff}. */
+export interface Diff {
+  /** Returns the list of changed file paths with their status. */
+  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
+  /** Returns the patch text for changes. */
+  patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
 
 /** Commit operations from {@linkcode Git.commits}. */
@@ -279,6 +289,34 @@ export interface RenamedPathStatus {
 export interface UntrackedPathStatus {
   /** Path to the file. */
   path: string;
+}
+
+/** A patch for a file returned by the {@linkcode Diff.patch} function. */
+export interface Patch {
+  /** Path to the file. */
+  path: string;
+  /** Path to the file before rename, if renamed. */
+  from: string;
+  /** List of hunks in the patch. */
+  hunks: Hunk[];
+}
+
+/** A single hunk in a patch returned by the {@linkcode Diff.patch} function. */
+export interface Hunk {
+  /** Line location of the hunk. */
+  line: {
+    /** Line number in the original file where the hunk starts. */
+    old: number;
+    /** Line number in the new file where the hunk starts. */
+    new: number;
+  };
+  /** Lines in the hunk. */
+  lines: {
+    /** Type of line in the hunk. */
+    type: "context" | "added" | "deleted" | "info";
+    /** Content of the line, excluding the leading indicator. */
+    content: string;
+  }[];
 }
 
 /** A single commit in a git repository. */
@@ -555,6 +593,49 @@ export interface IndexStatusOptions {
    * @default {true}
    */
   renames?: boolean;
+}
+
+/**
+ * Options for the {@linkcode Diff.status} and {@linkcode Diff.patch}
+ * functions.
+ */
+export interface DiffOptions {
+  /**
+   * Limit the diff to the given pathspecs.
+   *
+   * If directories are given, all files under those directories are included.
+   *
+   * If not set, all files are included.
+   */
+  path?: string | string[];
+  /**
+   * Diff staged changes, instead of changes in the working tree.
+   *
+   * @default {false}
+   */
+  staged?: boolean;
+  /**
+   * Target commit to diff against.
+   *
+   * If set to `HEAD`, diffs the working tree or index against the last commit.
+   */
+  target?: Commitish;
+  /** Revision range to diff against. */
+  range?: RevisionRange;
+}
+
+/** Options for the {@linkcode Diff.patch} function. */
+export interface DiffPatchOptions extends DiffOptions {
+  /**
+   * Diff algorithm to use.
+   * @default {"myers"}
+   */
+  algorithm?: "myers" | "minimal" | "patience" | "histogram";
+  /**
+   * Number of context lines.
+   * @default {3}
+   */
+  unified?: number;
 }
 
 /** Options for the {@linkcode Commits.create} function. */
@@ -923,8 +1004,7 @@ export function git(options?: GitOptions): Git {
       async status(options?: IndexStatusOptions) {
         const output = await run(
           gitOptions,
-          "status",
-          ["--porcelain=1", "-z"],
+          ["status", "--porcelain=1", "-z"],
           flag("--untracked-files=normal", options?.untracked === true),
           flag("--ignored=traditional", options?.ignored === true),
           flag("--ignored=no", options?.ignored === false),
@@ -950,17 +1030,17 @@ export function git(options?: GitOptions): Git {
         };
         let rename = false;
         for (
-          const [line, next] of slidingWindows(lines, 2, { partial: true })
+          const [entry, next] of slidingWindows(lines, 2, { partial: true })
         ) {
-          assertExists(line, "Cannot parse status line");
+          assertExists(entry, "Cannot parse status line");
           if (rename) {
             rename = false;
             continue;
           }
-          const [x, y, path] = [line[0], line[1], line.slice(3)];
-          assertExists(x, "Cannot parse status line");
-          assertExists(y, "Cannot parse status line");
-          assertExists(path, "Cannot parse status line");
+          const [x, y, path] = [entry[0], entry[1], entry.slice(3)];
+          assertExists(x, "Cannot parse status entry");
+          assertExists(y, "Cannot parse status entry");
+          assertExists(path, "Cannot parse status entry");
           rename = x === "R" || y === "R";
           if (x === "?") {
             status.untracked.push({ path });
@@ -973,7 +1053,7 @@ export function git(options?: GitOptions): Git {
           if (x !== " ") {
             const type = xyToStatus[x] ?? "modified";
             if (type === "renamed") {
-              assertExists(next, "Cannot parse status line");
+              assertExists(next, "Cannot parse status entry");
               status.staged.push({ path, status: "renamed", from: next });
             } else {
               status.staged.push({ path, status: type });
@@ -982,7 +1062,7 @@ export function git(options?: GitOptions): Git {
           if (y !== " ") {
             const type = xyToStatus[y] ?? "modified";
             if (type === "renamed") {
-              assertExists(next, "Cannot parse status line");
+              assertExists(next, "Cannot parse status entry");
               status.unstaged.push({ path, status: "renamed", from: next });
             } else {
               status.unstaged.push({ path, status: type });
@@ -990,6 +1070,107 @@ export function git(options?: GitOptions): Git {
           }
         }
         return status;
+      },
+    },
+    diff: {
+      async status(options) {
+        const output = await run(
+          gitOptions,
+          ["diff", "--name-status", "-z"],
+          commitArg(options?.target),
+          rangeArg(options?.range),
+          flag("--cached", options?.staged),
+          flag("--", options?.path),
+        );
+        const entries = output.split("\0").filter((x) => x);
+        const statuses: TrackedPathStatus[] = [];
+        let rename: string | undefined = undefined;
+        let code: string | undefined = undefined;
+        for (
+          const [entry, next] of slidingWindows(entries, 2, { partial: true })
+        ) {
+          assertExists(entry, "Cannot parse diff entry");
+          if (entry === rename) continue;
+          if (code === undefined) {
+            code = entry[0];
+            if (code === "R") {
+              assertExists(next, "Cannot parse diff entry");
+              rename = next;
+            }
+            continue;
+          }
+          if (rename) {
+            statuses.push({ path: entry, status: "renamed", from: rename });
+            rename = undefined;
+            code = undefined;
+            continue;
+          }
+          const status: TrackedPathStatus["status"] = code === "M"
+            ? "modified"
+            : code === "A"
+            ? "added"
+            : code === "D"
+            ? "deleted"
+            : "modified";
+          statuses.push({ path: entry, status });
+          code = undefined;
+        }
+        return statuses;
+      },
+      async patch(options) {
+        const output = await run(
+          gitOptions,
+          ["diff", "--no-color", "--no-prefix"],
+          commitArg(options?.target),
+          rangeArg(options?.range),
+          flag("--cached", options?.staged),
+          flag("--diff-algorithm", options?.algorithm),
+          flag(`--unified=${options?.unified}`, options?.unified !== undefined),
+          flag("--", options?.path),
+        );
+        return output.split(/\n(?=diff --git )/)
+          .filter((x) => x)
+          .map((content) => {
+            const [header, ...body] = content.split(/\n(?=@@ )/);
+            const from = header?.split("\n").at(-2)?.replace(/^--- /, "");
+            const path = header?.split("\n").at(-1)?.replace(/^\+\+\+ /, "");
+            assertExists(path, "Cannot parse diff output");
+            assertExists(from, "Cannot parse diff output");
+            assertExists(body, "Cannot parse diff output");
+            const hunks: Hunk[] = body.map((hunk) => {
+              const match = hunk.match(
+                /^@@ -(?<oldLine>\d+)(,\d*)? \+(?<newLine>\d+)(,\d*)? @@.*\n(?<body>(?:.|\n)*)$/,
+              );
+              const { oldLine, newLine, body } = match?.groups ?? {};
+              assertExists(oldLine, "Cannot parse hunk header");
+              assertExists(newLine, "Cannot parse hunk header");
+              assertExists(body, "Cannot parse hunk body");
+              return {
+                line: {
+                  old: parseInt(oldLine),
+                  new: parseInt(newLine),
+                },
+                lines: body.split("\n").filter((line) => line !== "").map(
+                  (line) => {
+                    const type = line.startsWith("+")
+                      ? "added" as const
+                      : line.startsWith("-")
+                      ? "deleted" as const
+                      : line.startsWith("\\")
+                      ? "info" as const
+                      : "context" as const;
+                    return {
+                      type,
+                      content: type === "info"
+                        ? line.slice(1).trim()
+                        : line.slice(1),
+                    };
+                  },
+                ),
+              };
+            });
+            return { path, from, hunks };
+          });
       },
     },
     commits: {
