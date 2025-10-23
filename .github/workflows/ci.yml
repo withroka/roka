@@ -22,7 +22,7 @@ jobs:
         run: deno task -q flow --check .
 
       - name: Coverage
-        run: deno coverage --lcov=coverage/lcov.info
+        run: deno coverage --lcov --output=coverage/lcov.info
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
