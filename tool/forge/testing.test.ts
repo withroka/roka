@@ -132,3 +132,20 @@ Deno.test("tempWorkspace() can create a workspace with no packages", async () =>
   await using packages = await tempWorkspace({});
   assertEquals([...packages], []);
 });
+
+Deno.test("tempWorkspace() can change working directory", async () => {
+  const cwd = Deno.cwd();
+  {
+    await using repo = await tempWorkspace({
+      configs: [{ name: "@scope/name", version: "1.2.3" }],
+      repo: { chdir: true },
+    });
+    const root = repo[0]?.root;
+    assertExists(root);
+    assertEquals(
+      await Deno.realPath(Deno.cwd()),
+      await Deno.realPath(root),
+    );
+  }
+  assertEquals(Deno.cwd(), cwd);
+});
