@@ -656,9 +656,9 @@ export interface DiffOptions {
   /**
    * Control the diff output for renamed files.
    *
-   * If set to `true`, copy detection is enabled, and copies are listed as such.
-   * If set to `false`, copies are listed as added files, unless the behavior
-   * is overridden with Git configuration.
+   * If set to `true`, copy detection is enabled, and copies are listed as
+   * such. If set to `false`, copies are listed as added files, unless the
+   * behavior is overridden with Git configuration.
    *
    * @default {false}
    */
