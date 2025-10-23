@@ -1611,18 +1611,18 @@ Deno.test("git().tags.create() cannot create duplicate tag", async () => {
   await assertRejects(() => repo.tags.create("tag"), GitError);
 });
 
-Deno.test("git().tags.create({ commit }) creates a tag with commit", async () => {
+Deno.test("git().tags.create({ target }) creates a tag with commit", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commits.create("commit", { allowEmpty: true });
-  const tag = await repo.tags.create("tag", { commit });
+  const tag = await repo.tags.create("tag", { target: commit });
   assertEquals(tag, { name: "tag", commit });
 });
 
-Deno.test("git().tags.create({ commit }) can create a tag with another tag", async () => {
+Deno.test("git().tags.create({ target }) can create a tag with another tag", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commits.create("commit", { allowEmpty: true });
   await repo.tags.create("tag1");
-  await repo.tags.create("tag2", { commit: "tag1" });
+  await repo.tags.create("tag2", { target: "tag1" });
   const tags = await repo.tags.list();
   assertEquals(tags, [
     { name: "tag1", commit },
