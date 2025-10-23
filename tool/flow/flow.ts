@@ -280,6 +280,7 @@ function options(): DenoOptions {
 
 async function files(paths: string[]): Promise<string[]> {
   if (paths.length === 0) {
+    // determined modified directories if in a Git repository
     const { value } = await maybe(async () => {
       const repo = git();
       const target = await repo.remotes.defaultBranch();
@@ -291,6 +292,7 @@ async function files(paths: string[]): Promise<string[]> {
       console.warn("🧽 No files modified");
       return [];
     }
+    // run on all files if not in a Git repository
     paths = value ? value : ["."];
   }
   let found = await Array.fromAsync(find(paths, {
@@ -301,6 +303,7 @@ async function files(paths: string[]): Promise<string[]> {
     git().ignore.check(found, { matching: false })
   );
   if (unignored !== undefined) {
+    // exclude ignored paths, except for those explicitly provided
     found = intersect(found, unignored.concat(paths));
   }
   if (found.length === 0) throw new Error(`No files found: ${paths.join(" ")}`);
