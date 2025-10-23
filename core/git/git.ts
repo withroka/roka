@@ -615,6 +615,16 @@ export interface DiffOptions {
    */
   staged?: boolean;
   /**
+   * Control the diff output for renamed files.
+   *
+   * By default, renamed files are included, unless disabled in Git
+   * configuration.
+   *
+   * If set to `false`, rename detection is turned off, and paths are listed
+   * separately as `"added"` and `"deleted"`.
+   */
+  renames?: false;
+  /**
    * Target commit to diff against.
    *
    * If set to `HEAD`, diffs the working tree or index against the last commit.
@@ -1110,6 +1120,7 @@ export function git(options?: GitOptions): Git {
           commitArg(options?.target),
           rangeArg(options?.range),
           flag("--cached", options?.staged),
+          flag("--no-renames", options?.renames === false),
           flag("--", options?.path),
         );
         const entries = output.split("\0").filter((x) => x);
@@ -1154,6 +1165,7 @@ export function git(options?: GitOptions): Git {
           commitArg(options?.target),
           rangeArg(options?.range),
           flag("--cached", options?.staged),
+          flag("--no-renames", options?.renames === false),
           flag("--diff-algorithm", options?.algorithm),
           flag(`--unified=${options?.unified}`, options?.unified !== undefined),
           flag("--", options?.path),
