@@ -1,21 +1,26 @@
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
-import { tempDirectory } from "@roka/fs/temp";
+import { tempRepository } from "@roka/git/testing";
 import { fakeArgs, fakeConsole } from "@roka/testing/fake";
 import { basename, dirname, fromFileUrl, join } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { flow } from "./flow.ts";
 
 async function run(context: Deno.TestContext) {
-  await using directory = await tempDirectory({ chdir: true });
+  await using remote = await tempRepository();
+  await remote.commits.create("initial", { allowEmpty: true });
+  await using repo = await tempRepository({ clone: remote, chdir: true });
   const dataDirectory = join(
     dirname(fromFileUrl(context.origin)),
     "__testdata__",
   );
+  const files = await Array.fromAsync(find([dataDirectory], { type: "file" }));
   await pool(
-    find([dataDirectory], { type: "file" }),
-    (path) => Deno.copyFile(path, basename(directory.path(path))),
+    files,
+    (path) => Deno.copyFile(path, basename(repo.path(path))),
   );
+  await repo.index.add(files.map((path) => basename(path)));
+  await repo.commits.create("commit");
   using _args = fakeArgs(
     context.name
       .replaceAll("[valid]", "valid.ts")
@@ -42,7 +47,9 @@ async function test(t: Deno.TestContext) {
 }
 
 Deno.test("flow --help", test);
+Deno.test("flow", test);
 Deno.test("flow [valid]", test);
+Deno.test("flow --check", test);
 Deno.test("flow --check [valid]", test);
 Deno.test("flow fmt [invalid-code]", test);
 Deno.test("flow fmt [invalid-comment]", test);

@@ -15,8 +15,19 @@
  * flow
  * ```
  *
- * This formats, types-checks, lints, and tests all project files. Individual
- * checks can be run with subcommands.
+ * This command formats, types-checks, lints, and tests all project files in
+ * directories that have been modified in the current branch. It compares these
+ * changes against the default branch of the repository, which is likely “main”.
+ *
+ * The default behavior verifies changes to the repository. If a path is
+ * provided to **flow**, it will check all matching files instead.
+ *
+ * ```sh
+ * flow core   # check all files in the core directory
+ * flow .      # check all project files
+ * ```
+ *
+ * Individual checks can be run with subcommands.
  *
  * ```sh
  * flow fmt    # format code
@@ -41,7 +52,11 @@
  * ```
  *
  * _**WARNING**: This tool serves the Roka project. Feel free to make
- * contributions if it is useful to you. The API is unstable and may change._
+ * contributions if it is useful to you. The interface is unstable and may
+ * change._
+ *
+ * @todo Determine affected files based on module graph.
+ * @todo Respect `include` and `exclude` lists in `deno.json`.
  *
  * @module flow
  */
@@ -58,8 +73,15 @@ import {
   RESTORE_CURSOR,
   SAVE_CURSOR,
 } from "@std/cli/unstable-ansi";
-import { associateBy, deepMerge, intersect, sumOf } from "@std/collections";
+import {
+  associateBy,
+  deepMerge,
+  distinct,
+  intersect,
+  sumOf,
+} from "@std/collections";
 import { bold, dim, green, red, yellow } from "@std/fmt/colors";
+import { dirname } from "@std/path";
 
 const DESCRIPTION = `
   ${bold("🍃 flow")}
@@ -83,8 +105,9 @@ export async function flow(): Promise<number> {
     .meta("v8", Deno.version.v8)
     .meta("typescript", Deno.version.typescript)
     .description(DESCRIPTION)
-    .example("flow", "Format code and run all checks.")
+    .example("flow", "Format code and run all checks for modified files.")
     .example("flow --check", "Check for problems without making changes.")
+    .example("flow .", "Format code and run all checks for all files.")
     .example("flow core/", "Format and check files in the core directory.")
     .example("flow check", "Type-check code.")
     .example("flow fmt", "Format code.")
@@ -101,11 +124,12 @@ export async function flow(): Promise<number> {
     .action(async ({ check }, ...paths) => {
       const fix = !check;
       const found = await files(paths);
+      if (found.length === 0) return;
       const cmds = deno(options());
       await run(found, [
         (files) => cmds.fmt(files, { ...options(), check }),
         (files) => cmds.check(files),
-        ...paths.length === 0
+        ...paths.includes(".")
           ? [(files: string[]) => deno(options()).doc(files, { lint: true })]
           : [],
         (files) => cmds.lint(files, { ...options(), fix }),
@@ -129,14 +153,16 @@ export async function flow(): Promise<number> {
 function fmtCommand() {
   return new Command()
     .description("Format code, including code blocks in JSDoc.")
-    .example("flow fmt", "Format all files.")
+    .example("flow fmt", "Format modified files.")
     .example("flow fmt --check", "Only check if files are formatted.")
+    .example("flow fmt .", "Format all files.")
     .example("flow fmt **/*.ts", "Format all TypeScript files.")
     .example("flow fmt core/", "Format files in the core directory.")
     .arguments("[paths...:file]")
     .option("--check", "Check if files are formatted.", { default: false })
     .action(async ({ check }, ...paths) => {
       const found = await files(paths);
+      if (found.length === 0) return;
       await run(found, [
         (files) => deno(options()).fmt(files, { check }),
       ], { prefix: check ? "Checked formatting in" : "Formatted" });
@@ -146,12 +172,14 @@ function fmtCommand() {
 function checkCommand() {
   return new Command()
     .description("Type-check code.")
-    .example("flow check", "Type-check all files.")
+    .example("flow check", "Type-check modified files.")
+    .example("flow check .", "Type-check all files.")
     .example("flow check **/*.ts", "Type-check all TypeScript files.")
     .example("flow check core/", "Type-check files in the core directory.")
     .arguments("[paths...:file]")
     .action(async (_, ...paths) => {
       const found = await files(paths);
+      if (found.length === 0) return;
       await run(found, [
         (files) => deno(options()).check(files),
       ], { prefix: "Type-checked" });
@@ -161,16 +189,18 @@ function checkCommand() {
 function lintCommand() {
   return new Command()
     .description("Lint code.")
-    .example("flow lint", "Lint all files.")
+    .example("flow lint", "Lint modified files.")
     .example("flow lint --fix", "Fix any fixable linting problems.")
+    .example("flow lint .", "Lint all files.")
     .example("flow lint **/*.ts", "Lint all TypeScript files.")
     .example("flow lint core/", "Lint files in the core directory.")
     .arguments("[paths...:file]")
     .option("--fix", "Fix any fixable linting errors.", { default: false })
     .action(async ({ fix }, ...paths) => {
       const found = await files(paths);
+      if (found.length === 0) return;
       await run(found, [
-        ...paths.length === 0
+        ...paths.includes(".")
           ? [(files: string[]) => deno(options()).doc(files, { lint: true })]
           : [],
         (files) => deno(options()).lint(files, { fix }),
@@ -181,14 +211,16 @@ function lintCommand() {
 function testCommand() {
   return new Command()
     .description("Run tests using Deno's built-in test runner.")
-    .example("flow test", "Run tests in all files.")
+    .example("flow test", "Run tests for modified files.")
     .example("flow test --update", "Run tests and update snapshots and mocks.")
+    .example("flow test .", "Run all tests.")
     .example("flow test **/*.test.ts", "Run tests in TypeScript test files.")
     .example("flow test core/", "Run tests in the core directory.")
     .option("--update", "Update snapshots and mocks.", { default: false })
     .arguments("[paths...:file]")
     .action(async ({ update }, ...paths) => {
       const found = await files(paths);
+      if (found.length === 0) return;
       await run(found, [
         (files) => deno(options()).test(files, { update }),
       ], { test: true });
@@ -246,16 +278,32 @@ function options(): DenoOptions {
 }
 
 async function files(paths: string[]): Promise<string[]> {
-  const explicit = paths.length > 0;
-  let found = await Array.fromAsync(find(explicit ? paths : ["."], {
+  if (paths.length === 0) {
+    // determined modified directories if in a Git repository
+    const { value } = await maybe(async () => {
+      const repo = git();
+      const target = await repo.remotes.defaultBranch();
+      assertExists(target, "Could not determine default branch.");
+      const diff = await repo.diff.status({ target });
+      return distinct(diff.map((f) => dirname(f.path)));
+    });
+    if (value?.length === 0) {
+      console.warn("🧽 No files modified");
+      return [];
+    }
+    // run on all files if not in a Git repository
+    paths = value ? value : ["."];
+  }
+  let found = await Array.fromAsync(find(paths, {
     type: "file",
     ignore: ["**/.git", "**/node_modules", "**/__testdata__"],
   }));
-  if (!explicit) {
-    const { value: unignored } = await maybe(() =>
-      git().ignore.check(found, { matching: false })
-    );
-    if (unignored !== undefined) found = intersect(found, unignored);
+  const { value: unignored } = await maybe(() =>
+    git().ignore.check(found, { matching: false })
+  );
+  if (unignored !== undefined) {
+    // exclude ignored paths, except for those explicitly provided
+    found = intersect(found, unignored.concat(paths));
   }
   if (found.length === 0) throw new Error(`No files found: ${paths.join(" ")}`);
   return found;

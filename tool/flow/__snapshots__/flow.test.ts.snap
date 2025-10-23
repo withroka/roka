@@ -34,8 +34,9 @@ Commands:
 
 Examples:
 
-  flow         Format code and run all checks.
+  flow         Format code and run all checks for modified files.
   flow --check Check for problems without making changes.
+  flow .       Format code and run all checks for all files.
   flow core/   Format and check files in the core directory.
   flow check   Type-check code.
   flow fmt     Format code.
@@ -43,6 +44,15 @@ Examples:
   flow test    Run tests.
 
 ❌ Test case attempted to exit with exit code: 0
+",
+}
+`;
+
+snapshot[`flow 1`] = `
+{
+  code: 0,
+  output: "
+🧽 No files modified
 ",
 }
 `;
@@ -56,6 +66,15 @@ snapshot[`flow [valid] 1`] = `
 example test ... ok (?ms)
 
 ✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow --check 1`] = `
+{
+  code: 0,
+  output: "
+🧽 No files modified
 ",
 }
 `;

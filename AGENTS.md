@@ -9,13 +9,14 @@
 ## Directories
 
 - Core libraries: `core/`
-- **forge**: `tool/forge/`
+- **flow** tool: `tool/flow/`
+- **forge** tool: `tool/forge/`
 
 ## Commands
 
-- Testing: `deno task flow <file_or_dir>`
-- All checks: `deno task flow`
-  - must be passing before committing
+- Check changed code: `deno task flow`
+- Check all code: `deno task flow .`
+  - must be passing before commit
 - Behind a firewall: `export DENO_TLS_CA_STORE=system`
   - to resolve firewall and certificate related problems
 - Run forge locally: `deno task forge`
