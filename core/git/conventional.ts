@@ -53,7 +53,7 @@ export interface ConventionalCommit extends Commit {
  * import { conventional } from "@roka/git/conventional";
  * import { assertEquals, assertFalse } from "@std/assert";
  *
- * const repo = await tempRepository();
+ * await using repo = await tempRepository();
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * await repo.commits.create("feat(cli): add new command");

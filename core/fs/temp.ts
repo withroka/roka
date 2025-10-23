@@ -25,6 +25,7 @@ export interface TempDirectoryOptions {
   /**
    * Automatically changes the current working directory to the
    * temporary directory and restores it when disposed.
+   *
    * @default {false}
    */
   chdir?: boolean;
@@ -57,14 +58,12 @@ export async function tempDirectory(
 ): Promise<TempDirectory & AsyncDisposable> {
   const directory = await Deno.makeTempDir();
   const cwd = options?.chdir ? Deno.cwd() : undefined;
-
   if (options?.chdir) Deno.chdir(directory);
-
   return Object.assign({
     path: (...paths: string[]) => join(directory, ...paths),
   }, {
     toString: () => directory,
-    [Symbol.asyncDispose]: async () => {
+    async [Symbol.asyncDispose]() {
       if (cwd) Deno.chdir(cwd);
       await Deno.remove(directory, { recursive: true });
     },
