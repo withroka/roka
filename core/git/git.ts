@@ -430,10 +430,11 @@ export interface BranchListOptions extends RefListOptions {
 export interface BranchCheckoutOptions {
   /**
    * Checkout at the given commit or branch.
-   * @default {"HEAD"}
    *
    * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be
    * `true`.
+   *
+   * @default {"HEAD"}
    */
   target?: Commitish;
   /** Branch to create and checkout during checkout. */
