@@ -9,6 +9,11 @@
  * operations, as well as the {@linkcode Commit}, {@linkcode Tag}, and similar
  * git objects.
  *
+ * All options adhere to default Git configurations and behaviors. If an option
+ * is explicitly set, it will override any corresponding Git configuration.
+ * Similarly, omitteds option can potentially be configured externally, even if
+ * a default is specified in the documentation.
+ *
  * ```ts
  * import { git } from "@roka/git";
  * (async () => {
@@ -200,10 +205,20 @@ export interface Config {
     /** Whether to sign commits. */
     gpgsign?: boolean;
   };
+  /** Diff configuration. */
+  diff?: {
+    /** Whether to detect renames and copies. */
+    renames?: boolean | "copies";
+  };
   /** Init configuration. */
   init?: {
     /** Default branch name. */
     defaultBranch?: string;
+  };
+  /** Status configuration. */
+  status?: {
+    /** Whether to detect renames and copies. */
+    renames?: boolean | "copies";
   };
   /** Tag configuration. */
   tag?: {
@@ -285,7 +300,7 @@ export interface RenamedPathStatus {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
-  status: "renamed";
+  status: "renamed" | "copied";
   /** Previous file path. */
   from: string;
 }
@@ -422,7 +437,7 @@ export interface InitOptions {
    * Creates a new branch with this name for {@linkcode Git.init} and checks
    * out this branch for {@linkcode Git.clone}.
    *
-   * Default is `main`, if not overridden with git config.
+   * Default is `main`, if not overridden with Git configuration.
    */
   branch?: string;
 }
@@ -604,8 +619,7 @@ export interface IndexStatusOptions {
    * detection is turned off, and paths are listed separately as `"added"` and
    * `"deleted"`.
    *
-   * Rename detection is enabled by default, unless disabled in Git
-   * configuration.
+   * @default {true}
    */
   renames?: boolean;
 }
@@ -636,10 +650,19 @@ export interface DiffOptions {
    * detection is turned off, and paths are listed separately as `"added"` and
    * `"deleted"`.
    *
-   * Rename detection is enabled by default, unless disabled in Git
-   * configuration.
+   * @default {true}
    */
   renames?: boolean;
+  /**
+   * Control the diff output for renamed files.
+   *
+   * If set to `true`, copy detection is enabled, and copies are listed as such.
+   * If set to `false`, copies are listed as added files, unless the behavior
+   * is overridden with Git configuration.
+   *
+   * @default {false}
+   */
+  copies?: boolean;
   /**
    * Target commit to diff against.
    *
@@ -1075,7 +1098,7 @@ export function git(options?: GitOptions): Git {
           flag("--ignored=no", options?.ignored === false),
           flag("--untracked-files=no", options?.untracked === false),
           flag("--untracked-files=all", options?.untracked === "all"),
-          flag(["--renames", "--no-renames"], options?.renames ?? true),
+          flag(["--renames", "--no-renames"], options?.renames),
           flag("--", options?.path),
         );
         const lines = output.split("\0").filter((x) => x);
@@ -1084,14 +1107,6 @@ export function git(options?: GitOptions): Git {
           unstaged: [],
           untracked: [],
           ignored: [],
-        };
-        const xyToStatus: Record<string, TrackedPathStatus["status"]> = {
-          "M": "modified",
-          "T": "modified",
-          "A": "added",
-          "C": "added",
-          "D": "deleted",
-          "R": "renamed",
         };
         let rename = false;
         for (
@@ -1106,7 +1121,6 @@ export function git(options?: GitOptions): Git {
           assertExists(x, "Cannot parse status entry");
           assertExists(y, "Cannot parse status entry");
           assertExists(path, "Cannot parse status entry");
-          rename = x === "R" || y === "R";
           if (x === "?") {
             status.untracked.push({ path });
             continue;
@@ -1116,21 +1130,23 @@ export function git(options?: GitOptions): Git {
             continue;
           }
           if (x !== " ") {
-            const type = xyToStatus[x] ?? "modified";
-            if (type === "renamed") {
+            const xStatus = statusKind(x);
+            if (xStatus === "renamed" || xStatus === "copied") {
               assertExists(next, "Cannot parse status entry");
-              status.staged.push({ path, status: "renamed", from: next });
+              rename = true;
+              status.staged.push({ path, status: xStatus, from: next });
             } else {
-              status.staged.push({ path, status: type });
+              status.staged.push({ path, status: xStatus });
             }
           }
           if (y !== " ") {
-            const type = xyToStatus[y] ?? "modified";
-            if (type === "renamed") {
+            const yStatus = statusKind(y);
+            if (yStatus === "renamed" || yStatus === "copied") {
               assertExists(next, "Cannot parse status entry");
-              status.unstaged.push({ path, status: "renamed", from: next });
+              rename = true;
+              status.unstaged.push({ path, status: yStatus, from: next });
             } else {
-              status.unstaged.push({ path, status: type });
+              status.unstaged.push({ path, status: yStatus });
             }
           }
         }
@@ -1146,40 +1162,35 @@ export function git(options?: GitOptions): Git {
           rangeArg(options?.range),
           flag("--cached", options?.staged),
           flag(["--find-renames", "--no-renames"], options?.renames),
+          flag("--find-copies", options?.copies),
           flag("--", options?.path),
         );
         const entries = output.split("\0").filter((x) => x);
         const statuses: TrackedPathStatus[] = [];
         let rename: string | undefined = undefined;
-        let code: string | undefined = undefined;
+        let status: TrackedPathStatus["status"] | undefined = undefined;
         for (
           const [entry, next] of slidingWindows(entries, 2, { partial: true })
         ) {
           assertExists(entry, "Cannot parse diff entry");
           if (entry === rename) continue;
-          if (code === undefined) {
-            code = entry[0];
-            if (code === "R") {
+          if (status === undefined) {
+            status = statusKind(entry);
+            if (status === "renamed" || status === "copied") {
               assertExists(next, "Cannot parse diff entry");
               rename = next;
             }
             continue;
           }
-          if (rename) {
-            statuses.push({ path: entry, status: "renamed", from: rename });
+          if (status === "renamed" || status === "copied") {
+            assertExists(rename, "Cannot parse diff entry");
+            statuses.push({ path: entry, status, from: rename });
             rename = undefined;
-            code = undefined;
+            status = undefined;
             continue;
           }
-          const status: TrackedPathStatus["status"] = code === "M"
-            ? "modified"
-            : code === "A"
-            ? "added"
-            : code === "D"
-            ? "deleted"
-            : "modified";
           statuses.push({ path: entry, status });
-          code = undefined;
+          status = undefined;
         }
         return statuses;
       },
@@ -1191,6 +1202,7 @@ export function git(options?: GitOptions): Git {
           rangeArg(options?.range),
           flag("--cached", options?.staged),
           flag(["--find-renames", "--no-renames"], options?.renames),
+          flag("--find-copies-harder", options?.copies),
           flag("--diff-algorithm", options?.algorithm),
           flag(`--unified=${options?.unified}`, options?.unified !== undefined),
           flag("--", options?.path),
@@ -1200,9 +1212,9 @@ export function git(options?: GitOptions): Git {
           .map((content) => {
             const [header, ...body] = content.split(/\n(?=@@ )/);
             const from = header?.split("\n").at(-2)
-              ?.replace(/^(?:---|rename from) /, "");
+              ?.replace(/^(?:---|rename from|copy from) /, "");
             const path = header?.split("\n").at(-1)
-              ?.replace(/^(?:\+\+\+|rename to) /, "");
+              ?.replace(/^(?:\+\+\+|rename to|copy to) /, "");
             assertExists(path, "Cannot parse diff output");
             assertExists(from, "Cannot parse diff output");
             assertExists(body, "Cannot parse diff output");
@@ -1523,6 +1535,23 @@ function rangeArg(range: RevisionRange | undefined): string | undefined {
   if (from === undefined && to === undefined) return undefined;
   if (from === undefined) return to;
   return `${from}${range.symmetric ? "..." : ".."}${to ?? "HEAD"}`;
+}
+
+function statusKind(code: string): TrackedPathStatus["status"] {
+  switch (code[0]) {
+    case "M":
+      return "modified";
+    case "A":
+      return "added";
+    case "D":
+      return "deleted";
+    case "R":
+      return "renamed";
+    case "C":
+      return "copied";
+    default:
+      return "modified";
+  }
 }
 
 type FormatFieldDescriptor<T> =
