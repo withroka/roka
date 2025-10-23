@@ -315,10 +315,24 @@ export interface UntrackedPathStatus {
 export interface Patch {
   /** Path to the file. */
   path: string;
-  /** Path to the file before rename, if renamed. */
-  from: string;
-  /** List of hunks in the patch. */
-  hunks: Hunk[];
+  /** Status of the file. */
+  status: TrackedPathStatus["status"];
+  /** File mode, if provided. */
+  mode?: {
+    /** Old file mode, if changed or deleted. */
+    old?: number;
+    /** Current or new file mode. */
+    new?: number;
+  };
+  /** Previous file path, for renamed or copied files. */
+  from?: {
+    /** Previous file path. */
+    path: string;
+    /** Similarity value (0-1) for the rename or copy. */
+    similarity: number;
+  };
+  /** List of diff hunks in the patch. */
+  hunks?: Hunk[];
 }
 
 /** A single hunk in a patch returned by the {@linkcode Diff.patch} function. */
@@ -1168,7 +1182,7 @@ export function git(options?: GitOptions): Git {
         const entries = output.split("\0").filter((x) => x);
         const statuses: TrackedPathStatus[] = [];
         let rename: string | undefined = undefined;
-        let status: TrackedPathStatus["status"] | undefined = undefined;
+        let status: Patch["status"] | undefined = undefined;
         for (
           const [entry, next] of slidingWindows(entries, 2, { partial: true })
         ) {
@@ -1211,22 +1225,28 @@ export function git(options?: GitOptions): Git {
           .filter((x) => x)
           .map((content) => {
             const [header, ...body] = content.split(/\n(?=@@ )/);
-            const from = header?.match(/\n--- (.*)/)?.[1];
-            const path = header?.match(/\n\+\+\+ (.*)/)?.[1];
-            return { path, from, body };
-          })
-          .filter(({ path, from }) => path !== undefined && from !== undefined)
-          .map(({ path, from, body }) => {
-            assertExists(path);
-            assertExists(from);
+            assertExists(header, "Cannot parse diff patch: header");
+            const patch = header.split("\n").reduce(
+              (patch: Partial<Patch>, line) => {
+                for (const transform of PATCH_HEADER_TRANSFORMS) {
+                  const match = line.match(transform.pattern);
+                  if (match?.[1] !== undefined) {
+                    transform.apply(patch, match[1]);
+                    return patch;
+                  }
+                }
+                return patch;
+              },
+              {},
+            );
             const hunks: Hunk[] = body.map((hunk) => {
               const match = hunk.match(
                 /^@@ -(?<oldLine>\d+)(,\d*)? \+(?<newLine>\d+)(,\d*)? @@.*\n(?<body>(?:.|\n)*)$/,
               );
               const { oldLine, newLine, body } = match?.groups ?? {};
-              assertExists(oldLine, "Cannot parse hunk header");
-              assertExists(newLine, "Cannot parse hunk header");
-              assertExists(body, "Cannot parse hunk body");
+              assertExists(oldLine, "Cannot parse diff patch: hunk header");
+              assertExists(newLine, "Cannot parse diff patch: hunk header");
+              assertExists(body, "Cannot parse diff patch: hunk body");
               return {
                 line: {
                   old: parseInt(oldLine),
@@ -1251,7 +1271,15 @@ export function git(options?: GitOptions): Git {
                 ),
               };
             });
-            return { path, from, hunks };
+            assertExists(patch.path, "Cannot parse diff patch: path");
+            assertExists(patch.status, "Cannot parse diff patch: status");
+            return {
+              path: patch.path,
+              status: patch.status,
+              ...patch.mode !== undefined && { mode: patch.mode },
+              ...patch.from !== undefined && { from: patch.from },
+              ...hunks.length > 0 && { hunks },
+            };
           });
       },
     },
@@ -1538,7 +1566,7 @@ function rangeArg(range: RevisionRange | undefined): string | undefined {
   return `${from}${range.symmetric ? "..." : ".."}${to ?? "HEAD"}`;
 }
 
-function statusKind(code: string): TrackedPathStatus["status"] {
+function statusKind(code: string): Patch["status"] {
   switch (code[0]) {
     case "M":
       return "modified";
@@ -1797,3 +1825,118 @@ function parseOutput<T>(
   }
   return result;
 }
+
+interface PatchTransform {
+  pattern: RegExp;
+  apply(patch: Partial<Patch>, value: string): void;
+}
+
+const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
+  {
+    pattern: /^diff --git (.+)$/m,
+    apply(patch, value) {
+      if (
+        value.length % 2 === 1 &&
+        value.slice(0, value.length / 2) ===
+          value.slice(value.length / 2 + 1)
+      ) {
+        patch.path ??= value.slice(0, value.length / 2);
+        patch.status ??= "modified";
+      }
+    },
+  },
+  {
+    pattern: /^\+\+\+ (.+)$/,
+    apply(patch, value) {
+      if (value !== "/dev/null") patch.path ??= value;
+      else patch.status ??= "deleted";
+    },
+  },
+  {
+    pattern: /^--- (.+)$/,
+    apply(patch, value) {
+      if (value !== "/dev/null") patch.path ??= value;
+      else patch.status ??= "added";
+    },
+  },
+  {
+    pattern: /^index \S+ (\d+)$/,
+    apply(patch, value) {
+      patch.mode ??= {};
+      patch.mode.new = parseInt(value, 8);
+    },
+  },
+  {
+    pattern: /^old mode (\d+)$/,
+    apply(patch, value) {
+      patch.mode ??= {};
+      patch.mode.old = parseInt(value, 8);
+    },
+  },
+  {
+    pattern: /^new mode (\d+)$/,
+    apply(patch, value) {
+      patch.mode ??= {};
+      patch.mode.new = parseInt(value, 8);
+    },
+  },
+  {
+    pattern: /^new file mode (\d+)$/,
+    apply(patch, value) {
+      patch.mode ??= {};
+      patch.mode.new = parseInt(value, 8);
+      patch.status = "added";
+    },
+  },
+  {
+    pattern: /^deleted file mode (\d+)$/,
+    apply(patch, value) {
+      patch.mode ??= {};
+      patch.mode.old = parseInt(value, 8);
+      patch.status = "deleted";
+    },
+  },
+  {
+    pattern: /^similarity index (\d+)%$/,
+    apply(patch, value) {
+      patch.from = {
+        path: patch.from?.path ?? "",
+        similarity: parseInt(value, 10) / 100,
+      };
+    },
+  },
+  {
+    pattern: /^rename from (.+)$/,
+    apply(patch, value) {
+      patch.from = {
+        path: value,
+        similarity: patch.from?.similarity ?? 0,
+      };
+      patch.status = "renamed";
+    },
+  },
+  {
+    pattern: /^rename to (.+)$/,
+    apply(patch, value) {
+      patch.path = value;
+      patch.status = "renamed";
+    },
+  },
+  {
+    pattern: /^copy from (.+)$/,
+    apply(patch, value) {
+      patch.from = {
+        path: value,
+        similarity: patch.from?.similarity ?? 0,
+      };
+      patch.status = "copied";
+    },
+  },
+  {
+    pattern: /^copy to (.+)$/,
+    apply(patch, value) {
+      patch.path = value;
+      patch.status = "copied";
+    },
+  },
+];
