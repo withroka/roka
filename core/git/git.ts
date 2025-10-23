@@ -654,7 +654,7 @@ export interface DiffOptions {
    */
   renames?: boolean;
   /**
-   * Control the diff output for renamed files.
+   * Control the diff output for copied files.
    *
    * If set to `true`, copy detection is enabled, and copies are listed as
    * such. If set to `false`, copies are listed as added files, unless the
