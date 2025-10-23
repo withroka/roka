@@ -328,7 +328,7 @@ export interface Patch {
   from?: {
     /** Previous file path. */
     path: string;
-    /** Similarity index (0-100) for the rename or copy. */
+    /** Similarity value (0-1) for the rename or copy. */
     similarity: number;
   };
   /** List of diff hunks in the patch. */
