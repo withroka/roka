@@ -822,6 +822,15 @@ export interface TransportOptions {
  * Creates a new {@linkcode Git} instance for a local repository for running
  * git operations.
  *
+ * @example Retrieve the current branch name.
+ * ```ts
+ * import { git } from "@roka/git";
+ * (async () => {
+ *   const branch = await git().branches.current();
+ *   return { branch };
+ * });
+ * ```
+ *
  * @example Retrieve the last commit in a repository.
  * ```ts
  * import { git } from "@roka/git";
@@ -840,19 +849,40 @@ export interface TransportOptions {
  * });
  * ```
  *
+ * @example Retrieve the default branch name from origin.
+ * ```ts
+ * import { git } from "@roka/git";
+ * (async () => {
+ *   const branch = await git().remotes.defaultBranch();
+ *   return { branch };
+ * });
+ * ```
+ *
  * @example Create a new git repository and add a file.
  * ```ts
  * import { git } from "@roka/git";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
+ *
  * await using directory = await tempDirectory();
  * const repo = git({ cwd: directory.path() });
  * await repo.init();
  * await repo.config.set({ user: { name: "name", email: "email" } });
+ *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
+ * assertEquals(
+ *   await repo.diff.status({ staged: true }),
+ *   [{ path: "file.txt", status: "added" }],
+ * );
  * const commit = await repo.commits.create("Initial commit", { sign: false });
  * assertEquals(await repo.commits.log(), [commit]);
+ *
+ * await Deno.writeTextFile(repo.path("file.txt"), "update");
+ * assertEquals(
+ *   await repo.diff.status(),
+ *   [{ path: "file.txt", status: "modified" }],
+ * );
  * ```
  */
 export function git(options?: GitOptions): Git {
