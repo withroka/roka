@@ -903,6 +903,17 @@ Deno.test("git().index.status({ renames }) can ignore renames", async () => {
   await Deno.rename(repo.path("old.file"), repo.path("file"));
   await repo.index.add("file");
   await repo.index.remove("old.file");
+  assertEquals(
+    await repo.index.status({ renames: true }),
+    {
+      staged: [
+        { from: "old.file", path: "file", status: "renamed" },
+      ],
+      unstaged: [],
+      untracked: [],
+      ignored: [],
+    },
+  );
   assertEquals(await repo.index.status({ renames: false }), {
     staged: [
       { path: "file", status: "added" },
@@ -1206,6 +1217,23 @@ Deno.test("git().diff.status({ staged }) lists renamed file", async () => {
   ]);
 });
 
+Deno.test("git().diff.status({ renames }) can ignore renames", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await Deno.rename(repo.path("old.file"), repo.path("file"));
+  await repo.index.add("file");
+  await repo.index.remove("old.file");
+  assertEquals(await repo.diff.status({ staged: true, renames: true }), [
+    { path: "file", status: "renamed", from: "old.file" },
+  ]);
+  assertEquals(await repo.diff.status({ staged: true, renames: false }), [
+    { path: "file", status: "added" },
+    { path: "old.file", status: "deleted" },
+  ]);
+});
+
 Deno.test("git().diff.status({ target }) lists files modified since commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("committed"), "content");
@@ -1503,11 +1531,60 @@ Deno.test("git().diff.patch() generates patch for renamed file", async () => {
   await repo.index.remove("old.file");
   assertEquals(await repo.diff.patch({ staged: true }), [
     {
-      from: "rename from old.file",
+      from: "old.file",
+      path: "file",
       hunks: [],
-      path: "rename to file",
     },
   ]);
+});
+
+Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content\n");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await Deno.rename(repo.path("old.file"), repo.path("file"));
+  await repo.index.add("file");
+  await repo.index.remove("old.file");
+  assertEquals(
+    await repo.diff.patch({ staged: true, renames: true }),
+    [
+      {
+        path: "file",
+        from: "old.file",
+        hunks: [],
+      },
+    ],
+  );
+  assertEquals(
+    await repo.diff.patch({ staged: true, renames: false }),
+    [
+      {
+        path: "file",
+        from: "/dev/null",
+        hunks: [
+          {
+            line: { old: 0, new: 1 },
+            lines: [
+              { type: "added", content: "content" },
+            ],
+          },
+        ],
+      },
+      {
+        path: "/dev/null",
+        from: "old.file",
+        hunks: [
+          {
+            line: { old: 1, new: 0 },
+            lines: [
+              { type: "deleted", content: "content" },
+            ],
+          },
+        ],
+      },
+    ],
+  );
 });
 
 Deno.test("git().diff.patch() generates patch for multiple files", async () => {

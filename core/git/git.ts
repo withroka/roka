@@ -590,7 +590,8 @@ export interface IndexStatusOptions {
    * detection is turned off, and paths are listed separately as `"added"` and
    * `"deleted"`.
    *
-   * @default {true}
+   * Rename detection is enabled by default, unless disabled in Git
+   * configuration.
    */
   renames?: boolean;
 }
@@ -614,6 +615,17 @@ export interface DiffOptions {
    * @default {false}
    */
   staged?: boolean;
+  /**
+   * Control the diff output for renamed files.
+   *
+   * If set to `true`, renamed files are included. If set to `false`, rename
+   * detection is turned off, and paths are listed separately as `"added"` and
+   * `"deleted"`.
+   *
+   * Rename detection is enabled by default, unless disabled in Git
+   * configuration.
+   */
+  renames?: boolean;
   /**
    * Target commit to diff against.
    *
@@ -1110,6 +1122,7 @@ export function git(options?: GitOptions): Git {
           commitArg(options?.target),
           rangeArg(options?.range),
           flag("--cached", options?.staged),
+          flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--", options?.path),
         );
         const entries = output.split("\0").filter((x) => x);
@@ -1154,6 +1167,7 @@ export function git(options?: GitOptions): Git {
           commitArg(options?.target),
           rangeArg(options?.range),
           flag("--cached", options?.staged),
+          flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--diff-algorithm", options?.algorithm),
           flag(`--unified=${options?.unified}`, options?.unified !== undefined),
           flag("--", options?.path),
@@ -1162,8 +1176,10 @@ export function git(options?: GitOptions): Git {
           .filter((x) => x)
           .map((content) => {
             const [header, ...body] = content.split(/\n(?=@@ )/);
-            const from = header?.split("\n").at(-2)?.replace(/^--- /, "");
-            const path = header?.split("\n").at(-1)?.replace(/^\+\+\+ /, "");
+            const from = header?.split("\n").at(-2)
+              ?.replace(/^(?:---|rename from) /, "");
+            const path = header?.split("\n").at(-1)
+              ?.replace(/^(?:\+\+\+|rename to) /, "");
             assertExists(path, "Cannot parse diff output");
             assertExists(from, "Cannot parse diff output");
             assertExists(body, "Cannot parse diff output");
