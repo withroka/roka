@@ -292,7 +292,7 @@ export interface UpdatedPathStatus {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
-  status: "modified" | "added" | "deleted";
+  status: "modified" | "type-changed" | "added" | "deleted";
 }
 
 /** Status of a renamed file in the index and the working tree. */
@@ -1211,13 +1211,14 @@ export function git(options?: GitOptions): Git {
           .filter((x) => x)
           .map((content) => {
             const [header, ...body] = content.split(/\n(?=@@ )/);
-            const from = header?.split("\n").at(-2)
-              ?.replace(/^(?:---|rename from|copy from) /, "");
-            const path = header?.split("\n").at(-1)
-              ?.replace(/^(?:\+\+\+|rename to|copy to) /, "");
-            assertExists(path, "Cannot parse diff output");
-            assertExists(from, "Cannot parse diff output");
-            assertExists(body, "Cannot parse diff output");
+            const from = header?.match(/\n--- (.*)/)?.[1];
+            const path = header?.match(/\n\+\+\+ (.*)/)?.[1];
+            return { path, from, body };
+          })
+          .filter(({ path, from }) => path !== undefined && from !== undefined)
+          .map(({ path, from, body }) => {
+            assertExists(path);
+            assertExists(from);
             const hunks: Hunk[] = body.map((hunk) => {
               const match = hunk.match(
                 /^@@ -(?<oldLine>\d+)(,\d*)? \+(?<newLine>\d+)(,\d*)? @@.*\n(?<body>(?:.|\n)*)$/,
@@ -1541,6 +1542,8 @@ function statusKind(code: string): TrackedPathStatus["status"] {
   switch (code[0]) {
     case "M":
       return "modified";
+    case "T":
+      return "type-changed";
     case "A":
       return "added";
     case "D":

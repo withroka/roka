@@ -810,7 +810,7 @@ Deno.test("git().index.status() lists staged modified file", async () => {
   });
 });
 
-Deno.test("git().index.status() lists staged type changed file", async () => {
+Deno.test("git().index.status() lists staged file with permission change", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file", { executable: false });
@@ -819,6 +819,22 @@ Deno.test("git().index.status() lists staged type changed file", async () => {
   await repo.index.add("file", { executable: true });
   assertEquals(await repo.index.status(), {
     staged: [{ path: "file", status: "modified" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists staged file with type change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  await Deno.symlink("target", repo.path("file"));
+  await repo.index.add("file");
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file", status: "type-changed" }],
     unstaged: [],
     untracked: [],
     ignored: [],
@@ -900,7 +916,7 @@ Deno.test("git().index.status() lists unstaged modified file", async () => {
   });
 });
 
-Deno.test("git().index.status() lists unstaged type changed file", async () => {
+Deno.test("git().index.status() lists unstaged file with permission change", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file", { executable: false });
@@ -909,6 +925,21 @@ Deno.test("git().index.status() lists unstaged type changed file", async () => {
   assertEquals(await repo.index.status(), {
     staged: [],
     unstaged: [{ path: "file", status: "modified" }],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().index.status() lists unstaged file with type change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  await Deno.symlink("target", repo.path("file"));
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [{ path: "file", status: "type-changed" }],
     untracked: [],
     ignored: [],
   });
@@ -1144,7 +1175,7 @@ Deno.test("git().diff.status() does not list staged modified file", async () => 
   assertEquals(await repo.diff.status(), []);
 });
 
-Deno.test("git().diff.status() lists unstaged type-changed file", async () => {
+Deno.test("git().diff.status() lists unstaged file with permission change", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
@@ -1155,13 +1186,36 @@ Deno.test("git().diff.status() lists unstaged type-changed file", async () => {
   ]);
 });
 
-Deno.test("git().diff.status() does not list staged type-changed file", async () => {
+Deno.test("git().diff.status() lists unstaged file with type change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  await Deno.symlink("target", repo.path("file"));
+  assertEquals(await repo.diff.status(), [
+    { path: "file", status: "type-changed" },
+  ]);
+});
+
+Deno.test("git().diff.status() does not list staged file with permission change", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file", { executable: false });
   await repo.commits.create("commit");
   await Deno.chmod(repo.path("file"), 0o755);
   await repo.index.add("file", { executable: true });
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().diff.status() does not list staged file with type change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  await Deno.symlink("target", repo.path("file"));
+  await repo.index.add("file");
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -1237,7 +1291,7 @@ Deno.test("git().diff.status({ staged }) does not list unstaged modified file", 
   assertEquals(await repo.diff.status({ staged: true }), []);
 });
 
-Deno.test("git().diff.status({ staged }) lists staged type-changed file", async () => {
+Deno.test("git().diff.status({ staged }) lists staged file with permission change", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file", { executable: false });
@@ -1249,12 +1303,35 @@ Deno.test("git().diff.status({ staged }) lists staged type-changed file", async 
   ]);
 });
 
-Deno.test("git().diff.status({ staged }) does not list unstaged type-changed file", async () => {
+Deno.test("git().diff.status({ staged }) lists staged file with type change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  await Deno.symlink("target", repo.path("file"));
+  await repo.index.add("file");
+  assertEquals(await repo.diff.status({ staged: true }), [
+    { path: "file", status: "type-changed" },
+  ]);
+});
+
+Deno.test("git().diff.status({ staged }) does not list unstaged file with permission change", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file", { executable: false });
   await repo.commits.create("commit");
   await Deno.chmod(repo.path("file"), 0o755);
+  assertEquals(await repo.diff.status({ staged: true }), []);
+});
+
+Deno.test("git().diff.status({ staged }) does not list unstaged file with type change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  await Deno.symlink("target", repo.path("file"));
   assertEquals(await repo.diff.status({ staged: true }), []);
 });
 
@@ -1353,7 +1430,7 @@ Deno.test("git().diff.status({ target }) lists files modified since commit", asy
   ]);
 });
 
-Deno.test("git().diff.status({ target }) lists files type-changed since commit", async () => {
+Deno.test("git().diff.status({ target }) lists files with permission change since commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("committed"), "content");
   await Deno.writeTextFile(repo.path("staged"), "content");
@@ -1370,6 +1447,29 @@ Deno.test("git().diff.status({ target }) lists files type-changed since commit",
     { path: "committed", status: "modified" },
     { path: "staged", status: "modified" },
     { path: "unstaged", status: "modified" },
+  ]);
+});
+
+Deno.test("git().diff.status({ target }) lists files with type change since commit", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("committed"), "content");
+  await Deno.writeTextFile(repo.path("staged"), "content");
+  await Deno.writeTextFile(repo.path("unstaged"), "content");
+  await repo.index.add(["committed", "staged", "unstaged"]);
+  const commit = await repo.commits.create("commit");
+  await Deno.remove(repo.path("committed"));
+  await Deno.symlink("target", repo.path("committed"));
+  await repo.index.add("committed");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("staged"));
+  await Deno.symlink("target", repo.path("staged"));
+  await repo.index.add("staged");
+  await Deno.remove(repo.path("unstaged"));
+  await Deno.symlink("target", repo.path("unstaged"));
+  assertEquals(await repo.diff.status({ target: commit }), [
+    { path: "committed", status: "type-changed" },
+    { path: "staged", status: "type-changed" },
+    { path: "unstaged", status: "type-changed" },
   ]);
 });
 
@@ -1585,6 +1685,51 @@ Deno.test("git().diff.patch() generates patch for added file", async () => {
   ]);
 });
 
+Deno.test("git().diff.patch() does not generate patch for file with permission change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content\n");
+  await repo.index.add("file", { executable: false });
+  await repo.commits.create("commit");
+  await Deno.chmod(repo.path("file"), 0o755);
+  await Deno.writeTextFile(repo.path("file"), "content\n");
+  await repo.index.add("file", { executable: true });
+  assertEquals(await repo.diff.patch({ staged: true }), []);
+});
+
+Deno.test("git().diff.patch() generates patch for file with type change", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content\n");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.remove(repo.path("file"));
+  await Deno.symlink("target", repo.path("file"));
+  assertEquals(await repo.diff.patch(), [
+    {
+      path: "/dev/null",
+      from: "file",
+      hunks: [
+        {
+          line: { old: 1, new: 0 },
+          lines: [{ type: "deleted", content: "content" }],
+        },
+      ],
+    },
+    {
+      path: "file",
+      from: "/dev/null",
+      hunks: [
+        {
+          line: { old: 0, new: 1 },
+          lines: [
+            { type: "added", content: "target" },
+            { type: "info", content: "No newline at end of file" },
+          ],
+        },
+      ],
+    },
+  ]);
+});
+
 Deno.test("git().diff.patch() generates patch for deleted file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content\n");
@@ -1607,19 +1752,13 @@ Deno.test("git().diff.patch() generates patch for deleted file", async () => {
   ]);
 });
 
-Deno.test("git().diff.patch() generates patch for renamed file", async () => {
+Deno.test("git().diff.patch() does not generate patch for renamed file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("old.file"), "content\n");
   await repo.index.add("old.file");
   await repo.commits.create("commit");
   await repo.index.move("old.file", "new.file");
-  assertEquals(await repo.diff.patch({ staged: true }), [
-    {
-      from: "old.file",
-      path: "new.file",
-      hunks: [],
-    },
-  ]);
+  assertEquals(await repo.diff.patch({ staged: true }), []);
 });
 
 Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
@@ -1628,16 +1767,7 @@ Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
   await repo.index.add("old.file");
   await repo.commits.create("commit");
   await repo.index.move("old.file", "new.file");
-  assertEquals(
-    await repo.diff.patch({ staged: true, renames: true }),
-    [
-      {
-        path: "new.file",
-        from: "old.file",
-        hunks: [],
-      },
-    ],
-  );
+  assertEquals(await repo.diff.patch({ staged: true, renames: true }), []);
   assertEquals(
     await repo.diff.patch({ staged: true, renames: false }),
     [
@@ -1678,9 +1808,38 @@ Deno.test("git().diff.patch({ copies }) can detect copies", async () => {
   await Deno.writeTextFile(repo.path("copied.file"), "content\n");
   await repo.index.add(["source.file", "copied.file"]);
   assertEquals(
+    await repo.diff.patch({ staged: true, copies: false }),
+    [
+      {
+        path: "copied.file",
+        from: "/dev/null",
+        hunks: [
+          {
+            line: { old: 0, new: 1 },
+            lines: [
+              { type: "added", content: "content" },
+            ],
+          },
+        ],
+      },
+      {
+        path: "source.file",
+        from: "source.file",
+        hunks: [
+          {
+            line: { old: 1, new: 1 },
+            lines: [
+              { type: "deleted", content: "content" },
+              { type: "added", content: "new content" },
+            ],
+          },
+        ],
+      },
+    ],
+  );
+  assertEquals(
     await repo.diff.patch({ staged: true, copies: true }),
     [
-      { path: "copied.file", from: "source.file", hunks: [] },
       {
         path: "source.file",
         from: "source.file",
