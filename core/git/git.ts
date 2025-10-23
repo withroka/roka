@@ -91,91 +91,72 @@ export interface Git {
     set(config: Config): Promise<void>;
   };
   /** Branch operations. */
-  branches: Branches;
+  branches: {
+    /** Returns the current branch name. */
+    current(): Promise<Branch | undefined>;
+    /** List branches in the repository alphabetically. */
+    list(options?: BranchListOptions): Promise<Branch[]>;
+    /** Switches to a commit, or an existing or new branch. */
+    checkout(options?: BranchCheckoutOptions): Promise<void>;
+    /** Creates a branch. */
+    create(name: string): Promise<void>;
+    /** Deletes a branch. */
+    delete(
+      branch: string | Branch,
+      options?: BranchDeleteOptions,
+    ): Promise<void>;
+  };
   /** Ignore (exclusion) operations. */
-  ignore: Ignore;
+  ignore: {
+    /** Checks paths against gitignore list and returns the ignored patterns. */
+    check(
+      path: string | string[],
+      options?: IgnoreCheckOptions,
+    ): Promise<string[]>;
+  };
   /** Index (staged area) operations. */
-  index: Index;
+  index: {
+    /** Stages files for commit. */
+    add(path: string | string[], options?: IndexAddOptions): Promise<void>;
+    /** Removes files from the index. */
+    remove(
+      path: string | string[],
+      options?: IndexRemoveOptions,
+    ): Promise<void>;
+    /** Returns the status of the index and the local working tree. */
+    status(options?: IndexStatusOptions): Promise<Status>;
+  };
   /** Commit operations. */
-  commits: Commits;
+  commits: {
+    /** Creates a new commit in the repository. */
+    create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
+    /** Returns the commit at the tip of `HEAD`. */
+    head(): Promise<Commit>;
+    /** Returns the history of commits in the repository. */
+    log(options?: CommitLogOptions): Promise<Commit[]>;
+    /** Pushes commits to a remote. */
+    push(options?: CommitPushOptions): Promise<void>;
+    /** Pulls commits and tags from a remote. */
+    pull(options?: CommitPullOptions): Promise<void>;
+  };
   /** Tag operations. */
-  tags: Tags;
+  tags: {
+    /** Creates a new tag in the repository. */
+    create(name: string, options?: TagCreateOptions): Promise<Tag>;
+    /** Lists all tags in the repository. */
+    list(options?: TagListOptions): Promise<Tag[]>;
+    /** Pushes a tag to a remote. */
+    push(tag: Tag | string, options?: TagPushOptions): Promise<void>;
+  };
   /** Remote operations. */
-  remotes: Remotes;
-}
-
-/** Branch operations from {@linkcode Git.branches}. */
-export interface Branches {
-  /** Returns the current branch name. */
-  current(): Promise<Branch | undefined>;
-  /** List branches in the repository alphabetically. */
-  list(options?: BranchListOptions): Promise<Branch[]>;
-  /** Switches to a commit, or an existing or new branch. */
-  checkout(options?: BranchCheckoutOptions): Promise<void>;
-  /** Creates a branch. */
-  create(name: string): Promise<void>;
-  /** Deletes a branch. */
-  delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
-}
-
-/** Ignore operations from {@linkcode Git.ignore}. */
-export interface Ignore {
-  /** Checks paths against gitignore list and returns the ignored patterns. */
-  check(
-    path: string | string[],
-    options?: IgnoreCheckOptions,
-  ): Promise<string[]>;
-}
-
-/** Index operations from {@linkcode Git.index}. */
-export interface Index {
-  /** Stages files for commit. */
-  add(path: string | string[], options?: IndexAddOptions): Promise<void>;
-  /** Removes files from the index. */
-  remove(
-    path: string | string[],
-    options?: IndexRemoveOptions,
-  ): Promise<void>;
-  /** Returns the status of the index and the local working tree. */
-  status(options?: IndexStatusOptions): Promise<Status>;
-}
-
-/** Commit operations from {@linkcode Git.commits}. */
-export interface Commits {
-  /** Creates a new commit in the repository. */
-  create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
-  /** Returns the commit at the tip of `HEAD`. */
-  head(): Promise<Commit>;
-  /** Returns the history of commits in the repository. */
-  log(options?: CommitLogOptions): Promise<Commit[]>;
-  /** Pushes commits to a remote. */
-  push(options?: CommitPushOptions): Promise<void>;
-  /** Pulls commits and tags from a remote. */
-  pull(options?: CommitPullOptions): Promise<void>;
-}
-
-/** Tag operations from {@linkcode Git.tags}. */
-export interface Tags {
-  /** Creates a new tag in the repository. */
-  create(name: string, options?: TagCreateOptions): Promise<Tag>;
-  /** Lists all tags in the repository. */
-  list(options?: TagListOptions): Promise<Tag[]>;
-  /** Pushes a tag to a remote. */
-  push(tag: Tag | string, options?: TagPushOptions): Promise<void>;
-}
-
-/**
- * Remote operations from {@linkcode Git.remotes}.
- *
- * Default remote name is `"origin"` for all remote methods.
- */
-export interface Remotes {
-  /** Returns the remote repository URL. */
-  get(name?: string): Promise<Remote>;
-  /** Adds a remote to the repository. */
-  add(url: string, name?: string): Promise<Remote>;
-  /** Queries the default branch on the remote. */
-  defaultBranch(name?: string): Promise<string | undefined>;
+  remotes: {
+    /** Returns the remote repository URL. */
+    get(name?: string): Promise<Remote>;
+    /** Adds a remote to the repository. */
+    add(url: string, name?: string): Promise<Remote>;
+    /** Queries the default branch on the remote. */
+    defaultBranch(name?: string): Promise<string | undefined>;
+  };
 }
 
 /** Configuration for a git repository. */
