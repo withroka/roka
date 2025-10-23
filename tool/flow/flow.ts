@@ -27,8 +27,7 @@
  * flow .      # check all project files
  * ```
  *
- *  Individual
- * checks can be run with subcommands.
+ * Individual checks can be run with subcommands.
  *
  * ```sh
  * flow fmt    # format code
