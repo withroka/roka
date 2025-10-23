@@ -47,10 +47,20 @@ export function testCommit(data?: Partial<Commit>): Commit {
 export interface TempRepositoryOptions {
   /** Clone the given repo instead of creating an empty one. */
   clone?: string | Git;
-  /** Create a bare repository. */
+  /**
+   * Create a bare repository.
+   * @default {false}
+   */
   bare?: boolean;
   /** Configuration for the repository. */
   config?: Config;
+  /**
+   * Automatically changes the current working directory to the
+   * temporary repository directory and restores it when disposed.
+   *
+   * @default {false}
+   */
+  chdir?: boolean;
 }
 
 /**
@@ -75,22 +85,31 @@ export async function tempRepository(
   options?: TempRepositoryOptions,
 ): Promise<Git & AsyncDisposable> {
   const { clone, bare = false } = options ?? {};
-  const cwd = await Deno.makeTempDir();
+  const directory = await Deno.makeTempDir();
   const config = {
     user: { name: "A U Thor", email: "author@example.com" },
     commit: { gpgsign: false },
     tag: { gpgsign: false },
     ...options?.config,
   };
-  const repo = git({ cwd });
+  const repo = git({ cwd: directory });
   if (clone) {
     const target = typeof clone === "string" ? clone : clone.path();
-    await git({ cwd }).clone(target, { directory: ".", bare, config });
+    await git({ cwd: directory }).clone(target, {
+      directory: ".",
+      bare,
+      config,
+    });
   } else {
-    await git({ cwd, config }).init({ bare });
+    await git({ cwd: directory, config }).init({ bare });
     await repo.config.set(config);
   }
+  const cwd = options?.chdir ? Deno.cwd() : undefined;
+  if (options?.chdir) Deno.chdir(directory);
   return Object.assign(repo, {
-    [Symbol.asyncDispose]: () => Deno.remove(cwd, { recursive: true }),
+    async [Symbol.asyncDispose]() {
+      if (cwd) Deno.chdir(cwd);
+      await Deno.remove(directory, { recursive: true });
+    },
   });
 }

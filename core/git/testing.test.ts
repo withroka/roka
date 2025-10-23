@@ -2,6 +2,7 @@ import {
   assertEquals,
   assertExists,
   assertGreater,
+  assertNotEquals,
   assertRejects,
 } from "@std/assert";
 import { tempRepository, testCommit } from "./testing.ts";
@@ -25,7 +26,7 @@ Deno.test("testCommit() creates a commit with custom data", () => {
   assertEquals(commit.body, "custom-body");
 });
 
-Deno.test("tempRepo() creates a disposable repo", async () => {
+Deno.test("tempRepository() creates a disposable repo", async () => {
   let path: string;
   {
     await using repo = await tempRepository();
@@ -36,7 +37,7 @@ Deno.test("tempRepo() creates a disposable repo", async () => {
   await assertRejects(() => Deno.stat(path), Deno.errors.NotFound);
 });
 
-Deno.test("tempRepo() can clone a repo from another repo", async () => {
+Deno.test("tempRepository({ clone }) clones a repo from another repo", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
   const commit = await repo.commits.create("initial", { allowEmpty: true });
@@ -44,10 +45,54 @@ Deno.test("tempRepo() can clone a repo from another repo", async () => {
   assertEquals(await remote.commits.head(), commit);
 });
 
-Deno.test("tempRepo() can clone a repo from path", async () => {
+Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote.path() });
   const commit = await repo.commits.create("initial", { allowEmpty: true });
   await repo.commits.push();
   assertEquals(await remote.commits.head(), commit);
+});
+
+Deno.test("tempRepository({ chdir }) changes working directory", async () => {
+  const cwd = Deno.cwd();
+  {
+    await using repo = await tempRepository({ chdir: true });
+    assertEquals(
+      await Deno.realPath(Deno.cwd()),
+      await Deno.realPath(repo.path()),
+    );
+    await Deno.writeTextFile("test.txt", "Hello, world!");
+    assertEquals(
+      await Deno.readTextFile(repo.path("test.txt")),
+      "Hello, world!",
+    );
+  }
+  assertEquals(Deno.cwd(), cwd);
+});
+
+Deno.test("tempRepository({ chdir }) works recursively", async () => {
+  const cwd = Deno.cwd();
+  {
+    await using outer = await tempRepository({ chdir: true });
+    assertEquals(
+      await Deno.realPath(Deno.cwd()),
+      await Deno.realPath(outer.path()),
+    );
+    {
+      await using inner = await tempRepository({ chdir: true });
+      assertNotEquals(
+        await Deno.realPath(inner.path()),
+        await Deno.realPath(outer.path()),
+      );
+      assertEquals(
+        await Deno.realPath(Deno.cwd()),
+        await Deno.realPath(inner.path()),
+      );
+    }
+    assertEquals(
+      await Deno.realPath(Deno.cwd()),
+      await Deno.realPath(outer.path()),
+    );
+  }
+  assertEquals(Deno.cwd(), cwd);
 });

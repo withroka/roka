@@ -51,9 +51,10 @@ const WORKSPACE = {
 
 async function run(context: Deno.TestContext) {
   await using remote = await tempRepository();
+  await remote.commits.create("initial", { allowEmpty: true });
   await using packages = await tempWorkspace({
     ...WORKSPACE,
-    repo: { clone: remote.path() },
+    repo: { clone: remote.path(), chdir: true },
   });
   assertExists(packages[0]);
   const pkg = packages[0];
@@ -76,22 +77,16 @@ async function run(context: Deno.TestContext) {
   );
   using _env = fakeEnv({ GITHUB_TOKEN: "token" });
   using console = fakeConsole();
-  const cwd = Deno.cwd();
-  try {
-    Deno.chdir(root);
-    const code = await forge({ repo });
-    return {
-      code,
-      // deno-lint-ignore no-console
-      output: console
-        .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
-        .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
-        .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
-        .replaceAll(root, "<directory>"),
-    };
-  } finally {
-    Deno.chdir(cwd);
-  }
+  const code = await forge({ repo });
+  return {
+    code,
+    // deno-lint-ignore no-console
+    output: console
+      .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
+      .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
+      .replace(/(?<=(\d+\.\d+\.\d+-\w+\.\d+)\+)(.......)/g, "<hash>")
+      .replaceAll(root, "<directory>"),
+  };
 }
 
 async function test(t: Deno.TestContext) {
