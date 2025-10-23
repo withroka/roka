@@ -9,10 +9,7 @@ import { flow } from "./flow.ts";
 async function run(context: Deno.TestContext) {
   await using remote = await tempRepository();
   await remote.commits.create("initial", { allowEmpty: true });
-  await using repo = await tempRepository({
-    clone: remote.path(),
-    chdir: true,
-  });
+  await using repo = await tempRepository({ clone: remote, chdir: true });
   const dataDirectory = join(
     dirname(fromFileUrl(context.origin)),
     "__testdata__",
