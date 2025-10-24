@@ -532,7 +532,7 @@ export interface BranchCreateOptions {
    */
   target?: Commitish;
   /**
-   * Setup upstream configuration for a new created branch.
+   * Setup upstream configuration for a newly created branch.
    *
    * Setting to `true` uses start-point branch itself as the upstream. Setting
    * to `"inherit"` copies the upstream configuration of the
