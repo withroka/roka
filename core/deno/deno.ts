@@ -421,7 +421,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           },
           debug: {
             patterns: [
-              /^Checked \d+ files/,
+              /^Checked \d+ files?/,
               /^error: Found \d+ not formatted files? in \d+ files?$/,
             ],
             transform: debugTransform,
