@@ -118,6 +118,12 @@ export interface Branches {
   current(): Promise<Branch | undefined>;
   /** List branches in the repository alphabetically. */
   list(options?: BranchListOptions): Promise<Branch[]>;
+  /** Renames a branch. */
+  rename(
+    branch: string | Branch,
+    newName: string,
+    options?: BranchRenameOptions,
+  ): Promise<Branch>;
   /** Deletes a branch. */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
   /** Switches to a commit, or an existing or new branch. */
@@ -535,6 +541,15 @@ export interface BranchCheckoutOptions {
    * @default {false}
    */
   detach?: boolean;
+}
+
+/** Options for the {@linkcode Branches.rename} function. */
+export interface BranchRenameOptions {
+  /**
+   * Force rename the branch.
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode Branches.delete} function. */
@@ -1048,6 +1063,16 @@ export function git(options?: GitOptions): Git {
         await run(gitOptions, "branch", name);
         const [branch] = await repo.branches.list({ name });
         return branch ? branch : { name };
+      },
+      async rename(branch, newName, options) {
+        const name = typeof branch === "string" ? branch : branch.name;
+        await run(
+          gitOptions,
+          ["branch", "-m", name, newName],
+          flag("--force", options?.force),
+        );
+        const [newBranch] = await repo.branches.list({ name: newName });
+        return newBranch ? newBranch : { name: newName };
       },
       async delete(branch, options) {
         const name = typeof branch === "string" ? branch : branch.name;
