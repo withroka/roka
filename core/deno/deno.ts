@@ -567,7 +567,7 @@ export function deno(options?: DenoOptions): DenoCommands {
               /^running \d+ tests? from (?<file>.*)(?:\$(?<line>\d+)-\d+)?$/,
               new RegExp(
                 /^(?<step> *)(?<name>.*?) \.\.\./.source +
-                  /(?: (?<status>FAILED|FAILED|INCOMPLETE|ok|ignored)(?: \(due to .*?\))?(?: .*?\((?<time>[^()]*?)\))?)?/
+                  /(?: (?<status>FAILED|INCOMPLETE|ok|ignored)(?: \(due to .*?\))?(?: .*?\((?<time>[^()]*?)\))?)?/
                     .source +
                   /(?:\n------- output -------\n(?<output>[\s\S]*?)----- output end -----$)?/
                     .source,
