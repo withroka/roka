@@ -420,7 +420,10 @@ export function deno(options?: DenoOptions): DenoCommands {
             },
           },
           debug: {
-            patterns: [/^error: Found \d+ not formatted files? in \d+ files?$/],
+            patterns: [
+              /^Checked \d+ files/,
+              /^error: Found \d+ not formatted files? in \d+ files?$/,
+            ],
             transform: debugTransform,
           },
         },
