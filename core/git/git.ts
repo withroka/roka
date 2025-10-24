@@ -38,7 +38,6 @@
  * @todo Extend `git().config.set()` with more configurations.
  * @todo Add `git().config.get()`
  * @todo Add stash management.
- * @todo Add `git().branches.track()`
  * @todo Handle merges, rebases, conflicts.
  * @todo Handle submodules.
  * @todo Expose dates.
@@ -111,7 +110,7 @@ export interface Git {
 /** Branch operations from {@linkcode Git.branches}. */
 export interface Branches {
   /** Creates a branch. */
-  create(name: string): Promise<Branch>;
+  create(name: string, options?: BranchCreateOptions): Promise<Branch>;
   /** Returns the current branch name. */
   current(): Promise<Branch | undefined>;
   /** List branches in the repository alphabetically. */
@@ -132,6 +131,13 @@ export interface Branches {
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
   /** Switches to a commit, or an existing or new branch. */
   checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
+  /** Branch upstream tracking operations. */
+  upstream: {
+    /** Sets the upstream branch for a given branch. */
+    set(branch: string | Branch, upstream: string): Promise<Branch>;
+    /** Removes the upstream branch for a given branch. */
+    unset(branch: string | Branch): Promise<Branch>;
+  };
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
@@ -210,6 +216,11 @@ export interface Remotes {
 
 /** Configuration for a git repository. */
 export interface Config {
+  /** Branch configuration. */
+  branch?: {
+    /** How to setup tracking for new branches. */
+    autoSetupMerge?: boolean | "always" | "inherit" | "simple";
+  };
   /** Commit configuration. */
   commit?: {
     /** Whether to sign commits. */
@@ -510,6 +521,30 @@ export interface CloneOptions extends InitOptions, RemoteOptions {
   tags?: boolean;
 }
 
+/**
+ * Options for the {@linkcode Branches.create} and
+ * {@linkcode Branches.checkout} functions when creating new branches.
+ */
+export interface BranchCreateOptions {
+  /**
+   * Target commit or branch to create the new branch from.
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
+  /**
+   * Setup upstream configuration for a newly created branch.
+   *
+   * Setting to `true` uses start-point branch itself as the upstream. Setting
+   * to `"inherit"` copies the upstream configuration of the
+   * {@linkcode BranchCreateOptions.target target} branch. Setting to `false`
+   * does not setup any upstream configuration.
+   *
+   * The default behavior is to enable upstream tracking only when
+   * {@linkcode BranchCreateOptions.target target} is a remote branch.
+   */
+  track?: boolean | "inherit";
+}
+
 /** Options for the {@linkcode Branches.list} function. */
 export interface BranchListOptions extends RefListOptions {
   /**
@@ -525,26 +560,6 @@ export interface BranchListOptions extends RefListOptions {
    * @default {false}
    */
   remotes?: boolean;
-}
-
-/** Options for the {@linkcode Branches.checkout} function. */
-export interface BranchCheckoutOptions {
-  /**
-   * Checkout at the given commit or branch.
-   *
-   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be
-   * `true`.
-   *
-   * @default {"HEAD"}
-   */
-  target?: Commitish;
-  /** Branch to create and checkout during checkout. */
-  new?: string;
-  /**
-   * Detach `HEAD` during checkout from the target branch.
-   * @default {false}
-   */
-  detach?: boolean;
 }
 
 /** Options for the {@linkcode Branches.move} function. */
@@ -572,6 +587,32 @@ export interface BranchDeleteOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+/** Options for the {@linkcode Branches.track} function. */
+export interface BranchCreateOptions {
+  /** Track given branch as upstream. */
+  upstream?: string;
+}
+
+/** Options for the {@linkcode Branches.checkout} function. */
+export interface BranchCheckoutOptions extends BranchCreateOptions {
+  /**
+   * Checkout at the given commit or branch.
+   *
+   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be
+   * `true`.
+   *
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
+  /** Branch to create and checkout during checkout. */
+  new?: string;
+  /**
+   * Detach `HEAD` during checkout from the target branch.
+   * @default {false}
+   */
+  detach?: boolean;
 }
 
 /** Options for the {@linkcode Ignore.check} function. */
@@ -773,6 +814,11 @@ export interface CommitLogOptions {
 export interface CommitPushOptions extends TransportOptions, RemoteOptions {
   /** Remote branch to push to. The default is the current branch. */
   branch?: string | Branch;
+  /**
+   * Set upstream tracking for every branch successfully pushed.
+   * @default {false}
+   */
+  setUpstream?: boolean;
   /** Force push to remote. */
   force?: boolean;
 }
@@ -1027,6 +1073,18 @@ export function git(options?: GitOptions): Git {
       },
     },
     branches: {
+      async create(name, options) {
+        await run(
+          gitOptions,
+          ["branch", name],
+          commitArg(options?.target),
+          flag("--track", options?.track === true),
+          flag("--no-track", options?.track === false),
+          flag("--track=inherit", options?.track === "inherit"),
+        );
+        const [branch] = await repo.branches.list({ name });
+        return branch ? branch : { name };
+      },
       async current() {
         const name = await run(gitOptions, "branch", "--show-current");
         if (!name) return undefined;
@@ -1062,21 +1120,6 @@ export function git(options?: GitOptions): Git {
             }),
         );
       },
-      async checkout(options) {
-        await run(
-          gitOptions,
-          "checkout",
-          flag("--detach", options?.detach),
-          flag("-b", options?.new),
-          commitArg(options?.target),
-        );
-        return repo.branches.current();
-      },
-      async create(name) {
-        await run(gitOptions, "branch", name);
-        const [branch] = await repo.branches.list({ name });
-        return branch ? branch : { name };
-      },
       async move(branch, newName, options) {
         const name = typeof branch === "string" ? branch : branch.name;
         await run(
@@ -1104,6 +1147,39 @@ export function git(options?: GitOptions): Git {
           ["branch", name],
           flag(["-D", "-d"], options?.force ?? false),
         );
+      },
+      async checkout(options) {
+        await run(
+          gitOptions,
+          "checkout",
+          flag("--detach", options?.detach),
+          flag("-b", options?.new),
+          flag("--track", options?.track === true),
+          flag("--no-track", options?.track === false),
+          flag("--track=inherit", options?.track === "inherit"),
+          commitArg(options?.target),
+        );
+        return repo.branches.current();
+      },
+      upstream: {
+        async set(branch, upstream) {
+          const name = typeof branch === "string" ? branch : branch.name;
+          await run(
+            gitOptions,
+            ["branch", name, "--set-upstream-to", upstream],
+          );
+          const [newBranch] = await repo.branches.list({ name });
+          return newBranch ? newBranch : { name };
+        },
+        async unset(branch) {
+          const name = typeof branch === "string" ? branch : branch.name;
+          await run(
+            gitOptions,
+            ["branch", name, "--unset-upstream"],
+          );
+          const [newBranch] = await repo.branches.list({ name });
+          return newBranch ? newBranch : { name };
+        },
       },
     },
     ignore: {
@@ -1385,8 +1461,9 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["push", options?.remote ?? "origin"],
           branch,
-          flag(["--atomic", "--no-atomic"], options?.atomic),
+          flag("--set-upstream", options?.setUpstream),
           flag("--force", options?.force),
+          flag(["--atomic", "--no-atomic"], options?.atomic),
           flag("--tags", options?.tags),
         );
       },
