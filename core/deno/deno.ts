@@ -212,6 +212,7 @@ export interface DenoOptions {
   onPartialDebug?: (info: Partial<Report>) => unknown;
 }
 
+/** Options for the {@linkcode Deno.check} function. */
 export interface CheckOptions {
   /**
    * Do not fail on zero matching files.
@@ -546,7 +547,6 @@ export function deno(options?: DenoOptions): DenoCommands {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
         permitNoFiles,
         commonArgs: [
-          "--permit-no-files",
           "--no-check",
           "--doc",
           update ? "--allow-all" : "--permission-set",
