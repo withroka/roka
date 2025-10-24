@@ -1514,15 +1514,22 @@ Deno.test("git().diff.status({ target }) lists deleted files since commit", asyn
 
 Deno.test("git().diff.status({ target }) lists renamed files since commit", async () => {
   await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("old.comitted.file"), "committed content");
+  await Deno.writeTextFile(
+    repo.path("old.committed.file"),
+    "committed content",
+  );
   await Deno.writeTextFile(repo.path("old.staged.file"), "staged content");
-  await repo.index.add(["old.comitted.file", "old.staged.file"]);
+  await repo.index.add(["old.committed.file", "old.staged.file"]);
   const commit = await repo.commits.create("commit");
-  await repo.index.move("old.comitted.file", "new.comitted.file");
+  await repo.index.move("old.committed.file", "new.committed.file");
   await repo.commits.create("commit");
   await repo.index.move("old.staged.file", "new.staged.file");
   assertEquals(await repo.diff.status({ target: commit }), [
-    { path: "new.comitted.file", status: "renamed", from: "old.comitted.file" },
+    {
+      path: "new.committed.file",
+      status: "renamed",
+      from: "old.committed.file",
+    },
     { path: "new.staged.file", status: "renamed", from: "old.staged.file" },
   ]);
 });
