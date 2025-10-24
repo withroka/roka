@@ -112,16 +112,16 @@ export interface Git {
 
 /** Branch operations from {@linkcode Git.branches}. */
 export interface Branches {
+  /** Creates a branch. */
+  create(name: string): Promise<Branch>;
   /** Returns the current branch name. */
   current(): Promise<Branch | undefined>;
   /** List branches in the repository alphabetically. */
   list(options?: BranchListOptions): Promise<Branch[]>;
-  /** Switches to a commit, or an existing or new branch. */
-  checkout(options?: BranchCheckoutOptions): Promise<void>;
-  /** Creates a branch. */
-  create(name: string): Promise<void>;
   /** Deletes a branch. */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
+  /** Switches to a commit, or an existing or new branch. */
+  checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
@@ -1042,9 +1042,12 @@ export function git(options?: GitOptions): Git {
           flag("-b", options?.new),
           commitArg(options?.target),
         );
+        return repo.branches.current();
       },
       async create(name) {
         await run(gitOptions, "branch", name);
+        const [branch] = await repo.branches.list({ name });
+        return branch ? branch : { name };
       },
       async delete(branch, options) {
         const name = typeof branch === "string" ? branch : branch.name;
