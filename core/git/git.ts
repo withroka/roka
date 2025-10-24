@@ -814,6 +814,11 @@ export interface CommitLogOptions {
 export interface CommitPushOptions extends TransportOptions, RemoteOptions {
   /** Remote branch to push to. The default is the current branch. */
   branch?: string | Branch;
+  /**
+   * Set upstream tracking for every branch successfully pushed.
+   * @default {false}
+   */
+  setUpstream?: boolean;
   /** Force push to remote. */
   force?: boolean;
 }
@@ -1456,8 +1461,9 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["push", options?.remote ?? "origin"],
           branch,
-          flag(["--atomic", "--no-atomic"], options?.atomic),
+          flag("--set-upstream", options?.setUpstream),
           flag("--force", options?.force),
+          flag(["--atomic", "--no-atomic"], options?.atomic),
           flag("--tags", options?.tags),
         );
       },

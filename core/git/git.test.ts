@@ -2756,6 +2756,36 @@ Deno.test("git().commits.push() pushes commits to remote", async () => {
   assertEquals(await remote.commits.log(), [commit2, commit1]);
 });
 
+Deno.test("git().commits.push({ branch }) pushes pushes to a remote branch", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: remote });
+  const commit = await repo.commits.create("commit", { allowEmpty: true });
+  const branch = await repo.branches.create("branch");
+  await repo.commits.push({ branch });
+  assertEquals(await repo.branches.list({ name: "branch" }), [
+    { name: "branch", commit },
+  ]);
+  assertEquals(await remote.branches.list({ name: "branch" }), [
+    { name: "branch", commit },
+  ]);
+});
+
+Deno.test("git().commits.push({ setUpstream }) sets upstream tracking", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: remote });
+  const commit = await repo.commits.create("commit", { allowEmpty: true });
+  const branch = await repo.branches.create("branch");
+  await repo.commits.push({ branch, setUpstream: true });
+  assertEquals(await repo.branches.list({ name: "branch" }), [
+    {
+      name: "branch",
+      push: "origin/branch",
+      upstream: "origin/branch",
+      commit,
+    },
+  ]);
+});
+
 Deno.test("git().commits.push({ remote }) pushes commits to a remote with branch", async () => {
   await using remote = await tempRepository({ bare: true });
   const branch = await remote.branches.current();
