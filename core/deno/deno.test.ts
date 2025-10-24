@@ -44,7 +44,7 @@ Deno.test("deno().path() is persistent with absolute path", async () => {
   const repo = deno({ cwd: directory.path() });
   assertEquals(repo.path(), directory.path());
   {
-    await using _ = await tempDirectory({ chdir: true });
+    const _ = await tempDirectory({ chdir: true });
     assertEquals(resolve(repo.path()), directory.path());
   }
 });
@@ -796,7 +796,6 @@ Deno.test("deno().fmt({ check }) reports formatting errors", async () => {
   assertResults(results, [{
     file: "file.ts",
     error: [{
-      kind: "fmt" as const,
       file: "file.ts",
       message: [
         `from ${Deno.cwd()}/file.ts:`,
@@ -833,7 +832,6 @@ Deno.test("deno().fmt({ check }) reports formatting errors in JSDoc code blocks"
   assertResults(results, [{
     file: "file.ts",
     error: [{
-      kind: "fmt" as const,
       file: "file.ts",
       message: [
         `from ${Deno.cwd()}/file.ts:3:4:`,
@@ -872,7 +870,6 @@ Deno.test("deno().fmt({ check }) reports formatting errors in Markdown code bloc
     file: "file.md",
     error: [
       {
-        kind: "fmt" as const,
         file: "file.md",
         message: [
           `from ${Deno.cwd()}/file.md:`,
@@ -1725,15 +1722,31 @@ Deno.test("deno().test() rejects runtime failure", async () => {
     ].join("\n"),
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
-  await assertRejects(
-    () => deno().test(["file.ts"]),
-    DenoError,
-    "TypeError: Assignment to constant variable",
-  );
+  assertResults(await deno().test(["file.ts"]), [
+    {
+      file: "file.ts",
+      error: [
+        {
+          file: "file.ts",
+          message: [
+            "./file.ts (uncaught error)",
+            "error: (in promise) TypeError: Assignment to constant variable.",
+            "x = 13;",
+            "^",
+            `    at file://${Deno.cwd()}/file.ts:2:1`,
+            "This error was not caught from a test and caused the test runner to fail on the referenced module.",
+            "It most likely originated from a dangling promise, event/timeout handler or top-level code.",
+          ].join("\n"),
+        },
+        { file: "file.ts", message: "./file.ts (uncaught error)" },
+      ],
+      info: [],
+    },
+  ], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
-Deno.test('deno().test() rejects passing tests with the "only" option', async () => {
+Deno.test("deno().test() rejects passing tests with the `only` option", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
     "Deno.test.only('test', () => {});",
@@ -2423,6 +2436,7 @@ Deno.test("deno().test() handles test output with passing tests", async () => {
       file: "file.ts",
       success: true,
       status: "ok",
+      output: "test log output\ntest error output\n",
       time: "?ms",
       message: "test ... ok (?ms)",
     }],
@@ -2475,6 +2489,7 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
       file: "file.ts",
       success: false,
       status: "FAILED",
+      output: "test log output\ntest error output\n",
       time: "?ms",
       message: "test ... FAILED (?ms)",
     }],
@@ -2506,7 +2521,13 @@ Deno.test("deno().test({ update }) updates snapshots", async () => {
       info: [
         {
           kind: "test",
-          message: "snapshotTest ... ok (?ms)",
+          message: [
+            "snapshotTest ... ok (?ms)",
+            "------- post-test output -------",
+            "",
+            " > 1 snapshot updated.",
+            "----- post-test output end -----",
+          ].join("\n"),
           test: ["snapshotTest"],
           file: "file.ts",
           success: true,
@@ -2550,7 +2571,14 @@ Deno.test("deno().test({ update }) updates mocks", async () => {
       info: [
         {
           kind: "test",
-          message: "snapshotTest ... ok (?ms)",
+          message: [
+            "snapshotTest ... ok (?ms)",
+            "------- post-test output -------",
+            "",
+            " > 1 mock updated.",
+            "   • snapshotTest > func 1",
+            "----- post-test output end -----",
+          ].join("\n"),
           test: ["snapshotTest"],
           file: "file.ts",
           success: true,
