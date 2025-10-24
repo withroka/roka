@@ -83,6 +83,24 @@ file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 }
 `;
 
+snapshot[`flow [empty-directory] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: empty-directory
+",
+}
+`;
+
+snapshot[`flow [missing-file] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: missing-file.ts
+",
+}
+`;
+
 snapshot[`flow --check 1`] = `
 {
   code: 0,
@@ -141,6 +159,24 @@ snapshot[`flow fmt [invalid-doc] 1`] = `
   code: 0,
   output: "
 ✅ Formatted 1 file
+",
+}
+`;
+
+snapshot[`flow fmt [empty-directory] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: empty-directory
+",
+}
+`;
+
+snapshot[`flow fmt [missing-file] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: missing-file.ts
 ",
 }
 `;
@@ -316,6 +352,24 @@ TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
 }
 `;
 
+snapshot[`flow check [empty-directory] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: empty-directory
+",
+}
+`;
+
+snapshot[`flow check [missing-file] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: missing-file.ts
+",
+}
+`;
+
 snapshot[`flow lint [valid-code] 1`] = `
 {
   code: 0,
@@ -478,6 +532,24 @@ error[no-window]: Window is no longer available in Deno
 
 ❌ Linted 1 file, found 4 problems
 ',
+}
+`;
+
+snapshot[`flow lint [empty-directory] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: empty-directory
+",
+}
+`;
+
+snapshot[`flow lint [missing-file] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: missing-file.ts
+",
 }
 `;
 
@@ -694,5 +766,47 @@ error: Error: fail
 
 ❌ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
 ',
+}
+`;
+
+snapshot[`flow test [empty-directory] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: empty-directory
+",
+}
+`;
+
+snapshot[`flow test [missing-file] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No files found: missing-file.ts
+",
+}
+`;
+
+snapshot[`flow test --update [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+
+example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow test --update [valid-doc] 1`] = `
+{
+  code: 0,
+  output: "
+
+file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
 }
 `;

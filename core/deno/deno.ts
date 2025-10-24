@@ -49,10 +49,11 @@ export interface DenoCommands {
    * Code blocks in documentation are also linted.
    *
    * @param files List of files to type check.
+   * @param options Options for formatting.
    * @returns Problems found type checking.
    * @throws {DenoError} If the command fails with no error message.
    */
-  check(files: string[]): Promise<FileResult[]>;
+  check(files: string[], options?: CheckOptions): Promise<FileResult[]>;
   /**
    * Format given files using [`deno fmt`](https://docs.deno.com/go/fmt).
    *
@@ -211,6 +212,15 @@ export interface DenoOptions {
   onPartialDebug?: (info: Partial<Report>) => unknown;
 }
 
+/** Options for the {@linkcode Deno.check} function. */
+export interface CheckOptions {
+  /**
+   * Do not fail on zero matching files.
+   * @default {false}
+   */
+  permitNoFiles?: boolean;
+}
+
 /** Options for the {@linkcode Deno.doc} function. */
 export interface DocOptions {
   /**
@@ -227,6 +237,11 @@ export interface DocOptions {
    * @default {false}
    */
   lint?: boolean;
+  /**
+   * Do not fail on zero matching files.
+   * @default {false}
+   */
+  permitNoFiles?: boolean;
 }
 
 /** Options for the {@linkcode Deno.fmt} function. */
@@ -240,6 +255,11 @@ export interface FmtOptions {
    * @default {false}
    */
   check?: boolean;
+  /**
+   * Do not fail on zero matching files.
+   * @default {false}
+   */
+  permitNoFiles?: boolean;
 }
 
 /** Options for the {@linkcode Deno.lint} function. */
@@ -249,6 +269,11 @@ export interface LintOptions {
    * @default {false}
    */
   fix?: boolean;
+  /**
+   * Do not fail on zero matching files.
+   * @default {false}
+   */
+  permitNoFiles?: boolean;
 }
 
 /** Options for the {@linkcode Deno.test} function. */
@@ -258,6 +283,11 @@ export interface TestOptions {
    * @default {false}
    */
   update?: boolean;
+  /**
+   * Do not fail on zero matching files.
+   * @default {false}
+   */
+  permitNoFiles?: boolean;
 }
 
 /** Options for the {@linkcode Deno.compile} function. */
@@ -366,9 +396,11 @@ export function deno(options?: DenoOptions): DenoCommands {
     path(...parts: string[]) {
       return join(directory, ...parts);
     },
-    async check(files) {
+    async check(files, options) {
+      const { permitNoFiles = false } = options ?? {};
       return await new Runner(directory, "check", {
         extensions: [...TYPESCRIPT_EXTENSIONS, "md"],
+        permitNoFiles,
         doc: { only: ["md"] },
         commonArgs: ["--quiet"],
         parse: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
@@ -402,8 +434,10 @@ export function deno(options?: DenoOptions): DenoCommands {
       }).run(files);
     },
     async fmt(files, options) {
-      const { check = false } = options ?? {};
+      const { check = false, permitNoFiles = false } = options ?? {};
       return await new Runner(directory, "fmt", {
+        extensions: FORMAT_EXTENSIONS,
+        permitNoFiles,
         doc: { skip: ["md"] },
         commonArgs: [...(check ? ["--check"] : ["--quiet"])],
         parse: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
@@ -430,9 +464,11 @@ export function deno(options?: DenoOptions): DenoCommands {
       }).run(files);
     },
     async doc(files, options) {
-      const { json = false, lint = false } = options ?? {};
+      const { json = false, lint = false, permitNoFiles = false } = options ??
+        {};
       return await new Runner(directory, "doc", {
         extensions: SCRIPT_EXTENSIONS,
+        permitNoFiles,
         commonArgs: [
           "--quiet",
           ...json ? ["--json"] : [],
@@ -471,9 +507,10 @@ export function deno(options?: DenoOptions): DenoCommands {
       }).run(files);
     },
     async lint(files, options) {
-      const { fix = false } = options ?? {};
+      const { fix = false, permitNoFiles = false } = options ?? {};
       return await new Runner(directory, "lint", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
+        permitNoFiles,
         doc: { only: ["md"] },
         commonArgs: [
           "--quiet",
@@ -503,13 +540,13 @@ export function deno(options?: DenoOptions): DenoCommands {
       }).run(files);
     },
     async test(files, options) {
-      const { update = false } = options ?? {};
+      const { update = false, permitNoFiles = false } = options ?? {};
       let lastFile: Partial<Info> = {};
       const test: string[] = [];
       return await new Runner(directory, "test", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
+        permitNoFiles,
         commonArgs: [
-          "--permit-no-files",
           "--no-check",
           "--doc",
           update ? "--allow-all" : "--permission-set",
@@ -657,11 +694,33 @@ const SCRIPT_EXTENSIONS = [
   ...TYPESCRIPT_EXTENSIONS,
   ...["js", "jsx", "mts", "mjs", "cts", "cjs"],
 ];
+const FORMAT_EXTENSIONS = [
+  ...SCRIPT_EXTENSIONS,
+  ...[
+    "md",
+    "json",
+    "jsonc",
+    "css",
+    "scss",
+    "sass",
+    "less",
+    "html",
+    "svelte",
+    "vue",
+    "astro",
+    "yml",
+    "yaml",
+    "ipynb",
+    "sql",
+    "vto",
+    "njk",
+  ],
+];
 
 interface RunOptions {
   cwd?: string;
-  allowNone?: boolean;
   extensions?: string[];
+  permitNoFiles?: boolean;
   doc?: boolean | {
     skip?: string[];
     only?: string[];
@@ -729,8 +788,8 @@ class Runner implements AsyncDisposable {
 
   async run(files: string[]): Promise<FileResult[]> {
     const {
-      allowNone,
       extensions,
+      permitNoFiles,
       commonArgs = [],
       codeArgs = [],
       scriptArgs = [],
@@ -738,16 +797,16 @@ class Runner implements AsyncDisposable {
       parse,
     } = this.options ?? {};
     const docOnly = typeof doc === "object" && doc.only ? doc.only : [];
-    const results = new Map<string, FileResult>(
-      files.map((file) => [file, { file, error: [], info: [] }]),
-    );
     if (extensions !== undefined) {
       files = files
         .filter((x) => extensions.includes(extname(x).slice(1).toLowerCase()));
     }
-    if (files.length === 0 && !allowNone) {
+    if (files.length === 0 && !permitNoFiles) {
       throw new DenoError("No target files found");
     }
+    const results = new Map<string, FileResult>(
+      files.map((file) => [file, { file, error: [], info: [] }]),
+    );
     this.filesByPath = new Map(files.map((file) => [resolve(file), file]));
     if (doc) this.blocksDir = await tempDirectory();
     this.blocksByPath = await this.blockFiles(files);
