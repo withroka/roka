@@ -38,7 +38,6 @@
  * @todo Extend `git().config.set()` with more configurations.
  * @todo Add `git().config.get()`
  * @todo Add stash management.
- * @todo Add `git().branches.copy()`
  * @todo Add `git().branches.track()`
  * @todo Handle merges, rebases, conflicts.
  * @todo Handle submodules.
@@ -122,6 +121,12 @@ export interface Branches {
     branch: string | Branch,
     newName: string,
     options?: BranchMoveOptions,
+  ): Promise<Branch>;
+  /** Copies a branch. */
+  copy(
+    branch: string | Branch,
+    newName: string,
+    options?: BranchCopyOptions,
   ): Promise<Branch>;
   /** Deletes a branch. */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
@@ -546,6 +551,15 @@ export interface BranchCheckoutOptions {
 export interface BranchMoveOptions {
   /**
    * Force rename the branch.
+   * @default {false}
+   */
+  force?: boolean;
+}
+
+/** Options for the {@linkcode Branches.copy} function. */
+export interface BranchCopyOptions {
+  /**
+   * Force copy the branch.
    * @default {false}
    */
   force?: boolean;
@@ -1068,6 +1082,16 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           ["branch", "-m", name, newName],
+          flag("--force", options?.force),
+        );
+        const [newBranch] = await repo.branches.list({ name: newName });
+        return newBranch ? newBranch : { name: newName };
+      },
+      async copy(branch, newName, options) {
+        const name = typeof branch === "string" ? branch : branch.name;
+        await run(
+          gitOptions,
+          ["branch", "-c", name, newName],
           flag("--force", options?.force),
         );
         const [newBranch] = await repo.branches.list({ name: newName });
