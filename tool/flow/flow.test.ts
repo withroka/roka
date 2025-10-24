@@ -23,7 +23,8 @@ async function run(context: Deno.TestContext) {
   await repo.commits.create("commit");
   using _args = fakeArgs(
     context.name
-      .replaceAll("[valid]", "valid.ts")
+      .replaceAll("[valid-code]", "valid-code.ts")
+      .replaceAll("[valid-doc]", "valid-doc.md")
       .replaceAll("[invalid-code]", "invalid-code.ts")
       .replaceAll("[invalid-comment]", "invalid-comment.ts")
       .replaceAll("[invalid-doc]", "invalid-doc.md")
@@ -48,29 +49,36 @@ async function test(t: Deno.TestContext) {
 
 Deno.test("flow --help", test);
 Deno.test("flow", test);
-Deno.test("flow [valid]", test);
+Deno.test("flow [valid-code]", test);
+Deno.test("flow [valid-doc]", test);
 Deno.test("flow --check", test);
-Deno.test("flow --check [valid]", test);
+Deno.test("flow --check [valid-code]", test);
+Deno.test("flow --check [valid-doc]", test);
 Deno.test("flow fmt [invalid-code]", test);
 Deno.test("flow fmt [invalid-comment]", test);
 Deno.test("flow fmt [invalid-doc]", test);
-Deno.test("flow fmt --check [valid]", test);
+Deno.test("flow fmt --check [valid-code]", test);
+Deno.test("flow fmt --check [valid-doc]", test);
 Deno.test("flow fmt --check [invalid-code]", test);
 Deno.test("flow fmt --check [invalid-comment]", test);
 Deno.test("flow fmt --check [invalid-doc]", test);
-Deno.test("flow check [valid]", test);
+Deno.test("flow check [valid-code]", test);
+Deno.test("flow check [valid-doc]", test);
 Deno.test("flow check [invalid-code]", test);
 Deno.test("flow check [invalid-comment]", test);
 Deno.test("flow check [invalid-doc]", test);
-Deno.test("flow lint [valid]", test);
+Deno.test("flow lint [valid-code]", test);
+Deno.test("flow lint [valid-doc]", test);
 Deno.test("flow lint [invalid-code]", test);
 Deno.test("flow lint [invalid-comment]", test);
 Deno.test("flow lint [invalid-doc]", test);
-Deno.test("flow lint --fix [valid]", test);
+Deno.test("flow lint --fix [valid-code]", test);
+Deno.test("flow lint --fix [valid-doc]", test);
 Deno.test("flow lint --fix [invalid-code]", test);
 Deno.test("flow lint --fix [invalid-comment]", test);
 Deno.test("flow lint --fix [invalid-doc]", test);
-Deno.test("flow test [valid]", test);
+Deno.test("flow test [valid-code]", test);
+Deno.test("flow test [valid-doc]", test);
 Deno.test("flow test [invalid-code]", test);
 Deno.test("flow test [invalid-comment]", test);
 Deno.test("flow test [invalid-doc]", test);

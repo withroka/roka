@@ -57,13 +57,26 @@ snapshot[`flow 1`] = `
 }
 `;
 
-snapshot[`flow [valid] 1`] = `
+snapshot[`flow [valid-code] 1`] = `
 {
   code: 0,
   output: "
 ✅ Checked 1 file
 
 example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow [valid-doc] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Checked 1 file
+
+file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 
 ✅ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
@@ -79,13 +92,26 @@ snapshot[`flow --check 1`] = `
 }
 `;
 
-snapshot[`flow --check [valid] 1`] = `
+snapshot[`flow --check [valid-code] 1`] = `
 {
   code: 0,
   output: "
 ✅ Checked 1 file
 
 example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow --check [valid-doc] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Checked 1 file
+
+file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 
 ✅ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
@@ -119,7 +145,16 @@ snapshot[`flow fmt [invalid-doc] 1`] = `
 }
 `;
 
-snapshot[`flow fmt --check [valid] 1`] = `
+snapshot[`flow fmt --check [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Checked formatting in 1 file
+",
+}
+`;
+
+snapshot[`flow fmt --check [valid-doc] 1`] = `
 {
   code: 0,
   output: "
@@ -182,7 +217,16 @@ from <directory>/invalid-doc.md:
 }
 `;
 
-snapshot[`flow check [valid] 1`] = `
+snapshot[`flow check [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Type-checked 1 file
+",
+}
+`;
+
+snapshot[`flow check [valid-doc] 1`] = `
 {
   code: 0,
   output: "
@@ -272,7 +316,16 @@ TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
 }
 `;
 
-snapshot[`flow lint [valid] 1`] = `
+snapshot[`flow lint [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Linted 1 file
+",
+}
+`;
+
+snapshot[`flow lint [valid-doc] 1`] = `
 {
   code: 0,
   output: "
@@ -428,7 +481,16 @@ error[no-window]: Window is no longer available in Deno
 }
 `;
 
-snapshot[`flow lint --fix [valid] 1`] = `
+snapshot[`flow lint --fix [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Linted 1 file
+",
+}
+`;
+
+snapshot[`flow lint --fix [valid-doc] 1`] = `
 {
   code: 0,
   output: "
@@ -554,12 +616,24 @@ error[no-unused-vars]: \`a\` is never used
 }
 `;
 
-snapshot[`flow test [valid] 1`] = `
+snapshot[`flow test [valid-code] 1`] = `
 {
   code: 0,
   output: "
 
 example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow test [valid-doc] 1`] = `
+{
+  code: 0,
+  output: "
+
+file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 
 ✅ Ran 1 test from 1 file (1 passed, 0 failed)
 ",

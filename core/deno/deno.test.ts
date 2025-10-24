@@ -164,6 +164,27 @@ Deno.test("deno().check() accepts file with no errors", async () => {
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
+Deno.test("deno().check() handles multiple files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "/**",
+    " * Some text",
+    " *",
+    " * ```ts",
+    " * Number(42);",
+    " * ```",
+    " */",
+    "export function f(): number { return 42; }",
+  ].join("\n");
+  await Deno.writeTextFile("file1.ts", content);
+  await Deno.writeTextFile("file2.ts", content);
+  const results = await deno().check(["file1.ts", "file2.ts"]);
+  assertResults(results, [
+    { file: "file1.ts", error: [], info: [] },
+    { file: "file2.ts", error: [], info: [] },
+  ]);
+});
+
 Deno.test("deno().check() reports type errors", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await Deno.writeTextFile(
@@ -606,17 +627,50 @@ Deno.test("deno().fmt() accepts syntax errors in Markdown code blocks", async ()
 
 Deno.test("deno().fmt() formats code", async () => {
   await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile(
-    "file.ts",
-    [
-      "export   const y= 1",
-      "function f(){return 42}",
-    ].join("\n"),
-  );
+  const content = [
+    "export   const y= 1",
+    "function f(){return 42}",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
   const results = await deno().fmt(["file.ts"]);
   assertResults(results, [{ file: "file.ts", error: [], info: [] }]);
   assertEquals(
     await Deno.readTextFile("file.ts"),
+    [
+      "export const y = 1;",
+      "function f() {",
+      "  return 42;",
+      "}",
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("deno().fmt() formats code in multiple files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "export   const y= 1",
+    "function f(){return 42}",
+  ].join("\n");
+  await Deno.writeTextFile("file1.ts", content);
+  await Deno.writeTextFile("file2.ts", content);
+  const results = await deno().fmt(["file1.ts", "file2.ts"]);
+  assertResults(results, [
+    { file: "file1.ts", error: [], info: [] },
+    { file: "file2.ts", error: [], info: [] },
+  ]);
+  assertEquals(
+    await Deno.readTextFile("file1.ts"),
+    [
+      "export const y = 1;",
+      "function f() {",
+      "  return 42;",
+      "}",
+      "",
+    ].join("\n"),
+  );
+  assertEquals(
+    await Deno.readTextFile("file2.ts"),
     [
       "export const y = 1;",
       "function f() {",
@@ -785,6 +839,48 @@ Deno.test("deno().fmt() ignores code blocks with no language in Markdown", async
   assertEquals(await Deno.readTextFile("file.md"), content);
 });
 
+Deno.test("deno().fmt({ check }) checks formatting", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "export const y = 1;",
+    "function f() {",
+    "  return 42;",
+    "}",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const results = await deno().fmt(["file.ts"], { check: true });
+  assertResults(results, [{
+    file: "file.ts",
+    error: [],
+    info: [],
+  }]);
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().fmt({ check }) handles multiple files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "export const y = 1;",
+    "function f() {",
+    "  return 42;",
+    "}",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file1.ts", content);
+  await Deno.writeTextFile("file2.ts", content);
+  const results = await deno().fmt(["file1.ts", "file2.ts"], { check: true });
+  assertResults(results, [{
+    file: "file1.ts",
+    error: [],
+    info: [],
+  }, {
+    file: "file2.ts",
+    error: [],
+    info: [],
+  }]);
+});
+
 Deno.test("deno().fmt({ check }) reports formatting errors", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
@@ -796,7 +892,6 @@ Deno.test("deno().fmt({ check }) reports formatting errors", async () => {
   assertResults(results, [{
     file: "file.ts",
     error: [{
-      kind: "fmt" as const,
       file: "file.ts",
       message: [
         `from ${Deno.cwd()}/file.ts:`,
@@ -812,6 +907,50 @@ Deno.test("deno().fmt({ check }) reports formatting errors", async () => {
     info: [],
   }]);
   assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().fmt({ check }) reports formatting errors from multiple files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "export   const y= 1",
+    "function f(){return 42}",
+  ].join("\n");
+  await Deno.writeTextFile("file1.ts", content);
+  await Deno.writeTextFile("file2.ts", content);
+  const results = await deno().fmt(["file1.ts", "file2.ts"], { check: true });
+  assertResults(results, [{
+    file: "file1.ts",
+    error: [{
+      file: "file1.ts",
+      message: [
+        `from ${Deno.cwd()}/file1.ts:`,
+        "1 | -export   const y= 1",
+        "1 | +export const y = 1;",
+        "2 | -function f(){return 42}",
+        "2 | +function f() {",
+        "3 | +  return 42;",
+        "4 | +}",
+        "5 | +",
+      ].join("\n"),
+    }],
+    info: [],
+  }, {
+    file: "file2.ts",
+    error: [{
+      file: "file2.ts",
+      message: [
+        `from ${Deno.cwd()}/file2.ts:`,
+        "1 | -export   const y= 1",
+        "1 | +export const y = 1;",
+        "2 | -function f(){return 42}",
+        "2 | +function f() {",
+        "3 | +  return 42;",
+        "4 | +}",
+        "5 | +",
+      ].join("\n"),
+    }],
+    info: [],
+  }]);
 });
 
 Deno.test("deno().fmt({ check }) reports formatting errors in JSDoc code blocks", async () => {
@@ -833,7 +972,6 @@ Deno.test("deno().fmt({ check }) reports formatting errors in JSDoc code blocks"
   assertResults(results, [{
     file: "file.ts",
     error: [{
-      kind: "fmt" as const,
       file: "file.ts",
       message: [
         `from ${Deno.cwd()}/file.ts:3:4:`,
@@ -872,7 +1010,6 @@ Deno.test("deno().fmt({ check }) reports formatting errors in Markdown code bloc
     file: "file.md",
     error: [
       {
-        kind: "fmt" as const,
         file: "file.md",
         message: [
           `from ${Deno.cwd()}/file.md:`,
@@ -938,6 +1075,32 @@ Deno.test("deno().doc({ lint }) lint accepts file with no errors", async () => {
   const results = deno().doc(["file.ts"], { lint: true });
   assertResults(await results, [{ file: "file.ts", error: [], info: [] }]);
   assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().doc({ lint }) handles multiple files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "/**",
+    " * Some text",
+    " *",
+    " * ```ts",
+    " * Number(42);",
+    " * ```",
+    " */",
+    "export function f(): number { return 42; }",
+  ].join("\n");
+  await Deno.writeTextFile("file1.ts", content);
+  await Deno.writeTextFile("file2.ts", content);
+  const results = deno().doc(["file1.ts", "file2.ts"], { lint: true });
+  assertResults(await results, [{
+    file: "file1.ts",
+    error: [],
+    info: [],
+  }, {
+    file: "file2.ts",
+    error: [],
+    info: [],
+  }]);
 });
 
 Deno.test("deno().doc({ lint }) reports doc lint errors", async () => {
@@ -1193,6 +1356,27 @@ Deno.test("deno().lint() accepts file with no errors", async () => {
   const results = await deno().lint(["file.ts"]);
   assertResults(results, [{ file: "file.ts", error: [], info: [] }]);
   assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().lint() handles multiple files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "/**",
+    " * Some text",
+    " *",
+    " * ```ts",
+    " * Number(42);",
+    " * ```",
+    " */",
+    "export function f(): number { return 42; }",
+  ].join("\n");
+  await Deno.writeTextFile("file1.ts", content);
+  await Deno.writeTextFile("file2.ts", content);
+  const results = await deno().lint(["file1.ts", "file2.ts"]);
+  assertResults(results, [
+    { file: "file1.ts", error: [], info: [] },
+    { file: "file2.ts", error: [], info: [] },
+  ]);
 });
 
 Deno.test("deno().lint() reports lint errors", async () => {
@@ -1725,15 +1909,31 @@ Deno.test("deno().test() rejects runtime failure", async () => {
     ].join("\n"),
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
-  await assertRejects(
-    () => deno().test(["file.ts"]),
-    DenoError,
-    "TypeError: Assignment to constant variable",
-  );
+  assertResults(await deno().test(["file.ts"]), [
+    {
+      file: "file.ts",
+      error: [
+        {
+          file: "file.ts",
+          message: [
+            "./file.ts (uncaught error)",
+            "error: (in promise) TypeError: Assignment to constant variable.",
+            "x = 13;",
+            "^",
+            `    at file://${Deno.cwd()}/file.ts:2:1`,
+            "This error was not caught from a test and caused the test runner to fail on the referenced module.",
+            "It most likely originated from a dangling promise, event/timeout handler or top-level code.",
+          ].join("\n"),
+        },
+        { file: "file.ts", message: "./file.ts (uncaught error)" },
+      ],
+      info: [],
+    },
+  ], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
-Deno.test('deno().test() rejects passing tests with the "only" option', async () => {
+Deno.test("deno().test() rejects passing tests with the `only` option", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
     "Deno.test.only('test', () => {});",
@@ -2423,6 +2623,7 @@ Deno.test("deno().test() handles test output with passing tests", async () => {
       file: "file.ts",
       success: true,
       status: "ok",
+      output: "test log output\ntest error output\n",
       time: "?ms",
       message: "test ... ok (?ms)",
     }],
@@ -2475,6 +2676,7 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
       file: "file.ts",
       success: false,
       status: "FAILED",
+      output: "test log output\ntest error output\n",
       time: "?ms",
       message: "test ... FAILED (?ms)",
     }],
@@ -2506,7 +2708,13 @@ Deno.test("deno().test({ update }) updates snapshots", async () => {
       info: [
         {
           kind: "test",
-          message: "snapshotTest ... ok (?ms)",
+          message: [
+            "snapshotTest ... ok (?ms)",
+            "------- post-test output -------",
+            "",
+            " > 1 snapshot updated.",
+            "----- post-test output end -----",
+          ].join("\n"),
           test: ["snapshotTest"],
           file: "file.ts",
           success: true,
@@ -2550,7 +2758,14 @@ Deno.test("deno().test({ update }) updates mocks", async () => {
       info: [
         {
           kind: "test",
-          message: "snapshotTest ... ok (?ms)",
+          message: [
+            "snapshotTest ... ok (?ms)",
+            "------- post-test output -------",
+            "",
+            " > 1 mock updated.",
+            "   • snapshotTest > func 1",
+            "----- post-test output end -----",
+          ].join("\n"),
           test: ["snapshotTest"],
           file: "file.ts",
           success: true,

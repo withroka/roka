@@ -142,12 +142,14 @@ export type Info =
     test: [string, ...string[]];
     /** The file the test belongs to. */
     file: string;
-    /** The line number of a documentation test in its file. */
-    line?: number;
     /** Whether the test was successful. */
     success: boolean;
     /** Test status string from `deno`. */
     status: string;
+    /** The output of the test, if generated. */
+    output?: string;
+    /** The line number of a documentation test in its file. */
+    line?: number;
     /** The time taken to run the test. */
     time?: string;
   };
@@ -158,7 +160,7 @@ export type Error =
   & (
     | {
       /** Error kind. */
-      kind: "check" | "lint" | "test";
+      kind: "check" | "lint";
       /** The file the error belongs to. */
       file: string;
       /** The line number the error occurs at. */
@@ -183,8 +185,6 @@ export type Error =
       column: number;
     }
     | {
-      /** Format error kind. */
-      kind: "fmt";
       /** The file the error belongs to. */
       file: string;
     }
@@ -370,7 +370,7 @@ export function deno(options?: DenoOptions): DenoCommands {
       return await new Runner(directory, "check", {
         extensions: [...TYPESCRIPT_EXTENSIONS, "md"],
         doc: { only: ["md"] },
-        args: ["--quiet"],
+        commonArgs: ["--quiet"],
         parse: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
         report: {
           error: {
@@ -405,14 +405,13 @@ export function deno(options?: DenoOptions): DenoCommands {
       const { check = false } = options ?? {};
       return await new Runner(directory, "fmt", {
         doc: { skip: ["md"] },
-        args: [...(check ? ["--check"] : ["--quiet"])],
+        commonArgs: [...(check ? ["--check"] : ["--quiet"])],
         parse: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
         report: {
           error: {
             patterns: [/^from (?<file>.*):\n[\s\S]+$/],
             transform({ message, file }, done) {
               const error = {
-                kind: "fmt" as const,
                 message,
                 file: file ?? "<unknown>",
               };
@@ -421,7 +420,10 @@ export function deno(options?: DenoOptions): DenoCommands {
             },
           },
           debug: {
-            patterns: [/^error: Found \d+ not formatted files? in \d+ files?$/],
+            patterns: [
+              /^Checked \d+ files?/,
+              /^error: Found \d+ not formatted files? in \d+ files?$/,
+            ],
             transform: debugTransform,
           },
         },
@@ -431,7 +433,7 @@ export function deno(options?: DenoOptions): DenoCommands {
       const { json = false, lint = false } = options ?? {};
       return await new Runner(directory, "doc", {
         extensions: SCRIPT_EXTENSIONS,
-        args: [
+        commonArgs: [
           "--quiet",
           ...json ? ["--json"] : [],
           ...lint ? ["--lint"] : [],
@@ -473,7 +475,7 @@ export function deno(options?: DenoOptions): DenoCommands {
       return await new Runner(directory, "lint", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
         doc: { only: ["md"] },
-        args: [
+        commonArgs: [
           "--quiet",
           ...(fix ? ["--fix"] : []),
         ],
@@ -506,42 +508,56 @@ export function deno(options?: DenoOptions): DenoCommands {
       const test: string[] = [];
       return await new Runner(directory, "test", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
-        args: [
-          "--quiet",
+        commonArgs: [
           "--permit-no-files",
           "--no-check",
           "--doc",
-          "--coverage",
           update ? "--allow-all" : "--permission-set",
+        ],
+        codeArgs: [
+          "--coverage",
         ],
         scriptArgs: update ? ["--", "--update"] : [],
         parse: {
           stdout: "piped",
           delimiter: new RegExp(
-            /(?:\n+(?:[^ ]*(?: (?:ERRORS|FAILURES) |(?:FAILED|ok)[^ ]* \| \d+ passed .*?\| \d+ failed ).*)\n+)/
-              .source +
+            /(?:(?:^|\n)[^ ]*Warning[^ ]* .+?\n)/.source +
+              "|" +
+              /(?:\n+(?:[^ ]*(?: (?:ERRORS|FAILURES) |(?:FAILED|ok)[^ ]* \| \d+ passed .*?\| \d+ failed ).*)\n+)/
+                .source +
               "|" +
               /(?:(?:^|\n+)(?=.*running \d+ tests? from|.+? \.\.\.(?:$| [^ ]*?(?:FAILED|INCOMPLETE|ok|ignored)[^ ]*? .*\n)?|.*=> .*:\d+:\d+[^ ]+\n))/
+                .source +
+              /(?:\n------- output -------\n[\s\S]*?----- output end -----)?/
                 .source,
           ),
         },
         report: {
+          fatal: {
+            patterns: [
+              /^error: (?!Test failed)[\s\S]+$/,
+              /^error: Test failed because the "only" option was used$/,
+              /^Error generating coverage report: [\s\S]+$/,
+            ],
+            transform: debugTransform,
+          },
           error: {
             patterns: [
-              /^(?<name>.*?) => (?<file>.*?):(?<line>\d+):(?<column>\d+)\nerror: [\s\S]+?$/,
+              /^(?<name>.*?) => (?<file>.*?):(?<line>\d+):(?<column>\d+)\nerror: [\s\S]+$/,
+              /^(?<file>.*?) \(uncaught error\)(?:\n[\s\S]*)?$/,
             ],
             transform({ message, name, file, line, column }, done) {
               const test = name?.split(" ... ");
-              assertExists(test);
-              assertExists(test[0]);
-              const error: Error = {
-                kind: "test" as const,
-                message,
-                test: [test[0], ...test.slice(1)],
-                file: file ?? "<unknown>",
-                line: Number.isNaN(Number(line)) ? -1 : Number(line),
-                column: Number.isNaN(Number(column)) ? -1 : Number(column),
-              };
+              const error: Error = test && test[0] !== undefined
+                ? {
+                  kind: "test" as const,
+                  message,
+                  test: [test[0], ...test.slice(1)],
+                  file: file ?? "<unknown>",
+                  line: Number.isNaN(Number(line)) ? -1 : Number(line),
+                  column: Number.isNaN(Number(column)) ? -1 : Number(column),
+                }
+                : { file: file ?? "<unknown>", message };
               (done ? onError : onPartialError)?.(error);
               return [error];
             },
@@ -549,9 +565,18 @@ export function deno(options?: DenoOptions): DenoCommands {
           info: {
             patterns: [
               /^running \d+ tests? from (?<file>.*)(?:\$(?<line>\d+)-\d+)?$/,
-              /^(?<step> *)(?<name>.*?) \.\.\.(?: (?<status>FAILED|INCOMPLETE|ok|ignored)(?: .*?\((?<time>[^()]*?)\))?)?$/,
+              new RegExp(
+                /^(?<step> *)(?<name>.*?) \.\.\./.source +
+                  /(?: (?<status>FAILED|INCOMPLETE|ok|ignored)(?: \(due to .*?\))?(?: .*?\((?<time>[^()]*?)\))?)?/
+                    .source +
+                  /(?:\n------- output -------\n(?<output>[\s\S]*?)----- output end -----$)?/
+                    .source,
+              ),
             ],
-            transform({ message, file, line, name, step, status, time }, done) {
+            transform(
+              { message, file, name, step, status, output, line, time },
+              done,
+            ) {
               if (file !== undefined) {
                 lastFile = {
                   file,
@@ -559,6 +584,12 @@ export function deno(options?: DenoOptions): DenoCommands {
                 };
                 return [];
               }
+              if (output !== undefined) {
+                lastFile = {
+                  ...lastFile,
+                  output,
+                };
+              } else output = lastFile.output;
               assertExists(name);
               test.splice((step?.length ?? 0) / 2);
               test.push(name);
@@ -571,10 +602,11 @@ export function deno(options?: DenoOptions): DenoCommands {
                   message,
                   test: [test[0], ...test.slice(1)],
                   file: lastFile.file ?? "<unknown>",
-                  ...lastFile.line && { line: lastFile.line },
                   ...status &&
                     { success: status === "ok" || status === "ignored" },
                   ...status && { status },
+                  ...output !== undefined && { output },
+                  ...lastFile.line && { line: lastFile.line },
                   ...time && { time },
                 };
               if (!done) {
@@ -592,10 +624,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           },
           debug: {
             patterns: [
-              /^running 0 tests from .*$/,
-              /^.* => .*$/,
-              /^(\|( [^|]* \|)+)(?:\n\|( [^|]* \|)+)*$/,
-              /^error: Test failed$/,
+              /^[\s\S]*$/,
             ],
             transform: debugTransform,
           },
@@ -610,7 +639,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     async compile(script, options) {
       const { args = [], target, include, output } = options ?? {};
       return await new Runner(directory, "compile", {
-        args: [
+        commonArgs: [
           "--quiet",
           "--permission-set",
           ...target ? ["--target", target] : [],
@@ -637,14 +666,18 @@ interface RunOptions {
     skip?: string[];
     only?: string[];
   };
-  args?: string[];
+  commonArgs?: string[];
+  codeArgs?: string[];
   scriptArgs?: string[];
   parse?: {
     stdout?: "piped" | "inherit" | "null";
     delimiter?: RegExp;
   };
   report?: {
-    done?: () => unknown;
+    fatal?: {
+      patterns: RegExp[];
+      transform: (data: ReportData, done: boolean) => Report[];
+    };
     error?: {
       patterns: RegExp[];
       transform: (data: ReportData, done: boolean) => Error[];
@@ -698,10 +731,11 @@ class Runner implements AsyncDisposable {
     const {
       allowNone,
       extensions,
+      commonArgs = [],
+      codeArgs = [],
       scriptArgs = [],
       doc = false,
       parse,
-      report,
     } = this.options ?? {};
     const docOnly = typeof doc === "object" && doc.only ? doc.only : [];
     const results = new Map<string, FileResult>(
@@ -726,7 +760,12 @@ class Runner implements AsyncDisposable {
     const cwd = this.directory;
     const args = [
       this.command,
-      ...this.options?.args ?? [],
+      ...commonArgs,
+      ...files.filter((x) =>
+          SCRIPT_EXTENSIONS.includes(extname(x).slice(1).toLowerCase())
+        ).length > 0
+        ? codeArgs
+        : [],
       ...files,
       ...this.blocksDir &&
           Object.keys(this.blocksByPath).length > 0
@@ -782,17 +821,12 @@ class Runner implements AsyncDisposable {
     for await (const output of stream.values()) {
       errors.push(stripAnsiCode(output));
     }
-    const { success, code } = await process.status;
-    report?.done?.();
-    if (!success) {
-      if (errors.length > 0) {
-        throw new DenoError(
-          `Error running deno command: ${this.command}:\n\n${
-            errors.join("\n\n")
-          }`,
-          { cause: { command: "deno", cwd, args, code } },
-        );
-      }
+    const { code } = await process.status;
+    if (errors.length > 0) {
+      throw new DenoError(
+        `Error running deno command: ${this.command}\n\n${errors.join("\n\n")}`,
+        { cause: { command: "deno", cwd, args, code } },
+      );
     }
     await this.updateBlocks();
     return results.values().toArray();
@@ -903,8 +937,8 @@ class Runner implements AsyncDisposable {
   ): boolean {
     const { report } = this.options ?? {};
     if (!output) return false;
-    const debugReports = this.matchReport(report?.debug, output, done);
-    if (debugReports !== undefined) return true;
+    const fatalReports = this.matchReport(report?.fatal, output, done);
+    if (fatalReports !== undefined) return false;
     const errorReports = this.matchReport(report?.error, output, done);
     if (done) {
       for (const report of errorReports ?? []) {
@@ -929,6 +963,8 @@ class Runner implements AsyncDisposable {
       }
     }
     if (infoReports !== undefined) return true;
+    const debugReports = this.matchReport(report?.debug, output, done);
+    if (debugReports !== undefined) return true;
     return false;
   }
 
