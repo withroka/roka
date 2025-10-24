@@ -121,7 +121,7 @@ export interface Branches {
   move(
     branch: string | Branch,
     newName: string,
-    options?: BranchRenameOptions,
+    options?: BranchMoveOptions,
   ): Promise<Branch>;
   /** Deletes a branch. */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
@@ -543,7 +543,7 @@ export interface BranchCheckoutOptions {
 }
 
 /** Options for the {@linkcode Branches.move} function. */
-export interface BranchRenameOptions {
+export interface BranchMoveOptions {
   /**
    * Force rename the branch.
    * @default {false}
