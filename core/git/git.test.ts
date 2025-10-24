@@ -396,6 +396,60 @@ Deno.test("git().branches.list({ pointsAt }) returns branches that point to a co
   assertEquals(await repo.branches.list({ pointsAt: commit2 }), [branch2]);
 });
 
+Deno.test("git().branches.move() renames a branch", async () => {
+  await using repo = await tempRepository({
+    config: { init: { defaultBranch: "main" } },
+  });
+  await repo.commits.create("commit", { allowEmpty: true });
+  const main = await repo.branches.current();
+  const branch = await repo.branches.create("branch");
+  assertEquals(await repo.branches.list(), [branch, main]);
+  const renamed = await repo.branches.move(branch, "renamed");
+  assertEquals(await repo.branches.list(), [main, renamed]);
+});
+
+Deno.test("git().branches.move() can rename current branch", async () => {
+  await using repo = await tempRepository({
+    config: { init: { defaultBranch: "main" } },
+  });
+  await repo.commits.create("commit", { allowEmpty: true });
+  const main = await repo.branches.current();
+  assertExists(main);
+  const renamed = await repo.branches.move(main, "renamed");
+  assertEquals(await repo.branches.list(), [renamed]);
+  assertEquals(await repo.branches.current(), renamed);
+});
+
+Deno.test("git().branches.move() rejects overriding existing branch", async () => {
+  await using repo = await tempRepository({
+    config: { init: { defaultBranch: "main" } },
+  });
+  await repo.commits.create("commit", { allowEmpty: true });
+  const main = await repo.branches.current();
+  assertExists(main);
+  const branch = await repo.branches.create("branch");
+  await assertRejects(
+    () => repo.branches.move(main, "branch"),
+    GitError,
+    "a branch named 'branch' already exists",
+  );
+  assertEquals(await repo.branches.list(), [branch, main]);
+});
+
+Deno.test("git().branches.move({ force }) can override existing branch", async () => {
+  await using repo = await tempRepository({
+    config: { init: { defaultBranch: "main" } },
+  });
+  await repo.commits.create("commit", { allowEmpty: true });
+  const main = await repo.branches.current();
+  assertExists(main);
+  let branch = await repo.branches.create("branch");
+  assertEquals(await repo.branches.list(), [branch, main]);
+  branch = await repo.branches.move(main, "branch", { force: true });
+  assertEquals(await repo.branches.list(), [branch]);
+  assertEquals(await repo.branches.current(), branch);
+});
+
 Deno.test("git().branches.checkout() stays at current branch", async () => {
   await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });

@@ -39,7 +39,6 @@
  * @todo Add `git().config.get()`
  * @todo Add stash management.
  * @todo Add `git().branches.copy()`
- * @todo Add `git().branches.move()`
  * @todo Add `git().branches.track()`
  * @todo Handle merges, rebases, conflicts.
  * @todo Handle submodules.
@@ -118,6 +117,12 @@ export interface Branches {
   current(): Promise<Branch | undefined>;
   /** List branches in the repository alphabetically. */
   list(options?: BranchListOptions): Promise<Branch[]>;
+  /** Renames a branch. */
+  move(
+    branch: string | Branch,
+    newName: string,
+    options?: BranchMoveOptions,
+  ): Promise<Branch>;
   /** Deletes a branch. */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
   /** Switches to a commit, or an existing or new branch. */
@@ -535,6 +540,15 @@ export interface BranchCheckoutOptions {
    * @default {false}
    */
   detach?: boolean;
+}
+
+/** Options for the {@linkcode Branches.move} function. */
+export interface BranchMoveOptions {
+  /**
+   * Force rename the branch.
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode Branches.delete} function. */
@@ -1048,6 +1062,16 @@ export function git(options?: GitOptions): Git {
         await run(gitOptions, "branch", name);
         const [branch] = await repo.branches.list({ name });
         return branch ? branch : { name };
+      },
+      async move(branch, newName, options) {
+        const name = typeof branch === "string" ? branch : branch.name;
+        await run(
+          gitOptions,
+          ["branch", "-m", name, newName],
+          flag("--force", options?.force),
+        );
+        const [newBranch] = await repo.branches.list({ name: newName });
+        return newBranch ? newBranch : { name: newName };
       },
       async delete(branch, options) {
         const name = typeof branch === "string" ? branch : branch.name;
