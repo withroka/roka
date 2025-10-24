@@ -39,7 +39,6 @@
  * @todo Add `git().config.get()`
  * @todo Add stash management.
  * @todo Add `git().branches.copy()`
- * @todo Add `git().branches.move()`
  * @todo Add `git().branches.track()`
  * @todo Handle merges, rebases, conflicts.
  * @todo Handle submodules.
@@ -119,7 +118,7 @@ export interface Branches {
   /** List branches in the repository alphabetically. */
   list(options?: BranchListOptions): Promise<Branch[]>;
   /** Renames a branch. */
-  rename(
+  move(
     branch: string | Branch,
     newName: string,
     options?: BranchRenameOptions,
@@ -543,7 +542,7 @@ export interface BranchCheckoutOptions {
   detach?: boolean;
 }
 
-/** Options for the {@linkcode Branches.rename} function. */
+/** Options for the {@linkcode Branches.move} function. */
 export interface BranchRenameOptions {
   /**
    * Force rename the branch.
@@ -1064,7 +1063,7 @@ export function git(options?: GitOptions): Git {
         const [branch] = await repo.branches.list({ name });
         return branch ? branch : { name };
       },
-      async rename(branch, newName, options) {
+      async move(branch, newName, options) {
         const name = typeof branch === "string" ? branch : branch.name;
         await run(
           gitOptions,
