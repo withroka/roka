@@ -127,15 +127,18 @@ export async function flow(): Promise<number> {
       if (found.length === 0) return;
       const cmds = deno(options());
       await run(found, [
-        (files) => cmds.fmt(files, { ...options(), check }),
-        (files) => cmds.check(files),
+        (files) => cmds.fmt(files, { check, permitNoFiles: true }),
+        (files) => cmds.check(files, { permitNoFiles: true }),
         ...paths.includes(".")
-          ? [(files: string[]) => deno(options()).doc(files, { lint: true })]
+          ? [
+            (files: string[]) =>
+              cmds.doc(files, { lint: true, permitNoFiles: true }),
+          ]
           : [],
-        (files) => cmds.lint(files, { ...options(), fix }),
+        (files) => cmds.lint(files, { fix, permitNoFiles: true }),
       ], { prefix: "Checked" });
       await run(found, [
-        (files) => cmds.test(files),
+        (files) => cmds.test(files, { permitNoFiles: true }),
       ], { test: true });
     })
     .command("fmt", fmtCommand())
@@ -330,11 +333,15 @@ function message(
 ): [string | undefined, string | undefined] {
   let { prefix, test } = options ?? {};
   const count = (value: number, name: string) =>
-    `${value === 0 ? "no" : value} ${name}${value === 1 ? "" : "s"}`;
+    `${value} ${name}${value === 1 ? "" : "s"}`;
   const tests = results.flatMap((r) => r.info)
     .filter((i) => i.kind === "test")
     .filter((t) => t.test.length === 1);
-  if (test) prefix = `Ran ${count(tests.length, "test")} from`;
+  if (test) {
+    prefix = tests.length
+      ? `Ran ${count(tests.length, "test")} from`
+      : "Found no tests in";
+  }
   const errorCount = sumOf(results, (r) => r.error.length);
   let message = errorCount === 0
     ? `${prefix} ${count(results.length, "file")}`
