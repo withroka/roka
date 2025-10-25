@@ -193,10 +193,10 @@ export interface CommitOperations {
 
 /** Tag operations from {@linkcode Git.tags}. */
 export interface TagOperations {
-  /** Creates a new tag in the repository. */
-  create(name: string, options?: TagCreateOptions): Promise<Tag>;
   /** Lists all tags in the repository. */
   list(options?: TagListOptions): Promise<Tag[]>;
+  /** Creates a new tag in the repository. */
+  create(name: string, options?: TagCreateOptions): Promise<Tag>;
   /** Pushes a tag to a remote. */
   push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
 }
@@ -822,21 +822,6 @@ export interface CommitCreateOptions extends SignOptions {
   trailers?: Record<string, string>;
 }
 
-/** Options for the {@linkcode TagOperations.create} function. */
-export interface TagCreateOptions extends SignOptions {
-  /**
-   * Target reference (commit, branch, or tag) to tag.
-   * @default {"HEAD"}
-   */
-  target?: Commitish;
-  /** Tag message subject. */
-  subject?: string;
-  /** Tag message body. */
-  body?: string;
-  /** Replace existing tags instead of failing. */
-  force?: boolean;
-}
-
 /** Options for the {@linkcode TagOperations.list} function. */
 export interface TagListOptions extends RefListOptions {
   /**
@@ -877,6 +862,21 @@ export interface TagListOptions extends RefListOptions {
    * ```
    */
   sort?: "version";
+}
+
+/** Options for the {@linkcode TagOperations.create} function. */
+export interface TagCreateOptions extends SignOptions {
+  /**
+   * Target reference (commit, branch, or tag) to tag.
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
+  /** Tag message subject. */
+  subject?: string;
+  /** Tag message body. */
+  body?: string;
+  /** Replace existing tags instead of failing. */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode TagOperations.push} function. */
@@ -1447,7 +1447,9 @@ export function git(options?: GitOptions): Git {
     commit: {
       async head() {
         const [commit] = await repo.commit.log({ maxCount: 1 });
-        assertExists(commit, "No HEAD commit.");
+        if (!commit) {
+          throw new GitError("Current branch does not have any commits");
+        }
         return commit;
       },
       async log(options) {
@@ -1498,20 +1500,6 @@ export function git(options?: GitOptions): Git {
       },
     },
     tags: {
-      async create(name, options): Promise<Tag> {
-        await run(
-          gitOptions,
-          ["tag", name],
-          commitArg(options?.target),
-          flag("-m", options?.subject),
-          flag("-m", options?.body),
-          flag("--force", options?.force),
-          signFlag("tag", options?.sign),
-        );
-        const [tag] = await repo.tags.list({ name });
-        assertExists(tag, "Cannot find created tag");
-        return tag;
-      },
       async list(options) {
         const output = await run(
           gitOptions,
@@ -1534,6 +1522,20 @@ export function git(options?: GitOptions): Git {
           const name: string = tag.name;
           return { ...tag, name, commit };
         }));
+      },
+      async create(name, options): Promise<Tag> {
+        await run(
+          gitOptions,
+          ["tag", name],
+          commitArg(options?.target),
+          flag("-m", options?.subject),
+          flag("-m", options?.body),
+          flag("--force", options?.force),
+          signFlag("tag", options?.sign),
+        );
+        const [tag] = await repo.tags.list({ name });
+        assertExists(tag, "Cannot find created tag");
+        return tag;
       },
       async push(tag, options) {
         await run(

@@ -2509,7 +2509,11 @@ Deno.test("git().diff.patch({ unified }) controls the number of context lines", 
 
 Deno.test("git().commit.head() rejects empty repo", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.commit.head(), GitError);
+  await assertRejects(
+    () => repo.commit.head(),
+    GitError,
+    "Current branch does not have any commits",
+  );
 });
 
 Deno.test("git().commit.head() returns head tip", async () => {
@@ -2916,97 +2920,6 @@ Deno.test("git().commit.create({ sign }) cannot use wrong key", async () => {
   );
 });
 
-Deno.test("git().tags.create() creates a lightweight tag", async () => {
-  await using repo = await tempRepository();
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
-  const tag = await repo.tags.create("tag");
-  assertEquals(tag, { name: "tag", commit });
-});
-
-Deno.test("git().tags.create() can create an annotated tag", {
-  ignore: codespaces,
-}, async () => {
-  await using repo = await tempRepository({
-    config: { user: { name: "tagger", email: "tagger@example.com" } },
-  });
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
-  const tag = await repo.tags.create("tag", {
-    subject: "subject",
-    body: "body",
-  });
-  assertEquals(tag, {
-    name: "tag",
-    commit,
-    tagger: { name: "tagger", email: "tagger@example.com" },
-    subject: "subject",
-    body: "body",
-  });
-});
-
-Deno.test("git().tags.create() ignores empty body", {
-  ignore: codespaces,
-}, async () => {
-  await using repo = await tempRepository({
-    config: { user: { name: "tagger", email: "tagger@example.com" } },
-  });
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
-  const tag = await repo.tags.create("tag", { subject: "subject", body: "" });
-  assertEquals(tag, {
-    name: "tag",
-    commit,
-    tagger: { name: "tagger", email: "tagger@example.com" },
-    subject: "subject",
-  });
-});
-
-Deno.test("git().tags.create() cannot create annotated tag without subject", async () => {
-  await using repo = await tempRepository();
-  await repo.commit.create("commit", { allowEmpty: true });
-  await assertRejects(() => repo.tags.create("tag", { sign: true }), GitError);
-});
-
-Deno.test("git().tags.create() cannot create duplicate tag", async () => {
-  await using repo = await tempRepository();
-  await repo.commit.create("commit", { allowEmpty: true });
-  await repo.tags.create("tag");
-  await assertRejects(() => repo.tags.create("tag"), GitError);
-});
-
-Deno.test("git().tags.create({ target }) creates a tag with commit", async () => {
-  await using repo = await tempRepository();
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
-  const tag = await repo.tags.create("tag", { target: commit });
-  assertEquals(tag, { name: "tag", commit });
-});
-
-Deno.test("git().tags.create({ target }) can create a tag with another tag", async () => {
-  await using repo = await tempRepository();
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
-  await repo.tags.create("tag1");
-  await repo.tags.create("tag2", { target: "tag1" });
-  const tags = await repo.tags.list();
-  assertEquals(tags, [
-    { name: "tag1", commit },
-    { name: "tag2", commit },
-  ]);
-});
-
-Deno.test("git().tags.create({ force }) can force move a tag", async () => {
-  await using repo = await tempRepository();
-  await repo.commit.create("commit1", { allowEmpty: true });
-  await repo.tags.create("tag");
-  await repo.commit.create("commit2", { allowEmpty: true });
-  await repo.tags.create("tag", { force: true });
-});
-
-Deno.test("git().tags.create({ sign }) cannot use wrong key", async () => {
-  await using repo = await tempRepository();
-  await assertRejects(
-    () => repo.tags.create("tag", { sign: "not-a-key" }),
-    GitError,
-  );
-});
-
 Deno.test("git().tags.list() returns empty list on empty repo", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.tags.list(), []);
@@ -3107,6 +3020,97 @@ Deno.test("git().tags.list({ pointsAt }) returns tags that point to a commit", a
   const tag2 = await repo.tags.create("tag2", { subject: "subject" });
   assertEquals(await repo.tags.list({ pointsAt: commit1 }), [tag1]);
   assertEquals(await repo.tags.list({ pointsAt: commit2 }), [tag2]);
+});
+
+Deno.test("git().tags.create() creates a lightweight tag", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const tag = await repo.tags.create("tag");
+  assertEquals(tag, { name: "tag", commit });
+});
+
+Deno.test("git().tags.create() can create an annotated tag", {
+  ignore: codespaces,
+}, async () => {
+  await using repo = await tempRepository({
+    config: { user: { name: "tagger", email: "tagger@example.com" } },
+  });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const tag = await repo.tags.create("tag", {
+    subject: "subject",
+    body: "body",
+  });
+  assertEquals(tag, {
+    name: "tag",
+    commit,
+    tagger: { name: "tagger", email: "tagger@example.com" },
+    subject: "subject",
+    body: "body",
+  });
+});
+
+Deno.test("git().tags.create() ignores empty body", {
+  ignore: codespaces,
+}, async () => {
+  await using repo = await tempRepository({
+    config: { user: { name: "tagger", email: "tagger@example.com" } },
+  });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const tag = await repo.tags.create("tag", { subject: "subject", body: "" });
+  assertEquals(tag, {
+    name: "tag",
+    commit,
+    tagger: { name: "tagger", email: "tagger@example.com" },
+    subject: "subject",
+  });
+});
+
+Deno.test("git().tags.create() cannot create annotated tag without subject", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  await assertRejects(() => repo.tags.create("tag", { sign: true }), GitError);
+});
+
+Deno.test("git().tags.create() cannot create duplicate tag", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  await repo.tags.create("tag");
+  await assertRejects(() => repo.tags.create("tag"), GitError);
+});
+
+Deno.test("git().tags.create({ target }) creates a tag with commit", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const tag = await repo.tags.create("tag", { target: commit });
+  assertEquals(tag, { name: "tag", commit });
+});
+
+Deno.test("git().tags.create({ target }) can create a tag with another tag", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  await repo.tags.create("tag1");
+  await repo.tags.create("tag2", { target: "tag1" });
+  const tags = await repo.tags.list();
+  assertEquals(tags, [
+    { name: "tag1", commit },
+    { name: "tag2", commit },
+  ]);
+});
+
+Deno.test("git().tags.create({ force }) can force move a tag", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit1", { allowEmpty: true });
+  await repo.tags.create("tag");
+  await repo.commit.create("commit2", { allowEmpty: true });
+  await repo.tags.create("tag", { force: true });
+});
+
+Deno.test("git().tags.create({ sign }) cannot use wrong key", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.tags.create("tag", { sign: "not-a-key" }),
+    GitError,
+  );
 });
 
 Deno.test("git().tags.push() can push tag to remote", async () => {
