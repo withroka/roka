@@ -864,7 +864,7 @@ export interface RemotePushOptions extends TransportOptions, RemoteOptions {
   /**
    * Branch to push commits onto.
    *
-   * The default is the tracking branch of the current branch.
+   * The default behaviors is to push the current branch to its upstream.
    *
    * This option does not accept tags. To push tags, use {@linkcode Tags.push}
    * to push a single tag, or set {@linkcode TransportOptions.tags} to `true` to
@@ -885,7 +885,11 @@ export interface RemotePushOptions extends TransportOptions, RemoteOptions {
 /** Options for the {@linkcode RemoteOperations.pull} function. */
 export interface RemotePullOptions
   extends RemoteOptions, TransportOptions, SignOptions {
-  /** Branch of tag to pull from. The default is the tracked remote branch. */
+  /**
+   * Branch or tag to pull commits from.
+   *
+   * The default behavior is to pull from the upstream of the current branch.
+   */
   target?: string | Branch | Tag;
 }
 

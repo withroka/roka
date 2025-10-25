@@ -3055,7 +3055,7 @@ Deno.test("git().remotes.head() returns remote default branch", async () => {
   assertEquals(await repo.remotes.head(), branch?.name);
 });
 
-Deno.test("git().remotes.head() detecs updated remote head", async () => {
+Deno.test("git().remotes.head() detects updated remote head", async () => {
   await using remote = await tempRepository();
   await remote.commits.create("commit", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
