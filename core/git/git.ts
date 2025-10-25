@@ -849,11 +849,26 @@ export interface CommitAmendOptions extends SignOptions {
   all?: boolean;
   /** Author who wrote the code. */
   author?: User | undefined;
-  /** New commit summary. If not provided, keeps the existing summary. */
+  /**
+   * New commit summary.
+   *
+   * If not provided, keeps the existing summary. When provided with
+   * {@linkcode CommitAmendOptions.body body} or
+   * {@linkcode CommitAmendOptions.trailers trailers}, those options are also
+   * applied.
+   */
   summary?: string;
-  /** New commit body. If not provided, keeps the existing body. */
+  /**
+   * New commit body.
+   *
+   * Only used when {@linkcode CommitAmendOptions.summary summary} is provided.
+   */
   body?: string;
-  /** Trailers to append to the commit message. */
+  /**
+   * Trailers to append to the commit message.
+   *
+   * Only used when {@linkcode CommitAmendOptions.summary summary} is provided.
+   */
   trailers?: Record<string, string>;
 }
 
