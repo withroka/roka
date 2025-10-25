@@ -1388,7 +1388,7 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "reset",
-          commitArg(options?.target),
+          commitArg(options?.target ?? "HEAD"),
           "--",
           path,
         );
