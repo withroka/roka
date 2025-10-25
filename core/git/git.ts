@@ -35,14 +35,25 @@
  *     {@link https://www.conventionalcommits.org Conventional Commits}.
  *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
- * @todo Extend `git().config.set()` with more configurations.
  * @todo Add `git().config.get()`
- * @todo Add stash management.
- * @todo Handle merges, rebases, conflicts.
- * @todo Handle submodules.
+ * @todo Extend `git().config.set()`
+ * @todo Add `git().remote.remove()`
+ * @todo Add `git().remote.fetch()`
+ * @todo Add `git().branch.switch()`
+ * @todo Add `git().index.reset()`
+ * @todo Add `git().commit.get()`
+ * @todo Add `git().commit.amend()`
+ * @todo Add `git().commit.revert()`
+ * @todo Add `git().tag.delete()`
+ * @todo Add `git().worktree.*()`
+ * @todo Add `git().stash.*()`
+ * @todo Add `git().merge.*()`
+ * @todo Add `git().rebase.*()`
+ * @todo Add `git().submodule.*()`
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
+ * @todo Add reflogs.
  *
  * @module git
  */
