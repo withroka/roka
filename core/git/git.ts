@@ -20,7 +20,7 @@
  *   const repo = git();
  *   const branch = await repo.branch.current();
  *   if (branch?.name === "main") {
- *     await repo.branch.switch(undefined, { create: "feature" });
+ *     await repo.branch.switch("feature", { create: true });
  *   }
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
@@ -146,7 +146,7 @@ export interface BranchOperations {
   checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
   /** Switches to an existing branch or creates and switches to a new branch. */
   switch(
-    branch?: string | Branch,
+    branch: string | Branch,
     options?: BranchSwitchOptions,
   ): Promise<Branch | undefined>;
   /** Creates a branch. */
@@ -619,14 +619,18 @@ export interface BranchCheckoutOptions extends BranchCreateOptions {
 
 /** Options for the {@linkcode BranchOperations.switch} function. */
 export interface BranchSwitchOptions extends BranchCreateOptions {
-  /** Branch to create and switch to. */
-  create?: string;
+  /**
+   * Create a new branch with the given name.
+   * @default {false}
+   */
+  create?: boolean;
   /**
    * Force create a new branch even if it already exists.
    *
    * If the branch already exists, it will be reset to the start point.
+   * @default {false}
    */
-  forceCreate?: string;
+  forceCreate?: boolean;
   /**
    * Detach `HEAD` at the given commit for inspection.
    * @default {false}
@@ -1252,18 +1256,19 @@ export function git(options?: GitOptions): Git {
         return branch;
       },
       async switch(branch, options) {
+        const branchName = refArg(branch);
         await run(
           gitOptions,
           "switch",
           flag("--detach", options?.detach),
-          flag("-c", options?.create),
-          flag("-C", options?.forceCreate),
+          flag("-c", options?.create ? branchName : undefined),
+          flag("-C", options?.forceCreate ? branchName : undefined),
           flag("--force", options?.force),
           flag("--track", options?.track === true),
           flag("--no-track", options?.track === false),
           flag("--track=inherit", options?.track === "inherit"),
           commitArg(options?.target),
-          refArg(branch),
+          !options?.create && !options?.forceCreate ? branchName : undefined,
         );
         const { value: current } = await maybe(() => repo.branch.current());
         return current;
