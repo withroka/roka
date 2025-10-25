@@ -78,7 +78,7 @@ export interface TempRepositoryOptions {
  * const commit = await repo.commits.create("feat: add feature");
  * await repo.remotes.push();
  *
- * assertEquals(await remote.commits.current(), commit);
+ * assertEquals(await remote.commits.head(), commit);
  * ```
  */
 export async function tempRepository(

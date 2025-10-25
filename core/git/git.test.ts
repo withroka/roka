@@ -2318,7 +2318,7 @@ Deno.test("git().commits.create() can automatically add files", async () => {
   await repo.commits.create("commit");
   await Deno.writeTextFile(repo.path("file"), "new content");
   const commit = await repo.commits.create("commit", { all: true });
-  assertEquals(await repo.commits.current(), commit);
+  assertEquals(await repo.commits.head(), commit);
 });
 
 Deno.test("git().commits.create() can automatically remove files", async () => {
@@ -2328,7 +2328,7 @@ Deno.test("git().commits.create() can automatically remove files", async () => {
   await repo.commits.create("commit");
   await Deno.remove(repo.path("file"));
   const commit = await repo.commits.create("commit", { all: true });
-  assertEquals(await repo.commits.current(), commit);
+  assertEquals(await repo.commits.head(), commit);
 });
 
 Deno.test("git().commits.create({ amend }) amends a commit", async () => {
@@ -2384,16 +2384,16 @@ Deno.test("git().commits.create({ sign }) cannot use wrong key", async () => {
   );
 });
 
-Deno.test("git().commits.current() rejects empty repo", async () => {
+Deno.test("git().commits.head() rejects empty repo", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.commits.current(), GitError);
+  await assertRejects(() => repo.commits.head(), GitError);
 });
 
-Deno.test("git().commits.current() returns head tip", async () => {
+Deno.test("git().commits.head() returns head tip", async () => {
   await using repo = await tempRepository();
   await repo.commits.create("commit1", { allowEmpty: true });
   const commit = await repo.commits.create("commit2", { allowEmpty: true });
-  assertEquals(await repo.commits.current(), commit);
+  assertEquals(await repo.commits.head(), commit);
 });
 
 Deno.test("git().commits.log() rejects empty repo", async () => {

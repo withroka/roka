@@ -176,7 +176,7 @@ export interface CommitOperations {
   /** Creates a new commit in the repository. */
   create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
   /** Returns the commit at the tip of `HEAD`. */
-  current(): Promise<Commit>;
+  head(): Promise<Commit>;
   /** Returns the history of commits in the repository. */
   log(options?: CommitLogOptions): Promise<Commit[]>;
 }
@@ -961,7 +961,7 @@ export interface TransportOptions {
  * ```ts
  * import { git } from "@roka/git";
  * (async () => {
- *   const commit = await git().commits.current();
+ *   const commit = await git().commits.head();
  *   return { commit };
  * });
  * ```
@@ -1397,7 +1397,7 @@ export function git(options?: GitOptions): Git {
         assertExists(commit, "Cannot find created commit");
         return commit;
       },
-      async current() {
+      async head() {
         const [commit] = await repo.commits.log({ maxCount: 1 });
         assertExists(commit, "No HEAD commit.");
         return commit;

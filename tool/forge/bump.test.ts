@@ -17,13 +17,13 @@ Deno.test("bump() minor updates released package", async () => {
     ],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.current();
+  const commit = await repo.commits.head();
   const pr = await bump([pkg]);
   assertEquals(pr, undefined);
   assertEquals(pkg.config.version, `1.3.0-pre.1+${commit.short}`);
   const updated = await packageInfo({ directory: pkg.directory });
   assertEquals(updated.config, pkg.config);
-  const head = await repo.commits.current();
+  const head = await repo.commits.head();
   assertEquals(head.summary, "feat: new feature");
 });
 
@@ -33,7 +33,7 @@ Deno.test("bump() minor updates unreleased package", async () => {
     commits: [{ summary: "feat: new feature" }],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.current();
+  const commit = await repo.commits.head();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.1.0-pre.1+${commit.short}`);
 });
@@ -44,7 +44,7 @@ Deno.test("bump() patch updates unreleased package", async () => {
     commits: [{ summary: "fix: bug fix" }],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.current();
+  const commit = await repo.commits.head();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
 });
@@ -55,7 +55,7 @@ Deno.test("bump() patch updates package with unstable changes", async () => {
     commits: [{ summary: "feat(unstable): new unstable feature" }],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.current();
+  const commit = await repo.commits.head();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
 });
@@ -197,7 +197,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  const short = (await repo.git.commits.current())?.short;
+  const short = (await repo.git.commits.head())?.short;
   const current = await repo.git.branches.current();
   const pr = await bump([pkg], {
     release: true,
@@ -224,7 +224,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
   assertEquals(await repo.git.branches.current(), current);
   assertEquals(await repo.git.branches.list(), [current]);
   await remote.branches.checkout({ target: pr.head });
-  const commit = await remote.commits.current();
+  const commit = await remote.commits.head();
   assertExists(commit);
   assertEquals(commit.author?.name, "bump-name");
   assertEquals(commit.author?.email, "bump-email");
