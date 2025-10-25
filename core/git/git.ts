@@ -38,7 +38,6 @@
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
  * @todo Add `git().remote.fetch()`
- * @todo Add `git().branch.switch()`
  * @todo Add `git().index.reset()`
  * @todo Add `git().commit.get()`
  * @todo Add `git().commit.revert()`
@@ -145,6 +144,11 @@ export interface BranchOperations {
   list(options?: BranchListOptions): Promise<Branch[]>;
   /** Switches to a commit, or an existing or new branch. */
   checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
+  /** Switches to an existing branch or creates and switches to a new branch. */
+  switch(
+    branch?: string | Branch,
+    options?: BranchSwitchOptions,
+  ): Promise<Branch | undefined>;
   /** Creates a branch. */
   create(name: string, options?: BranchCreateOptions): Promise<Branch>;
   /** Renames a branch. */
@@ -611,6 +615,28 @@ export interface BranchCheckoutOptions extends BranchCreateOptions {
    * @default {false}
    */
   detach?: boolean;
+}
+
+/** Options for the {@linkcode BranchOperations.switch} function. */
+export interface BranchSwitchOptions extends BranchCreateOptions {
+  /** Branch to create and switch to. */
+  create?: string;
+  /**
+   * Force create a new branch even if it already exists.
+   *
+   * If the branch already exists, it will be reset to the start point.
+   */
+  forceCreate?: string;
+  /**
+   * Detach `HEAD` at the given commit for inspection.
+   * @default {false}
+   */
+  detach?: boolean;
+  /**
+   * Discard local changes when switching branches.
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /**
@@ -1224,6 +1250,23 @@ export function git(options?: GitOptions): Git {
         );
         const { value: branch } = await maybe(() => repo.branch.current());
         return branch;
+      },
+      async switch(branch, options) {
+        await run(
+          gitOptions,
+          "switch",
+          flag("--detach", options?.detach),
+          flag("-c", options?.create),
+          flag("-C", options?.forceCreate),
+          flag("--force", options?.force),
+          flag("--track", options?.track === true),
+          flag("--no-track", options?.track === false),
+          flag("--track=inherit", options?.track === "inherit"),
+          commitArg(options?.target),
+          refArg(branch),
+        );
+        const { value: current } = await maybe(() => repo.branch.current());
+        return current;
       },
       async create(name, options) {
         await run(
