@@ -41,7 +41,7 @@ Deno.test("git() configures for each command", async () => {
     },
   });
   await repo.init();
-  await repo.commit.create("summary", { allowEmpty: true });
+  await repo.commit.create("commit", { allowEmpty: true });
   await repo.tag.create("1.2.3");
   await repo.tag.create("1.2.3-alpha");
   await repo.tag.create("1.2.3-beta");
@@ -105,7 +105,7 @@ Deno.test("git().config.set() configures single values", async () => {
 
 Deno.test("git().config.set() configures multi values", async () => {
   await using repo = await tempRepository();
-  await repo.commit.create("summary", { allowEmpty: true });
+  await repo.commit.create("commit", { allowEmpty: true });
   await repo.tag.create("1.2.3");
   await repo.tag.create("1.2.3-alpha");
   await repo.tag.create("1.2.3-beta");
@@ -174,45 +174,45 @@ Deno.test("git().remote.clone({ remote }) clones a repo with remote name", async
 
 Deno.test("git().remote.clone({ branch }) checks out a branch", async () => {
   await using remote = await tempRepository();
-  const target = await remote.commit.create("commit1", { allowEmpty: true });
+  const commit1 = await remote.commit.create("commit1", { allowEmpty: true });
   await remote.commit.create("commit2", { allowEmpty: true });
-  await remote.branch.checkout({ target, create: "branch" });
+  await remote.branch.checkout({ target: commit1, create: "branch" });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).remote.clone(
     remote.path(),
     { branch: "branch" },
   );
-  assertEquals(await repo.commit.log(), [target]);
+  assertEquals(await repo.commit.log(), [commit1]);
 });
 
 Deno.test("git().remote.clone({ depth }) makes a shallow copy", async () => {
   await using remote = await tempRepository();
   await remote.commit.create("commit1", { allowEmpty: true });
   await remote.commit.create("commit2", { allowEmpty: true });
-  const third = await remote.commit.create("commit3", { allowEmpty: true });
+  const commit3 = await remote.commit.create("commit3", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).remote.clone(
     remote.path(),
     { depth: 1, local: false },
   );
-  assertEquals(await repo.commit.log(), [third]);
+  assertEquals(await repo.commit.log(), [commit3]);
 });
 
 Deno.test("git().remote.clone({ depth }) can make a shallow copy of multiple branches", async () => {
   await using remote = await tempRepository();
   await remote.branch.checkout({ create: "branch1" });
-  const first = await remote.commit.create("commit1", { allowEmpty: true });
+  const commit1 = await remote.commit.create("commit1", { allowEmpty: true });
   await remote.branch.checkout({ create: "branch2" });
   await remote.commit.create("commit2", { allowEmpty: true });
-  const third = await remote.commit.create("commit3", { allowEmpty: true });
+  const commit3 = await remote.commit.create("commit3", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git({ cwd: directory.path() }).remote.clone(
     remote.path(),
     { branch: "branch1", depth: 1, local: false, singleBranch: false },
   );
-  assertEquals(await repo.commit.log(), [first]);
+  assertEquals(await repo.commit.log(), [commit1]);
   await repo.branch.checkout({ target: "branch2" });
-  assertEquals(await repo.commit.log(), [third]);
+  assertEquals(await repo.commit.log(), [commit3]);
 });
 
 Deno.test("git().remote.clone({ local }) is no-op for local remote", async () => {
@@ -231,8 +231,8 @@ Deno.test("git().remote.clone({ local }) is no-op for local remote", async () =>
 Deno.test("git().remote.clone({ singleBranch }) copies a single branch", async () => {
   await using remote = await tempRepository();
   await remote.branch.checkout({ create: "branch1" });
-  const first = await remote.commit.create("commit1", { allowEmpty: true });
-  const second = await remote.commit.create("commit2", { allowEmpty: true });
+  const commit1 = await remote.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await remote.commit.create("commit2", { allowEmpty: true });
   await remote.branch.checkout({ create: "branch2" });
   await remote.commit.create("commit3", { allowEmpty: true });
   await using directory = await tempDirectory();
@@ -240,7 +240,7 @@ Deno.test("git().remote.clone({ singleBranch }) copies a single branch", async (
     remote.path(),
     { branch: "branch1", singleBranch: true },
   );
-  assertEquals(await repo.commit.log(), [second, first]);
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
   await assertRejects(
     () => repo.branch.checkout({ target: "branch2" }),
     GitError,
@@ -357,7 +357,7 @@ Deno.test("git().remote.pull() does not pull all tags", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
   await using other = await tempRepository({ clone: remote });
-  const commit = await other.commit.create("commit", { allowEmpty: true });
+  const commit1 = await other.commit.create("commit1", { allowEmpty: true });
   const tag1 = await other.tag.create("tag1");
   await other.remote.push();
   await other.tag.push(tag1);
@@ -366,7 +366,7 @@ Deno.test("git().remote.pull() does not pull all tags", async () => {
   const tag2 = await other.tag.create("tag2");
   await other.tag.push(tag2);
   await repo.remote.pull();
-  assertEquals(await repo.commit.log(), [commit]);
+  assertEquals(await repo.commit.log(), [commit1]);
   assertEquals(await repo.tag.list(), [tag1]);
 });
 
@@ -2943,13 +2943,13 @@ Deno.test("git().commit.amend() amends last commit without changing message", as
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content");
   await repo.index.add("file1");
-  const commit = await repo.commit.create("summary", { body: "body" });
+  const original = await repo.commit.create("summary", { body: "body" });
   await Deno.writeTextFile(repo.path("file2"), "content");
   await repo.index.add("file2");
   const amended = await repo.commit.amend();
   assertEquals(amended.summary, "summary");
   assertEquals(amended.body, "body");
-  assertNotEquals(amended.hash, commit.hash);
+  assertNotEquals(amended.hash, original.hash);
   assertEquals(await repo.commit.log(), [amended]);
 });
 
@@ -2962,10 +2962,10 @@ Deno.test("git().commit.amend({ summary }) changes the commit message", async ()
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const original = await repo.commit.create("summary");
+  const commit = await repo.commit.create("summary");
   const amended = await repo.commit.amend({ summary: "new summary" });
   assertEquals(amended.summary, "new summary");
-  assertNotEquals(amended.hash, original.hash);
+  assertNotEquals(amended.hash, commit.hash);
 });
 
 Deno.test("git().commit.amend({ summary }) overrides commit body", async () => {
