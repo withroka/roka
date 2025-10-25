@@ -1368,7 +1368,6 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["reset"],
           flag("--soft", options?.mode === "soft"),
-          flag("--mixed", options?.mode === "mixed"),
           flag("--hard", options?.mode === "hard"),
           commitArg(target),
         );
