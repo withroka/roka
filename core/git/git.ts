@@ -39,7 +39,6 @@
  * @todo Extend `git().config.set()`
  * @todo Add `git().branch.restore()`
  * @todo Add `git().index.reset()`
- * @todo Add `git().commit.get()`
  * @todo Add `git().commit.revert()`
  * @todo Add `git().worktree.*()`
  * @todo Add `git().stash.*()`
@@ -204,6 +203,11 @@ export interface CommitOperations {
    * @throws {@linkcode GitError} If there are no commits.
    */
   head(): Promise<Commit>;
+  /**
+   * Returns a specific commit by its reference.
+   * @throws {@linkcode GitError} If the commit does not exist.
+   */
+  get(ref: Commitish): Promise<Commit>;
   /** Returns the history of commits in the repository. */
   log(options?: CommitLogOptions): Promise<Commit[]>;
   /** Creates a new commit in the repository. */
@@ -1564,6 +1568,16 @@ export function git(options?: GitOptions): Git {
         const [commit] = await repo.commit.log({ maxCount: 1 });
         if (!commit) {
           throw new GitError("Current branch does not have any commits");
+        }
+        return commit;
+      },
+      async get(ref) {
+        const [commit] = await repo.commit.log({
+          maxCount: 1,
+          range: { to: ref },
+        });
+        if (!commit) {
+          throw new GitError("Commit not found");
         }
         return commit;
       },
