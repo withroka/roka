@@ -653,8 +653,7 @@ export interface BranchCheckoutOptions extends BranchTrackOptions {
 }
 
 /**
- * Options for the {@linkcode BranchOperations.create} and
- * {@linkcode BranchOperations.checkout} functions when creating new branches.
+ * Options for the {@linkcode BranchOperations.create} function.
  */
 export interface BranchCreateOptions extends BranchTrackOptions {
   /**
