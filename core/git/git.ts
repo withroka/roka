@@ -278,7 +278,7 @@ export interface Config {
 export interface User {
   /** Name of the user. */
   name: string;
-  /** E-mail of the user. */
+  /** Email of the user. */
   email: string;
 }
 

@@ -645,7 +645,7 @@ Deno.test("git().branch.list({ contains }) returns branches that contain commit"
   ]);
 });
 
-Deno.test("git().branch.list() returns branches that do not contain commit", async () => {
+Deno.test("git().branch.list({ noContains }) returns branches that do not contain commit", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
   const branch1 = await repo.branch.create("branch1");
@@ -2979,7 +2979,7 @@ Deno.test("git().tag.list({ name }) can match tag pattern", async () => {
   assertEquals(await repo.tag.list({ name: "tag*" }), [tag1, tag2]);
 });
 
-Deno.test("git().tag.list() returns tags that contain commit", async () => {
+Deno.test("git().tag.list({ contains }) returns tags that contain commit", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
   const tag1 = await repo.tag.create("tag1");
