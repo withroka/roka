@@ -250,6 +250,14 @@ Deno.test("git().remote.clone({ singleBranch }) copies a single branch", async (
 Deno.test("git().remote.get() returns remote URL", async () => {
   await using other = await tempRepository();
   await using repo = await tempRepository();
+  await repo.remote.add(other.path());
+  const remote = await repo.remote.get("upstream");
+  assertEquals(remote.pushUrl, other.path());
+});
+
+Deno.test("git().remote.get() returns remote URL by remote name", async () => {
+  await using other = await tempRepository();
+  await using repo = await tempRepository();
   await repo.remote.add(other.path(), "upstream");
   const remote = await repo.remote.get("upstream");
   assertEquals(remote.pushUrl, other.path());
@@ -290,7 +298,7 @@ Deno.test("git().remote.remove() removes remote", async () => {
   await using repo = await tempRepository();
   await repo.remote.add(other.path());
   await repo.remote.remove();
-  await assertRejects(() => repo.remote.get("origin"), GitError);
+  await assertRejects(() => repo.remote.get(), GitError);
 });
 
 Deno.test("git().remote.remove() can remove named remote", async () => {
