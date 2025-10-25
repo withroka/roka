@@ -843,6 +843,12 @@ Deno.test("git().branch.switch() can switch to branch by name", async () => {
   assertEquals(await repo.branch.current(), branch);
 });
 
+Deno.test("git().branch.switch() rejects switching to non-branch ref", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  await assertRejects(() => repo.branch.switch(commit.hash), GitError);
+});
+
 Deno.test("git().branch.switch() keeps working tree changes", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
