@@ -285,6 +285,27 @@ Deno.test("git().remote.add() can add multiple remotes", async () => {
   assertEquals(await repo.remote.get("remote2"), remote2);
 });
 
+Deno.test("git().remote.remove() removes remote", async () => {
+  await using other = await tempRepository();
+  await using repo = await tempRepository();
+  await repo.remote.add(other.path());
+  await repo.remote.remove();
+  await assertRejects(() => repo.remote.get("origin"), GitError);
+});
+
+Deno.test("git().remote.remove() can remove named remote", async () => {
+  await using other = await tempRepository();
+  await using repo = await tempRepository();
+  await repo.remote.add(other.path(), "upstream");
+  await repo.remote.remove("upstream");
+  await assertRejects(() => repo.remote.get("upstream"), GitError);
+});
+
+Deno.test("git().remote.remove() rejects unknown remote", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(() => repo.remote.remove("nonexistent"), GitError);
+});
+
 Deno.test("git().remote.head() returns remote default branch", async () => {
   await using remote = await tempRepository();
   await remote.commit.create("commit", { allowEmpty: true });
