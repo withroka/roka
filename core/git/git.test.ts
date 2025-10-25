@@ -250,6 +250,14 @@ Deno.test("git().remote.clone({ singleBranch }) copies a single branch", async (
 Deno.test("git().remote.get() returns remote URL", async () => {
   await using other = await tempRepository();
   await using repo = await tempRepository();
+  await repo.remote.add(other.path());
+  const remote = await repo.remote.get();
+  assertEquals(remote.pushUrl, other.path());
+});
+
+Deno.test("git().remote.get() returns remote URL by remote name", async () => {
+  await using other = await tempRepository();
+  await using repo = await tempRepository();
   await repo.remote.add(other.path(), "upstream");
   const remote = await repo.remote.get("upstream");
   assertEquals(remote.pushUrl, other.path());
@@ -257,7 +265,7 @@ Deno.test("git().remote.get() returns remote URL", async () => {
 
 Deno.test("git().remote.get() rejects unknown remote", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.remote.get("remote"), GitError);
+  await assertRejects(() => repo.remote.get("unknown"), GitError);
 });
 
 Deno.test("git().remote.add() adds remote URL", async () => {
@@ -283,6 +291,27 @@ Deno.test("git().remote.add() can add multiple remotes", async () => {
   const remote2 = await repo.remote.add(other2.path(), "remote2");
   assertEquals(await repo.remote.get("remote1"), remote1);
   assertEquals(await repo.remote.get("remote2"), remote2);
+});
+
+Deno.test("git().remote.remove() removes remote", async () => {
+  await using other = await tempRepository();
+  await using repo = await tempRepository();
+  await repo.remote.add(other.path());
+  await repo.remote.remove();
+  await assertRejects(() => repo.remote.get(), GitError);
+});
+
+Deno.test("git().remote.remove() can remove named remote", async () => {
+  await using other = await tempRepository();
+  await using repo = await tempRepository();
+  await repo.remote.add(other.path(), "upstream");
+  await repo.remote.remove("upstream");
+  await assertRejects(() => repo.remote.get("upstream"), GitError);
+});
+
+Deno.test("git().remote.remove() rejects unknown remote", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(() => repo.remote.remove("unknown"), GitError);
 });
 
 Deno.test("git().remote.head() returns remote default branch", async () => {

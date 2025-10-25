@@ -37,7 +37,6 @@
  *
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
- * @todo Add `git().remote.remove()`
  * @todo Add `git().remote.fetch()`
  * @todo Add `git().branch.switch()`
  * @todo Add `git().index.reset()`
@@ -123,6 +122,8 @@ export interface RemoteOperations {
   get(name?: string): Promise<Remote>;
   /** Adds a remote to the repository. */
   add(url: string, name?: string): Promise<Remote>;
+  /** Removes a remote from the repository. */
+  remove(name?: string): Promise<void>;
   /**
    * Queries the currently checked out branch on the remote.
    * @throws {@linkcode GitError} If remote `HEAD` is detached.
@@ -1146,6 +1147,9 @@ export function git(options?: GitOptions): Git {
       async add(url, name = "origin") {
         await run(gitOptions, ["remote", "add"], name, url);
         return repo.remote.get(name);
+      },
+      async remove(name = "origin") {
+        await run(gitOptions, ["remote", "remove"], name);
       },
       async head(name = "origin") {
         const output = await run(
