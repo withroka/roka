@@ -334,12 +334,12 @@ function repository(
         let head = options?.head;
         if (head === undefined) {
           const [branch, remote] = await Promise.all([
-            git.branches.current(),
+            git.branch.current(),
             git.remote.get(),
           ]);
-          head = branch?.push?.startsWith(remote.name)
+          head = branch.push?.startsWith(remote.name)
             ? branch.push.slice(remote.name.length + 1)
-            : branch?.name;
+            : branch.name;
         }
         assertExists(head, "Cannot determine remote push branch");
         const base = options?.base ?? await git.remote.head();

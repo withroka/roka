@@ -286,7 +286,6 @@ async function files(paths: string[]): Promise<string[]> {
     const { value } = await maybe(async () => {
       const repo = git();
       const target = await repo.remote.head();
-      assertExists(target, "Could not determine default branch.");
       const diff = await repo.diff.status({ target });
       return distinct(diff.map((f) => dirname(f.path)));
     });

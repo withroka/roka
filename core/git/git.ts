@@ -18,9 +18,9 @@
  * import { git } from "@roka/git";
  * (async () => {
  *   const repo = git();
- *   const branch = await repo.branches.current();
+ *   const branch = await repo.branch.current();
  *   if (branch?.name === "main") {
- *     await repo.branches.checkout({ create: "feature" });
+ *     await repo.branch.checkout({ create: "feature" });
  *   }
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
@@ -47,6 +47,7 @@
  * @module git
  */
 
+import { maybe } from "@roka/maybe";
 import {
   assertEquals,
   assertExists,
@@ -81,7 +82,7 @@ export interface Git {
   /** Remote operations. */
   remote: RemoteOperations;
   /** Branch operations. */
-  branches: BranchOperations;
+  branch: BranchOperations;
   /** Ignore (exclusion) operations. */
   ignore: IgnoreOperations;
   /** Index (staged area) operations. */
@@ -100,30 +101,56 @@ export interface ConfigOperations {
   set(config: Config): Promise<void>;
 }
 
-/** Branch operations from {@linkcode Git.branches}. */
+/**
+ * Remote operations from {@linkcode Git.remote}.
+ *
+ * Default remote name is `"origin"` for all remote methods.
+ */
+export interface RemoteOperations {
+  /** Clones a remote repository. */
+  clone(url: string, options?: RemoteCloneOptions): Promise<Git>;
+  /** Adds a remote to the repository. */
+  add(url: string, name?: string): Promise<Remote>;
+  /** Returns the remote repository URL. */
+  get(name?: string): Promise<Remote>;
+  /**
+   * Queries the currently checked out branch on the remote.
+   * @throws {@linkcode GitError} if remote `HEAD` is detached.
+   */
+  head(name?: string): Promise<string>;
+  /** Pulls branches and tags from a remote. */
+  pull(options?: RemotePullOptions): Promise<void>;
+  /** Pushes branches and tags to a remote. */
+  push(options?: RemotePushOptions): Promise<void>;
+}
+
+/** Branch operations from {@linkcode Git.branch}. */
 export interface BranchOperations {
+  /**
+   * Returns the current branch name.
+   * @throws {@linkcode GitError} if `HEAD` is detached.
+   */
+  current(): Promise<Branch>;
+  /** Switches to a commit, or an existing or new branch. */
+  checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
   /** Creates a branch. */
   create(name: string, options?: BranchCreateOptions): Promise<Branch>;
-  /** Returns the current branch name. */
-  current(): Promise<Branch | undefined>;
-  /** List branches in the repository alphabetically. */
-  list(options?: BranchListOptions): Promise<Branch[]>;
   /** Renames a branch. */
   move(
     branch: string | Branch,
-    newName: string,
+    name: string,
     options?: BranchMoveOptions,
   ): Promise<Branch>;
   /** Copies a branch. */
   copy(
     branch: string | Branch,
-    newName: string,
+    name: string,
     options?: BranchCopyOptions,
   ): Promise<Branch>;
   /** Deletes a branch. */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
-  /** Switches to a commit, or an existing or new branch. */
-  checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
+  /** List branches in the repository alphabetically. */
+  list(options?: BranchListOptions): Promise<Branch[]>;
   /** Sets the upstream branch for a given branch. */
   track(branch: string | Branch, upstream: string): Promise<Branch>;
   /** Removes the upstream branch for a given branch. */
@@ -189,26 +216,6 @@ export interface TagOperations {
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Pushes a tag to a remote. */
   push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
-}
-
-/**
- * Remote operations from {@linkcode Git.remote}.
- *
- * Default remote name is `"origin"` for all remote methods.
- */
-export interface RemoteOperations {
-  /** Clones a remote repository. */
-  clone(url: string, options?: RemoteCloneOptions): Promise<Git>;
-  /** Adds a remote to the repository. */
-  add(url: string, name?: string): Promise<Remote>;
-  /** Returns the remote repository URL. */
-  get(name?: string): Promise<Remote>;
-  /** Queries the currently checked out branch on the remote. */
-  head(name?: string): Promise<string>;
-  /** Pulls branches and tags from a remote. */
-  pull(options?: RemotePullOptions): Promise<void>;
-  /** Pushes branches and tags to a remote. */
-  push(options?: RemotePushOptions): Promise<void>;
 }
 
 /** Configuration for a git repository. */
@@ -552,6 +559,26 @@ export interface RemotePushOptions extends TransportOptions, RemoteOptions {
   setUpstream?: boolean;
 }
 
+/** Options for the {@linkcode BranchOperations.checkout} function. */
+export interface BranchCheckoutOptions extends BranchCreateOptions {
+  /**
+   * Checkout at the given commit or branch.
+   *
+   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be
+   * `true`.
+   *
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
+  /** Branch to create and checkout during checkout. */
+  create?: string;
+  /**
+   * Detach `HEAD` during checkout from the target branch.
+   * @default {false}
+   */
+  detach?: boolean;
+}
+
 /**
  * Options for the {@linkcode BranchOperations.create} and
  * {@linkcode BranchOperations.checkout} functions when creating new branches.
@@ -574,23 +601,6 @@ export interface BranchCreateOptions {
    * {@linkcode BranchCreateOptions.target target} is a remote branch.
    */
   track?: boolean | "inherit";
-}
-
-/** Options for the {@linkcode BranchOperations.list} function. */
-export interface BranchListOptions extends RefListOptions {
-  /**
-   * Include remote branches.
-   * @default {false}
-   */
-  all?: boolean;
-  /**
-   * Only remote branches.
-   *
-   * Implies {@linkcode BranchListOptions.all all} to be `true`.
-   *
-   * @default {false}
-   */
-  remotes?: boolean;
 }
 
 /** Options for the {@linkcode BranchOperations.move} function. */
@@ -620,24 +630,21 @@ export interface BranchDeleteOptions {
   force?: boolean;
 }
 
-/** Options for the {@linkcode BranchOperations.checkout} function. */
-export interface BranchCheckoutOptions extends BranchCreateOptions {
+/** Options for the {@linkcode BranchOperations.list} function. */
+export interface BranchListOptions extends RefListOptions {
   /**
-   * Checkout at the given commit or branch.
-   *
-   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be
-   * `true`.
-   *
-   * @default {"HEAD"}
-   */
-  target?: Commitish;
-  /** Branch to create and checkout during checkout. */
-  create?: string;
-  /**
-   * Detach `HEAD` during checkout from the target branch.
+   * Include remote branches.
    * @default {false}
    */
-  detach?: boolean;
+  all?: boolean;
+  /**
+   * Only remote branches.
+   *
+   * Implies {@linkcode BranchListOptions.all all} to be `true`.
+   *
+   * @default {false}
+   */
+  remotes?: boolean;
 }
 
 /**
@@ -964,7 +971,7 @@ export interface TransportOptions {
  * ```ts
  * import { git } from "@roka/git";
  * (async () => {
- *   const branch = await git().branches.current();
+ *   const branch = await git().branch.current();
  *   return { branch };
  * });
  * ```
@@ -1127,7 +1134,27 @@ export function git(options?: GitOptions): Git {
         );
       },
     },
-    branches: {
+    branch: {
+      async current() {
+        const name = await run(gitOptions, "branch", "--show-current");
+        if (!name) throw new GitError("Cannot determine HEAD branch");
+        const [branch] = await repo.branch.list({ name });
+        return branch ?? { name };
+      },
+      async checkout(options) {
+        await run(
+          gitOptions,
+          "checkout",
+          flag("--detach", options?.detach),
+          flag("-b", options?.create),
+          flag("--track", options?.track === true),
+          flag("--no-track", options?.track === false),
+          flag("--track=inherit", options?.track === "inherit"),
+          commitArg(options?.target),
+        );
+        const { value: branch } = await maybe(() => repo.branch.current());
+        return branch;
+      },
       async create(name, options) {
         await run(
           gitOptions,
@@ -1137,14 +1164,33 @@ export function git(options?: GitOptions): Git {
           flag("--no-track", options?.track === false),
           flag("--track=inherit", options?.track === "inherit"),
         );
-        const [branch] = await repo.branches.list({ name });
+        const [branch] = await repo.branch.list({ name });
         return branch ?? { name };
       },
-      async current() {
-        const name = await run(gitOptions, "branch", "--show-current");
-        if (!name) return undefined;
-        const [branch] = await repo.branches.list({ name });
-        return branch ?? { name };
+      async move(branch, name, options) {
+        await run(
+          gitOptions,
+          ["branch", "-m", refArg(branch), name],
+          flag("--force", options?.force),
+        );
+        const [newBranch] = await repo.branch.list({ name });
+        return newBranch ?? { name };
+      },
+      async copy(branch, name, options) {
+        await run(
+          gitOptions,
+          ["branch", "-c", refArg(branch), name],
+          flag("--force", options?.force),
+        );
+        const [newBranch] = await repo.branch.list({ name });
+        return newBranch ?? { name };
+      },
+      async delete(branch, options) {
+        await run(
+          gitOptions,
+          ["branch", refArg(branch)],
+          flag(["-D", "-d"], options?.force ?? false),
+        );
       },
       async list(options) {
         const output = await run(
@@ -1175,51 +1221,13 @@ export function git(options?: GitOptions): Git {
             }),
         );
       },
-      async move(branch, newName, options) {
-        await run(
-          gitOptions,
-          ["branch", "-m", refArg(branch), newName],
-          flag("--force", options?.force),
-        );
-        const [newBranch] = await repo.branches.list({ name: newName });
-        return newBranch ?? { name: newName };
-      },
-      async copy(branch, newName, options) {
-        await run(
-          gitOptions,
-          ["branch", "-c", refArg(branch), newName],
-          flag("--force", options?.force),
-        );
-        const [newBranch] = await repo.branches.list({ name: newName });
-        return newBranch ?? { name: newName };
-      },
-      async delete(branch, options) {
-        await run(
-          gitOptions,
-          ["branch", refArg(branch)],
-          flag(["-D", "-d"], options?.force ?? false),
-        );
-      },
-      async checkout(options) {
-        await run(
-          gitOptions,
-          "checkout",
-          flag("--detach", options?.detach),
-          flag("-b", options?.create),
-          flag("--track", options?.track === true),
-          flag("--no-track", options?.track === false),
-          flag("--track=inherit", options?.track === "inherit"),
-          commitArg(options?.target),
-        );
-        return repo.branches.current();
-      },
       async track(branch, upstream) {
         const name = refArg(branch);
         await run(
           gitOptions,
           ["branch", name, "--set-upstream-to", upstream],
         );
-        const [newBranch] = await repo.branches.list({ name });
+        const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
       },
       async untrack(branch) {
@@ -1228,7 +1236,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["branch", name, "--unset-upstream"],
         );
-        const [newBranch] = await repo.branches.list({ name });
+        const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
       },
     },

@@ -198,7 +198,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
   const short = (await repo.git.commits.head())?.short;
-  const current = await repo.git.branches.current();
+  const current = await repo.git.branch.current();
   const pr = await bump([pkg], {
     release: true,
     pr: true,
@@ -221,9 +221,9 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
       "",
     ].join("\n"),
   );
-  assertEquals(await repo.git.branches.current(), current);
-  assertEquals(await repo.git.branches.list(), [current]);
-  await remote.branches.checkout({ target: pr.head });
+  assertEquals(await repo.git.branch.current(), current);
+  assertEquals(await repo.git.branch.list(), [current]);
+  await remote.branch.checkout({ target: pr.head });
   const commit = await remote.commits.head();
   assertExists(commit);
   assertEquals(commit.author?.name, "bump-name");
@@ -280,7 +280,7 @@ Deno.test("bump({ pr }) can update a pull request", async () => {
 
 Deno.test("bump({ pr }) creates a pull request against the current branch", async () => {
   await using remote = await tempRepository();
-  await remote.branches.checkout({ create: "release" });
+  await remote.branch.checkout({ create: "release" });
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },
@@ -318,13 +318,13 @@ Deno.test("bump({ pr }) rejects if pull request branch exists locally", async ()
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  await repo.git.branches.create(`automated/bump-${pkg.name}`);
+  await repo.git.branch.create(`automated/bump-${pkg.name}`);
   await assertRejects(() => bump([pkg], { repo, pr: true }), GitError);
 });
 
 Deno.test("bump({ draft }) can create a draft pull request", async () => {
   await using remote = await tempRepository();
-  await remote.branches.checkout({ create: "release" });
+  await remote.branch.checkout({ create: "release" });
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },
