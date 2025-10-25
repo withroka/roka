@@ -251,7 +251,7 @@ Deno.test("git().remote.get() returns remote URL", async () => {
   await using other = await tempRepository();
   await using repo = await tempRepository();
   await repo.remote.add(other.path());
-  const remote = await repo.remote.get("upstream");
+  const remote = await repo.remote.get();
   assertEquals(remote.pushUrl, other.path());
 });
 
