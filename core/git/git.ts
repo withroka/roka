@@ -20,7 +20,7 @@
  *   const repo = git();
  *   const branch = await repo.branch.current();
  *   if (branch?.name === "main") {
- *     await repo.branch.checkout({ create: "feature" });
+ *     await repo.branch.switch(undefined, { create: "feature" });
  *   }
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
