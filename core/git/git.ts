@@ -852,10 +852,9 @@ export interface CommitAmendOptions extends SignOptions {
   /**
    * New commit summary.
    *
-   * If not provided, keeps the existing summary. When provided with
-   * {@linkcode CommitAmendOptions.body body} or
-   * {@linkcode CommitAmendOptions.trailers trailers}, those options are also
-   * applied.
+   * If not provided, keeps the existing summary. When provided, enables the
+   * use of {@linkcode CommitAmendOptions.body body} and
+   * {@linkcode CommitAmendOptions.trailers trailers} options.
    */
   summary?: string;
   /**
