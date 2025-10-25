@@ -37,7 +37,6 @@
  *
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
- * @todo Add `git().remote.fetch()`
  * @todo Add `git().branch.switch()`
  * @todo Add `git().index.reset()`
  * @todo Add `git().commit.get()`
@@ -128,6 +127,8 @@ export interface RemoteOperations {
    * @throws {@linkcode GitError} If remote `HEAD` is detached.
    */
   head(name?: string): Promise<string>;
+  /** Fetches branches and tags from a remote. */
+  fetch(options?: RemoteFetchOptions): Promise<void>;
   /** Pulls branches and tags from a remote. */
   pull(options?: RemotePullOptions): Promise<void>;
   /** Pushes branches and tags to a remote. */
@@ -540,6 +541,16 @@ export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
    * @default {true}
    */
   tags?: boolean;
+}
+
+/** Options for the {@linkcode RemoteOperations.fetch} function. */
+export interface RemoteFetchOptions extends RemoteOptions, TransportOptions {
+  /**
+   * Branch or tag to fetch commits from.
+   *
+   * The default behavior is to fetch from all remote branches.
+   */
+  target?: string | Branch | Tag;
 }
 
 /** Options for the {@linkcode RemoteOperations.pull} function. */
@@ -1151,6 +1162,15 @@ export function git(options?: GitOptions): Git {
         const { head } = { ...match?.groups };
         if (!head) throw new GitError("Cannot determine remote HEAD branch");
         return head;
+      },
+      async fetch(options) {
+        await run(
+          gitOptions,
+          ["fetch", options?.remote ?? "origin"],
+          refArg(options?.target),
+          flag("--atomic", options?.atomic),
+          flag(["--tags", "--no-tags"], options?.tags),
+        );
       },
       async pull(options) {
         await run(
