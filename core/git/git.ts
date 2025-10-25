@@ -1621,10 +1621,7 @@ export function git(options?: GitOptions): Git {
         );
       },
       async delete(tag) {
-        await run(
-          gitOptions,
-          ["tag", "-d", refArg(tag)],
-        );
+        await run(gitOptions, ["tag", "-d", refArg(tag)]);
       },
     },
     ignore: {

@@ -3326,34 +3326,34 @@ Deno.test("git().tag.push({ force }) force overrides remote tag", async () => {
   await repo.tag.push("tag", { force: true });
 });
 
-Deno.test("git().tag.delete() can delete tag by name", async () => {
-  await using repo = await tempRepository();
-  await repo.commit.create("commit", { allowEmpty: true });
-  await repo.tag.create("tag1");
-  await repo.tag.create("tag2");
-  assertEquals((await repo.tag.list()).length, 2);
-  await repo.tag.delete("tag1");
-  const tags = await repo.tag.list();
-  assertEquals(tags.length, 1);
-  assertEquals(tags[0]?.name, "tag2");
-});
-
-Deno.test("git().tag.delete() can delete tag by Tag object", async () => {
+Deno.test("git().tag.delete() deletes a tag", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
   const tag1 = await repo.tag.create("tag1");
-  await repo.tag.create("tag2");
-  assertEquals((await repo.tag.list()).length, 2);
+  const tag2 = await repo.tag.create("tag2");
+  assertEquals(await repo.tag.list(), [tag1, tag2]);
   await repo.tag.delete(tag1);
-  const tags = await repo.tag.list();
-  assertEquals(tags.length, 1);
-  assertEquals(tags[0]?.name, "tag2");
+  assertEquals(await repo.tag.list(), [tag2]);
+  await repo.tag.delete(tag2);
+  assertEquals(await repo.tag.list(), []);
+});
+
+Deno.test("git().tag.delete() can delete tag by name", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  assertEquals(await repo.tag.list(), [tag1, tag2]);
+  await repo.tag.delete("tag1");
+  assertEquals(await repo.tag.list(), [tag2]);
+  await repo.tag.delete("tag2");
+  assertEquals(await repo.tag.list(), []);
 });
 
 Deno.test("git().tag.delete() rejects deleting non-existent tag", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
-  await assertRejects(() => repo.tag.delete("nonexistent"), GitError);
+  await assertRejects(() => repo.tag.delete("unknown"), GitError);
 });
 
 Deno.test("git().ignore.filter() returns empty array for non-ignored files", async () => {
