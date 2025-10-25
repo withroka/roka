@@ -1572,12 +1572,13 @@ export function git(options?: GitOptions): Git {
         return commit;
       },
       async get(ref) {
+        const refString = commitArg(ref);
         const [commit] = await repo.commit.log({
           maxCount: 1,
-          range: { to: ref },
+          range: { to: refString },
         });
         if (!commit) {
-          throw new GitError("Commit not found");
+          throw new GitError(`Commit not found: ${refString}`);
         }
         return commit;
       },

@@ -2836,7 +2836,7 @@ Deno.test("git().commit.get() rejects non-existent commit", async () => {
   await assertRejects(
     () => repo.commit.get("nonexistent"),
     GitError,
-    "Commit not found",
+    "Commit not found: nonexistent",
   );
 });
 
