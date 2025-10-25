@@ -1261,6 +1261,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "switch",
           flag("--detach", options?.detach),
+          // When creating, branch name goes after the -c/-C flag
           flag("-c", options?.create ? branchName : undefined),
           flag("-C", options?.forceCreate ? branchName : undefined),
           flag("--force", options?.force),
@@ -1268,6 +1269,7 @@ export function git(options?: GitOptions): Git {
           flag("--no-track", options?.track === false),
           flag("--track=inherit", options?.track === "inherit"),
           commitArg(options?.target),
+          // When not creating, branch name is a positional argument
           !options?.create && !options?.forceCreate ? branchName : undefined,
         );
         const { value: current } = await maybe(() => repo.branch.current());
