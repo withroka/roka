@@ -2943,13 +2943,13 @@ Deno.test("git().commit.amend() amends last commit without changing message", as
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content");
   await repo.index.add("file1");
-  const commit = await repo.commit.create("summary", { body: "body" });
+  const original = await repo.commit.create("summary", { body: "body" });
   await Deno.writeTextFile(repo.path("file2"), "content");
   await repo.index.add("file2");
   const amended = await repo.commit.amend();
   assertEquals(amended.summary, "summary");
   assertEquals(amended.body, "body");
-  assertNotEquals(amended.hash, commit.hash);
+  assertNotEquals(amended.hash, original.hash);
   assertEquals(await repo.commit.log(), [amended]);
 });
 
@@ -2972,11 +2972,11 @@ Deno.test("git().commit.amend({ summary }) overrides commit body", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create("summary", { body: "body" });
+  const original = await repo.commit.create("summary", { body: "body" });
   const amended = await repo.commit.amend({ summary: "new summary" });
   assertEquals(amended.summary, "new summary");
   assertEquals(amended.body, undefined);
-  assertNotEquals(amended.hash, commit.hash);
+  assertNotEquals(amended.hash, original.hash);
 });
 
 Deno.test("git().commit.amend({ summary }) rejects empty summary", async () => {
