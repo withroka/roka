@@ -41,7 +41,7 @@ Deno.test("git() configures for each command", async () => {
     },
   });
   await repo.init();
-  await repo.commit.create("summary", { allowEmpty: true });
+  await repo.commit.create("commit", { allowEmpty: true });
   await repo.tag.create("1.2.3");
   await repo.tag.create("1.2.3-alpha");
   await repo.tag.create("1.2.3-beta");
@@ -105,7 +105,7 @@ Deno.test("git().config.set() configures single values", async () => {
 
 Deno.test("git().config.set() configures multi values", async () => {
   await using repo = await tempRepository();
-  await repo.commit.create("summary", { allowEmpty: true });
+  await repo.commit.create("commit", { allowEmpty: true });
   await repo.tag.create("1.2.3");
   await repo.tag.create("1.2.3-alpha");
   await repo.tag.create("1.2.3-beta");
@@ -357,16 +357,16 @@ Deno.test("git().remote.pull() does not pull all tags", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
   await using other = await tempRepository({ clone: remote });
-  const commit = await other.commit.create("commit", { allowEmpty: true });
+  const commit1 = await other.commit.create("commit", { allowEmpty: true });
   const tag1 = await other.tag.create("tag1");
   await other.remote.push();
   await other.tag.push(tag1);
   await other.branch.checkout({ create: "branch" });
-  await other.commit.create("commit2", { allowEmpty: true });
+  await other.commit.create("commit", { allowEmpty: true });
   const tag2 = await other.tag.create("tag2");
   await other.tag.push(tag2);
   await repo.remote.pull();
-  assertEquals(await repo.commit.log(), [commit]);
+  assertEquals(await repo.commit.log(), [commit1]);
   assertEquals(await repo.tag.list(), [tag1]);
 });
 
