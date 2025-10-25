@@ -126,7 +126,7 @@ export interface RemoteOperations {
   add(url: string, name?: string): Promise<Remote>;
   /**
    * Queries the currently checked out branch on the remote.
-   * @throws {@linkcode GitError} if remote `HEAD` is detached.
+   * @throws {@linkcode GitError} If remote `HEAD` is detached.
    */
   head(name?: string): Promise<string>;
   /** Pulls branches and tags from a remote. */
@@ -139,7 +139,7 @@ export interface RemoteOperations {
 export interface BranchOperations {
   /**
    * Returns the current branch name.
-   * @throws {@linkcode GitError} if `HEAD` is detached.
+   * @throws {@linkcode GitError} If `HEAD` is detached.
    */
   current(): Promise<Branch>;
   /** List branches in the repository alphabetically. */
@@ -194,7 +194,10 @@ export interface DiffOperations {
 
 /** Commit operations from {@linkcode Git.commit}. */
 export interface CommitOperations {
-  /** Returns the commit at the tip of `HEAD`. */
+  /**
+   * Returns the commit at the tip of `HEAD`.
+   * @throws {@linkcode GitError} If there are no commits.
+   */
   head(): Promise<Commit>;
   /** Returns the history of commits in the repository. */
   log(options?: CommitLogOptions): Promise<Commit[]>;

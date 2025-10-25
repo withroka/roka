@@ -519,7 +519,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
     .env("GIT_NAME=<name:string>", "Git user name for the bump commit.", {
       prefix: "GIT_",
     })
-    .env("GIT_EMAIL=<email:string>", "Git user e-mail for the bump commit.", {
+    .env("GIT_EMAIL=<email:string>", "Git user email for the bump commit.", {
       prefix: "GIT_",
     })
     .env(
