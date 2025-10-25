@@ -85,14 +85,14 @@ export interface Git {
   branch: BranchOperations;
   /** Index (staged area) operations. */
   index: IndexOperations;
-  /** Ignore (exclusion) operations. */
-  ignore: IgnoreOperations;
   /** Difference (diff) operations. */
   diff: DiffOperations;
   /** Commit operations. */
   commits: CommitOperations;
   /** Tag operations. */
   tags: TagOperations;
+  /** Ignore (exclusion) operations. */
+  ignore: IgnoreOperations;
 }
 
 /** Config operations from {@linkcode Git.config}. */
@@ -181,20 +181,6 @@ export interface DiffOperations {
   patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
 
-/** Ignore operations from {@linkcode Git.ignore}. */
-export interface IgnoreOperations {
-  /** Checks paths against gitignore list and returns the ignored patterns. */
-  ignored(
-    path: string | string[],
-    options?: IgnoreCheckOptions,
-  ): Promise<string[]>;
-  /** Checks paths against gitignore list and returns the unignored patterns. */
-  unignored(
-    path: string | string[],
-    options?: IgnoreCheckOptions,
-  ): Promise<string[]>;
-}
-
 /** Commit operations from {@linkcode Git.commits}. */
 export interface CommitOperations {
   /** Creates a new commit in the repository. */
@@ -213,6 +199,20 @@ export interface TagOperations {
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Pushes a tag to a remote. */
   push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
+}
+
+/** Ignore operations from {@linkcode Git.ignore}. */
+export interface IgnoreOperations {
+  /** Checks paths against gitignore list and returns the ignored patterns. */
+  ignored(
+    path: string | string[],
+    options?: IgnoreCheckOptions,
+  ): Promise<string[]>;
+  /** Checks paths against gitignore list and returns the unignored patterns. */
+  unignored(
+    path: string | string[],
+    options?: IgnoreCheckOptions,
+  ): Promise<string[]>;
 }
 
 /** Configuration for a git repository. */
@@ -720,18 +720,6 @@ export interface IndexRemoveOptions {
 }
 
 /**
- * Options for the {@linkcode IgnoreOperations.ignored} and
- * {@linkcode IgnoreOperations.unignored} functions.
- */
-export interface IgnoreCheckOptions {
-  /**
-   * Look in the index when undertaking the checks.
-   * @default {true}
-   */
-  index?: boolean;
-}
-
-/**
  * Options for the {@linkcode DiffOperations.status} and {@linkcode DiffOperations.patch}
  * functions.
  */
@@ -898,8 +886,20 @@ export interface TagPushOptions extends RemoteOptions {
 }
 
 /**
- * Options common to the {@linkcode BranchOperations.list} and {@linkcode TagOperations.list}
- * functions for ref filtering.
+ * Options for the {@linkcode IgnoreOperations.ignored} and
+ * {@linkcode IgnoreOperations.unignored} functions.
+ */
+export interface IgnoreCheckOptions {
+  /**
+   * Look in the index when undertaking the checks.
+   * @default {true}
+   */
+  index?: boolean;
+}
+
+/**
+ * Options common to the {@linkcode BranchOperations.list} and
+ * {@linkcode TagOperations.list} functions for ref filtering.
  */
 export interface RefListOptions {
   /** Ref selection pattern. The default is all relevant refs. */
@@ -1328,33 +1328,6 @@ export function git(options?: GitOptions): Git {
         );
       },
     },
-    ignore: {
-      async ignored(path, options) {
-        if (typeof path === "string") path = [path];
-        if (path.length === 0) return [];
-        const output = await run(
-          { ...gitOptions, allowCode: [1] },
-          "check-ignore",
-          path,
-          flag("--no-index", options?.index === false),
-        );
-        return output.split("\n").filter((line) => line);
-      },
-      async unignored(path, options) {
-        if (typeof path === "string") path = [path];
-        if (path.length === 0) return [];
-        const output = await run(
-          { ...gitOptions, allowCode: [1] },
-          ["check-ignore", "--verbose", "--non-matching"],
-          path,
-          flag("--no-index", options?.index === false),
-        );
-        return output
-          .split("\n")
-          .map((l) => (l.startsWith("::") ? (l.split("\t").at(-1) ?? "") : ""))
-          .filter((line) => line);
-      },
-    },
     diff: {
       async status(options) {
         const output = await run(
@@ -1559,6 +1532,33 @@ export function git(options?: GitOptions): Git {
           ["push", options?.remote ?? "origin", "tag", refArg(tag)],
           flag("--force", options?.force),
         );
+      },
+    },
+    ignore: {
+      async ignored(path, options) {
+        if (typeof path === "string") path = [path];
+        if (path.length === 0) return [];
+        const output = await run(
+          { ...gitOptions, allowCode: [1] },
+          "check-ignore",
+          path,
+          flag("--no-index", options?.index === false),
+        );
+        return output.split("\n").filter((line) => line);
+      },
+      async unignored(path, options) {
+        if (typeof path === "string") path = [path];
+        if (path.length === 0) return [];
+        const output = await run(
+          { ...gitOptions, allowCode: [1] },
+          ["check-ignore", "--verbose", "--non-matching"],
+          path,
+          flag("--no-index", options?.index === false),
+        );
+        return output
+          .split("\n")
+          .map((l) => (l.startsWith("::") ? (l.split("\t").at(-1) ?? "") : ""))
+          .filter((line) => line);
       },
     },
   };
