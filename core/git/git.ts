@@ -25,7 +25,7 @@
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
  *   await repo.commit.create("Initial commit");
- *   await repo.tags.create("v1.0.0");
+ *   await repo.tag.create("v1.0.0");
  * });
  * ```
  *
@@ -90,7 +90,7 @@ export interface Git {
   /** Commit operations. */
   commit: CommitOperations;
   /** Tag operations. */
-  tags: TagOperations;
+  tag: TagOperations;
   /** Ignore (exclusion) operations. */
   ignore: IgnoreOperations;
 }
@@ -191,7 +191,7 @@ export interface CommitOperations {
   create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
 }
 
-/** Tag operations from {@linkcode Git.tags}. */
+/** Tag operations from {@linkcode Git.tag}. */
 export interface TagOperations {
   /** Lists all tags in the repository. */
   list(options?: TagListOptions): Promise<Tag[]>;
@@ -847,11 +847,11 @@ export interface TagListOptions extends RefListOptions {
    * });
    *
    * await repo.commit.create("summary", { allowEmpty: true });
-   * await repo.tags.create("v1.0.0");
-   * await repo.tags.create("v2.0.0");
-   * await repo.tags.create("v2.0.0-pre");
-   * await repo.tags.create("v2.0.0-rc");
-   * const tags = await repo.tags.list({ sort: "version" });
+   * await repo.tag.create("v1.0.0");
+   * await repo.tag.create("v2.0.0");
+   * await repo.tag.create("v2.0.0-pre");
+   * await repo.tag.create("v2.0.0-rc");
+   * const tags = await repo.tag.list({ sort: "version" });
    *
    * assertEquals(tags.map((x) => x.name), [
    *   "v2.0.0",
@@ -986,7 +986,7 @@ export interface TransportOptions {
  * ```ts
  * import { git } from "@roka/git";
  * (async () => {
- *   const tags = await git().tags.list();
+ *   const tags = await git().tag.list();
  *   return { tags };
  * });
  * ```
@@ -1499,7 +1499,7 @@ export function git(options?: GitOptions): Git {
         return commit;
       },
     },
-    tags: {
+    tag: {
       async list(options) {
         const output = await run(
           gitOptions,
@@ -1533,7 +1533,7 @@ export function git(options?: GitOptions): Git {
           flag("--force", options?.force),
           signFlag("tag", options?.sign),
         );
-        const [tag] = await repo.tags.list({ name });
+        const [tag] = await repo.tag.list({ name });
         assertExists(tag, "Cannot find created tag");
         return tag;
       },
