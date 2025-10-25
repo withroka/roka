@@ -42,7 +42,6 @@
  * @todo Add `git().branch.switch()`
  * @todo Add `git().index.reset()`
  * @todo Add `git().commit.get()`
- * @todo Add `git().commit.amend()`
  * @todo Add `git().commit.revert()`
  * @todo Add `git().tag.delete()`
  * @todo Add `git().worktree.*()`
@@ -203,6 +202,8 @@ export interface CommitOperations {
   log(options?: CommitLogOptions): Promise<Commit[]>;
   /** Creates a new commit in the repository. */
   create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
+  /** Amends the last commit in the repository. */
+  amend(options?: CommitAmendOptions): Promise<Commit>;
 }
 
 /** Tag operations from {@linkcode Git.tag}. */
@@ -834,6 +835,23 @@ export interface CommitCreateOptions extends SignOptions {
   /** Author who wrote the code. */
   author?: User | undefined;
   /** Commit body to append to the message.   */
+  body?: string;
+  /** Trailers to append to the commit message. */
+  trailers?: Record<string, string>;
+}
+
+/** Options for the {@linkcode CommitOperations.amend} function. */
+export interface CommitAmendOptions extends SignOptions {
+  /**
+   * Automatically stage modified or deleted files known to git.
+   * @default {false}
+   */
+  all?: boolean;
+  /** Author who wrote the code. */
+  author?: User | undefined;
+  /** New commit summary. If not provided, keeps the existing summary. */
+  summary?: string;
+  /** New commit body. If not provided, keeps the existing body. */
   body?: string;
   /** Trailers to append to the commit message. */
   trailers?: Record<string, string>;
@@ -1513,6 +1531,33 @@ export function git(options?: GitOptions): Git {
           range: { to: hash },
         });
         assertExists(commit, "Cannot find created commit");
+        return commit;
+      },
+      async amend(options) {
+        const args = ["commit", "--amend"];
+        if (options?.summary !== undefined) {
+          args.push(...flag("-m", options.summary));
+          if (options?.body !== undefined) {
+            args.push(...flag("-m", options.body));
+          }
+          args.push(...trailerFlag(options?.trailers));
+        } else {
+          args.push("--no-edit");
+        }
+        const output = await run(
+          gitOptions,
+          args,
+          flag("--all", options?.all),
+          flag("--author", userArg(options?.author)),
+          signFlag("commit", options?.sign),
+        );
+        const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
+        assertExists(hash, "Cannot find amended commit");
+        const [commit] = await repo.commit.log({
+          maxCount: 1,
+          range: { to: hash },
+        });
+        assertExists(commit, "Cannot find amended commit");
         return commit;
       },
     },
