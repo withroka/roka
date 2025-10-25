@@ -223,7 +223,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
   );
   assertEquals(await repo.git.branch.current(), current);
   assertEquals(await repo.git.branch.list(), [current]);
-  await remote.branch.checkout({ target: pr.head });
+  await remote.branch.switch(pr.head);
   const commit = await remote.commit.head();
   assertExists(commit);
   assertEquals(commit.author?.name, "bump-name");
@@ -280,7 +280,7 @@ Deno.test("bump({ pr }) can update a pull request", async () => {
 
 Deno.test("bump({ pr }) creates a pull request against the current branch", async () => {
   await using remote = await tempRepository();
-  await remote.branch.checkout({ create: "release" });
+  await remote.branch.switch("release", { create: true });
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },
@@ -324,7 +324,7 @@ Deno.test("bump({ pr }) rejects if pull request branch exists locally", async ()
 
 Deno.test("bump({ draft }) can create a draft pull request", async () => {
   await using remote = await tempRepository();
-  await remote.branch.checkout({ create: "release" });
+  await remote.branch.switch("release", { create: true });
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },

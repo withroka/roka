@@ -20,7 +20,7 @@
  *   const repo = git();
  *   const branch = await repo.branch.current();
  *   if (branch?.name === "main") {
- *     await repo.branch.checkout({ create: "feature" });
+ *     await repo.branch.switch("feature", { create: true });
  *   }
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
@@ -37,7 +37,7 @@
  *
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
- * @todo Add `git().branch.switch()`
+ * @todo Add `git().branch.restore()`
  * @todo Add `git().index.reset()`
  * @todo Add `git().commit.get()`
  * @todo Add `git().commit.revert()`
@@ -144,6 +144,11 @@ export interface BranchOperations {
   current(): Promise<Branch>;
   /** List branches in the repository alphabetically. */
   list(options?: BranchListOptions): Promise<Branch[]>;
+  /** Switches to an existing or new branch. */
+  switch(
+    branch: string | Branch,
+    options?: BranchSwitchOptions,
+  ): Promise<Branch>;
   /** Switches to a commit, or an existing or new branch. */
   checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
   /** Creates a branch. */
@@ -604,8 +609,31 @@ export interface BranchListOptions extends RefListOptions {
   remotes?: boolean;
 }
 
+/** Options for the {@linkcode BranchOperations.switch} function. */
+export interface BranchSwitchOptions extends BranchTrackOptions {
+  /**
+   * Create a new branch with the given name.
+   *
+   * If set to `true`, a new branch is created at the current `HEAD`. If set to
+   * a commitish, the new branch is created at the given commit or branch.
+   *
+   * If the branch already exists, an error is thrown unless
+   * {@linkcode BranchSwitchOptions.force force} is set to `true`.
+   *
+   * @default {false}
+   */
+  create?: boolean | Commitish;
+  /**
+   * Discard local changes when switching branches, and ignore existing branch
+   * when creating a new branch.
+   *
+   * @default {false}
+   */
+  force?: boolean;
+}
+
 /** Options for the {@linkcode BranchOperations.checkout} function. */
-export interface BranchCheckoutOptions extends BranchCreateOptions {
+export interface BranchCheckoutOptions extends BranchTrackOptions {
   /**
    * Checkout at the given commit or branch.
    *
@@ -625,27 +653,14 @@ export interface BranchCheckoutOptions extends BranchCreateOptions {
 }
 
 /**
- * Options for the {@linkcode BranchOperations.create} and
- * {@linkcode BranchOperations.checkout} functions when creating new branches.
+ * Options for the {@linkcode BranchOperations.create} function.
  */
-export interface BranchCreateOptions {
+export interface BranchCreateOptions extends BranchTrackOptions {
   /**
    * Target commit or branch to create the new branch from.
    * @default {"HEAD"}
    */
   target?: Commitish;
-  /**
-   * Setup upstream configuration for a newly created branch.
-   *
-   * Setting to `true` uses start-point branch itself as the upstream. Setting
-   * to `"inherit"` copies the upstream configuration of the
-   * {@linkcode BranchCreateOptions.target target} branch. Setting to `false`
-   * does not setup any upstream configuration.
-   *
-   * The default behavior is to enable upstream tracking only when
-   * {@linkcode BranchCreateOptions.target target} is a remote branch.
-   */
-  track?: boolean | "inherit";
 }
 
 /** Options for the {@linkcode BranchOperations.move} function. */
@@ -673,6 +688,25 @@ export interface BranchDeleteOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+/**
+ * Options common to operations that can setup upstream tracking for branches
+ * (e.g. {@linkcode BranchOperations.create}).
+ */
+export interface BranchTrackOptions {
+  /**
+   * Setup upstream configuration for a newly created branch.
+   *
+   * Setting to `true` uses start-point branch itself as the upstream. Setting
+   * to `"inherit"` copies the upstream configuration of the
+   * {@linkcode BranchCreateOptions.target target} branch. Setting to `false`
+   * does not setup any upstream configuration.
+   *
+   * The default behavior is to enable upstream tracking only when
+   * {@linkcode BranchCreateOptions.target target} is a remote branch.
+   */
+  track?: boolean | "inherit";
 }
 
 /** Options for the {@linkcode IndexOperations.status} function. */
@@ -977,8 +1011,8 @@ export interface RemoteOptions {
 }
 
 /**
- * Options common to {@linkcode CommitOperations.create} and {@linkcode TagOperations.create} for
- * GPG signing.
+ * Options common to {@linkcode CommitOperations.create} and
+ * {@linkcode TagOperations.create} for GPG signing.
  */
 export interface SignOptions {
   /**
@@ -993,8 +1027,9 @@ export interface SignOptions {
 }
 
 /**
- * Options common to {@linkcode RemoteOperations.push} and {@linkcode RemoteOperations.pull} for
- * controlling what is updated in repositories.
+ * Options common to {@linkcode RemoteOperations.push} and
+ * {@linkcode RemoteOperations.pull} for controlling what is updated in
+ * repositories.
  */
 export interface TransportOptions {
   /** Either update all refs on the other side or don't update any.*/
@@ -1230,6 +1265,22 @@ export function git(options?: GitOptions): Git {
               return { ...branch, name, ...commit && { commit } };
             }),
         );
+      },
+      async switch(branch, options) {
+        await run(
+          gitOptions,
+          "switch",
+          flag("--force", options?.force),
+          flag("--track", options?.track === true),
+          flag("--no-track", options?.track === false),
+          flag("--track=inherit", options?.track === "inherit"),
+          flag(options?.force ? "-C" : "-c", !!options?.create),
+          refArg(branch),
+          ...typeof options?.create !== "boolean"
+            ? [commitArg(options?.create)]
+            : [],
+        );
+        return await repo.branch.current();
       },
       async checkout(options) {
         await run(
