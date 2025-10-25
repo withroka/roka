@@ -125,9 +125,7 @@ Deno.test("git().config.set() configures multi values", async () => {
 });
 
 Deno.test("git().branches.create() creates a branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   const commit = await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   const branch = await repo.branches.create("branch");
@@ -194,9 +192,7 @@ Deno.test("git().branches.create({ track }) can disable tracking", async () => {
 });
 
 Deno.test("git().branches.create({ track }) can inherit source upstream", async () => {
-  await using remote = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using remote = await tempRepository();
   const commit = await remote.commits.create("commit", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   const main = await repo.branches.current();
@@ -222,9 +218,7 @@ Deno.test("git().branches.current() is undefined on detached state", async () =>
 });
 
 Deno.test("git().branches.list() returns all branches", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit1", { allowEmpty: true });
   let main = await repo.branches.current();
   assertEquals(await repo.branches.list(), [main]);
@@ -235,9 +229,7 @@ Deno.test("git().branches.list() returns all branches", async () => {
 });
 
 Deno.test("git().branches.list() returns all branches in detached HEAD", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   await repo.branches.checkout({ detach: true });
@@ -284,9 +276,7 @@ Deno.test("git().branches.list({ all }) returns all branches", async () => {
 });
 
 Deno.test("git().branches.list({ remotes }) returns only remote branches", async () => {
-  await using remote = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using remote = await tempRepository();
   const commit = await remote.commits.create("commit", { allowEmpty: true });
   await remote.branches.create("remote");
   await using repo = await tempRepository({ clone: remote });
@@ -299,9 +289,7 @@ Deno.test("git().branches.list({ remotes }) returns only remote branches", async
 });
 
 Deno.test("git().branches.list({ contains }) returns branches that contain commit", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   const branch1 = await repo.branches.create("branch1");
   const commit2 = await repo.commits.create("commit2", { allowEmpty: true });
@@ -341,9 +329,7 @@ Deno.test("git().branches.list({ pointsAt }) returns branches that point to a co
 });
 
 Deno.test("git().branches.move() renames a branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   const branch = await repo.branches.create("branch");
@@ -353,9 +339,7 @@ Deno.test("git().branches.move() renames a branch", async () => {
 });
 
 Deno.test("git().branches.move() can rename current branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   assertExists(main);
@@ -365,9 +349,7 @@ Deno.test("git().branches.move() can rename current branch", async () => {
 });
 
 Deno.test("git().branches.move() rejects overriding existing branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   assertExists(main);
@@ -381,9 +363,7 @@ Deno.test("git().branches.move() rejects overriding existing branch", async () =
 });
 
 Deno.test("git().branches.move({ force }) can override existing branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   assertExists(main);
@@ -395,9 +375,7 @@ Deno.test("git().branches.move({ force }) can override existing branch", async (
 });
 
 Deno.test("git().branches.copy() copies a branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   const branch = await repo.branches.create("branch");
@@ -407,9 +385,7 @@ Deno.test("git().branches.copy() copies a branch", async () => {
 });
 
 Deno.test("git().branches.copy() can copy current branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   assertExists(main);
@@ -419,9 +395,7 @@ Deno.test("git().branches.copy() can copy current branch", async () => {
 });
 
 Deno.test("git().branches.copy() rejects overriding existing branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   assertExists(main);
@@ -435,9 +409,7 @@ Deno.test("git().branches.copy() rejects overriding existing branch", async () =
 });
 
 Deno.test("git().branches.copy({ force }) can override existing branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   assertExists(main);
@@ -467,9 +439,7 @@ Deno.test("git().branches.delete() can delete branch", async () => {
 });
 
 Deno.test("git().branches.delete() can delete branch by name", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
   const branch = await repo.branches.create("branch");
@@ -491,15 +461,14 @@ Deno.test("git().branches.delete() rejects unmerged branch", async () => {
 });
 
 Deno.test("git().branches.delete({ force }) can delete unmerged branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   await repo.commits.create("commit", { allowEmpty: true });
   const main = await repo.branches.current();
+  assertExists(main);
   await repo.branches.create("branch");
   await repo.branches.checkout({ target: "branch" });
   await repo.commits.create("commit", { allowEmpty: true });
-  await repo.branches.checkout({ target: "main" });
+  await repo.branches.checkout({ target: main });
   await repo.branches.delete("branch", { force: true });
   assertEquals(await repo.branches.list(), [main]);
 });
@@ -513,11 +482,10 @@ Deno.test("git().branches.checkout() stays at current branch", async () => {
 });
 
 Deno.test("git().branches.checkout({ target }) can switch to branch", async () => {
-  await using repo = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using repo = await tempRepository();
   const commit1 = await repo.commits.create("commit1", { allowEmpty: true });
   const main = await repo.branches.current();
+  assertExists(main);
   await repo.branches.checkout({ create: "branch" });
   assertEquals(await repo.branches.current(), {
     name: "branch",
@@ -529,7 +497,7 @@ Deno.test("git().branches.checkout({ target }) can switch to branch", async () =
     commit: commit2,
   });
   assertEquals(await repo.commits.log(), [commit2, commit1]);
-  await repo.branches.checkout({ target: "main" });
+  await repo.branches.checkout({ target: main });
   assertEquals(await repo.branches.current(), main);
   assertEquals(await repo.commits.log(), [commit1]);
   await repo.branches.checkout({ target: "branch" });
@@ -622,9 +590,7 @@ Deno.test("git().branches.checkout({ track }) can disable tracking", async () =>
 });
 
 Deno.test("git().branches.checkout({ track }) can inherit source upstream", async () => {
-  await using remote = await tempRepository({
-    config: { init: { defaultBranch: "main" } },
-  });
+  await using remote = await tempRepository();
   const commit = await remote.commits.create("commit", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   const main = await repo.branches.current();
@@ -3212,10 +3178,12 @@ Deno.test("git().remotes.pull() does not pull all tags", async () => {
 
 Deno.test("git().remotes.pull({ target }) can pull commits from a branch", async () => {
   await using remote = await tempRepository();
+  const main = await remote.branches.current();
+  assertExists(main);
   const commit1 = await remote.commits.create("commit", { allowEmpty: true });
   await remote.branches.checkout({ create: "branch" });
   const commit2 = await remote.commits.create("commit", { allowEmpty: true });
-  await remote.branches.checkout({ target: "main" });
+  await remote.branches.checkout({ target: main });
   await using repo = await tempRepository({ clone: remote });
   assertEquals(await repo.commits.log(), [commit1]);
   await repo.remotes.pull({ target: "branch" });
