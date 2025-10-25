@@ -218,7 +218,7 @@ async function createRepository(
   const repo = await tempRepository(options?.repo);
   for (const { summary, tags } of options?.commits ?? []) {
     // deno-lint-ignore no-await-in-loop
-    await repo.commits.create(summary, { allowEmpty: true });
+    await repo.commit.create(summary, { allowEmpty: true });
     for (const tag of tags ?? []) {
       // deno-lint-ignore no-await-in-loop
       await repo.tags.create(tag);

@@ -9,8 +9,8 @@
  * import { assertEquals, assertFalse } from "@std/assert";
  * (async () => {
  *   const repo = git();
- *   await repo.commits.create("feat(cli): add new command");
- *   const commit = conventional(await repo.commits.head());
+ *   await repo.commit.create("feat(cli): add new command");
+ *   const commit = conventional(await repo.commit.head());
  *   assertEquals(commit.type, "feat");
  *   assertEquals(commit.scopes, ["cli"]);
  *   assertEquals(commit.description, "add new command");
@@ -56,8 +56,8 @@ export interface ConventionalCommit extends Commit {
  * await using repo = await tempRepository();
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
- * await repo.commits.create("feat(cli): add new command");
- * const commit = conventional(await repo.commits.head());
+ * await repo.commit.create("feat(cli): add new command");
+ * const commit = conventional(await repo.commit.head());
  *
  * assertEquals(commit.type, "feat");
  * assertEquals(commit.scopes, ["cli"]);

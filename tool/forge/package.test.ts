@@ -91,7 +91,7 @@ Deno.test("packageInfo() calculates patch version update", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commit.head();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.2.4-pre.1+${commit.short}`,
@@ -109,7 +109,7 @@ Deno.test("packageInfo() calculates minor version update", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commit.head();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.3.0-pre.1+${commit.short}`,
@@ -127,7 +127,7 @@ Deno.test("packageInfo() calculates major version update", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commit.head();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
@@ -145,7 +145,7 @@ Deno.test("packageInfo() matches all scopes for non-workspace", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [commit2, commit1] = await repo.commits.log();
+  const [commit2, commit1] = await repo.commit.log();
   assertExists(commit2);
   assertExists(commit1);
   assertObjectMatch(await packageInfo({ directory }), {
@@ -165,7 +165,7 @@ Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [_, fix] = await repo.commits.log();
+  const [_, fix] = await repo.commit.log();
   assertExists(fix);
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
@@ -184,7 +184,7 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [style, fix] = await repo.commits.log();
+  const [style, fix] = await repo.commit.log();
   assertExists(style);
   assertExists(fix);
   assertObjectMatch(await packageInfo({ directory }), {
@@ -205,7 +205,7 @@ Deno.test("packageInfo() calculates patch version update for unstable changes", 
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [commit2, commit1] = await repo.commits.log();
+  const [commit2, commit1] = await repo.commit.log();
   assertExists(commit2);
   assertExists(commit1);
   assertObjectMatch(await packageInfo({ directory }), {
@@ -225,7 +225,7 @@ Deno.test("packageInfo() breaking changes are still breaking for unstable", asyn
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commit.head();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
@@ -246,7 +246,7 @@ Deno.test("packageInfo() skips over pre-release versions", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [feat2, docs, fix, feat1] = await repo.commits.log();
+  const [feat2, docs, fix, feat1] = await repo.commit.log();
   assertExists(feat2);
   assertExists(docs);
   assertExists(fix);
@@ -415,7 +415,7 @@ Deno.test("workspace() matches commit scope", async () => {
   assertExists(pkg2);
   assertExists(pkg3);
   const root = pkg1.root;
-  const [commit3, commit2, commit1] = await git({ cwd: root }).commits.log();
+  const [commit3, commit2, commit1] = await git({ cwd: root }).commit.log();
   assertExists(commit1);
   assertExists(commit2);
   assertExists(commit3);
@@ -455,7 +455,7 @@ Deno.test("workspace() considers unstable changes", async () => {
   assertExists(pkg1);
   assertExists(pkg2);
   const root = pkg1.root;
-  const [commit3, commit2, commit1] = await git({ cwd: root }).commits
+  const [commit3, commit2, commit1] = await git({ cwd: root }).commit
     .log();
   assertExists(commit1);
   assertExists(commit2);
@@ -572,7 +572,7 @@ Deno.test("commits() returns all history", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [docs, fix, feat] = await git({ cwd: pkg.root }).commits.log();
+  const [docs, fix, feat] = await git({ cwd: pkg.root }).commit.log();
   assertExists(docs);
   assertExists(fix);
   assertExists(feat);
@@ -596,7 +596,7 @@ Deno.test("commits() enforces scope for workspace members", async () => {
   });
   assertExists(pkg1);
   assertExists(pkg2);
-  const [docs, fix] = await git({ cwd: pkg1.directory }).commits.log();
+  const [docs, fix] = await git({ cwd: pkg1.directory }).commit.log();
   assertExists(docs);
   assertExists(fix);
   assertEquals(await commits(pkg1), [conventional(fix)]);
@@ -613,7 +613,7 @@ Deno.test("commits({ range }) returns from a range", async () => {
     ],
   });
   assertExists(pkg.latest);
-  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
+  const [_, fix, feat] = await git({ cwd: pkg.root }).commit.log();
   assertExists(fix);
   assertExists(feat);
   assertEquals(
@@ -631,7 +631,7 @@ Deno.test("commits({ type }) filters by type", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [_, fix, feat] = await git({ cwd: pkg.root }).commits.log();
+  const [_, fix, feat] = await git({ cwd: pkg.root }).commit.log();
   assertExists(fix);
   assertExists(feat);
   assertEquals(
@@ -649,7 +649,7 @@ Deno.test("commits({ type }) always includes breaking changes", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [docs, fix] = await git({ cwd: pkg.root }).commits.log();
+  const [docs, fix] = await git({ cwd: pkg.root }).commit.log();
   assertExists(docs);
   assertExists(fix);
   assertEquals(
@@ -667,7 +667,7 @@ Deno.test("commits({ breaking }) can filter breaking changes", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [_, fix] = await git({ cwd: pkg.root }).commits.log();
+  const [_, fix] = await git({ cwd: pkg.root }).commit.log();
   assertExists(fix);
   assertEquals(
     await commits(pkg, { breaking: true }),
@@ -684,7 +684,7 @@ Deno.test("commits({ breaking }) can filter non-breaking changes", async () => {
       { summary: "docs: add docs" },
     ],
   });
-  const [docs] = await git({ cwd: pkg.root }).commits.log();
+  const [docs] = await git({ cwd: pkg.root }).commit.log();
   assertExists(docs);
   assertEquals(
     await commits(pkg, { type: ["docs"], breaking: false }),

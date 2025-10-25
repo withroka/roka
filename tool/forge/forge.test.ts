@@ -51,7 +51,7 @@ const WORKSPACE = {
 
 async function run(context: Deno.TestContext) {
   await using remote = await tempRepository();
-  await remote.commits.create("initial", { allowEmpty: true });
+  await remote.commit.create("initial", { allowEmpty: true });
   await using packages = await tempWorkspace({
     ...WORKSPACE,
     repo: { clone: remote.path(), chdir: true },

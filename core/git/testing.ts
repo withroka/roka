@@ -7,7 +7,7 @@
  *
  * await using repo = await tempRepository();
  * const commit = testCommit({ summary: "feat(cli): add command" });
- * await repo.commits.create(commit.summary, {
+ * await repo.commit.create(commit.summary, {
  *   author: commit.author,
  *   allowEmpty: true,
  * });
@@ -75,10 +75,10 @@ export interface TempRepositoryOptions {
  * await using repo = await tempRepository({ clone: remote });
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
- * const commit = await repo.commits.create("feat: add feature");
+ * const commit = await repo.commit.create("feat: add feature");
  * await repo.remote.push();
  *
- * assertEquals(await remote.commits.head(), commit);
+ * assertEquals(await remote.commit.head(), commit);
  * ```
  */
 export async function tempRepository(
