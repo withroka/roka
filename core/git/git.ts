@@ -39,7 +39,6 @@
  * @todo Extend `git().config.set()`
  * @todo Add `git().remote.fetch()`
  * @todo Add `git().branch.switch()`
- * @todo Add `git().index.reset()`
  * @todo Add `git().commit.get()`
  * @todo Add `git().commit.revert()`
  * @todo Add `git().worktree.*()`
@@ -181,6 +180,8 @@ export interface IndexOperations {
   ): Promise<void>;
   /** Removes files or directories from the working tree and index. */
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
+  /** Unstages files from the index. */
+  reset(path: string | string[], options?: IndexResetOptions): Promise<void>;
 }
 
 /** Difference operations from {@linkcode Git.diff}. */
@@ -737,6 +738,18 @@ export interface IndexRemoveOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+/** Options for the {@linkcode IndexOperations.reset} function. */
+export interface IndexResetOptions {
+  /**
+   * Target commit to reset from.
+   *
+   * If set, resets the specified paths to their state at the given commit.
+   *
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
 }
 
 /**
@@ -1369,6 +1382,15 @@ export function git(options?: GitOptions): Git {
           "rm",
           path,
           flag("--force", options?.force),
+        );
+      },
+      async reset(path, options?: IndexResetOptions) {
+        await run(
+          gitOptions,
+          "reset",
+          commitArg(options?.target),
+          "--",
+          path,
         );
       },
     },

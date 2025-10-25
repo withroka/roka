@@ -1596,6 +1596,118 @@ Deno.test("git().index.remove({ force }) can remove modified file", async () => 
   ]);
 });
 
+Deno.test("git().index.reset() unstages a file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commit.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "modified content");
+  await repo.index.add("file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "modified" },
+  ]);
+  await repo.index.reset("file");
+  assertEquals((await repo.index.status()).staged, []);
+  assertEquals((await repo.index.status()).unstaged, [
+    { path: "file", status: "modified" },
+  ]);
+});
+
+Deno.test("git().index.reset() unstages multiple files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create("commit");
+  await Deno.writeTextFile(repo.path("file1"), "modified1");
+  await Deno.writeTextFile(repo.path("file2"), "modified2");
+  await repo.index.add(["file1", "file2"]);
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file1", status: "modified" },
+    { path: "file2", status: "modified" },
+  ]);
+  await repo.index.reset(["file1", "file2"]);
+  assertEquals((await repo.index.status()).staged, []);
+  assertEquals((await repo.index.status()).unstaged, [
+    { path: "file1", status: "modified" },
+    { path: "file2", status: "modified" },
+  ]);
+});
+
+Deno.test("git().index.reset() can unstage added file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "added" },
+  ]);
+  await repo.index.reset("file");
+  assertEquals((await repo.index.status()).staged, []);
+  assertEquals((await repo.index.status()).untracked, [
+    { path: "file" },
+  ]);
+});
+
+Deno.test("git().index.reset() can unstage deleted file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commit.create("commit");
+  await repo.index.remove("file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "deleted" },
+  ]);
+  await repo.index.reset("file");
+  assertEquals((await repo.index.status()).staged, []);
+  assertEquals((await repo.index.status()).unstaged, [
+    { path: "file", status: "deleted" },
+  ]);
+});
+
+Deno.test("git().index.reset() can unstage renamed file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
+  await repo.commit.create("commit");
+  await repo.index.move("old.file", "new.file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "new.file", status: "renamed", from: "old.file" },
+  ]);
+  await repo.index.reset(["old.file", "new.file"]);
+  assertEquals((await repo.index.status()).staged, []);
+  assertEquals((await repo.index.status()).unstaged, [
+    { path: "old.file", status: "deleted" },
+  ]);
+  assertEquals((await repo.index.status()).untracked, [
+    { path: "new.file" },
+  ]);
+});
+
+Deno.test("git().index.reset({ target }) can reset to a specific commit", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create("commit1");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  await repo.commit.create("commit2");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "modified" },
+  ]);
+  // Reset index to commit1 state. Now index has content1, HEAD is at commit2 (content2), working tree has content3
+  await repo.index.reset("file", { target: commit1 });
+  // Staged: content2 (HEAD/commit2) -> content1 (index) = modified
+  // Unstaged: content1 (index) -> content3 (working tree) = modified
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "modified" },
+  ]);
+  assertEquals((await repo.index.status()).unstaged, [
+    { path: "file", status: "modified" },
+  ]);
+});
+
 Deno.test("git().diff.status() returns empty for no change", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.diff.status(), []);
