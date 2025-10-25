@@ -474,7 +474,10 @@ export interface GitOptions {
   config?: Config;
 }
 
-/** Options for the {@linkcode Git.init} and {@linkcode Git.clone} functions. */
+/**
+ * Options for the {@linkcode Git.init} and {@linkcode RemoteOperations.clone}
+ * functions.
+ */
 export interface InitOptions {
   /**
    * Create a bare repository.
@@ -485,7 +488,7 @@ export interface InitOptions {
    * Name of the initial branch.
    *
    * Creates a new branch with this name for {@linkcode Git.init} and checks
-   * out this branch for {@linkcode Git.clone}.
+   * out this branch for {@linkcode RemoteOperations.clone}.
    *
    * Default is `main`, if not overridden with Git configuration.
    */
@@ -598,7 +601,7 @@ export interface BranchCheckoutOptions extends BranchCreateOptions {
    * @default {"HEAD"}
    */
   target?: Commitish;
-  /** Branch to create and checkout during checkout. */
+  /** Branch to create and switch to. */
   create?: string;
   /**
    * Detach `HEAD` during checkout from the target branch.
