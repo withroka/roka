@@ -300,7 +300,7 @@ async function files(paths: string[]): Promise<string[]> {
     type: "file",
     ignore: ["**/.git", "**/node_modules", "**/__testdata__"],
   }));
-  const { value: unignored } = await maybe(() => git().ignore.unignored(found));
+  const { value: unignored } = await maybe(() => git().ignore.omit(found));
   if (unignored !== undefined) {
     // exclude ignored paths, except for those explicitly provided
     found = intersect(found, unignored.concat(paths));

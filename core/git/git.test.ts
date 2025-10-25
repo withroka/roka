@@ -3129,120 +3129,120 @@ Deno.test("git().tag.push({ force }) force overrides remote tag", async () => {
   await repo.tag.push("tag", { force: true });
 });
 
-Deno.test("git().ignore.ignored() returns empty array for non-ignored files", async () => {
+Deno.test("git().ignore.filter() returns empty array for non-ignored files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file.txt"), "content");
-  assertEquals(await repo.ignore.ignored("file.txt"), []);
+  assertEquals(await repo.ignore.filter("file.txt"), []);
 });
 
-Deno.test("git().ignore.ignored() returns ignored files", async () => {
+Deno.test("git().ignore.filter() returns ignored files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   await Deno.writeTextFile(repo.path("file.txt"), "content");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.ignored(["file.txt", "file.log"]), [
+  assertEquals(await repo.ignore.filter(["file.txt", "file.log"]), [
     "file.log",
   ]);
 });
 
-Deno.test("git().ignore.ignored() works with single path string", async () => {
+Deno.test("git().ignore.filter() works with single path string", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.ignored("file.log"), ["file.log"]);
-  assertEquals(await repo.ignore.ignored("file.txt"), []);
+  assertEquals(await repo.ignore.filter("file.log"), ["file.log"]);
+  assertEquals(await repo.ignore.filter("file.txt"), []);
 });
 
-Deno.test("git().ignore.ignored() works with multiple patterns", async () => {
+Deno.test("git().ignore.filter() works with multiple patterns", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n*.tmp");
   await Deno.writeTextFile(repo.path("file.txt"), "content");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
   await Deno.writeTextFile(repo.path("temp.tmp"), "temp");
   assertEquals(
-    await repo.ignore.ignored(["file.txt", "file.log", "temp.tmp"]),
+    await repo.ignore.filter(["file.txt", "file.log", "temp.tmp"]),
     ["file.log", "temp.tmp"],
   );
 });
 
-Deno.test("git().ignore.ignored() handles empty array", async () => {
+Deno.test("git().ignore.filter() handles empty array", async () => {
   await using repo = await tempRepository();
-  assertEquals(await repo.ignore.ignored([]), []);
+  assertEquals(await repo.ignore.filter([]), []);
 });
 
-Deno.test("git().ignore.ignored() works with nonexistent files", async () => {
+Deno.test("git().ignore.filter() works with nonexistent files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  assertEquals(await repo.ignore.ignored("ignored.log"), ["ignored.log"]);
+  assertEquals(await repo.ignore.filter("ignored.log"), ["ignored.log"]);
 });
 
-Deno.test("git().ignore.ignored({ index }) considers index", async () => {
+Deno.test("git().ignore.filter({ index }) considers index", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
   await repo.index.add("file.log", { force: true });
-  assertEquals(await repo.ignore.ignored("file.log"), []);
-  assertEquals(await repo.ignore.ignored("file.log", { index: false }), [
+  assertEquals(await repo.ignore.filter("file.log"), []);
+  assertEquals(await repo.ignore.filter("file.log", { index: false }), [
     "file.log",
   ]);
 });
 
-Deno.test("git().ignore.unignored() returns empty array for ignored files", async () => {
+Deno.test("git().ignore.omit() returns empty array for ignored files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "file.txt");
   await Deno.writeTextFile(repo.path("file.txt"), "content");
-  assertEquals(await repo.ignore.unignored("file.txt"), []);
+  assertEquals(await repo.ignore.omit("file.txt"), []);
 });
 
-Deno.test("git().ignore.unignored() returns unignored files", async () => {
+Deno.test("git().ignore.omit() returns unignored files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   await Deno.writeTextFile(repo.path("file.txt"), "content");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.unignored(["file.txt", "file.log"]), [
+  assertEquals(await repo.ignore.omit(["file.txt", "file.log"]), [
     "file.txt",
   ]);
 });
 
-Deno.test("git().ignore.unignored() works with single path string", async () => {
+Deno.test("git().ignore.omit() works with single path string", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.unignored("file.log"), []);
-  assertEquals(await repo.ignore.unignored("file.txt"), ["file.txt"]);
+  assertEquals(await repo.ignore.omit("file.log"), []);
+  assertEquals(await repo.ignore.omit("file.txt"), ["file.txt"]);
 });
 
-Deno.test("git().ignore.unignored() works with multiple patterns", async () => {
+Deno.test("git().ignore.omit() works with multiple patterns", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n*.tmp");
   await Deno.writeTextFile(repo.path("file.txt"), "content");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
   await Deno.writeTextFile(repo.path("temp.tmp"), "temp");
   assertEquals(
-    await repo.ignore.unignored(["file.txt", "file.log", "temp.tmp"]),
+    await repo.ignore.omit(["file.txt", "file.log", "temp.tmp"]),
     ["file.txt"],
   );
 });
 
-Deno.test("git().ignore.unignored() handles empty array", async () => {
+Deno.test("git().ignore.omit() handles empty array", async () => {
   await using repo = await tempRepository();
-  assertEquals(await repo.ignore.unignored([]), []);
+  assertEquals(await repo.ignore.omit([]), []);
 });
 
-Deno.test("git().ignore.unignored() works with nonexistent files", async () => {
+Deno.test("git().ignore.omit() works with nonexistent files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  assertEquals(await repo.ignore.unignored("ignored.log"), []);
-  assertEquals(await repo.ignore.unignored("log"), ["log"]);
+  assertEquals(await repo.ignore.omit("ignored.log"), []);
+  assertEquals(await repo.ignore.omit("log"), ["log"]);
 });
 
-Deno.test("git().ignore.unignored({ index }) considers index", async () => {
+Deno.test("git().ignore.omit({ index }) considers index", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   await Deno.writeTextFile(repo.path("file.log"), "log content");
   await repo.index.add("file.log", { force: true });
-  assertEquals(await repo.ignore.unignored("file.log", { index: true }), [
+  assertEquals(await repo.ignore.omit("file.log", { index: true }), [
     "file.log",
   ]);
-  assertEquals(await repo.ignore.unignored("file.log", { index: false }), []);
+  assertEquals(await repo.ignore.omit("file.log", { index: false }), []);
 });

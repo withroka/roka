@@ -204,14 +204,14 @@ export interface TagOperations {
 /** Ignore operations from {@linkcode Git.ignore}. */
 export interface IgnoreOperations {
   /** Checks paths against gitignore list and returns the ignored patterns. */
-  ignored(
+  filter(
     path: string | string[],
-    options?: IgnoreCheckOptions,
+    options?: IgnoreFilterOptions,
   ): Promise<string[]>;
   /** Checks paths against gitignore list and returns the unignored patterns. */
-  unignored(
+  omit(
     path: string | string[],
-    options?: IgnoreCheckOptions,
+    options?: IgnoreFilterOptions,
   ): Promise<string[]>;
 }
 
@@ -886,10 +886,10 @@ export interface TagPushOptions extends RemoteOptions {
 }
 
 /**
- * Options for the {@linkcode IgnoreOperations.ignored} and
- * {@linkcode IgnoreOperations.unignored} functions.
+ * Options for the {@linkcode IgnoreOperations.filter} and
+ * {@linkcode IgnoreOperations.omit} functions.
  */
-export interface IgnoreCheckOptions {
+export interface IgnoreFilterOptions {
   /**
    * Look in the index when undertaking the checks.
    * @default {true}
@@ -1546,7 +1546,7 @@ export function git(options?: GitOptions): Git {
       },
     },
     ignore: {
-      async ignored(path, options) {
+      async filter(path, options) {
         if (typeof path === "string") path = [path];
         if (path.length === 0) return [];
         const output = await run(
@@ -1557,7 +1557,7 @@ export function git(options?: GitOptions): Git {
         );
         return output.split("\n").filter((line) => line);
       },
-      async unignored(path, options) {
+      async omit(path, options) {
         if (typeof path === "string") path = [path];
         if (path.length === 0) return [];
         const output = await run(
