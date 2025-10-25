@@ -202,7 +202,7 @@ export interface CommitOperations {
   /** Returns the history of commits in the repository. */
   log(options?: CommitLogOptions): Promise<Commit[]>;
   /** Creates a new commit in the repository. */
-  create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
+  create(summary: string, options?: CommitOptions): Promise<Commit>;
   /** Amends the last commit in the repository. */
   amend(options?: CommitAmendOptions): Promise<Commit>;
 }
@@ -819,8 +819,11 @@ export interface CommitLogOptions {
   text?: string;
 }
 
-/** Options for the {@linkcode CommitOperations.create} function. */
-export interface CommitCreateOptions extends SignOptions {
+/**
+ * Options for the {@linkcode CommitOperations.create} and
+ * {@linkcode CommitOperations.amend} functions.
+ */
+export interface CommitOptions extends SignOptions {
   /**
    * Automatically stage modified or deleted files known to git.
    * @default {false}
@@ -831,45 +834,32 @@ export interface CommitCreateOptions extends SignOptions {
    * @default {false}
    */
   allowEmpty?: boolean;
-  /** Amend the last commit. */
-  amend?: boolean;
   /** Author who wrote the code. */
   author?: User | undefined;
-  /** Commit body to append to the message.   */
+  /**
+   * Commit body to append to the message.
+   *
+   * If a body is provided to the {@linkcode CommitAmendOptions.amend amend}
+   * function, the {@linkcode CommitAmendOptions.trailers trailers} of the
+   * commit are rewritten as well. They need to be provided again, if they are
+   * to be kept.
+   */
   body?: string;
   /** Trailers to append to the commit message. */
   trailers?: Record<string, string>;
 }
 
 /** Options for the {@linkcode CommitOperations.amend} function. */
-export interface CommitAmendOptions extends SignOptions {
+export interface CommitAmendOptions extends CommitOptions {
   /**
-   * Automatically stage modified or deleted files known to git.
-   * @default {false}
-   */
-  all?: boolean;
-  /** Author who wrote the code. */
-  author?: User | undefined;
-  /**
-   * New commit summary.
+   * Amended commit summary.
    *
-   * If not provided, keeps the existing summary. When provided, enables the
-   * use of {@linkcode CommitAmendOptions.body body} and
-   * {@linkcode CommitAmendOptions.trailers trailers} options.
+   * If a summary is provided, the {@linkcode CommitAmendOptions.body body},
+   * and {@linkcode CommitAmendOptions.trailers trailers} of the commit are
+   * rewritten as well. These values are reset, if they are not provided to the
+   * {@linkcode CommitAmendOptions.amend amend} function.
    */
   summary?: string;
-  /**
-   * New commit body.
-   *
-   * Only used when {@linkcode CommitAmendOptions.summary summary} is provided.
-   */
-  body?: string;
-  /**
-   * Trailers to append to the commit message.
-   *
-   * Only used when {@linkcode CommitAmendOptions.summary summary} is provided.
-   */
-  trailers?: Record<string, string>;
 }
 
 /** Options for the {@linkcode TagOperations.list} function. */
@@ -1538,7 +1528,6 @@ export function git(options?: GitOptions): Git {
           trailerFlag(options?.trailers),
           flag("--all", options?.all),
           flag("--allow-empty", options?.allowEmpty),
-          flag("--amend", options?.amend),
           flag("--author", userArg(options?.author)),
           signFlag("commit", options?.sign),
         );
@@ -1552,30 +1541,36 @@ export function git(options?: GitOptions): Git {
         return commit;
       },
       async amend(options) {
-        const args = ["commit", "--amend"];
-        if (options?.summary !== undefined) {
-          args.push(...flag("-m", options.summary));
-          if (options?.body !== undefined) {
-            args.push(...flag("-m", options.body));
+        let { summary, body, trailers } = options ?? {};
+        const edited = summary !== undefined ||
+          body !== undefined ||
+          (trailers !== undefined && Object.keys(trailers).length > 0);
+        if (edited && (summary === undefined || body === undefined)) {
+          const [commit] = await repo.commit.log({ maxCount: 1 });
+          if (commit && summary === undefined && body === undefined) {
+            body = commit.body;
           }
-          args.push(...trailerFlag(options?.trailers));
-        } else {
-          args.push("--no-edit");
+          if (commit && summary === undefined) summary = commit.summary;
         }
         const output = await run(
           gitOptions,
-          args,
+          ["commit", "--amend"],
+          flag("-m", summary),
+          flag("-m", body),
+          trailerFlag(trailers),
           flag("--all", options?.all),
+          flag("--allow-empty", options?.allowEmpty),
+          flag("--no-edit", !edited),
           flag("--author", userArg(options?.author)),
           signFlag("commit", options?.sign),
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
-        assertExists(hash, "Cannot find amended commit");
+        assertExists(hash, "Cannot find created commit");
         const [commit] = await repo.commit.log({
           maxCount: 1,
           range: { to: hash },
         });
-        assertExists(commit, "Cannot find amended commit");
+        assertExists(commit, "Cannot find created commit");
         return commit;
       },
     },
