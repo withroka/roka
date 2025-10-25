@@ -187,6 +187,11 @@ export interface IndexOperations {
   ): Promise<void>;
   /** Removes files or directories from the working tree and index. */
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
+  /** Restores files in the index from a source. */
+  restore(
+    path: string | string[],
+    options?: IndexRestoreOptions,
+  ): Promise<void>;
 }
 
 /** Difference operations from {@linkcode Git.diff}. */
@@ -782,6 +787,18 @@ export interface IndexRemoveOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+/** Options for the {@linkcode IndexOperations.restore} function. */
+export interface IndexRestoreOptions {
+  /**
+   * Source commit to restore from.
+   *
+   * If not specified, the contents are restored from `HEAD`.
+   *
+   * @default {"HEAD"}
+   */
+  source?: Commitish;
 }
 
 /**
@@ -1440,6 +1457,14 @@ export function git(options?: GitOptions): Git {
           "rm",
           path,
           flag("--force", options?.force),
+        );
+      },
+      async restore(path, options?: IndexRestoreOptions) {
+        await run(
+          gitOptions,
+          ["restore", "--staged"],
+          flag("--source", commitArg(options?.source)),
+          path,
         );
       },
     },
