@@ -861,7 +861,15 @@ export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
 export interface RemotePushOptions extends TransportOptions, RemoteOptions {
-  /** Branch to push. The default is the current branch. */
+  /**
+   * Branch to push commits onto.
+   *
+   * The default is the tracking branch of the current branch.
+   *
+   * This option does not accept tags. To push tags, use {@linkcode Tags.push}
+   * to push a single tag, or set {@linkcode TransportOptions.tags} to `true` to
+   * push all tags.
+   */
   target?: string | Branch;
   /** Push all branches. */
   branches?: boolean;
