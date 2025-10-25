@@ -343,6 +343,159 @@ Deno.test("git().remote.head() detects detached remote head", async () => {
   );
 });
 
+Deno.test("git().remote.fetch() fetches commits and tags", async () => {
+  await using remote = await tempRepository();
+  const initialCommit = await remote.commit.create("initial", {
+    allowEmpty: true,
+  });
+  await using repo = await tempRepository({ clone: remote });
+  const remoteBranchName = await repo.remote.head();
+  const newCommit = await remote.commit.create("commit", { allowEmpty: true });
+  const tag = await remote.tag.create("tag");
+  await repo.remote.fetch();
+  // Fetch should update the remote-tracking branch without merging
+  const remoteBranches = await repo.branch.list({ remotes: true });
+  const mainBranch = remoteBranches.find((b) =>
+    b.name === `origin/${remoteBranchName}`
+  );
+  assertEquals(mainBranch?.commit, newCommit);
+  // Local HEAD should not change after fetch
+  assertEquals(await repo.commit.head(), initialCommit);
+  assertEquals(await repo.tag.list(), [tag]);
+});
+Deno.test("git().remote.fetch() does not fetch all tags", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: remote });
+  await using other = await tempRepository({ clone: remote });
+  const commit1 = await other.commit.create("commit1", { allowEmpty: true });
+  const remoteBranchName = (await other.branch.current()).name;
+  const tag1 = await other.tag.create("tag1");
+  await other.remote.push();
+  await other.tag.push(tag1);
+  await other.branch.checkout({ create: "branch" });
+  await other.commit.create("commit2", { allowEmpty: true });
+  const tag2 = await other.tag.create("tag2");
+  await other.tag.push(tag2);
+  await repo.remote.fetch();
+  // Check that fetch updated remote-tracking branch
+  const remoteBranches = await repo.branch.list({ remotes: true });
+  const mainBranch = remoteBranches.find((b) =>
+    b.name === `origin/${remoteBranchName}`
+  );
+  assertEquals(mainBranch?.commit, commit1);
+  assertEquals(await repo.tag.list(), [tag1]);
+});
+Deno.test("git().remote.fetch({ target }) can fetch commits from a branch", async () => {
+  await using remote = await tempRepository();
+  const initialCommit = await remote.commit.create("commit1", {
+    allowEmpty: true,
+  });
+  await using repo = await tempRepository({ clone: remote });
+  const remoteBranchName = await repo.remote.head();
+  await remote.branch.checkout({ create: "branch" });
+  const commit2 = await remote.commit.create("commit2", { allowEmpty: true });
+  await repo.remote.fetch({ target: "branch" });
+  const remoteBranches = await repo.branch.list({ remotes: true });
+  const branchBranch = remoteBranches.find((b) => b.name === "origin/branch");
+  const mainBranch = remoteBranches.find((b) =>
+    b.name === `origin/${remoteBranchName}`
+  );
+  assertEquals(branchBranch?.commit, commit2);
+  assertEquals(mainBranch?.commit, initialCommit);
+  // Local HEAD should not change after fetch
+  assertEquals(await repo.commit.head(), initialCommit);
+});
+
+Deno.test("git().remote.fetch({ target }) can fetch commits from a tag", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: remote });
+  await using other = await tempRepository({ clone: remote });
+  const commit1 = await other.commit.create("commit", { allowEmpty: true });
+  const remoteBranchName = (await other.branch.current()).name;
+  const tag1 = await other.tag.create("tag1");
+  await other.remote.push();
+  await other.tag.push(tag1);
+  await other.branch.checkout({ create: "branch" });
+  await other.commit.create("commit2", { allowEmpty: true });
+  const tag2 = await other.tag.create("tag2");
+  await other.tag.push(tag2);
+
+  // First, do a regular fetch to get the main branch (and tag1)
+  await repo.remote.fetch();
+  let remoteBranches = await repo.branch.list({ remotes: true });
+  let mainBranch = remoteBranches.find((b) =>
+    b.name === `origin/${remoteBranchName}`
+  );
+  assertEquals(mainBranch?.commit, commit1);
+  assertEquals(await repo.tag.list(), [tag1]);
+
+  // Now fetch just tag2 - this shouldn't update any branches or create a local tag
+  await repo.remote.fetch({ target: tag2 });
+  remoteBranches = await repo.branch.list({ remotes: true });
+  mainBranch = remoteBranches.find((b) =>
+    b.name === `origin/${remoteBranchName}`
+  );
+  // Main branch should still be at commit1
+  assertEquals(mainBranch?.commit, commit1);
+  // Tag list should still only have tag1
+  assertEquals(await repo.tag.list(), [tag1]);
+});
+Deno.test("git().remote.fetch({ remote }) fetches from a remote with branch", async () => {
+  await using remote = await tempRepository();
+  const commit = await remote.commit.create("commit", {
+    allowEmpty: true,
+  });
+  const branch = await remote.branch.current();
+  await using repo = await tempRepository();
+  await repo.remote.add(remote.path(), "remote");
+  await repo.remote.fetch({ remote: "remote", target: branch });
+  const remoteBranches = await repo.branch.list({ remotes: true });
+  const mainBranch = remoteBranches.find((b) =>
+    b.name === `remote/${branch.name}`
+  );
+  assertEquals(mainBranch?.commit, commit);
+});
+
+Deno.test("git().remote.fetch({ tags }) can skip tags", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: remote });
+  await using other = await tempRepository({ clone: remote });
+  const commit = await other.commit.create("commit", { allowEmpty: true });
+  const remoteBranchName = (await other.branch.current()).name;
+  const tag = await other.tag.create("tag");
+  await other.remote.push();
+  await other.tag.push(tag);
+  await repo.remote.fetch({ tags: false });
+  const remoteBranches = await repo.branch.list({ remotes: true });
+  const mainBranch = remoteBranches.find((b) =>
+    b.name === `origin/${remoteBranchName}`
+  );
+  assertEquals(mainBranch?.commit, commit);
+  assertEquals(await repo.tag.list(), []);
+});
+
+Deno.test("git().remote.fetch({ tags }) can fetch all tags", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: remote });
+  await using other = await tempRepository({ clone: remote });
+  const commit = await other.commit.create("commit", { allowEmpty: true });
+  const remoteBranchName = (await other.branch.current()).name;
+  const tag1 = await other.tag.create("tag1");
+  await other.remote.push();
+  await other.tag.push(tag1);
+  await other.branch.checkout({ create: "branch" });
+  await other.commit.create("commit2", { allowEmpty: true });
+  const tag2 = await other.tag.create("tag2");
+  await other.tag.push(tag2);
+  await repo.remote.fetch({ tags: true });
+  const remoteBranches = await repo.branch.list({ remotes: true });
+  const mainBranch = remoteBranches.find((b) =>
+    b.name === `origin/${remoteBranchName}`
+  );
+  assertEquals(mainBranch?.commit, commit);
+  assertEquals(await repo.tag.list(), [tag1, tag2]);
+});
+
 Deno.test("git().remote.pull() pulls commits and tags", async () => {
   await using remote = await tempRepository();
   await using repo = await tempRepository({ clone: remote });
