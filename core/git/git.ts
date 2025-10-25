@@ -37,12 +37,14 @@
  *
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
- * @todo Add `git().worktree.*`
- * @todo Add `git().stash.*`
- * @todo Add `git().revert.*`
- * @todo Add `git().merge.*`
- * @todo Add `git().rebase.*`
- * @todo Add `git().submodule.*`
+ * @todo Add `git().branch.restore()`
+ * @todo Add `git().index.reset()`
+ * @todo Add `git().worktree.*()`
+ * @todo Add `git().stash.*()`
+ * @todo Add `git().merge.*()`
+ * @todo Add `git().rebase.*()`
+ * @todo Add `git().submodule.*()`
+ * @todo Split `git().worktree` from `git().index`
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
@@ -216,6 +218,8 @@ export interface CommitOperations {
   create(summary: string, options?: CommitOptions): Promise<Commit>;
   /** Amends the last commit in the repository. */
   amend(options?: CommitAmendOptions): Promise<Commit>;
+  /** Reverts an existing commit by creating a new commit. */
+  revert(commit: Commitish, options?: CommitRevertOptions): Promise<Commit>;
 }
 
 /** Tag operations from {@linkcode Git.tag}. */
@@ -973,6 +977,22 @@ export interface CommitAmendOptions extends CommitOptions {
    * {@linkcode CommitAmendOptions.amend amend} function.
    */
   summary?: string;
+}
+
+/** Options for the {@linkcode CommitOperations.revert} function. */
+export interface CommitRevertOptions extends SignOptions {
+  /**
+   * Edit the commit message before committing.
+   * @default {false}
+   */
+  edit?: boolean;
+  /**
+   * Parent number for reverting merge commits (starting from 1).
+   *
+   * When reverting a merge commit, you must specify which parent should be
+   * considered the mainline.
+   */
+  mainline?: number;
 }
 
 /** Options for the {@linkcode TagOperations.list} function. */
@@ -1759,6 +1779,23 @@ export function git(options?: GitOptions): Git {
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
         const commit = await repo.commit.get(hash);
+        assertExists(commit, "Cannot find created commit");
+        return commit;
+      },
+      async revert(commitish, options) {
+        const output = await run(
+          gitOptions,
+          ["revert", commitArg(commitish)],
+          flag(["--edit", "--no-edit"], options?.edit),
+          flag("--mainline", options?.mainline),
+          signFlag("commit", options?.sign),
+        );
+        const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
+        assertExists(hash, "Cannot find created commit");
+        const [commit] = await repo.commit.log({
+          maxCount: 1,
+          range: { to: hash },
+        });
         assertExists(commit, "Cannot find created commit");
         return commit;
       },

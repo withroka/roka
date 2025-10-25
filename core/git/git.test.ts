@@ -3798,7 +3798,153 @@ Deno.test("git().commit.amend({ sign }) cannot use wrong key", async () => {
   );
 });
 
-Deno.test("git().tag.list() returns empty list on empty repository", async () => {
+Deno.test("git().commit.revert() reverts a commit", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "original");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create("Add file");
+  await Deno.writeTextFile(repo.path("file"), "modified");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create("Modify file");
+  const revert = await repo.commit.revert(commit2);
+  assertEquals(revert.summary, `Revert "Modify file"`);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "original");
+  assertEquals(await repo.commit.log(), [revert, commit2, commit1]);
+});
+
+Deno.test("git().commit.revert() can revert by commit hash", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "original");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create("Add file");
+  await Deno.writeTextFile(repo.path("file"), "modified");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create("Modify file");
+  const revert = await repo.commit.revert(commit2.hash);
+  assertEquals(revert.summary, `Revert "Modify file"`);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "original");
+  assertEquals(await repo.commit.log(), [revert, commit2, commit1]);
+});
+
+Deno.test("git().commit.revert() can revert multiple commits", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "v1");
+  await repo.index.add("file");
+  await repo.commit.create("Version 1");
+  await Deno.writeTextFile(repo.path("file"), "v2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create("Version 2");
+  await Deno.writeTextFile(repo.path("file"), "v3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create("Version 3");
+  const revert1 = await repo.commit.revert(commit3);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "v2");
+  const revert2 = await repo.commit.revert(commit2);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "v1");
+  assertEquals(await repo.commit.log({ maxCount: 2 }), [revert2, revert1]);
+});
+
+Deno.test("git().commit.revert() rejects with dirty working tree", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "original");
+  await repo.index.add("file");
+  await repo.commit.create("Add file");
+  await Deno.writeTextFile(repo.path("file"), "modified");
+  await repo.index.add("file");
+  const commit = await repo.commit.create("Modify file");
+  await Deno.writeTextFile(repo.path("file"), "dirty");
+  await assertRejects(() => repo.commit.revert(commit), GitError);
+});
+
+Deno.test("git().commit.revert() rejects on conflict", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "line1\nline2\nline3");
+  await repo.index.add("file");
+  await repo.commit.create("Add file");
+  await Deno.writeTextFile(repo.path("file"), "line1\nmodified\nline3");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create("Modify line2");
+  await Deno.writeTextFile(repo.path("file"), "line1\nchanged\nline3");
+  await repo.index.add("file");
+  await repo.commit.create("Change line2 again");
+  await assertRejects(() => repo.commit.revert(commit2), GitError);
+});
+
+Deno.test("git().commit.revert({ edit }) can disable message editing", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "original");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create("Add file");
+  await Deno.writeTextFile(repo.path("file"), "modified");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create("Modify file");
+  const revert = await repo.commit.revert(commit2, { edit: false });
+  assertEquals(revert.summary, `Revert "Modify file"`);
+  assertEquals(await repo.commit.log(), [revert, commit2, commit1]);
+});
+
+Deno.test("git().commit.revert({ mainline }) reverts a merge commit", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "main");
+  await repo.index.add("file");
+  await repo.commit.create("Main commit");
+  const mainBranch = await repo.branch.current();
+  await repo.branch.checkout({ create: "feature" });
+  await Deno.writeTextFile(repo.path("file"), "feature");
+  await repo.index.add("file");
+  await repo.commit.create("Feature commit");
+  await repo.branch.checkout({ target: mainBranch });
+  await Deno.writeTextFile(repo.path("other"), "other");
+  await repo.index.add("other");
+  await repo.commit.create("Other commit");
+  // Create a merge commit using raw git command
+  const mergeResult = await new Deno.Command("git", {
+    args: ["-C", repo.path(), "merge", "--no-ff", "--no-edit", "feature"],
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+  assertEquals(mergeResult.code, 0, "Merge should succeed");
+  const merge = await repo.commit.head();
+  // Revert the merge commit by selecting main as mainline (parent 1)
+  const revert = await repo.commit.revert(merge, { mainline: 1 });
+  assertEquals(revert.summary.startsWith("Revert"), true);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "main");
+});
+
+Deno.test("git().commit.revert({ mainline }) rejects merge without mainline", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "main");
+  await repo.index.add("file");
+  await repo.commit.create("Main commit");
+  const mainBranch = await repo.branch.current();
+  await repo.branch.checkout({ create: "feature" });
+  await Deno.writeTextFile(repo.path("file"), "feature");
+  await repo.index.add("file");
+  await repo.commit.create("Feature commit");
+  await repo.branch.checkout({ target: mainBranch });
+  // Create a merge commit
+  const mergeResult = await new Deno.Command("git", {
+    args: ["-C", repo.path(), "merge", "--no-ff", "--no-edit", "feature"],
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+  assertEquals(mergeResult.code, 0, "Merge should succeed");
+  const merge = await repo.commit.head();
+  await assertRejects(() => repo.commit.revert(merge), GitError);
+});
+
+Deno.test("git().commit.revert({ sign }) cannot use wrong key", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const commit = await repo.commit.create("Add file");
+  await assertRejects(
+    () => repo.commit.revert(commit, { sign: "not-a-key" }),
+    GitError,
+  );
+});
+
+Deno.test("git().tag.list() returns empty list on empty repo", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.tag.list(), []);
 });
