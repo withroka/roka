@@ -76,9 +76,9 @@ export interface TempRepositoryOptions {
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * const commit = await repo.commits.create("feat: add feature");
- * await repo.commits.push();
+ * await repo.remotes.push();
  *
- * assertEquals(await remote.commits.head(), commit);
+ * assertEquals(await remote.commits.current(), commit);
  * ```
  */
 export async function tempRepository(
@@ -95,11 +95,7 @@ export async function tempRepository(
   const repo = git({ cwd: directory });
   if (clone) {
     const target = typeof clone === "string" ? clone : clone.path();
-    await git({ cwd: directory }).clone(target, {
-      directory: ".",
-      bare,
-      config,
-    });
+    await git().remotes.clone(target, { directory, bare, config });
   } else {
     await git({ cwd: directory, config }).init({ bare });
     await repo.config.set(config);

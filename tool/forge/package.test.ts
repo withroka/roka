@@ -91,7 +91,7 @@ Deno.test("packageInfo() calculates patch version update", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.2.4-pre.1+${commit.short}`,
@@ -109,7 +109,7 @@ Deno.test("packageInfo() calculates minor version update", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `1.3.0-pre.1+${commit.short}`,
@@ -127,7 +127,7 @@ Deno.test("packageInfo() calculates major version update", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,
@@ -225,7 +225,7 @@ Deno.test("packageInfo() breaking changes are still breaking for unstable", asyn
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
     version: `2.0.0-pre.1+${commit.short}`,

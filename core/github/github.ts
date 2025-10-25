@@ -342,7 +342,7 @@ function repository(
             : branch?.name;
         }
         assertExists(head, "Cannot determine remote push branch");
-        const base = options?.base ?? await git.remotes.defaultBranch();
+        const base = options?.base ?? await git.remotes.head();
         assertExists(base, "Cannot determine remote base branch");
         const commit = !options?.title
           ? (await git.commits.log({ range: { from: base } })).pop()

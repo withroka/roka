@@ -206,7 +206,7 @@ async function createPullRequest(
     })
   ).join("\n");
   try {
-    await repo.git.branches.checkout({ new: head });
+    await repo.git.branches.checkout({ create: head });
     await repo.git.config.set({ user: pick(options ?? {}, ["name", "email"]) });
     await repo.git.index.add([
       ...packages.map((pkg) => join(pkg.directory, "deno.json")),
@@ -215,10 +215,10 @@ async function createPullRequest(
     await repo.git.commits.create(title, { body: commitBody });
     let [pr] = await repo.pulls.list({ base, head, closed: false });
     if (pr) {
-      await repo.git.commits.push({ force: true, branch: head });
+      await repo.git.remotes.push({ force: true, target: head });
       pr.update({ title, body: prBody });
     } else {
-      await repo.git.commits.push({ branch: head });
+      await repo.git.remotes.push({ target: head });
       pr = await repo.pulls.create({
         base,
         head,

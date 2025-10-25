@@ -31,7 +31,7 @@ Deno.test("tempRepository() creates a disposable repo", async () => {
   {
     await using repo = await tempRepository();
     const commit = await repo.commits.create("initial", { allowEmpty: true });
-    assertEquals(await repo.commits.head(), commit);
+    assertEquals(await repo.commits.current(), commit);
     path = repo.path();
   }
   await assertRejects(() => Deno.stat(path), Deno.errors.NotFound);
@@ -41,16 +41,16 @@ Deno.test("tempRepository({ clone }) clones a repo from another repo", async () 
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
   const commit = await repo.commits.create("initial", { allowEmpty: true });
-  await repo.commits.push();
-  assertEquals(await remote.commits.head(), commit);
+  await repo.remotes.push();
+  assertEquals(await remote.commits.current(), commit);
 });
 
 Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote.path() });
   const commit = await repo.commits.create("initial", { allowEmpty: true });
-  await repo.commits.push();
-  assertEquals(await remote.commits.head(), commit);
+  await repo.remotes.push();
+  assertEquals(await remote.commits.current(), commit);
 });
 
 Deno.test("tempRepository({ chdir }) changes working directory", async () => {

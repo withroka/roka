@@ -33,7 +33,7 @@ Deno.test("tempPackage() creates package in a repository", async () => {
     ],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await git({ cwd: pkg.root }).commits.head();
+  const commit = await git({ cwd: pkg.root }).commits.current();
   assertExists(commit);
   assertEquals(omit(pkg, [Symbol.asyncDispose]), {
     name: "name",

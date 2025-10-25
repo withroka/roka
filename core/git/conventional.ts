@@ -10,7 +10,7 @@
  * (async () => {
  *   const repo = git();
  *   await repo.commits.create("feat(cli): add new command");
- *   const commit = conventional(await repo.commits.head());
+ *   const commit = conventional(await repo.commits.current());
  *   assertEquals(commit.type, "feat");
  *   assertEquals(commit.scopes, ["cli"]);
  *   assertEquals(commit.description, "add new command");
@@ -57,7 +57,7 @@ export interface ConventionalCommit extends Commit {
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * await repo.commits.create("feat(cli): add new command");
- * const commit = conventional(await repo.commits.head());
+ * const commit = conventional(await repo.commits.current());
  *
  * assertEquals(commit.type, "feat");
  * assertEquals(commit.scopes, ["cli"]);

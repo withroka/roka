@@ -17,13 +17,13 @@ Deno.test("bump() minor updates released package", async () => {
     ],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   const pr = await bump([pkg]);
   assertEquals(pr, undefined);
   assertEquals(pkg.config.version, `1.3.0-pre.1+${commit.short}`);
   const updated = await packageInfo({ directory: pkg.directory });
   assertEquals(updated.config, pkg.config);
-  const head = await repo.commits.head();
+  const head = await repo.commits.current();
   assertEquals(head.summary, "feat: new feature");
 });
 
@@ -33,7 +33,7 @@ Deno.test("bump() minor updates unreleased package", async () => {
     commits: [{ summary: "feat: new feature" }],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.1.0-pre.1+${commit.short}`);
 });
@@ -44,7 +44,7 @@ Deno.test("bump() patch updates unreleased package", async () => {
     commits: [{ summary: "fix: bug fix" }],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
 });
@@ -55,7 +55,7 @@ Deno.test("bump() patch updates package with unstable changes", async () => {
     commits: [{ summary: "feat(unstable): new unstable feature" }],
   });
   const repo = git({ cwd: pkg.root });
-  const commit = await repo.commits.head();
+  const commit = await repo.commits.current();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
 });
@@ -197,7 +197,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  const short = (await repo.git.commits.head())?.short;
+  const short = (await repo.git.commits.current())?.short;
   const current = await repo.git.branches.current();
   const pr = await bump([pkg], {
     release: true,
@@ -224,7 +224,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
   assertEquals(await repo.git.branches.current(), current);
   assertEquals(await repo.git.branches.list(), [current]);
   await remote.branches.checkout({ target: pr.head });
-  const commit = await remote.commits.head();
+  const commit = await remote.commits.current();
   assertExists(commit);
   assertEquals(commit.author?.name, "bump-name");
   assertEquals(commit.author?.email, "bump-email");
@@ -280,7 +280,7 @@ Deno.test("bump({ pr }) can update a pull request", async () => {
 
 Deno.test("bump({ pr }) creates a pull request against the current branch", async () => {
   await using remote = await tempRepository();
-  await remote.branches.checkout({ new: "release" });
+  await remote.branches.checkout({ create: "release" });
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },
@@ -324,7 +324,7 @@ Deno.test("bump({ pr }) rejects if pull request branch exists locally", async ()
 
 Deno.test("bump({ draft }) can create a draft pull request", async () => {
   await using remote = await tempRepository();
-  await remote.branches.checkout({ new: "release" });
+  await remote.branches.checkout({ create: "release" });
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },
