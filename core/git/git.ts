@@ -170,6 +170,8 @@ export interface BranchOperations {
   track(branch: string | Branch, upstream: string): Promise<Branch>;
   /** Removes the upstream branch for a given branch. */
   untrack(branch: string | Branch): Promise<Branch>;
+  /** Resets the current branch head to a specified state. */
+  reset(target: Commitish, options?: BranchResetOptions): Promise<void>;
 }
 
 /** Index operations from {@linkcode Git.index}. */
@@ -689,6 +691,20 @@ export interface BranchDeleteOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+/** Options for the {@linkcode BranchOperations.reset} function. */
+export interface BranchResetOptions {
+  /**
+   * Reset mode.
+   *
+   * - `"soft"`: Keep index and working tree unchanged.
+   * - `"mixed"`: Reset index but keep working tree unchanged (default).
+   * - `"hard"`: Reset both index and working tree.
+   *
+   * @default {"mixed"}
+   */
+  mode?: "soft" | "mixed" | "hard";
 }
 
 /**
@@ -1346,6 +1362,16 @@ export function git(options?: GitOptions): Git {
         );
         const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
+      },
+      async reset(target, options) {
+        await run(
+          gitOptions,
+          ["reset"],
+          flag("--soft", options?.mode === "soft"),
+          flag("--mixed", options?.mode === "mixed"),
+          flag("--hard", options?.mode === "hard"),
+          commitArg(target),
+        );
       },
     },
     index: {
