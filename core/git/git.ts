@@ -83,10 +83,10 @@ export interface Git {
   remote: RemoteOperations;
   /** Branch operations. */
   branch: BranchOperations;
-  /** Ignore (exclusion) operations. */
-  ignore: IgnoreOperations;
   /** Index (staged area) operations. */
   index: IndexOperations;
+  /** Ignore (exclusion) operations. */
+  ignore: IgnoreOperations;
   /** Difference (diff) operations. */
   diff: DiffOperations;
   /** Commit operations. */
@@ -157,6 +157,30 @@ export interface BranchOperations {
   untrack(branch: string | Branch): Promise<Branch>;
 }
 
+/** Index operations from {@linkcode Git.index}. */
+export interface IndexOperations {
+  /** Returns the status of the index and the local working tree. */
+  status(options?: IndexStatusOptions): Promise<Status>;
+  /** Stages files for commit. */
+  add(path: string | string[], options?: IndexAddOptions): Promise<void>;
+  /** Move or rename a file, a directory, or a symlink. */
+  move(
+    source: string | string[],
+    destination: string,
+    options?: IndexMoveOptions,
+  ): Promise<void>;
+  /** Removes files or directories from the working tree and index. */
+  remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
+}
+
+/** Difference operations from {@linkcode Git.diff}. */
+export interface DiffOperations {
+  /** Returns the list of changed file paths with their status. */
+  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
+  /** Returns the patch text for changes. */
+  patch(options?: DiffPatchOptions): Promise<Patch[]>;
+}
+
 /** Ignore operations from {@linkcode Git.ignore}. */
 export interface IgnoreOperations {
   /** Checks paths against gitignore list and returns the ignored patterns. */
@@ -169,33 +193,6 @@ export interface IgnoreOperations {
     path: string | string[],
     options?: IgnoreCheckOptions,
   ): Promise<string[]>;
-}
-
-/** Index operations from {@linkcode Git.index}. */
-export interface IndexOperations {
-  /** Stages files for commit. */
-  add(path: string | string[], options?: IndexAddOptions): Promise<void>;
-  /** Move or rename a file, a directory, or a symlink. */
-  move(
-    source: string | string[],
-    destination: string,
-    options?: IndexMoveOptions,
-  ): Promise<void>;
-  /** Removes files or directories from the working tree and index. */
-  remove(
-    path: string | string[],
-    options?: IndexRemoveOptions,
-  ): Promise<void>;
-  /** Returns the status of the index and the local working tree. */
-  status(options?: IndexStatusOptions): Promise<Status>;
-}
-
-/** Difference operations from {@linkcode Git.diff}. */
-export interface DiffOperations {
-  /** Returns the list of changed file paths with their status. */
-  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
-  /** Returns the patch text for changes. */
-  patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
 
 /** Commit operations from {@linkcode Git.commits}. */
@@ -647,52 +644,6 @@ export interface BranchListOptions extends RefListOptions {
   remotes?: boolean;
 }
 
-/**
- * Options for the {@linkcode IgnoreOperations.ignored} and
- * {@linkcode IgnoreOperations.unignored} functions.
- */
-export interface IgnoreCheckOptions {
-  /**
-   * Look in the index when undertaking the checks.
-   * @default {true}
-   */
-  index?: boolean;
-}
-
-/** Options for the {@linkcode IndexOperations.add} function. */
-export interface IndexAddOptions {
-  /**
-   * Override the executable bit of the file.
-   *
-   * If set, the file mode in the file sytem is ignored, and the executable bit
-   * is set to the given value.
-   */
-  executable?: boolean;
-  /**
-   * Add files to the index, even if they are ignored.
-   * @default {false}
-   */
-  force?: boolean;
-}
-
-/** Options for the {@linkcode IndexOperations.move} function. */
-export interface IndexMoveOptions {
-  /**
-   * Move files, even if the destination file already exists.
-   * @default {false}
-   */
-  force?: boolean;
-}
-
-/** Options for the {@linkcode IndexOperations.remove} function. */
-export interface IndexRemoveOptions {
-  /**
-   * Remove files, even if they have local modifications.
-   * @default {false}
-   */
-  force?: boolean;
-}
-
 /** Options for the {@linkcode IndexOperations.status} function. */
 export interface IndexStatusOptions {
   /**
@@ -732,6 +683,52 @@ export interface IndexStatusOptions {
    * @default {true}
    */
   untracked?: boolean | "all";
+}
+
+/** Options for the {@linkcode IndexOperations.add} function. */
+export interface IndexAddOptions {
+  /**
+   * Override the executable bit of the file.
+   *
+   * If set, the file mode in the file sytem is ignored, and the executable bit
+   * is set to the given value.
+   */
+  executable?: boolean;
+  /**
+   * Add files to the index, even if they are ignored.
+   * @default {false}
+   */
+  force?: boolean;
+}
+
+/** Options for the {@linkcode IndexOperations.move} function. */
+export interface IndexMoveOptions {
+  /**
+   * Move files, even if the destination file already exists.
+   * @default {false}
+   */
+  force?: boolean;
+}
+
+/** Options for the {@linkcode IndexOperations.remove} function. */
+export interface IndexRemoveOptions {
+  /**
+   * Remove files, even if they have local modifications.
+   * @default {false}
+   */
+  force?: boolean;
+}
+
+/**
+ * Options for the {@linkcode IgnoreOperations.ignored} and
+ * {@linkcode IgnoreOperations.unignored} functions.
+ */
+export interface IgnoreCheckOptions {
+  /**
+   * Look in the index when undertaking the checks.
+   * @default {true}
+   */
+  index?: boolean;
 }
 
 /**
@@ -1240,60 +1237,7 @@ export function git(options?: GitOptions): Git {
         return newBranch ?? { name };
       },
     },
-    ignore: {
-      async ignored(path, options) {
-        if (typeof path === "string") path = [path];
-        if (path.length === 0) return [];
-        const output = await run(
-          { ...gitOptions, allowCode: [1] },
-          "check-ignore",
-          path,
-          flag("--no-index", options?.index === false),
-        );
-        return output.split("\n").filter((line) => line);
-      },
-      async unignored(path, options) {
-        if (typeof path === "string") path = [path];
-        if (path.length === 0) return [];
-        const output = await run(
-          { ...gitOptions, allowCode: [1] },
-          ["check-ignore", "--verbose", "--non-matching"],
-          path,
-          flag("--no-index", options?.index === false),
-        );
-        return output
-          .split("\n")
-          .map((l) => (l.startsWith("::") ? (l.split("\t").at(-1) ?? "") : ""))
-          .filter((line) => line);
-      },
-    },
     index: {
-      async add(path, options?: IndexAddOptions) {
-        await run(
-          gitOptions,
-          "add",
-          path,
-          flag("--force", options?.force),
-          flag(["--chmod=+x", "--chmod=-x"], options?.executable),
-        );
-      },
-      async move(source, destination, options?: IndexMoveOptions) {
-        await run(
-          gitOptions,
-          "mv",
-          source,
-          destination,
-          flag("--force", options?.force),
-        );
-      },
-      async remove(path, options?: IndexRemoveOptions) {
-        await run(
-          gitOptions,
-          "rm",
-          path,
-          flag("--force", options?.force),
-        );
-      },
       async status(options?: IndexStatusOptions) {
         const output = await run(
           gitOptions,
@@ -1356,6 +1300,59 @@ export function git(options?: GitOptions): Git {
           }
         }
         return status;
+      },
+      async add(path, options?: IndexAddOptions) {
+        await run(
+          gitOptions,
+          "add",
+          path,
+          flag("--force", options?.force),
+          flag(["--chmod=+x", "--chmod=-x"], options?.executable),
+        );
+      },
+      async move(source, destination, options?: IndexMoveOptions) {
+        await run(
+          gitOptions,
+          "mv",
+          source,
+          destination,
+          flag("--force", options?.force),
+        );
+      },
+      async remove(path, options?: IndexRemoveOptions) {
+        await run(
+          gitOptions,
+          "rm",
+          path,
+          flag("--force", options?.force),
+        );
+      },
+    },
+    ignore: {
+      async ignored(path, options) {
+        if (typeof path === "string") path = [path];
+        if (path.length === 0) return [];
+        const output = await run(
+          { ...gitOptions, allowCode: [1] },
+          "check-ignore",
+          path,
+          flag("--no-index", options?.index === false),
+        );
+        return output.split("\n").filter((line) => line);
+      },
+      async unignored(path, options) {
+        if (typeof path === "string") path = [path];
+        if (path.length === 0) return [];
+        const output = await run(
+          { ...gitOptions, allowCode: [1] },
+          ["check-ignore", "--verbose", "--non-matching"],
+          path,
+          flag("--no-index", options?.index === false),
+        );
+        return output
+          .split("\n")
+          .map((l) => (l.startsWith("::") ? (l.split("\t").at(-1) ?? "") : ""))
+          .filter((line) => line);
       },
     },
     diff: {

@@ -1039,301 +1039,6 @@ Deno.test("git().branch.untrack() unsets upstream branch", async () => {
   ]);
 });
 
-Deno.test("git().ignore.ignored() returns empty array for non-ignored files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file.txt"), "content");
-  assertEquals(await repo.ignore.ignored("file.txt"), []);
-});
-
-Deno.test("git().ignore.ignored() returns ignored files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  await Deno.writeTextFile(repo.path("file.txt"), "content");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.ignored(["file.txt", "file.log"]), [
-    "file.log",
-  ]);
-});
-
-Deno.test("git().ignore.ignored() works with single path string", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.ignored("file.log"), ["file.log"]);
-  assertEquals(await repo.ignore.ignored("file.txt"), []);
-});
-
-Deno.test("git().ignore.ignored() works with multiple patterns", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n*.tmp");
-  await Deno.writeTextFile(repo.path("file.txt"), "content");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  await Deno.writeTextFile(repo.path("temp.tmp"), "temp");
-  assertEquals(
-    await repo.ignore.ignored(["file.txt", "file.log", "temp.tmp"]),
-    ["file.log", "temp.tmp"],
-  );
-});
-
-Deno.test("git().ignore.ignored() handles empty array", async () => {
-  await using repo = await tempRepository();
-  assertEquals(await repo.ignore.ignored([]), []);
-});
-
-Deno.test("git().ignore.ignored() works with nonexistent files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  assertEquals(await repo.ignore.ignored("ignored.log"), ["ignored.log"]);
-});
-
-Deno.test("git().ignore.ignored({ index }) considers index", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  await repo.index.add("file.log", { force: true });
-  assertEquals(await repo.ignore.ignored("file.log"), []);
-  assertEquals(await repo.ignore.ignored("file.log", { index: false }), [
-    "file.log",
-  ]);
-});
-
-Deno.test("git().ignore.unignored() returns empty array for ignored files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "file.txt");
-  await Deno.writeTextFile(repo.path("file.txt"), "content");
-  assertEquals(await repo.ignore.unignored("file.txt"), []);
-});
-
-Deno.test("git().ignore.unignored() returns unignored files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  await Deno.writeTextFile(repo.path("file.txt"), "content");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.unignored(["file.txt", "file.log"]), [
-    "file.txt",
-  ]);
-});
-
-Deno.test("git().ignore.unignored() works with single path string", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  assertEquals(await repo.ignore.unignored("file.log"), []);
-  assertEquals(await repo.ignore.unignored("file.txt"), ["file.txt"]);
-});
-
-Deno.test("git().ignore.unignored() works with multiple patterns", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n*.tmp");
-  await Deno.writeTextFile(repo.path("file.txt"), "content");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  await Deno.writeTextFile(repo.path("temp.tmp"), "temp");
-  assertEquals(
-    await repo.ignore.unignored(["file.txt", "file.log", "temp.tmp"]),
-    ["file.txt"],
-  );
-});
-
-Deno.test("git().ignore.unignored() handles empty array", async () => {
-  await using repo = await tempRepository();
-  assertEquals(await repo.ignore.unignored([]), []);
-});
-
-Deno.test("git().ignore.unignored() works with nonexistent files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  assertEquals(await repo.ignore.unignored("ignored.log"), []);
-  assertEquals(await repo.ignore.unignored("log"), ["log"]);
-});
-
-Deno.test("git().ignore.unignored({ index }) considers index", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
-  await Deno.writeTextFile(repo.path("file.log"), "log content");
-  await repo.index.add("file.log", { force: true });
-  assertEquals(await repo.ignore.unignored("file.log", { index: true }), [
-    "file.log",
-  ]);
-  assertEquals(await repo.ignore.unignored("file.log", { index: false }), []);
-});
-
-Deno.test("git().index.add() adds files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await repo.index.add("file");
-  assertEquals((await repo.index.status()).staged, [
-    { path: "file", status: "added" },
-  ]);
-});
-
-Deno.test("git().index.add() rejects non-existent file", async () => {
-  await using repo = await tempRepository();
-  await assertRejects(() => repo.index.add("file"), GitError);
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.add() rejects ignored file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await Deno.writeTextFile(repo.path(".gitignore"), "file");
-  await repo.index.add(".gitignore");
-  await repo.commits.create("commit");
-  await assertRejects(() => repo.index.add("file"), GitError);
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.add({ force }) can add ignored file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await Deno.writeTextFile(repo.path(".gitignore"), "file");
-  await repo.index.add(".gitignore");
-  await repo.commits.create("commit");
-  await repo.index.add("file", { force: true });
-  assertEquals((await repo.index.status()).staged, [
-    { path: "file", status: "added" },
-  ]);
-});
-
-Deno.test("git().index.add({ executable }) can add file as executable", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  let stat = await Deno.stat(repo.path("file"));
-  assertEquals((stat.mode ?? 0) & 0o111, 0o000);
-  await repo.index.add("file", { executable: true });
-  const commit = await repo.commits.create("commit");
-  await repo.index.remove("file", { force: true });
-  await repo.commits.create("commit");
-  await repo.branch.checkout({ target: commit });
-  stat = await Deno.stat(repo.path("file"));
-  assertEquals((stat.mode ?? 0) & 0o110, 0o110);
-});
-
-Deno.test("git().index.add({ executable }) can add file as non-executable", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await Deno.chmod(repo.path("file"), 0o755);
-  await repo.index.add("file", { executable: false });
-  const commit = await repo.commits.create("commit");
-  await repo.index.remove("file", { force: true });
-  await repo.commits.create("commit");
-  await repo.branch.checkout({ target: commit });
-  const stat = await Deno.stat(repo.path("file"));
-  assertEquals((stat.mode ?? 0) & 0o111, 0o000);
-});
-
-Deno.test("git().index.move() moves files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("old.file"), "content");
-  await repo.index.add("old.file");
-  await repo.commits.create("commit");
-  await repo.index.move("old.file", "new.file");
-  assertEquals((await repo.index.status()).staged, [
-    { path: "new.file", status: "renamed", from: "old.file" },
-  ]);
-});
-
-Deno.test("git().index.move() can move multiple files into a directory", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file1"), "content");
-  await Deno.writeTextFile(repo.path("file2"), "content");
-  await Deno.mkdir(repo.path("directory"));
-  await repo.index.add(["file1", "file2"]);
-  await repo.commits.create("commit");
-  await repo.index.move(["file1", "file2"], "directory");
-  assertEquals((await repo.index.status()).staged, [
-    { path: "directory/file1", status: "renamed", from: "file1" },
-    { path: "directory/file2", status: "renamed", from: "file2" },
-  ]);
-});
-
-Deno.test("git().index.move() rejects missing destination if moving multiple files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file1"), "content");
-  await Deno.writeTextFile(repo.path("file2"), "content");
-  await repo.index.add(["file1", "file2"]);
-  await repo.commits.create("commit");
-  await assertRejects(
-    () => repo.index.move(["file1", "file2"], "directory"),
-    GitError,
-    "not a directory",
-  );
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.move() rejects non-existent source file", async () => {
-  await using repo = await tempRepository();
-  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.move() rejects untracked source file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("old.file"), "content");
-  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.move() rejects existing destination file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("old.file"), "content");
-  await Deno.writeTextFile(repo.path("new.file"), "content");
-  await repo.index.add("old.file");
-  await repo.commits.create("commit");
-  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.move({ force }) can overwrite existing destination file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("old.file"), "content");
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await repo.index.add("old.file");
-  await repo.commits.create("commit");
-  await repo.index.move("old.file", "new.file", { force: true });
-  assertEquals((await repo.index.status()).staged, [
-    { path: "new.file", status: "renamed", from: "old.file" },
-  ]);
-});
-
-Deno.test("git().index.remove() removes files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await repo.index.add("file");
-  await repo.commits.create("commit");
-  await repo.index.remove("file");
-  assertEquals((await repo.index.status()).staged, [
-    { path: "file", status: "deleted" },
-  ]);
-});
-
-Deno.test("git().index.remove() rejects non-existent file", async () => {
-  await using repo = await tempRepository();
-  await assertRejects(() => repo.index.remove("file"), GitError);
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.remove() rejects modified file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await repo.index.add("file");
-  await repo.commits.create("commit");
-  await Deno.writeTextFile(repo.path("file"), "modified content");
-  await assertRejects(() => repo.index.remove("file"), GitError);
-  assertEquals((await repo.index.status()).staged, []);
-});
-
-Deno.test("git().index.remove({ force }) can remove modified file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await repo.index.add("file");
-  await repo.commits.create("commit");
-  await Deno.writeTextFile(repo.path("file"), "modified content");
-  await repo.index.remove("file", { force: true });
-  assertEquals((await repo.index.status()).staged, [
-    { path: "file", status: "deleted" },
-  ]);
-});
-
 Deno.test("git().index.status() lists staged modified file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
@@ -1686,6 +1391,301 @@ Deno.test("git().index.status({ path }) can filter by path", async () => {
     untracked: [],
     ignored: [],
   });
+});
+
+Deno.test("git().index.add() adds files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "added" },
+  ]);
+});
+
+Deno.test("git().index.add() rejects non-existent file", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(() => repo.index.add("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.add() rejects ignored file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await assertRejects(() => repo.index.add("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.add({ executable }) can add file as executable", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  let stat = await Deno.stat(repo.path("file"));
+  assertEquals((stat.mode ?? 0) & 0o111, 0o000);
+  await repo.index.add("file", { executable: true });
+  const commit = await repo.commits.create("commit");
+  await repo.index.remove("file", { force: true });
+  await repo.commits.create("commit");
+  await repo.branch.checkout({ target: commit });
+  stat = await Deno.stat(repo.path("file"));
+  assertEquals((stat.mode ?? 0) & 0o110, 0o110);
+});
+
+Deno.test("git().index.add({ executable }) can add file as non-executable", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await Deno.chmod(repo.path("file"), 0o755);
+  await repo.index.add("file", { executable: false });
+  const commit = await repo.commits.create("commit");
+  await repo.index.remove("file", { force: true });
+  await repo.commits.create("commit");
+  await repo.branch.checkout({ target: commit });
+  const stat = await Deno.stat(repo.path("file"));
+  assertEquals((stat.mode ?? 0) & 0o111, 0o000);
+});
+
+Deno.test("git().index.add({ force }) can add ignored file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await repo.index.add(".gitignore");
+  await repo.commits.create("commit");
+  await repo.index.add("file", { force: true });
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "added" },
+  ]);
+});
+
+Deno.test("git().index.move() moves files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await repo.index.move("old.file", "new.file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "new.file", status: "renamed", from: "old.file" },
+  ]);
+});
+
+Deno.test("git().index.move() can move multiple files into a directory", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await Deno.mkdir(repo.path("directory"));
+  await repo.index.add(["file1", "file2"]);
+  await repo.commits.create("commit");
+  await repo.index.move(["file1", "file2"], "directory");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "directory/file1", status: "renamed", from: "file1" },
+    { path: "directory/file2", status: "renamed", from: "file2" },
+  ]);
+});
+
+Deno.test("git().index.move() rejects missing destination if moving multiple files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commits.create("commit");
+  await assertRejects(
+    () => repo.index.move(["file1", "file2"], "directory"),
+    GitError,
+    "not a directory",
+  );
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move() rejects non-existent source file", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move() rejects untracked source file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move() rejects existing destination file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await Deno.writeTextFile(repo.path("new.file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.move({ force }) can overwrite existing destination file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("old.file");
+  await repo.commits.create("commit");
+  await repo.index.move("old.file", "new.file", { force: true });
+  assertEquals((await repo.index.status()).staged, [
+    { path: "new.file", status: "renamed", from: "old.file" },
+  ]);
+});
+
+Deno.test("git().index.remove() removes files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await repo.index.remove("file");
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "deleted" },
+  ]);
+});
+
+Deno.test("git().index.remove() rejects non-existent file", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(() => repo.index.remove("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.remove() rejects modified file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "modified content");
+  await assertRejects(() => repo.index.remove("file"), GitError);
+  assertEquals((await repo.index.status()).staged, []);
+});
+
+Deno.test("git().index.remove({ force }) can remove modified file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commits.create("commit");
+  await Deno.writeTextFile(repo.path("file"), "modified content");
+  await repo.index.remove("file", { force: true });
+  assertEquals((await repo.index.status()).staged, [
+    { path: "file", status: "deleted" },
+  ]);
+});
+
+Deno.test("git().ignore.ignored() returns empty array for non-ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.ignore.ignored("file.txt"), []);
+});
+
+Deno.test("git().ignore.ignored() returns ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  assertEquals(await repo.ignore.ignored(["file.txt", "file.log"]), [
+    "file.log",
+  ]);
+});
+
+Deno.test("git().ignore.ignored() works with single path string", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  assertEquals(await repo.ignore.ignored("file.log"), ["file.log"]);
+  assertEquals(await repo.ignore.ignored("file.txt"), []);
+});
+
+Deno.test("git().ignore.ignored() works with multiple patterns", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n*.tmp");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await Deno.writeTextFile(repo.path("temp.tmp"), "temp");
+  assertEquals(
+    await repo.ignore.ignored(["file.txt", "file.log", "temp.tmp"]),
+    ["file.log", "temp.tmp"],
+  );
+});
+
+Deno.test("git().ignore.ignored() handles empty array", async () => {
+  await using repo = await tempRepository();
+  assertEquals(await repo.ignore.ignored([]), []);
+});
+
+Deno.test("git().ignore.ignored() works with nonexistent files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  assertEquals(await repo.ignore.ignored("ignored.log"), ["ignored.log"]);
+});
+
+Deno.test("git().ignore.ignored({ index }) considers index", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await repo.index.add("file.log", { force: true });
+  assertEquals(await repo.ignore.ignored("file.log"), []);
+  assertEquals(await repo.ignore.ignored("file.log", { index: false }), [
+    "file.log",
+  ]);
+});
+
+Deno.test("git().ignore.unignored() returns empty array for ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "file.txt");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.ignore.unignored("file.txt"), []);
+});
+
+Deno.test("git().ignore.unignored() returns unignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  assertEquals(await repo.ignore.unignored(["file.txt", "file.log"]), [
+    "file.txt",
+  ]);
+});
+
+Deno.test("git().ignore.unignored() works with single path string", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  assertEquals(await repo.ignore.unignored("file.log"), []);
+  assertEquals(await repo.ignore.unignored("file.txt"), ["file.txt"]);
+});
+
+Deno.test("git().ignore.unignored() works with multiple patterns", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n*.tmp");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await Deno.writeTextFile(repo.path("temp.tmp"), "temp");
+  assertEquals(
+    await repo.ignore.unignored(["file.txt", "file.log", "temp.tmp"]),
+    ["file.txt"],
+  );
+});
+
+Deno.test("git().ignore.unignored() handles empty array", async () => {
+  await using repo = await tempRepository();
+  assertEquals(await repo.ignore.unignored([]), []);
+});
+
+Deno.test("git().ignore.unignored() works with nonexistent files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  assertEquals(await repo.ignore.unignored("ignored.log"), []);
+  assertEquals(await repo.ignore.unignored("log"), ["log"]);
+});
+
+Deno.test("git().ignore.unignored({ index }) considers index", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await repo.index.add("file.log", { force: true });
+  assertEquals(await repo.ignore.unignored("file.log", { index: true }), [
+    "file.log",
+  ]);
+  assertEquals(await repo.ignore.unignored("file.log", { index: false }), []);
 });
 
 Deno.test("git().diff.status() returns empty for no change", async () => {
