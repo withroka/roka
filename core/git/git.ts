@@ -212,10 +212,10 @@ export interface TagOperations {
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Creates a new tag in the repository. */
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
-  /** Pushes a tag to a remote. */
-  push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
   /** Deletes a tag. */
   delete(tag: string | Tag): Promise<void>;
+  /** Pushes a tag to a remote. */
+  push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
@@ -1613,15 +1613,15 @@ export function git(options?: GitOptions): Git {
         assertExists(tag, "Cannot find created tag");
         return tag;
       },
+      async delete(tag) {
+        await run(gitOptions, ["tag", "-d", refArg(tag)]);
+      },
       async push(tag, options) {
         await run(
           gitOptions,
           ["push", options?.remote ?? "origin", "tag", refArg(tag)],
           flag("--force", options?.force),
         );
-      },
-      async delete(tag) {
-        await run(gitOptions, ["tag", "-d", refArg(tag)]);
       },
     },
     ignore: {
