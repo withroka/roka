@@ -302,7 +302,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
       pkg.version = calculateVersion(pkg, latest, changes);
     }
   } catch (e: unknown) {
-    // git will fail on non-repository or uninitialized repository
+    // git will fail on non-repository
     if (!(e instanceof GitError)) throw e;
   }
   return pkg;

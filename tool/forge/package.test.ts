@@ -42,6 +42,7 @@ Deno.test("packageInfo() returns package from directory", async () => {
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
+    changes: [],
   });
 });
 
@@ -310,6 +311,7 @@ Deno.test("workspace() returns simple package", async () => {
     directory: join(root, "pkg"),
     root,
     config: { name: "pkg" },
+    changes: [],
   }]);
 });
 
@@ -332,18 +334,21 @@ Deno.test("workspace() returns monorepo packages", async () => {
     directory: join(root, "pkg1"),
     root,
     config: { name: "pkg1", version: "0.1.0" },
+    changes: [],
   }, {
     name: "pkg2",
     version: "0.0.0",
     directory: join(root, "pkg2"),
     root,
     config: { name: "pkg2" },
+    changes: [],
   }, {
     name: "pkg3",
     version: "0.0.0",
     directory: join(root, "pkg2/pkg3"),
     root,
     config: { name: "pkg2/pkg3" },
+    changes: [],
   }]);
 });
 
