@@ -42,7 +42,6 @@
  * @todo Add `git().index.reset()`
  * @todo Add `git().commit.get()`
  * @todo Add `git().commit.revert()`
- * @todo Add `git().tag.delete()`
  * @todo Add `git().worktree.*()`
  * @todo Add `git().stash.*()`
  * @todo Add `git().merge.*()`
@@ -213,6 +212,8 @@ export interface TagOperations {
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Creates a new tag in the repository. */
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
+  /** Deletes a tag. */
+  delete(tag: string | Tag): Promise<void>;
   /** Pushes a tag to a remote. */
   push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
 }
@@ -1611,6 +1612,9 @@ export function git(options?: GitOptions): Git {
         const [tag] = await repo.tag.list({ name });
         assertExists(tag, "Cannot find created tag");
         return tag;
+      },
+      async delete(tag) {
+        await run(gitOptions, ["tag", "-d", refArg(tag)]);
       },
       async push(tag, options) {
         await run(

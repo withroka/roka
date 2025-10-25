@@ -3297,6 +3297,36 @@ Deno.test("git().tag.create({ sign }) cannot use wrong key", async () => {
   );
 });
 
+Deno.test("git().tag.delete() deletes a tag", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  assertEquals(await repo.tag.list(), [tag1, tag2]);
+  await repo.tag.delete(tag1);
+  assertEquals(await repo.tag.list(), [tag2]);
+  await repo.tag.delete(tag2);
+  assertEquals(await repo.tag.list(), []);
+});
+
+Deno.test("git().tag.delete() can delete tag by name", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  assertEquals(await repo.tag.list(), [tag1, tag2]);
+  await repo.tag.delete("tag1");
+  assertEquals(await repo.tag.list(), [tag2]);
+  await repo.tag.delete("tag2");
+  assertEquals(await repo.tag.list(), []);
+});
+
+Deno.test("git().tag.delete() rejects non-existent tag", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  await assertRejects(() => repo.tag.delete("unknown"), GitError);
+});
+
 Deno.test("git().tag.push() can push tag to remote", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
