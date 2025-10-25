@@ -285,7 +285,7 @@ async function files(paths: string[]): Promise<string[]> {
     // determine modified directories if in a Git repository
     const { value } = await maybe(async () => {
       const repo = git();
-      const target = await repo.remotes.head();
+      const target = await repo.remote.head();
       assertExists(target, "Could not determine default branch.");
       const diff = await repo.diff.status({ target });
       return distinct(diff.map((f) => dirname(f.path)));

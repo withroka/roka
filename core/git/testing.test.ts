@@ -41,7 +41,7 @@ Deno.test("tempRepository({ clone }) clones a repo from another repo", async () 
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
   const commit = await repo.commits.create("initial", { allowEmpty: true });
-  await repo.remotes.push();
+  await repo.remote.push();
   assertEquals(await remote.commits.head(), commit);
 });
 
@@ -49,7 +49,7 @@ Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote.path() });
   const commit = await repo.commits.create("initial", { allowEmpty: true });
-  await repo.remotes.push();
+  await repo.remote.push();
   assertEquals(await remote.commits.head(), commit);
 });
 

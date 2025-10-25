@@ -294,7 +294,7 @@ function repositories(api: Octokit): Repositories {
       return repository(git, api, ownerOrOptions, repo);
     }
     return (async () => {
-      const remote = await git.remotes.get();
+      const remote = await git.remote.get();
       const { owner, repo } = parseRemote(remote.pushUrl);
       return repository(git, api, owner, repo);
     })();
@@ -335,14 +335,14 @@ function repository(
         if (head === undefined) {
           const [branch, remote] = await Promise.all([
             git.branches.current(),
-            git.remotes.get(),
+            git.remote.get(),
           ]);
           head = branch?.push?.startsWith(remote.name)
             ? branch.push.slice(remote.name.length + 1)
             : branch?.name;
         }
         assertExists(head, "Cannot determine remote push branch");
-        const base = options?.base ?? await git.remotes.head();
+        const base = options?.base ?? await git.remote.head();
         assertExists(base, "Cannot determine remote base branch");
         const commit = !options?.title
           ? (await git.commits.log({ range: { from: base } })).pop()

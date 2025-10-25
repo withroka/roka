@@ -176,7 +176,7 @@ async function createPullRequest(
     {};
   const [branch, remote] = await Promise.all([
     repo.git.branches.current(),
-    repo.git.remotes.get(),
+    repo.git.remote.get(),
   ]);
   if (!branch) throw new PackageError("Cannot determine base branch");
   const base = branch.push?.startsWith(remote.name)
@@ -215,10 +215,10 @@ async function createPullRequest(
     await repo.git.commits.create(title, { body: commitBody });
     let [pr] = await repo.pulls.list({ base, head, closed: false });
     if (pr) {
-      await repo.git.remotes.push({ force: true, target: head });
+      await repo.git.remote.push({ force: true, target: head });
       pr.update({ title, body: prBody });
     } else {
-      await repo.git.remotes.push({ target: head });
+      await repo.git.remote.push({ target: head });
       pr = await repo.pulls.create({
         base,
         head,

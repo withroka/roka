@@ -78,6 +78,8 @@ export interface Git {
   init(options?: InitOptions): Promise<Git>;
   /** Config operations. */
   config: ConfigOperations;
+  /** Remote operations. */
+  remote: RemoteOperations;
   /** Branch operations. */
   branches: BranchOperations;
   /** Ignore (exclusion) operations. */
@@ -90,8 +92,6 @@ export interface Git {
   commits: CommitOperations;
   /** Tag operations. */
   tags: TagOperations;
-  /** Remote operations. */
-  remotes: RemoteOperations;
 }
 
 /** Config operations from {@linkcode Git.config}. */
@@ -192,23 +192,23 @@ export interface TagOperations {
 }
 
 /**
- * Remote operations from {@linkcode Git.remotes}.
+ * Remote operations from {@linkcode Git.remote}.
  *
  * Default remote name is `"origin"` for all remote methods.
  */
 export interface RemoteOperations {
   /** Clones a remote repository. */
   clone(url: string, options?: RemoteCloneOptions): Promise<Git>;
-  /** Returns the remote repository URL. */
-  get(name?: string): Promise<Remote>;
   /** Adds a remote to the repository. */
   add(url: string, name?: string): Promise<Remote>;
+  /** Returns the remote repository URL. */
+  get(name?: string): Promise<Remote>;
   /** Queries the currently checked out branch on the remote. */
-  head(name?: string): Promise<string | undefined>;
-  /** Pushes branches and tags to a remote. */
-  push(options?: RemotePushOptions): Promise<void>;
+  head(name?: string): Promise<string>;
   /** Pulls branches and tags from a remote. */
   pull(options?: RemotePullOptions): Promise<void>;
+  /** Pushes branches and tags to a remote. */
+  push(options?: RemotePushOptions): Promise<void>;
 }
 
 /** Configuration for a git repository. */
@@ -474,6 +474,84 @@ export interface InitOptions {
   branch?: string;
 }
 
+/** Options for the {@linkcode RemoteOperations.clone} function. */
+export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
+  /**
+   * Set config for the new repository, after initialization, but before
+   * fetch.
+   */
+  config?: Config;
+  /**
+   * Number of commits to clone at the tip.
+   *
+   * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless it is
+   * set to `false` to fetch from the tip of all branches.
+   */
+  depth?: number;
+  /**
+   * The name of a new directory to clone into.
+   *
+   * If not set, the directory name is derived from the repository name.
+   *
+   * Cloning into an existing directory is only allowed if the directory is
+   * empty.
+   */
+  directory?: string;
+  /**
+   * Bypasses local transport optimization when set to `false`.
+   *
+   * When the remote repository is specified as a URL, this is ignored.
+   * Otherwise, it is implied.
+   */
+  local?: boolean;
+  /**
+   * Clone only the tip of a single branch.
+   *
+   * The cloned branch is either remote `HEAD` or
+   * {@linkcode InitOptions.branch}.
+   */
+  singleBranch?: boolean;
+  /**
+   * Fetch tags.
+   * @default {true}
+   */
+  tags?: boolean;
+}
+
+/** Options for the {@linkcode RemoteOperations.pull} function. */
+export interface RemotePullOptions
+  extends RemoteOptions, TransportOptions, SignOptions {
+  /**
+   * Branch or tag to pull commits from.
+   *
+   * The default behavior is to pull from the upstream of the current branch.
+   */
+  target?: string | Branch | Tag;
+}
+
+/** Options for the {@linkcode RemoteOperations.push} function. */
+export interface RemotePushOptions extends TransportOptions, RemoteOptions {
+  /**
+   * Branch to push commits onto.
+   *
+   * The default behaviors is to push the current branch to its upstream.
+   *
+   * This option does not accept tags. To push tags, use {@linkcode Tags.push}
+   * to push a single tag, or set {@linkcode TransportOptions.tags} to `true` to
+   * push all tags.
+   */
+  target?: string | Branch;
+  /** Push all branches. */
+  branches?: boolean;
+  /** Force push to remote. */
+  force?: boolean;
+  /**
+   * Set upstream tracking for every branch successfully pushed.
+   * @default {false}
+   */
+  setUpstream?: boolean;
+}
+
 /**
  * Options for the {@linkcode BranchOperations.create} and
  * {@linkcode BranchOperations.checkout} functions when creating new branches.
@@ -577,17 +655,17 @@ export interface IgnoreCheckOptions {
 /** Options for the {@linkcode IndexOperations.add} function. */
 export interface IndexAddOptions {
   /**
-   * Add files to the index, even if they are ignored.
-   * @default {false}
-   */
-  force?: boolean;
-  /**
    * Override the executable bit of the file.
    *
    * If set, the file mode in the file sytem is ignored, and the executable bit
    * is set to the given value.
    */
   executable?: boolean;
+  /**
+   * Add files to the index, even if they are ignored.
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode IndexOperations.move} function. */
@@ -617,16 +695,6 @@ export interface IndexStatusOptions {
    */
   path?: string | string[];
   /**
-   * Control the status output for untracked files.
-   *
-   * If set to `false`, untracked files are not included. If set to `true`,
-   * untracked directories are included, but their files are not listed. If set
-   * to `"all"`, all untracked files are included.
-   *
-   * @default {true}
-   */
-  untracked?: boolean | "all";
-  /**
    * Control the status output for ignored files.
    *
    * If set to `true`, ignored files and directories are included. In
@@ -647,6 +715,16 @@ export interface IndexStatusOptions {
    * @default {true}
    */
   renames?: boolean;
+  /**
+   * Control the status output for untracked files.
+   *
+   * If set to `false`, untracked files are not included. If set to `true`,
+   * untracked directories are included, but their files are not listed. If set
+   * to `"all"`, all untracked files are included.
+   *
+   * @default {true}
+   */
+  untracked?: boolean | "all";
 }
 
 /**
@@ -654,6 +732,12 @@ export interface IndexStatusOptions {
  * functions.
  */
 export interface DiffOptions {
+  /**
+   * Target commit to diff against.
+   *
+   * If set to `HEAD`, diffs the working tree or index against the last commit.
+   */
+  target?: Commitish;
   /**
    * Limit the diff to the given pathspecs.
    *
@@ -663,11 +747,17 @@ export interface DiffOptions {
    */
   path?: string | string[];
   /**
-   * Diff staged changes, instead of changes in the working tree.
+   * Control the diff output for copied files.
+   *
+   * If set to `true`, copy detection is enabled, and copies are listed as
+   * such. If set to `false`, copies are listed as added files, unless the
+   * behavior is overridden with Git configuration.
    *
    * @default {false}
    */
-  staged?: boolean;
+  copies?: boolean;
+  /** Revision range to diff against. */
+  range?: RevisionRange;
   /**
    * Control the diff output for renamed files.
    *
@@ -679,23 +769,11 @@ export interface DiffOptions {
    */
   renames?: boolean;
   /**
-   * Control the diff output for copied files.
-   *
-   * If set to `true`, copy detection is enabled, and copies are listed as
-   * such. If set to `false`, copies are listed as added files, unless the
-   * behavior is overridden with Git configuration.
+   * Diff staged changes, instead of changes in the working tree.
    *
    * @default {false}
    */
-  copies?: boolean;
-  /**
-   * Target commit to diff against.
-   *
-   * If set to `HEAD`, diffs the working tree or index against the last commit.
-   */
-  target?: Commitish;
-  /** Revision range to diff against. */
-  range?: RevisionRange;
+  staged?: boolean;
 }
 
 /** Options for the {@linkcode DiffOperations.patch} function. */
@@ -815,84 +893,6 @@ export interface TagPushOptions extends RemoteOptions {
   force?: boolean;
 }
 
-/** Options for the {@linkcode RemoteOperations.clone} function. */
-export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
-  /**
-   * Set config for the new repository, after initialization, but before
-   * fetch.
-   */
-  config?: Config;
-  /**
-   * Number of commits to clone at the tip.
-   *
-   * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless it is
-   * set to `false` to fetch from the tip of all branches.
-   */
-  depth?: number;
-  /**
-   * The name of a new directory to clone into.
-   *
-   * If not set, the directory name is derived from the repository name.
-   *
-   * Cloning into an existing directory is only allowed if the directory is
-   * empty.
-   */
-  directory?: string;
-  /**
-   * Bypasses local transport optimization when set to `false`.
-   *
-   * When the remote repository is specified as a URL, this is ignored.
-   * Otherwise, it is implied.
-   */
-  local?: boolean;
-  /**
-   * Clone only the tip of a single branch.
-   *
-   * The cloned branch is either remote `HEAD` or
-   * {@linkcode InitOptions.branch}.
-   */
-  singleBranch?: boolean;
-  /**
-   * Fetch tags.
-   * @default {true}
-   */
-  tags?: boolean;
-}
-
-/** Options for the {@linkcode RemoteOperations.push} function. */
-export interface RemotePushOptions extends TransportOptions, RemoteOptions {
-  /**
-   * Branch to push commits onto.
-   *
-   * The default behaviors is to push the current branch to its upstream.
-   *
-   * This option does not accept tags. To push tags, use {@linkcode Tags.push}
-   * to push a single tag, or set {@linkcode TransportOptions.tags} to `true` to
-   * push all tags.
-   */
-  target?: string | Branch;
-  /** Push all branches. */
-  branches?: boolean;
-  /**
-   * Set upstream tracking for every branch successfully pushed.
-   * @default {false}
-   */
-  setUpstream?: boolean;
-  /** Force push to remote. */
-  force?: boolean;
-}
-
-/** Options for the {@linkcode RemoteOperations.pull} function. */
-export interface RemotePullOptions
-  extends RemoteOptions, TransportOptions, SignOptions {
-  /**
-   * Branch or tag to pull commits from.
-   *
-   * The default behavior is to pull from the upstream of the current branch.
-   */
-  target?: string | Branch | Tag;
-}
-
 /**
  * Options common to the {@linkcode BranchOperations.list} and {@linkcode TagOperations.list}
  * functions for ref filtering.
@@ -991,7 +991,7 @@ export interface TransportOptions {
  * ```ts
  * import { git } from "@roka/git";
  * (async () => {
- *   const branch = await git().remotes.head();
+ *   const branch = await git().remote.head();
  *   return { branch };
  * });
  * ```
@@ -1045,6 +1045,86 @@ export function git(options?: GitOptions): Git {
           // deno-lint-ignore no-await-in-loop
           await run(gitOptions, "config", cfg);
         }
+      },
+    },
+    remote: {
+      async clone(url, options) {
+        const output = await run(
+          { ...gitOptions, stderr: true },
+          ["clone", url],
+          configFlags(options?.config, "--config").flat(),
+          flag("--bare", options?.bare),
+          flag("--depth", options?.depth),
+          flag(["--local", "--no-local"], options?.local),
+          flag("--origin", options?.remote),
+          flag("--branch", options?.branch),
+          flag(
+            ["--single-branch", "--no-single-branch"],
+            options?.singleBranch,
+          ),
+          options?.directory,
+        );
+        const match = output.match(
+          /Cloning into '(?<directory>.+?)'...(?:.|\n)*/,
+        );
+        assertExists(
+          match?.groups?.directory,
+          "Cannot determine cloned directory",
+        );
+        const cwd = resolve(
+          directory,
+          options?.directory ?? match.groups.directory,
+        );
+        return git({ ...gitOptions, cwd });
+      },
+      async add(url, name = "origin") {
+        await run(gitOptions, ["remote", "add"], name, url);
+        return repo.remote.get(name);
+      },
+      async get(name = "origin") {
+        const remotes = (await run(gitOptions, "remote"))
+          .split("\n").filter((x) => x);
+        if (!remotes.includes(name)) throw new GitError("Remote not found");
+        const info = await run(gitOptions, ["remote", "show", "-n", name]);
+        const match = info.match(
+          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*(\n|$)/,
+        );
+        const { fetchUrl, pushUrl } = { ...match?.groups };
+        assertExists(fetchUrl, "Cannot parse remote information");
+        assertExists(pushUrl, "Cannot parse remote information");
+        return { name, fetchUrl, pushUrl };
+      },
+      async head(name = "origin") {
+        const output = await run(
+          gitOptions,
+          ["ls-remote", "--symref", name, "HEAD"],
+        );
+        const match = output.match(/^ref: refs\/heads\/(?<head>.+?)\s+HEAD$/m);
+        const { head } = { ...match?.groups };
+        if (!head) throw new GitError("Cannot determine remote HEAD branch");
+        return head;
+      },
+      async pull(options) {
+        await run(
+          gitOptions,
+          ["pull", options?.remote ?? "origin"],
+          refArg(options?.target),
+          flag("--atomic", options?.atomic),
+          flag(["--tags", "--no-tags"], options?.tags),
+          signFlag("commit", options?.sign),
+        );
+      },
+      async push(options) {
+        await run(
+          gitOptions,
+          ["push", options?.remote ?? "origin"],
+          refArg(options?.target),
+          flag("--set-upstream", options?.setUpstream),
+          flag("--force", options?.force),
+          flag(["--atomic", "--no-atomic"], options?.atomic),
+          flag("--branches", options?.branches),
+          flag("--tags", options?.tags),
+        );
       },
     },
     branches: {
@@ -1473,85 +1553,6 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["push", options?.remote ?? "origin", "tag", refArg(tag)],
           flag("--force", options?.force),
-        );
-      },
-    },
-    remotes: {
-      async clone(url, options) {
-        const output = await run(
-          { ...gitOptions, stderr: true },
-          ["clone", url],
-          configFlags(options?.config, "--config").flat(),
-          flag("--bare", options?.bare),
-          flag("--depth", options?.depth),
-          flag(["--local", "--no-local"], options?.local),
-          flag("--origin", options?.remote),
-          flag("--branch", options?.branch),
-          flag(
-            ["--single-branch", "--no-single-branch"],
-            options?.singleBranch,
-          ),
-          options?.directory,
-        );
-        const match = output.match(
-          /Cloning into '(?<directory>.+?)'...(?:.|\n)*/,
-        );
-        assertExists(
-          match?.groups?.directory,
-          "Cannot determine cloned directory",
-        );
-        const cwd = resolve(
-          directory,
-          options?.directory ?? match.groups.directory,
-        );
-        return git({ ...gitOptions, cwd });
-      },
-      async get(name = "origin") {
-        const remotes = (await run(gitOptions, "remote"))
-          .split("\n").filter((x) => x);
-        if (!remotes.includes(name)) throw new GitError("Remote not found");
-        const info = await run(gitOptions, ["remote", "show", "-n", name]);
-        const match = info.match(
-          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*(\n|$)/,
-        );
-        const { fetchUrl, pushUrl } = { ...match?.groups };
-        assertExists(fetchUrl, "Cannot parse remote information");
-        assertExists(pushUrl, "Cannot parse remote information");
-        return { name, fetchUrl, pushUrl };
-      },
-      async add(url, name = "origin") {
-        await run(gitOptions, ["remote", "add"], name, url);
-        return repo.remotes.get(name);
-      },
-      async head(name = "origin") {
-        const output = await run(
-          gitOptions,
-          ["ls-remote", "--symref", name, "HEAD"],
-        );
-        const match = output.match(/^ref: refs\/heads\/(?<head>.+?)\s+HEAD$/m);
-        const { head } = { ...match?.groups };
-        return head;
-      },
-      async push(options) {
-        await run(
-          gitOptions,
-          ["push", options?.remote ?? "origin"],
-          refArg(options?.target),
-          flag("--set-upstream", options?.setUpstream),
-          flag("--force", options?.force),
-          flag(["--atomic", "--no-atomic"], options?.atomic),
-          flag("--branches", options?.branches),
-          flag("--tags", options?.tags),
-        );
-      },
-      async pull(options) {
-        await run(
-          gitOptions,
-          ["pull", options?.remote ?? "origin"],
-          refArg(options?.target),
-          flag("--atomic", options?.atomic),
-          flag(["--tags", "--no-tags"], options?.tags),
-          signFlag("commit", options?.sign),
         );
       },
     },
