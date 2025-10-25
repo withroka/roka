@@ -265,7 +265,7 @@ Deno.test("git().remote.get() returns remote URL by remote name", async () => {
 
 Deno.test("git().remote.get() rejects unknown remote", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.remote.get("remote"), GitError);
+  await assertRejects(() => repo.remote.get("unknown"), GitError);
 });
 
 Deno.test("git().remote.add() adds remote URL", async () => {
@@ -311,7 +311,7 @@ Deno.test("git().remote.remove() can remove named remote", async () => {
 
 Deno.test("git().remote.remove() rejects unknown remote", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.remote.remove("nonexistent"), GitError);
+  await assertRejects(() => repo.remote.remove("unknown"), GitError);
 });
 
 Deno.test("git().remote.head() returns remote default branch", async () => {
