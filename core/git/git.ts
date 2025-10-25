@@ -44,7 +44,6 @@
  * @todo Add `git().commit.get()`
  * @todo Add `git().commit.amend()`
  * @todo Add `git().commit.revert()`
- * @todo Add `git().tag.delete()`
  * @todo Add `git().worktree.*()`
  * @todo Add `git().stash.*()`
  * @todo Add `git().merge.*()`
@@ -213,6 +212,8 @@ export interface TagOperations {
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
   /** Pushes a tag to a remote. */
   push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
+  /** Deletes a tag. */
+  delete(tag: string | Tag): Promise<void>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
@@ -1559,6 +1560,12 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["push", options?.remote ?? "origin", "tag", refArg(tag)],
           flag("--force", options?.force),
+        );
+      },
+      async delete(tag) {
+        await run(
+          gitOptions,
+          ["tag", "-d", refArg(tag)],
         );
       },
     },
