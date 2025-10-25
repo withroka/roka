@@ -276,7 +276,9 @@ Deno.test("git().branches.list({ all }) returns all branches", async () => {
 });
 
 Deno.test("git().branches.list({ remotes }) returns only remote branches", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({
+    config: { init: { defaultBranch: "main" } },
+  });
   const commit = await remote.commits.create("commit", { allowEmpty: true });
   await remote.branches.create("remote");
   await using repo = await tempRepository({ clone: remote });
@@ -590,7 +592,9 @@ Deno.test("git().branches.checkout({ track }) can disable tracking", async () =>
 });
 
 Deno.test("git().branches.checkout({ track }) can inherit source upstream", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({
+    config: { init: { defaultBranch: "main" } },
+  });
   const commit = await remote.commits.create("commit", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   const main = await repo.branches.current();
