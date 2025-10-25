@@ -285,8 +285,7 @@ async function files(paths: string[]): Promise<string[]> {
     // determine modified directories if in a Git repository
     const { value } = await maybe(async () => {
       const repo = git();
-      const target = await repo.remotes.defaultBranch();
-      assertExists(target, "Could not determine default branch.");
+      const target = await repo.remote.head();
       const diff = await repo.diff.status({ target });
       return distinct(diff.map((f) => dirname(f.path)));
     });
@@ -301,9 +300,7 @@ async function files(paths: string[]): Promise<string[]> {
     type: "file",
     ignore: ["**/.git", "**/node_modules", "**/__testdata__"],
   }));
-  const { value: unignored } = await maybe(() =>
-    git().ignore.check(found, { matching: false })
-  );
+  const { value: unignored } = await maybe(() => git().ignore.omit(found));
   if (unignored !== undefined) {
     // exclude ignored paths, except for those explicitly provided
     found = intersect(found, unignored.concat(paths));

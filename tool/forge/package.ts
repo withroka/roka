@@ -302,7 +302,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
       pkg.version = calculateVersion(pkg, latest, changes);
     }
   } catch (e: unknown) {
-    // git will fail on non-repository or uninitialized repository
+    // git will fail on non-repository
     if (!(e instanceof GitError)) throw e;
   }
   return pkg;
@@ -374,7 +374,7 @@ export async function releases(
   const versions = (await git({
     cwd: pkg.directory,
     config: { versionsort: { suffix: ["-pre"] } },
-  }).tags
+  }).tag
     .list({ name: `${pkg.name}@*`, sort: "version" }))
     .filter(parseTag)
     .map((tag) => {
@@ -435,7 +435,7 @@ export async function commits(
   pkg: Package,
   options?: CommitOptions,
 ): Promise<ConventionalCommit[]> {
-  const log = await git({ cwd: pkg.root }).commits.log(
+  const log = await git({ cwd: pkg.root }).commit.log(
     options?.range ? { range: options?.range } : {},
   );
   return log

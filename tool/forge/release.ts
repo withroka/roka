@@ -88,7 +88,7 @@ export async function release(
   }
   const name = `${pkg.name}@${pkg.config.version}`;
   let [release] = await repo.releases.list({ name, draft });
-  const [head] = await repo.git.commits.log();
+  const [head] = await repo.git.commit.log();
   if (!head) throw new PackageError("Cannot determine current commit");
   const data = {
     name,

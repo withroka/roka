@@ -8,7 +8,7 @@ import { flow } from "./flow.ts";
 
 async function run(context: Deno.TestContext) {
   await using remote = await tempRepository();
-  await remote.commits.create("initial", { allowEmpty: true });
+  await remote.commit.create("initial", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote, chdir: true });
   const dataDirectory = join(
     dirname(fromFileUrl(context.origin)),
@@ -21,7 +21,7 @@ async function run(context: Deno.TestContext) {
   );
   await Deno.mkdir(repo.path("empty-directory"));
   await repo.index.add(files.map((path) => basename(path)));
-  await repo.commits.create("commit");
+  await repo.commit.create("commit");
   using _args = fakeArgs(
     context.name
       .replaceAll("[valid-code]", "valid-code.ts")
