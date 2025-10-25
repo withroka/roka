@@ -94,6 +94,7 @@ export interface Git {
   remotes: RemoteOperations;
 }
 
+/** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
   /** Configures repository options. */
   set(config: Config): Promise<void>;
