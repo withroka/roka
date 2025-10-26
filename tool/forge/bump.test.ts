@@ -197,7 +197,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
-  const short = (await repo.git.commit.head())?.short;
+  let commit = await repo.git.commit.head();
   const current = await repo.git.branch.current();
   const pr = await bump([pkg], {
     release: true,
@@ -217,15 +217,14 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
       "## name@1.3.0",
       "",
       "- #42",
-      `- fix: force pushed (${short})`,
+      `- fix: force pushed (${commit.short})`,
       "",
     ].join("\n"),
   );
   assertEquals(await repo.git.branch.current(), current);
   assertEquals(await repo.git.branch.list(), [current]);
   await remote.branch.switch(pr.head);
-  const commit = await remote.commit.head();
-  assertExists(commit);
+  commit = await remote.commit.head();
   assertEquals(commit.author?.name, "bump-name");
   assertEquals(commit.author?.email, "bump-email");
   assertEquals(commit.summary, "chore: bump name to 1.3.0");
@@ -235,7 +234,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
       "## name@1.3.0",
       "",
       "- feat: new feature (#42)",
-      `- fix: force pushed (${short})`,
+      `- fix: force pushed (${commit.short})`,
     ].join("\n"),
   );
 });

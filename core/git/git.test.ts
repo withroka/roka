@@ -1,11 +1,6 @@
 import { tempDirectory } from "@roka/fs/temp";
 import { tempRepository } from "@roka/git/testing";
-import {
-  assertEquals,
-  assertExists,
-  assertNotEquals,
-  assertRejects,
-} from "@std/assert";
+import { assertEquals, assertNotEquals, assertRejects } from "@std/assert";
 import { basename, resolve } from "@std/path";
 import { git, GitError } from "./git.ts";
 
@@ -388,7 +383,6 @@ Deno.test("git().remote.fetch({ target }) can fetch commits from a branch", asyn
   const main = await remote.branch.current();
   const commit1 = await remote.commit.create("commit", { allowEmpty: true });
   const branch = await remote.branch.switch("branch", { create: true });
-  assertExists(branch);
   const commit2 = await remote.commit.create("commit", { allowEmpty: true });
   await remote.branch.switch(main);
   await using repo = await tempRepository({ clone: remote });

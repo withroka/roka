@@ -1618,7 +1618,7 @@ export function git(options?: GitOptions): Git {
           body !== undefined ||
           (trailers !== undefined && Object.keys(trailers).length > 0);
         if (edited && (summary === undefined || body === undefined)) {
-          const commit = await repo.commit.head();
+          const commit = await repo.commit.get("HEAD");
           if (commit && summary === undefined && body === undefined) {
             body = commit.body;
           }
