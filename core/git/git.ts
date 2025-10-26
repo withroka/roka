@@ -150,6 +150,8 @@ export interface BranchOperations {
   ): Promise<Branch>;
   /** Switches to a commit, or an existing or new branch. */
   checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
+  /** Resets the current branch head to a specified state. */
+  reset(target: Commitish, options?: BranchResetOptions): Promise<Branch>;
   /** Creates a branch. */
   create(name: string, options?: BranchCreateOptions): Promise<Branch>;
   /** Renames a branch. */
@@ -310,12 +312,16 @@ export interface User {
 export interface Branch {
   /** Short name of the branch. */
   name: string;
+  /**
+   * Commit at the tip of the branch, if branch has any commits.
+   *
+   * This can be unset if the branch is newly created and has no commits yet.
+   */
+  commit?: Commit;
   /** Remote push branch name, if set. */
   push?: string;
   /** Remote upstream branch name, if set. */
   upstream?: string;
-  /** Commit at the tip of the branch, if branch has any commits. */
-  commit?: Commit;
 }
 
 /** Status of files in the index and the working tree. */
@@ -651,6 +657,25 @@ export interface BranchCheckoutOptions extends BranchTrackOptions {
    * @default {false}
    */
   detach?: boolean;
+}
+
+/** Options for the {@linkcode BranchOperations.reset} function. */
+export interface BranchResetOptions {
+  /**
+   * Reset mode.
+   *
+   * - `"soft"`: only move HEAD, keep index and working tree
+   * - `"mixed"`: reset index, keep working tree
+   * - `"hard"`: reset index and working tree, discard all changes
+   * - `"merge"`: reset but keep non-conflicting changes, abort if unsafe
+   * - `"keep"`: reset but abort if any modified file differs between commits
+   *
+   * If set to `"merge"` or `"keep"`, reset may be aborted to avoid losing
+   * local changes. Other modes will always succeed.
+   *
+   * @default {"mixed"}
+   */
+  mode?: "soft" | "mixed" | "hard" | "merge" | "keep";
 }
 
 /**
@@ -1291,6 +1316,19 @@ export function git(options?: GitOptions): Git {
         );
         const { value: branch } = await maybe(() => repo.branch.current());
         return branch;
+      },
+      async reset(target, options) {
+        await run(
+          gitOptions,
+          ["reset"],
+          flag("--soft", options?.mode === "soft"),
+          flag("--hard", options?.mode === "hard"),
+          flag("--mixed", options?.mode === "mixed"),
+          flag("--merge", options?.mode === "merge"),
+          flag("--keep", options?.mode === "keep"),
+          commitArg(target),
+        );
+        return await repo.branch.current();
       },
       async create(name, options) {
         await run(
