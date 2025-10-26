@@ -203,11 +203,8 @@ export interface CommitOperations {
    * @throws {@linkcode GitError} If there are no commits.
    */
   head(): Promise<Commit>;
-  /**
-   * Returns a specific commit by its reference.
-   * @throws {@linkcode GitError} If the commit does not exist.
-   */
-  get(ref: Commitish): Promise<Commit>;
+  /** Returns a specific commit by its reference. */
+  get(ref: Commitish): Promise<Commit | undefined>;
   /** Returns the history of commits in the repository. */
   log(options?: CommitLogOptions): Promise<Commit[]>;
   /** Creates a new commit in the repository. */
@@ -1258,13 +1255,8 @@ export function git(options?: GitOptions): Git {
             .filter((branch) => !branch?.name?.includes(" "))
             .map(async (branch) => {
               assertExists(branch.name, "Branch name not filled");
-              let commit: Commit | undefined = undefined;
-              if (branch.commit?.hash) {
-                [commit] = await repo.commit.log({
-                  maxCount: 1,
-                  range: { to: branch.commit.hash },
-                });
-              }
+              const commit = branch.commit?.hash &&
+                await repo.commit.get(branch.commit?.hash);
               const name: string = branch.name;
               return { ...branch, name, ...commit && { commit } };
             }),
@@ -1565,21 +1557,17 @@ export function git(options?: GitOptions): Git {
     },
     commit: {
       async head() {
-        const [commit] = await repo.commit.log({ maxCount: 1 });
+        const commit = await repo.commit.get("HEAD");
         if (!commit) {
           throw new GitError("Current branch does not have any commits");
         }
         return commit;
       },
       async get(ref) {
-        const refString = commitArg(ref);
         const [commit] = await repo.commit.log({
           maxCount: 1,
-          range: { to: refString },
+          range: { to: commitArg(ref) },
         });
-        if (!commit) {
-          throw new GitError(`Commit not found: ${refString}`);
-        }
         return commit;
       },
       async log(options) {
@@ -1620,10 +1608,7 @@ export function git(options?: GitOptions): Git {
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
-        const [commit] = await repo.commit.log({
-          maxCount: 1,
-          range: { to: hash },
-        });
+        const commit = await repo.commit.get(hash);
         assertExists(commit, "Cannot find created commit");
         return commit;
       },
@@ -1633,7 +1618,7 @@ export function git(options?: GitOptions): Git {
           body !== undefined ||
           (trailers !== undefined && Object.keys(trailers).length > 0);
         if (edited && (summary === undefined || body === undefined)) {
-          const [commit] = await repo.commit.log({ maxCount: 1 });
+          const commit = await repo.commit.head();
           if (commit && summary === undefined && body === undefined) {
             body = commit.body;
           }
@@ -1653,10 +1638,7 @@ export function git(options?: GitOptions): Git {
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
-        const [commit] = await repo.commit.log({
-          maxCount: 1,
-          range: { to: hash },
-        });
+        const commit = await repo.commit.get(hash);
         assertExists(commit, "Cannot find created commit");
         return commit;
       },
@@ -1676,10 +1658,7 @@ export function git(options?: GitOptions): Git {
         return await Promise.all(tags.map(async (tag) => {
           assertExists(tag.name, "Tag name not filled");
           assertExists(tag.commit?.hash, "Commit hash not filled for tag");
-          const [commit] = await repo.commit.log({
-            maxCount: 1,
-            range: { to: tag.commit.hash },
-          });
+          const commit = await repo.commit.get(tag.commit.hash);
           assertExists(commit, "Cannot find commit for tag");
           const name: string = tag.name;
           return { ...tag, name, commit };

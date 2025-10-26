@@ -2831,15 +2831,6 @@ Deno.test("git().commit.head() returns head tip", async () => {
   assertEquals(await repo.commit.head(), commit);
 });
 
-Deno.test("git().commit.get() rejects non-existent commit", async () => {
-  await using repo = await tempRepository();
-  await assertRejects(
-    () => repo.commit.get("nonexistent"),
-    GitError,
-    "Commit not found: nonexistent",
-  );
-});
-
 Deno.test("git().commit.get() returns a commit by hash", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
@@ -2872,18 +2863,23 @@ Deno.test("git().commit.get() returns a commit by tag", async () => {
   assertEquals(await repo.commit.get("v1.0.0"), commit);
 });
 
-Deno.test("git().commit.get() returns a commit by HEAD", async () => {
+Deno.test("git().commit.get() returns a commit by special symbol", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit1", { allowEmpty: true });
   const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
   assertEquals(await repo.commit.get("HEAD"), commit2);
 });
 
-Deno.test("git().commit.get() returns a commit by relative ref", async () => {
+Deno.test("git().commit.get() returns a commit by relative reference", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
   await repo.commit.create("commit2", { allowEmpty: true });
   assertEquals(await repo.commit.get("HEAD~1"), commit1);
+});
+
+Deno.test("git().commit.get() handles non-existent commit", async () => {
+  await using repo = await tempRepository();
+  assertEquals(await repo.commit.get("unknown"), undefined);
 });
 
 Deno.test("git().commit.log() return empty on empty repo", async () => {
