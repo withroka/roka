@@ -315,8 +315,7 @@ export interface Branch {
   /**
    * Commit at the tip of the branch, if branch has any commits.
    *
-   * This can be unset if the branch is "unborn", when it is newly created and
-   * has no commits yet.
+   * This can be unset if the branch is newly created and has no commits yet.
    */
   commit?: Commit;
   /** Remote push branch name, if set. */
