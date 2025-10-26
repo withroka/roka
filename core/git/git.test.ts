@@ -1,11 +1,6 @@
 import { tempDirectory } from "@roka/fs/temp";
 import { tempRepository } from "@roka/git/testing";
-import {
-  assertEquals,
-  assertExists,
-  assertNotEquals,
-  assertRejects,
-} from "@std/assert";
+import { assertEquals, assertNotEquals, assertRejects } from "@std/assert";
 import { basename, resolve } from "@std/path";
 import { git, GitError } from "./git.ts";
 
@@ -388,7 +383,6 @@ Deno.test("git().remote.fetch({ target }) can fetch commits from a branch", asyn
   const main = await remote.branch.current();
   const commit1 = await remote.commit.create("commit", { allowEmpty: true });
   const branch = await remote.branch.switch("branch", { create: true });
-  assertExists(branch);
   const commit2 = await remote.commit.create("commit", { allowEmpty: true });
   await remote.branch.switch(main);
   await using repo = await tempRepository({ clone: remote });
@@ -2829,6 +2823,57 @@ Deno.test("git().commit.head() returns head tip", async () => {
   await repo.commit.create("commit1", { allowEmpty: true });
   const commit = await repo.commit.create("commit2", { allowEmpty: true });
   assertEquals(await repo.commit.head(), commit);
+});
+
+Deno.test("git().commit.get() returns a commit by hash", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  assertEquals(await repo.commit.get(commit1.hash), commit1);
+  assertEquals(await repo.commit.get(commit2.hash), commit2);
+});
+
+Deno.test("git().commit.get() returns a commit by short hash", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  assertEquals(await repo.commit.get(commit.short), commit);
+});
+
+Deno.test("git().commit.get() returns a commit by branch", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  const branch1 = await repo.branch.current();
+  await repo.branch.switch("branch2", { create: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  assertEquals(await repo.commit.get(branch1), commit1);
+  assertEquals(await repo.commit.get("branch2"), commit2);
+});
+
+Deno.test("git().commit.get() returns a commit by tag", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const tag = await repo.tag.create("v1.0.0");
+  assertEquals(await repo.commit.get(tag), commit);
+  assertEquals(await repo.commit.get("v1.0.0"), commit);
+});
+
+Deno.test("git().commit.get() returns a commit by special symbol", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  assertEquals(await repo.commit.get("HEAD"), commit2);
+});
+
+Deno.test("git().commit.get() returns a commit by relative reference", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  await repo.commit.create("commit2", { allowEmpty: true });
+  assertEquals(await repo.commit.get("HEAD~1"), commit1);
+});
+
+Deno.test("git().commit.get() handles non-existent commit", async () => {
+  await using repo = await tempRepository();
+  assertEquals(await repo.commit.get("unknown"), undefined);
 });
 
 Deno.test("git().commit.log() return empty on empty repo", async () => {
