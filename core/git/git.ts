@@ -486,7 +486,7 @@ export interface GitOptions {
    */
   cwd?: string;
   /**
-   * Git configuration options for each executed git command.
+   * Configuration options for each executed git command.
    *
    * These will override repository or global configurations.
    */
@@ -498,6 +498,12 @@ export interface GitOptions {
  * functions.
  */
 export interface InitOptions {
+  /**
+   * The name of a new directory to initialize into.
+   *
+   * If not set, initializes in the current directory.
+   */
+  directory?: string;
   /**
    * Create a bare repository.
    * @default {false}
@@ -513,27 +519,15 @@ export interface InitOptions {
    */
   branch?: string;
   /**
-   * The name of a new directory to initialize into.
+   * Configuration for the initialized repository.
    *
-   * If not set, initializes in the current directory.
+   * This configuration change will persist in the local repository.
    */
-  directory?: string;
+  config?: Config;
 }
 
 /** Options for the {@linkcode RemoteOperations.clone} function. */
 export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
-  /**
-   * Set config for the new repository, after initialization, but before
-   * fetch.
-   */
-  config?: Config;
-  /**
-   * Number of commits to clone at the tip.
-   *
-   * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless it is
-   * set to `false` to fetch from the tip of all branches.
-   */
-  depth?: number;
   /**
    * The name of a new directory to clone into.
    *
@@ -543,6 +537,20 @@ export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
    * empty.
    */
   directory?: string;
+  /**
+   * Set configuration for the initialized repository.
+   *
+   * This configuration will persist in the local repository, and it will start
+   * to apply before any fetch happens.
+   */
+  config?: Config;
+  /**
+   * Number of commits to clone at the tip.
+   *
+   * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless it is
+   * set to `false` to fetch from the tip of all branches.
+   */
+  depth?: number;
   /**
    * Bypasses local transport optimization when set to `false`.
    *
@@ -1147,8 +1155,10 @@ export interface TransportOptions {
  * import { assertEquals } from "@std/assert";
  *
  * await using directory = await tempDirectory();
- * const repo = await git().init({ directory: directory.path() });
- * await repo.config.set({ user: { name: "name", email: "email" } });
+ * const repo = await git().init({
+ *   directory: directory.path(),
+ *   config: { user: { name: "name", email: "email" } },
+ * });
  *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
@@ -1182,7 +1192,11 @@ export function git(options?: GitOptions): Git {
         "--",
         options?.directory,
       );
-      return git({ cwd: resolve(directory, options?.directory ?? directory) });
+      const repo = git({
+        cwd: resolve(directory, options?.directory ?? directory),
+      });
+      if (options?.config) await repo.config.set(options.config);
+      return repo;
     },
     config: {
       async set(config) {
