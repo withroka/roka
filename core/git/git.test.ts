@@ -441,7 +441,7 @@ Deno.test("git().remote.head() detects detached remote head", async () => {
 });
 
 Deno.test("git().remote.fetch() fetches commits and tags", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const commit1 = await remote.commit.create("commit1", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   const commit2 = await remote.commit.create("commit2", { allowEmpty: true });
@@ -475,7 +475,7 @@ Deno.test("git().remote.fetch() does not fetch all tags", async () => {
 });
 
 Deno.test("git().remote.fetch({ target }) can fetch commits from a branch", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const main = await remote.branch.current();
   const commit1 = await remote.commit.create("commit", { allowEmpty: true });
   const branch = await remote.branch.switch("branch", { create: true });
@@ -512,7 +512,7 @@ Deno.test("git().remote.fetch({ target }) can fetch commits from a tag", async (
 });
 
 Deno.test("git().remote.fetch({ remote }) fetches from a remote with branch", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const commit = await remote.commit.create("commit", { allowEmpty: true });
   const branch = await remote.branch.current();
   await using repo = await tempRepository();
@@ -529,7 +529,7 @@ Deno.test("git().remote.fetch({ remote }) fetches from a remote with branch", as
 });
 
 Deno.test("git().remote.fetch({ tags }) can skip tags", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   await using repo = await tempRepository({ clone: remote });
   const commit = await remote.commit.create("commit2", { allowEmpty: true });
   await remote.tag.create("tag");
@@ -777,7 +777,7 @@ Deno.test("git().branch.current() returns current branch", async () => {
 });
 
 Deno.test("git().branch.current() can return unborn branch", async () => {
-  await using repo = await tempRepository();
+  await using repo = await tempRepository({ branch: "main" });
   assertEquals(await repo.branch.current(), { name: "main" });
 });
 
@@ -834,7 +834,7 @@ Deno.test("git().branch.list({ name }) can match branch pattern", async () => {
 });
 
 Deno.test("git().branch.list({ all }) returns all branches", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const commit = await remote.commit.create("commit", { allowEmpty: true });
   await remote.branch.create("remote");
   await using repo = await tempRepository({ clone: remote });
@@ -849,7 +849,7 @@ Deno.test("git().branch.list({ all }) returns all branches", async () => {
 });
 
 Deno.test("git().branch.list({ remotes }) returns only remote branches", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const commit = await remote.commit.create("commit", { allowEmpty: true });
   await remote.branch.create("remote");
   await using repo = await tempRepository({ clone: remote });
@@ -1039,7 +1039,7 @@ Deno.test("git().branch.switch({ track }) can disable tracking", async () => {
 });
 
 Deno.test("git().branch.switch({ track }) can inherit source upstream", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const commit = await remote.commit.create("commit", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   const main = await repo.branch.current();
@@ -1175,7 +1175,7 @@ Deno.test("git().branch.checkout({ track }) can disable tracking", async () => {
 });
 
 Deno.test("git().branch.checkout({ track }) can inherit source upstream", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const commit = await remote.commit.create("commit", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   const main = await repo.branch.current();
@@ -1189,7 +1189,7 @@ Deno.test("git().branch.checkout({ track }) can inherit source upstream", async 
 });
 
 Deno.test("git().branch.reset() resets branch to commit", async () => {
-  await using repo = await tempRepository();
+  await using repo = await tempRepository({ branch: "main" });
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
   await repo.commit.create("commit2", { allowEmpty: true });
   const branch = await repo.branch.reset(commit1);
@@ -1388,7 +1388,7 @@ Deno.test("git().branch.create({ track }) can disable tracking", async () => {
 });
 
 Deno.test("git().branch.create({ track }) can inherit source upstream", async () => {
-  await using remote = await tempRepository();
+  await using remote = await tempRepository({ branch: "main" });
   const commit = await remote.commit.create("commit", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote });
   const main = await repo.branch.current();
