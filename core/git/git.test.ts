@@ -78,11 +78,19 @@ Deno.test("git().path() is persistent with relative path", async () => {
   }
 });
 
-Deno.test("git().init() creates a repo", async () => {
+Deno.test("git().init() initializes a repo", async () => {
   await using directory = await tempDirectory();
   const repo = git({ cwd: directory.path() });
   assertEquals(await repo.init(), repo);
   assertEquals((await Deno.stat(repo.path(".git"))).isDirectory, true);
+});
+
+Deno.test("git().init() can reinitialize an existing repo", async () => {
+  await using directory = await tempDirectory();
+  const repo = git({ cwd: directory.path() });
+  assertEquals(await repo.init({ branch: "branch1" }), repo);
+  assertEquals(await repo.init({ branch: "branch2" }), repo);
+  assertEquals(await repo.branch.current(), { name: "branch1" });
 });
 
 Deno.test("git().init({ branch }) creates a repo with initial branch", async () => {
