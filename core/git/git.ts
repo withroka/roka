@@ -1203,6 +1203,7 @@ export function git(options?: GitOptions): Git {
             ["--single-branch", "--no-single-branch"],
             options?.singleBranch,
           ),
+          "--",
           options?.directory,
         );
         const match = output.match(
@@ -1421,7 +1422,8 @@ export function git(options?: GitOptions): Git {
           flag("--untracked-files=no", options?.untracked === false),
           flag("--untracked-files=all", options?.untracked === "all"),
           flag(["--renames", "--no-renames"], options?.renames),
-          flag("--", options?.path),
+          "--",
+          options?.path,
         );
         const lines = output.split("\0").filter((x) => x);
         const status: Status = {
@@ -1478,9 +1480,10 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "add",
-          path,
           flag("--force", options?.force),
           flag(["--chmod=+x", "--chmod=-x"], options?.executable),
+          "--",
+          path,
         );
       },
       async move(source, destination, options?: IndexMoveOptions) {
@@ -1513,6 +1516,7 @@ export function git(options?: GitOptions): Git {
             options?.location === "worktree" || options?.location === "both",
           ),
           flag("--source", commitArg(options?.source)),
+          "--",
           path,
         );
       },
@@ -1527,7 +1531,8 @@ export function git(options?: GitOptions): Git {
           flag("--cached", options?.staged),
           flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--find-copies", options?.copies),
-          flag("--", options?.path),
+          "--",
+          options?.path,
         );
         const entries = output.split("\0").filter((x) => x);
         const statuses: TrackedPathStatus[] = [];
@@ -1569,7 +1574,8 @@ export function git(options?: GitOptions): Git {
           flag("--find-copies-harder", options?.copies),
           flag("--diff-algorithm", options?.algorithm),
           flag(`--unified=${options?.unified}`, options?.unified !== undefined),
-          flag("--", options?.path),
+          "--",
+          options?.path,
         );
         return output.split(/\n(?=diff --git )/)
           .filter((x) => x)
@@ -1659,8 +1665,9 @@ export function git(options?: GitOptions): Git {
             flag("--skip", options?.skip),
             flag("--pickaxe-regex", options?.text !== undefined),
             flag("-S", options?.text),
-            flag("--", options?.path),
             rangeArg(options?.range),
+            "--",
+            options?.path,
           )
         );
         if (error) {
@@ -1774,8 +1781,9 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           "check-ignore",
-          path,
           flag("--no-index", options?.index === false),
+          "--",
+          path,
         );
         return output.split("\n").filter((line) => line);
       },
