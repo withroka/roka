@@ -1782,6 +1782,7 @@ export function git(options?: GitOptions): Git {
           { ...gitOptions, allowCode: [1] },
           "check-ignore",
           flag("--no-index", options?.index === false),
+          "--",
           path,
         );
         return output.split("\n").filter((line) => line);
