@@ -1240,6 +1240,126 @@ Deno.test("git().branch.reset({ mode }) can reset in keep mode", async () => {
   assertEquals(await Deno.readTextFile(repo.path("file.txt")), "content1");
 });
 
+Deno.test("git().branch.reset({ path }) can reset a single file in index", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1.txt"), "content1");
+  await Deno.writeTextFile(repo.path("file2.txt"), "content2");
+  await repo.index.add(["file1.txt", "file2.txt"]);
+  const commit = await repo.commit.create("commit");
+  await Deno.writeTextFile(repo.path("file1.txt"), "modified1");
+  await Deno.writeTextFile(repo.path("file2.txt"), "modified2");
+  await repo.index.add(["file1.txt", "file2.txt"]);
+  await repo.branch.reset("HEAD", { path: "file1.txt" });
+  assertEquals(await repo.commit.log(), [commit]);
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file2.txt", status: "modified" }],
+    unstaged: [{ path: "file1.txt", status: "modified" }],
+    untracked: [],
+    ignored: [],
+  });
+  assertEquals(await Deno.readTextFile(repo.path("file1.txt")), "modified1");
+  assertEquals(await Deno.readTextFile(repo.path("file2.txt")), "modified2");
+});
+
+Deno.test("git().branch.reset({ path }) can reset multiple files in index", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1.txt"), "content1");
+  await Deno.writeTextFile(repo.path("file2.txt"), "content2");
+  await Deno.writeTextFile(repo.path("file3.txt"), "content3");
+  await repo.index.add(["file1.txt", "file2.txt", "file3.txt"]);
+  const commit = await repo.commit.create("commit");
+  await Deno.writeTextFile(repo.path("file1.txt"), "modified1");
+  await Deno.writeTextFile(repo.path("file2.txt"), "modified2");
+  await Deno.writeTextFile(repo.path("file3.txt"), "modified3");
+  await repo.index.add(["file1.txt", "file2.txt", "file3.txt"]);
+  await repo.branch.reset("HEAD", { path: ["file1.txt", "file2.txt"] });
+  assertEquals(await repo.commit.log(), [commit]);
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file3.txt", status: "modified" }],
+    unstaged: [
+      { path: "file1.txt", status: "modified" },
+      { path: "file2.txt", status: "modified" },
+    ],
+    untracked: [],
+    ignored: [],
+  });
+});
+
+Deno.test("git().branch.reset({ path }) does not move HEAD", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content1");
+  await repo.index.add("file.txt");
+  const commit1 = await repo.commit.create("commit1");
+  await Deno.writeTextFile(repo.path("file.txt"), "content2");
+  await repo.index.add("file.txt");
+  const commit2 = await repo.commit.create("commit2");
+  await Deno.writeTextFile(repo.path("file.txt"), "content3");
+  await repo.index.add("file.txt");
+  await repo.branch.reset(commit1, { path: "file.txt" });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file.txt", status: "modified" }],
+    unstaged: [{ path: "file.txt", status: "modified" }],
+    untracked: [],
+    ignored: [],
+  });
+  assertEquals(await Deno.readTextFile(repo.path("file.txt")), "content3");
+});
+
+Deno.test("git().branch.reset({ path }) ignores mode option", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content1");
+  await repo.index.add("file.txt");
+  const commit1 = await repo.commit.create("commit1");
+  await Deno.writeTextFile(repo.path("file.txt"), "content2");
+  await repo.index.add("file.txt");
+  const commit2 = await repo.commit.create("commit2");
+  await Deno.writeTextFile(repo.path("file.txt"), "content3");
+  await repo.index.add("file.txt");
+  await repo.branch.reset(commit1, { path: "file.txt", mode: "hard" });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file.txt", status: "modified" }],
+    unstaged: [{ path: "file.txt", status: "modified" }],
+    untracked: [],
+    ignored: [],
+  });
+  assertEquals(await Deno.readTextFile(repo.path("file.txt")), "content3");
+});
+
+Deno.test("git().branch.reset({ path }) can unstage added file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("existing.txt"), "existing");
+  await repo.index.add("existing.txt");
+  const commit = await repo.commit.create("commit");
+  await Deno.writeTextFile(repo.path("new.txt"), "new content");
+  await repo.index.add("new.txt");
+  await repo.branch.reset("HEAD", { path: "new.txt" });
+  assertEquals(await repo.commit.log(), [commit]);
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [],
+    untracked: [{ path: "new.txt" }],
+    ignored: [],
+  });
+});
+
+Deno.test("git().branch.reset({ path }) can unstage deleted file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await repo.index.add("file.txt");
+  const commit = await repo.commit.create("commit");
+  await repo.index.remove("file.txt");
+  await repo.branch.reset("HEAD", { path: "file.txt" });
+  assertEquals(await repo.commit.log(), [commit]);
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [{ path: "file.txt", status: "deleted" }],
+    untracked: [],
+    ignored: [],
+  });
+});
+
 Deno.test("git().branch.create() creates a branch", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create("commit", { allowEmpty: true });

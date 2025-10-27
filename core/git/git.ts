@@ -673,9 +673,22 @@ export interface BranchResetOptions {
    * If set to `"merge"` or `"keep"`, reset may be aborted to avoid losing
    * local changes. Other modes will always succeed.
    *
+   * Ignored when {@linkcode BranchResetOptions.path path} is provided.
+   *
    * @default {"mixed"}
    */
   mode?: "soft" | "mixed" | "hard" | "merge" | "keep";
+  /**
+   * Limit the reset to the given pathspecs.
+   *
+   * When provided, resets index entries for the specified paths without
+   * moving HEAD or affecting the working tree. This is equivalent to
+   * unstaging files.
+   *
+   * The {@linkcode BranchResetOptions.mode mode} option is ignored when path
+   * is provided.
+   */
+  path?: string | string[];
 }
 
 /**
@@ -1321,12 +1334,13 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           ["reset"],
-          flag("--soft", options?.mode === "soft"),
-          flag("--hard", options?.mode === "hard"),
-          flag("--mixed", options?.mode === "mixed"),
-          flag("--merge", options?.mode === "merge"),
-          flag("--keep", options?.mode === "keep"),
+          flag("--soft", options?.mode === "soft" && !options?.path),
+          flag("--hard", options?.mode === "hard" && !options?.path),
+          flag("--mixed", options?.mode === "mixed" && !options?.path),
+          flag("--merge", options?.mode === "merge" && !options?.path),
+          flag("--keep", options?.mode === "keep" && !options?.path),
           commitArg(target),
+          flag("--", options?.path),
         );
         return await repo.branch.current();
       },
