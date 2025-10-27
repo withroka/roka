@@ -520,7 +520,7 @@ export interface InitOptions {
    * Creates a new branch with this name for {@linkcode Git.init} and checks
    * out this branch for {@linkcode RemoteOperations.clone}.
    *
-   * Default is `main`, if not overridden with Git configuration.
+   * Default is `main` in latest versions of `git`.
    */
   branch?: string;
   /**

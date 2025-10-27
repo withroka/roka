@@ -52,6 +52,11 @@ export interface TempRepositoryOptions {
    * @default {false}
    */
   bare?: boolean;
+  /**
+   * Name of the initial branch.
+   * @default {"main"}
+   */
+  branch?: string;
   /** Configuration for the repository. */
   config?: Config;
   /**
@@ -84,7 +89,7 @@ export interface TempRepositoryOptions {
 export async function tempRepository(
   options?: TempRepositoryOptions,
 ): Promise<Git & AsyncDisposable> {
-  const { clone, bare = false } = options ?? {};
+  const { clone, bare = false, branch = "main" } = options ?? {};
   const directory = await Deno.makeTempDir();
   const config = {
     user: { name: "A U Thor", email: "author@example.com" },
@@ -97,7 +102,7 @@ export async function tempRepository(
       typeof clone === "string" ? clone : clone.path(),
       { directory, bare, config },
     )
-    : await git().init({ bare, config, directory });
+    : await git().init({ bare, branch, config, directory });
   const cwd = options?.chdir ? Deno.cwd() : undefined;
   if (options?.chdir) Deno.chdir(directory);
   return Object.assign(repo, {

@@ -37,10 +37,18 @@ Deno.test("tempRepository() creates a disposable repo", async () => {
   await assertRejects(() => Deno.stat(path), Deno.errors.NotFound);
 });
 
+Deno.test("tempRepository({ branch }) sets default branch name", async () => {
+  await using repo = await tempRepository({ branch: "branch" });
+  assertEquals(await repo.branch.current(), { name: "branch" });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const branches = await repo.branch.list();
+  assertEquals(branches, [{ name: "branch", commit }]);
+});
+
 Deno.test("tempRepository({ clone }) clones a repo from another repo", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
-  const commit = await repo.commit.create("initial", { allowEmpty: true });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
   await repo.remote.push();
   assertEquals(await remote.commit.head(), commit);
 });
@@ -48,7 +56,7 @@ Deno.test("tempRepository({ clone }) clones a repo from another repo", async () 
 Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote.path() });
-  const commit = await repo.commit.create("initial", { allowEmpty: true });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
   await repo.remote.push();
   assertEquals(await remote.commit.head(), commit);
 });
