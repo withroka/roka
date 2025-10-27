@@ -104,3 +104,9 @@ Deno.test("tempRepository({ chdir }) works recursively", async () => {
   }
   assertEquals(Deno.cwd(), cwd);
 });
+
+Deno.test("tempRepository({ remote }) sets remote name", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: remote, remote: "remote" });
+  assertEquals((await repo.remote.get("remote")).pushUrl, remote.path());
+});

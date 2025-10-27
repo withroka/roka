@@ -66,6 +66,11 @@ export interface TempRepositoryOptions {
    * @default {false}
    */
   chdir?: boolean;
+  /**
+   * Name of the remote for the cloned repository.
+   * @default {"origin"}
+   */
+  remote?: string;
 }
 
 /**
@@ -89,7 +94,8 @@ export interface TempRepositoryOptions {
 export async function tempRepository(
   options?: TempRepositoryOptions,
 ): Promise<Git & AsyncDisposable> {
-  const { clone, bare = false, branch = "main" } = options ?? {};
+  const { clone, bare = false, branch = "main", remote = "origin" } = options ??
+    {};
   const directory = await Deno.makeTempDir();
   const config = {
     user: { name: "A U Thor", email: "author@example.com" },
@@ -100,7 +106,7 @@ export async function tempRepository(
   const repo = clone
     ? await git().remote.clone(
       typeof clone === "string" ? clone : clone.path(),
-      { directory, bare, config },
+      { directory, bare, config, remote },
     )
     : await git().init({ bare, branch, config, directory });
   const cwd = options?.chdir ? Deno.cwd() : undefined;
