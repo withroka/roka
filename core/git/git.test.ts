@@ -31,7 +31,7 @@ Deno.test("git() mentions permission on capability error", {
 
 Deno.test("git() configures for each command", async () => {
   await using directory = await tempDirectory();
-  const repo = await git({
+  const repo = git({
     cwd: directory.path(),
     config: {
       user: { name: "name", email: "email" },
@@ -39,7 +39,8 @@ Deno.test("git() configures for each command", async () => {
       tag: { gpgsign: false },
       versionsort: { suffix: ["-alpha", "-beta", "-rc"] },
     },
-  }).init();
+  });
+  await repo.init();
   await repo.commit.create("commit", { allowEmpty: true });
   await repo.tag.create("1.2.3");
   await repo.tag.create("1.2.3-alpha");
