@@ -187,7 +187,7 @@ export interface IndexOperations {
   ): Promise<void>;
   /** Removes files or directories from the working tree and index. */
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
-  /** Restores files in the index from a source. */
+  /** Restores files in the working tree from a source. */
   restore(
     path: string | string[],
     options?: IndexRestoreOptions,
@@ -799,6 +799,12 @@ export interface IndexRestoreOptions {
    * @default {"HEAD"}
    */
   source?: Commitish;
+  /**
+   * Location to restore files in.
+   *
+   * @default {"worktree"}
+   */
+  location?: "index" | "worktree" | "both";
 }
 
 /**
@@ -1462,7 +1468,15 @@ export function git(options?: GitOptions): Git {
       async restore(path, options?: IndexRestoreOptions) {
         await run(
           gitOptions,
-          ["restore", "--staged"],
+          ["restore"],
+          flag(
+            "--staged",
+            options?.location === "index" || options?.location === "both",
+          ),
+          flag(
+            "--worktree",
+            options?.location === "worktree" || options?.location === "both",
+          ),
           flag("--source", commitArg(options?.source)),
           path,
         );
