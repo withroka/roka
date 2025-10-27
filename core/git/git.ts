@@ -82,7 +82,7 @@ export class GitError extends Error {
 export interface Git {
   /** Returns the repository directory, with optional relative children. */
   path(...parts: string[]): string;
-  /** Initializes a new git repository. */
+  /** Initializes a new git repository, or reinitialize an existing one. */
   init(options?: InitOptions): Promise<Git>;
   /** Config operations. */
   config: ConfigOperations;
