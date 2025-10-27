@@ -46,6 +46,7 @@
  * @todo Add `git().merge.*()`
  * @todo Add `git().rebase.*()`
  * @todo Add `git().submodule.*()`
+ * @todo Split `git().worktree` from `git().index
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
