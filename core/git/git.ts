@@ -39,7 +39,6 @@
  * @todo Extend `git().config.set()`
  * @todo Add `git().branch.restore()`
  * @todo Add `git().index.reset()`
- * @todo Add `git().commit.get()`
  * @todo Add `git().commit.revert()`
  * @todo Add `git().worktree.*()`
  * @todo Add `git().stash.*()`
@@ -152,6 +151,8 @@ export interface BranchOperations {
   ): Promise<Branch>;
   /** Switches to a commit, or an existing or new branch. */
   checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
+  /** Resets the current branch head to a specified state. */
+  reset(target: Commitish, options?: BranchResetOptions): Promise<Branch>;
   /** Creates a branch. */
   create(name: string, options?: BranchCreateOptions): Promise<Branch>;
   /** Renames a branch. */
@@ -210,6 +211,8 @@ export interface CommitOperations {
    * @throws {@linkcode GitError} If there are no commits.
    */
   head(): Promise<Commit>;
+  /** Returns a specific commit by its reference. */
+  get(ref: Commitish): Promise<Commit | undefined>;
   /** Returns the history of commits in the repository. */
   log(options?: CommitLogOptions): Promise<Commit[]>;
   /** Creates a new commit in the repository. */
@@ -315,12 +318,16 @@ export interface User {
 export interface Branch {
   /** Short name of the branch. */
   name: string;
+  /**
+   * Commit at the tip of the branch, if branch has any commits.
+   *
+   * This can be unset if the branch is newly created and has no commits yet.
+   */
+  commit?: Commit;
   /** Remote push branch name, if set. */
   push?: string;
   /** Remote upstream branch name, if set. */
   upstream?: string;
-  /** Commit at the tip of the branch, if branch has any commits. */
-  commit?: Commit;
 }
 
 /** Status of files in the index and the working tree. */
@@ -656,6 +663,25 @@ export interface BranchCheckoutOptions extends BranchTrackOptions {
    * @default {false}
    */
   detach?: boolean;
+}
+
+/** Options for the {@linkcode BranchOperations.reset} function. */
+export interface BranchResetOptions {
+  /**
+   * Reset mode.
+   *
+   * - `"soft"`: only move HEAD, keep index and working tree
+   * - `"mixed"`: reset index, keep working tree
+   * - `"hard"`: reset index and working tree, discard all changes
+   * - `"merge"`: reset but keep non-conflicting changes, abort if unsafe
+   * - `"keep"`: reset but abort if any modified file differs between commits
+   *
+   * If set to `"merge"` or `"keep"`, reset may be aborted to avoid losing
+   * local changes. Other modes will always succeed.
+   *
+   * @default {"mixed"}
+   */
+  mode?: "soft" | "mixed" | "hard" | "merge" | "keep";
 }
 
 /**
@@ -1278,13 +1304,8 @@ export function git(options?: GitOptions): Git {
             .filter((branch) => !branch?.name?.includes(" "))
             .map(async (branch) => {
               assertExists(branch.name, "Branch name not filled");
-              let commit: Commit | undefined = undefined;
-              if (branch.commit?.hash) {
-                [commit] = await repo.commit.log({
-                  maxCount: 1,
-                  range: { to: branch.commit.hash },
-                });
-              }
+              const commit = branch.commit?.hash &&
+                await repo.commit.get(branch.commit?.hash);
               const name: string = branch.name;
               return { ...branch, name, ...commit && { commit } };
             }),
@@ -1319,6 +1340,19 @@ export function git(options?: GitOptions): Git {
         );
         const { value: branch } = await maybe(() => repo.branch.current());
         return branch;
+      },
+      async reset(target, options) {
+        await run(
+          gitOptions,
+          ["reset"],
+          flag("--soft", options?.mode === "soft"),
+          flag("--hard", options?.mode === "hard"),
+          flag("--mixed", options?.mode === "mixed"),
+          flag("--merge", options?.mode === "merge"),
+          flag("--keep", options?.mode === "keep"),
+          commitArg(target),
+        );
+        return await repo.branch.current();
       },
       async create(name, options) {
         await run(
@@ -1601,10 +1635,17 @@ export function git(options?: GitOptions): Git {
     },
     commit: {
       async head() {
-        const [commit] = await repo.commit.log({ maxCount: 1 });
+        const commit = await repo.commit.get("HEAD");
         if (!commit) {
           throw new GitError("Current branch does not have any commits");
         }
+        return commit;
+      },
+      async get(ref) {
+        const [commit] = await repo.commit.log({
+          maxCount: 1,
+          range: { to: commitArg(ref) },
+        });
         return commit;
       },
       async log(options) {
@@ -1645,10 +1686,7 @@ export function git(options?: GitOptions): Git {
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
-        const [commit] = await repo.commit.log({
-          maxCount: 1,
-          range: { to: hash },
-        });
+        const commit = await repo.commit.get(hash);
         assertExists(commit, "Cannot find created commit");
         return commit;
       },
@@ -1658,7 +1696,7 @@ export function git(options?: GitOptions): Git {
           body !== undefined ||
           (trailers !== undefined && Object.keys(trailers).length > 0);
         if (edited && (summary === undefined || body === undefined)) {
-          const [commit] = await repo.commit.log({ maxCount: 1 });
+          const commit = await repo.commit.get("HEAD");
           if (commit && summary === undefined && body === undefined) {
             body = commit.body;
           }
@@ -1678,10 +1716,7 @@ export function git(options?: GitOptions): Git {
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
-        const [commit] = await repo.commit.log({
-          maxCount: 1,
-          range: { to: hash },
-        });
+        const commit = await repo.commit.get(hash);
         assertExists(commit, "Cannot find created commit");
         return commit;
       },
@@ -1701,10 +1736,7 @@ export function git(options?: GitOptions): Git {
         return await Promise.all(tags.map(async (tag) => {
           assertExists(tag.name, "Tag name not filled");
           assertExists(tag.commit?.hash, "Commit hash not filled for tag");
-          const [commit] = await repo.commit.log({
-            maxCount: 1,
-            range: { to: tag.commit.hash },
-          });
+          const commit = await repo.commit.get(tag.commit.hash);
           assertExists(commit, "Cannot find commit for tag");
           const name: string = tag.name;
           return { ...tag, name, commit };
