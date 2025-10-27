@@ -97,7 +97,7 @@ export async function tempRepository(
     const target = typeof clone === "string" ? clone : clone.path();
     await git().remote.clone(target, { directory, bare, config });
   } else {
-    await git({ cwd: directory, config }).init({ bare });
+    await git({ config }).init({ bare });
     await repo.config.set(config);
   }
   const cwd = options?.chdir ? Deno.cwd() : undefined;

@@ -37,15 +37,12 @@
  *
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
- * @todo Add `git().branch.restore()`
- * @todo Add `git().index.reset()`
- * @todo Add `git().commit.revert()`
- * @todo Add `git().worktree.*()`
- * @todo Add `git().stash.*()`
- * @todo Add `git().merge.*()`
- * @todo Add `git().rebase.*()`
- * @todo Add `git().submodule.*()`
- * @todo Split `git().worktree` from `git().index`
+ * @todo Add `git().worktree.*`
+ * @todo Add `git().stash.*`
+ * @todo Add `git().revert.*`
+ * @todo Add `git().merge.*`
+ * @todo Add `git().rebase.*`
+ * @todo Add `git().submodule.*`
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
@@ -1150,8 +1147,7 @@ export interface TransportOptions {
  * import { assertEquals } from "@std/assert";
  *
  * await using directory = await tempDirectory();
- * const repo = git({ cwd: directory.path() });
- * await repo.init();
+ * const repo = await git().init({ directory });
  * await repo.config.set({ user: { name: "name", email: "email" } });
  *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
@@ -1183,13 +1179,10 @@ export function git(options?: GitOptions): Git {
         "init",
         flag("--bare", options?.bare),
         flag("--initial-branch", options?.branch),
+        "--",
         options?.directory,
       );
-      if (options?.directory) {
-        const cwd = resolve(directory, options.directory);
-        return git({ ...gitOptions, cwd });
-      }
-      return repo;
+      return git({ cwd: resolve(directory, options?.directory ?? directory) });
     },
     config: {
       async set(config) {

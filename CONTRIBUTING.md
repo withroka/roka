@@ -115,7 +115,7 @@ category contains development tools. As the codebase grows, new categories like
 - Add tests for new features.
 - Add tests for fixed bugs.
 - Add tests for `testing` modules.
-- Name tests explicitly (`"git().init() creates a repo"`).
+- Name tests explicitly (`"git().init() initializes a repository"`).
 
 ### Documentation
 

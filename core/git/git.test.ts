@@ -31,7 +31,7 @@ Deno.test("git() mentions permission on capability error", {
 
 Deno.test("git() configures for each command", async () => {
   await using directory = await tempDirectory();
-  const repo = git({
+  const repo = await git({
     cwd: directory.path(),
     config: {
       user: { name: "name", email: "email" },
@@ -39,8 +39,7 @@ Deno.test("git() configures for each command", async () => {
       tag: { gpgsign: false },
       versionsort: { suffix: ["-alpha", "-beta", "-rc"] },
     },
-  });
-  await repo.init();
+  }).init();
   await repo.commit.create("commit", { allowEmpty: true });
   await repo.tag.create("1.2.3");
   await repo.tag.create("1.2.3-alpha");
@@ -78,51 +77,43 @@ Deno.test("git().path() is persistent with relative path", async () => {
   }
 });
 
-Deno.test("git().init() initializes a repo", async () => {
+Deno.test("git().init() initializes a repository", async () => {
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path() });
-  assertEquals(await repo.init(), repo);
+  const repo = await git({ cwd: directory.path() }).init();
+  assertEquals(repo.path(), directory.path());
   assertEquals((await Deno.stat(repo.path(".git"))).isDirectory, true);
 });
 
-Deno.test("git().init() can reinitialize an existing repo", async () => {
+Deno.test("git().init() can reinitialize an existing repository", async () => {
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path() });
-  assertEquals(await repo.init({ branch: "branch1" }), repo);
-  assertEquals(await repo.init({ branch: "branch2" }), repo);
+  const repo = await git({ cwd: directory.path() }).init({ branch: "branch1" });
+  await repo.init({ branch: "branch2" });
   assertEquals(await repo.branch.current(), { name: "branch1" });
 });
 
-Deno.test("git().init({ branch }) creates a repo with initial branch", async () => {
+Deno.test("git().init({ branch }) creates a repository with initial branch", async () => {
   await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path() });
-  await repo.init({ branch: "branch" });
+  const repo = await git({ cwd: directory.path() }).init({ branch: "branch" });
   assertEquals(await repo.branch.current(), { name: "branch" });
-  await repo.init();
 });
 
-Deno.test("git().init({ directory }) creates a repo in specified directory", async () => {
-  await using parent = await tempDirectory();
-  const repo = git({ cwd: parent.path() });
-  const newRepo = await repo.init({ directory: "subdir" });
-  assertEquals(newRepo.path(), parent.path("subdir"));
-  assertEquals((await Deno.stat(newRepo.path(".git"))).isDirectory, true);
+Deno.test("git().init({ directory }) creates a repository in specified directory", async () => {
+  await using directory = await tempDirectory();
+  const repo = await git().init({ directory: directory.path() });
+  assertEquals(repo.path(), directory.path());
+  assertEquals((await Deno.stat(repo.path(".git"))).isDirectory, true);
 });
 
-Deno.test("git().init({ directory }) can create nested directories", async () => {
-  await using parent = await tempDirectory();
-  const repo = git({ cwd: parent.path() });
-  const newRepo = await repo.init({ directory: "nested/dir" });
-  assertEquals(newRepo.path(), parent.path("nested/dir"));
-  assertEquals((await Deno.stat(newRepo.path(".git"))).isDirectory, true);
-});
-
-Deno.test("git().init({ directory, branch }) creates repo with initial branch in directory", async () => {
-  await using parent = await tempDirectory();
-  const repo = git({ cwd: parent.path() });
-  const newRepo = await repo.init({ directory: "subdir", branch: "main" });
-  await newRepo.config.set({ user: { name: "name", email: "email" } });
-  assertEquals(await newRepo.branch.current(), { name: "main" });
+Deno.test("git().init({ directory }) can create repository inside a repository", async () => {
+  await using directory = await tempDirectory();
+  const repo1 = await git({ cwd: directory.path() }).init();
+  const repo2 = await repo1.init({ directory: "directory" });
+  const repo3 = await repo2.init({ directory: "directory" });
+  assertEquals(repo2.path(), repo1.path("directory"));
+  assertEquals(repo3.path(), repo2.path("directory"));
+  assertEquals((await Deno.stat(repo1.path(".git"))).isDirectory, true);
+  assertEquals((await Deno.stat(repo2.path(".git"))).isDirectory, true);
+  assertEquals((await Deno.stat(repo3.path(".git"))).isDirectory, true);
 });
 
 Deno.test("git().config.set() configures single values", async () => {
@@ -151,7 +142,7 @@ Deno.test("git().config.set() configures multi values", async () => {
   );
 });
 
-Deno.test("git().remote.clone() clones a repo", async () => {
+Deno.test("git().remote.clone() clones a repository", async () => {
   await using remote = await tempRepository();
   await remote.commit.create("commit1", { allowEmpty: true });
   await remote.commit.create("commit2", { allowEmpty: true });
@@ -193,7 +184,7 @@ Deno.test("git().remote.clone({ directory }) rejects non-empty directory", async
   );
 });
 
-Deno.test("git().remote.clone({ remote }) clones a repo with remote name", async () => {
+Deno.test("git().remote.clone({ remote }) clones a repository with remote name", async () => {
   await using remote = await tempRepository();
   await remote.commit.create("commit", { allowEmpty: true });
   await using directory = await tempDirectory();
@@ -3114,7 +3105,7 @@ Deno.test("git().diff.patch({ unified }) controls the number of context lines", 
   ]);
 });
 
-Deno.test("git().commit.head() rejects empty repo", async () => {
+Deno.test("git().commit.head() rejects empty repository", async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () => repo.commit.head(),
@@ -3181,7 +3172,7 @@ Deno.test("git().commit.get() handles non-existent commit", async () => {
   assertEquals(await repo.commit.get("unknown"), undefined);
 });
 
-Deno.test("git().commit.log() return empty on empty repo", async () => {
+Deno.test("git().commit.log() return empty on empty repository", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.commit.log(), []);
 });
@@ -3743,12 +3734,12 @@ Deno.test("git().commit.amend({ sign }) cannot use wrong key", async () => {
   );
 });
 
-Deno.test("git().tag.list() returns empty list on empty repo", async () => {
+Deno.test("git().tag.list() returns empty list on empty repository", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.tag.list(), []);
 });
 
-Deno.test("git().tag.list() returns empty list on no tags repo", async () => {
+Deno.test("git().tag.list() returns empty list on repository with no tags", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
   assertEquals(await repo.tag.list(), []);
