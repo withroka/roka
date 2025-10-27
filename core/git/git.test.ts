@@ -93,6 +93,30 @@ Deno.test("git().init({ branch }) creates a repo with initial branch", async () 
   await repo.init();
 });
 
+Deno.test("git().init({ directory }) creates a repo in specified directory", async () => {
+  await using parent = await tempDirectory();
+  const repo = git({ cwd: parent.path() });
+  const newRepo = await repo.init({ directory: "subdir" });
+  assertEquals(newRepo.path(), parent.path("subdir"));
+  assertEquals((await Deno.stat(newRepo.path(".git"))).isDirectory, true);
+});
+
+Deno.test("git().init({ directory }) can create nested directories", async () => {
+  await using parent = await tempDirectory();
+  const repo = git({ cwd: parent.path() });
+  const newRepo = await repo.init({ directory: "nested/dir" });
+  assertEquals(newRepo.path(), parent.path("nested/dir"));
+  assertEquals((await Deno.stat(newRepo.path(".git"))).isDirectory, true);
+});
+
+Deno.test("git().init({ directory, branch }) creates repo with initial branch in directory", async () => {
+  await using parent = await tempDirectory();
+  const repo = git({ cwd: parent.path() });
+  const newRepo = await repo.init({ directory: "subdir", branch: "main" });
+  await newRepo.config.set({ user: { name: "name", email: "email" } });
+  assertEquals(await newRepo.branch.current(), { name: "main" });
+});
+
 Deno.test("git().config.set() configures single values", async () => {
   await using repo = await tempRepository();
   await repo.config.set({ user: { name: "name", email: "email" } });

@@ -515,6 +515,12 @@ export interface InitOptions {
    * Default is `main`, if not overridden with Git configuration.
    */
   branch?: string;
+  /**
+   * The name of a new directory to initialize into.
+   *
+   * If not set, initializes in the current directory.
+   */
+  directory?: string;
 }
 
 /** Options for the {@linkcode RemoteOperations.clone} function. */
@@ -1177,7 +1183,12 @@ export function git(options?: GitOptions): Git {
         "init",
         flag("--bare", options?.bare),
         flag("--initial-branch", options?.branch),
+        options?.directory,
       );
+      if (options?.directory) {
+        const cwd = resolve(directory, options.directory);
+        return git({ ...gitOptions, cwd });
+      }
       return repo;
     },
     config: {
