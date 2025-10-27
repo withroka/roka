@@ -127,6 +127,17 @@ Deno.test("git().init({ branch }) creates a repository with initial branch", asy
   assertEquals(await repo.branch.current(), { name: "branch" });
 });
 
+Deno.test("git().init({ config }) applies to initialization", async () => {
+  await using directory = await tempDirectory();
+  const repo = await git().init({
+    directory: directory.path(),
+    config: {
+      init: { defaultBranch: "branch" },
+    },
+  });
+  assertEquals(await repo.branch.current(), { name: "branch" });
+});
+
 Deno.test("git().init({ config }) persists configuration", async () => {
   await using directory = await tempDirectory();
   const repo = await git().init({
@@ -239,6 +250,19 @@ Deno.test("git().remote.clone({ branch }) checks out a branch", async () => {
     branch: "branch",
   });
   assertEquals(await repo.commit.log(), [commit1]);
+});
+
+Deno.test("git().remote.clone({ config }) applies to initialization", async () => {
+  await using remote = await tempRepository();
+  await remote.commit.create("commit", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const repo = await git().remote.clone(remote.path(), {
+    directory: directory.path(),
+    config: {
+      clone: { defaultRemoteName: "remote" },
+    },
+  });
+  assertEquals((await repo.remote.get("remote")).name, "remote");
 });
 
 Deno.test("git().remote.clone({ config }) persists configuration", async () => {

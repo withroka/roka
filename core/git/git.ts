@@ -251,6 +251,11 @@ export interface Config {
     /** How to setup tracking for new branches. */
     autoSetupMerge?: boolean | "always" | "inherit" | "simple";
   };
+  /** Clone configuration. */
+  clone?: {
+    /** Default remote name. */
+    defaultRemoteName?: string;
+  };
   /** Commit configuration. */
   commit?: {
     /** Whether to sign commits. */
@@ -521,7 +526,8 @@ export interface InitOptions {
   /**
    * Configuration for the initialized repository.
    *
-   * This configuration change will persist in the local repository.
+   * This configuration will apply to initialization operation itself, and it
+   * will persist in the local repository afterwards.
    */
   config?: Config;
 }
@@ -540,8 +546,8 @@ export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
   /**
    * Set configuration for the initialized repository.
    *
-   * This configuration will persist in the local repository, and it will start
-   * to apply before any fetch happens.
+   * This configuration will apply to initialization and fetch, and it will
+   * persist in the local repository afterwards.
    */
   config?: Config;
   /**
@@ -1185,7 +1191,10 @@ export function git(options?: GitOptions): Git {
     },
     async init(options) {
       await run(
-        gitOptions,
+        {
+          ...gitOptions,
+          config: { ...gitOptions?.config, ...options?.config },
+        },
         "init",
         flag("--bare", options?.bare),
         flag("--initial-branch", options?.branch),
@@ -1209,7 +1218,11 @@ export function git(options?: GitOptions): Git {
     remote: {
       async clone(url, options) {
         const output = await run(
-          { ...gitOptions, stderr: true },
+          {
+            ...gitOptions,
+            config: { ...gitOptions?.config, ...options?.config },
+            stderr: true,
+          },
           ["clone", url],
           configFlags(options?.config, "--config").flat(),
           flag("--bare", options?.bare),
