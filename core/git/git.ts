@@ -45,6 +45,7 @@
  * @todo Add `git().merge.*()`
  * @todo Add `git().rebase.*()`
  * @todo Add `git().submodule.*()`
+ * @todo Split `git().worktree` from `git().index`
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
@@ -188,6 +189,11 @@ export interface IndexOperations {
   ): Promise<void>;
   /** Removes files or directories from the working tree and index. */
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
+  /** Restores files in the working tree and index from a source. */
+  restore(
+    path: string | string[],
+    options?: IndexRestoreOptions,
+  ): Promise<void>;
 }
 
 /** Difference operations from {@linkcode Git.diff}. */
@@ -808,6 +814,24 @@ export interface IndexRemoveOptions {
    * @default {false}
    */
   force?: boolean;
+}
+
+/** Options for the {@linkcode IndexOperations.restore} function. */
+export interface IndexRestoreOptions {
+  /**
+   * Source commit to restore from.
+   *
+   * If not specified, the contents are restored from `HEAD`.
+   *
+   * @default {"HEAD"}
+   */
+  source?: Commitish;
+  /**
+   * Location to restore files in.
+   *
+   * @default {"worktree"}
+   */
+  location?: "index" | "worktree" | "both";
 }
 
 /**
@@ -1474,6 +1498,22 @@ export function git(options?: GitOptions): Git {
           "rm",
           path,
           flag("--force", options?.force),
+        );
+      },
+      async restore(path, options?: IndexRestoreOptions) {
+        await run(
+          gitOptions,
+          ["restore"],
+          flag(
+            "--staged",
+            options?.location === "index" || options?.location === "both",
+          ),
+          flag(
+            "--worktree",
+            options?.location === "worktree" || options?.location === "both",
+          ),
+          flag("--source", commitArg(options?.source)),
+          path,
         );
       },
     },
