@@ -189,7 +189,7 @@ export interface IndexOperations {
   ): Promise<void>;
   /** Removes files or directories from the working tree and index. */
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
-  /** Restores files in the working tree from a source. */
+  /** Restores files in the working tree and index from a source. */
   restore(
     path: string | string[],
     options?: IndexRestoreOptions,
