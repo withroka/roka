@@ -1283,7 +1283,10 @@ export function git(options?: GitOptions): Git {
     },
     branch: {
       async current() {
-        const name = await run(gitOptions, "branch", "--show-current");
+        const name = await run(
+          gitOptions,
+          ["branch", "--no-color", "--show-current"],
+        );
         if (!name) throw new GitError("Cannot determine HEAD branch");
         const [branch] = await repo.branch.list({ name });
         return branch ?? { name }; // unborn branch
@@ -1291,7 +1294,8 @@ export function git(options?: GitOptions): Git {
       async list(options) {
         const output = await run(
           gitOptions,
-          ["branch", "--list", `--format=${formatArg(BRANCH_FORMAT)}`],
+          ["branch", "--no-color", "--list"],
+          `--format=${formatArg(BRANCH_FORMAT)}`,
           options?.name,
           flag("--all", options?.all),
           flag("--remotes", options?.remotes),
@@ -1358,7 +1362,7 @@ export function git(options?: GitOptions): Git {
       async create(name, options) {
         await run(
           gitOptions,
-          ["branch", name],
+          ["branch", "--no-color", name],
           commitArg(options?.target),
           flag("--track", options?.track === true),
           flag("--no-track", options?.track === false),
@@ -1370,7 +1374,7 @@ export function git(options?: GitOptions): Git {
       async move(branch, name, options) {
         await run(
           gitOptions,
-          ["branch", "-m", refArg(branch), name],
+          ["branch", "--no-color", "-m", refArg(branch), name],
           flag("--force", options?.force),
         );
         const [newBranch] = await repo.branch.list({ name });
@@ -1379,7 +1383,7 @@ export function git(options?: GitOptions): Git {
       async copy(branch, name, options) {
         await run(
           gitOptions,
-          ["branch", "-c", refArg(branch), name],
+          ["branch", "--no-color", "-c", refArg(branch), name],
           flag("--force", options?.force),
         );
         const [newBranch] = await repo.branch.list({ name });
@@ -1388,7 +1392,7 @@ export function git(options?: GitOptions): Git {
       async delete(branch, options) {
         await run(
           gitOptions,
-          ["branch", refArg(branch)],
+          ["branch", "--no-color", refArg(branch)],
           flag(["-D", "-d"], options?.force ?? false),
         );
       },
@@ -1396,7 +1400,7 @@ export function git(options?: GitOptions): Git {
         const name = refArg(branch);
         await run(
           gitOptions,
-          ["branch", name, "--set-upstream-to", upstream],
+          ["branch", "--no-color", name, "--set-upstream-to", upstream],
         );
         const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
@@ -1405,7 +1409,7 @@ export function git(options?: GitOptions): Git {
         const name = refArg(branch);
         await run(
           gitOptions,
-          ["branch", name, "--unset-upstream"],
+          ["branch", "--no-color", name, "--unset-upstream"],
         );
         const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
@@ -1525,7 +1529,7 @@ export function git(options?: GitOptions): Git {
       async status(options) {
         const output = await run(
           gitOptions,
-          ["diff", "--name-status", "-z"],
+          ["diff", "--no-color", "--name-status", "-z"],
           commitArg(options?.target),
           rangeArg(options?.range),
           flag("--cached", options?.staged),
@@ -1658,7 +1662,7 @@ export function git(options?: GitOptions): Git {
         const { value: output, error } = await maybe(() =>
           run(
             gitOptions,
-            ["log", `--format=${formatArg(LOG_FORMAT)}`],
+            ["log", "--no-color", `--format=${formatArg(LOG_FORMAT)}`],
             flag("--author", userArg(options?.author)),
             flag("--committer", userArg(options?.committer)),
             flag("--max-count", options?.maxCount),
