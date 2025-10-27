@@ -92,14 +92,12 @@ export async function tempRepository(
     tag: { gpgsign: false },
     ...options?.config,
   };
-  const repo = git({ cwd: directory });
-  if (clone) {
-    const target = typeof clone === "string" ? clone : clone.path();
-    await git().remote.clone(target, { directory, bare, config });
-  } else {
-    await git({ config }).init({ bare, directory });
-    await repo.config.set(config);
-  }
+  const repo = clone
+    ? await git().remote.clone(
+      typeof clone === "string" ? clone : clone.path(),
+      { directory, bare, config },
+    )
+    : await git().init({ bare, config, directory });
   const cwd = options?.chdir ? Deno.cwd() : undefined;
   if (options?.chdir) Deno.chdir(directory);
   return Object.assign(repo, {
