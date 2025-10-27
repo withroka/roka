@@ -1147,7 +1147,7 @@ export interface TransportOptions {
  * import { assertEquals } from "@std/assert";
  *
  * await using directory = await tempDirectory();
- * const repo = await git().init({ directory });
+ * const repo = await git().init({ directory: directory.path() });
  * await repo.config.set({ user: { name: "name", email: "email" } });
  *
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
