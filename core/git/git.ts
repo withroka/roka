@@ -706,7 +706,7 @@ export interface BranchCreateTrackOptions {
 /**
  * Options for the {@linkcode BranchOperations.create} function.
  */
-export interface BranchCreateOptions {
+export interface BranchCreateOptions extends BranchCreateTrackOptions {
   /**
    * Reset branch to {@linkcode BranchCreateOptions.target target} even if it
    * already exists.
@@ -719,20 +719,6 @@ export interface BranchCreateOptions {
    * @default {"HEAD"}
    */
   target?: Commitish;
-  /**
-   * Setup upstream configuration for a newly created branch.
-   *
-   * The tracking configuration depends on the value of the
-   * {@linkcode BranchCreateOptions.target target} option.
-   *
-   * - `true`: set the upstream tracking to `target`
-   * - `"inherit"`: copy the upstream configuration from `target`
-   * - `false`: no upstream is set
-   *
-   * The default behavior is to enable upstream tracking only when `target` is
-   * a remote branch.
-   */
-  track?: boolean | "inherit";
 }
 
 /** Options for the {@linkcode BranchOperations.list} function. */
