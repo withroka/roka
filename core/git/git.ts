@@ -1318,16 +1318,11 @@ export function git(options?: GitOptions): Git {
           options?.directory,
         );
         const match = output.match(
-          /Cloning into '(?<directory>.+?)'...(?:.|\n)*/,
+          /Cloning into '(?<directory>.+?)'\.\.\.(?:.|\n)*/,
         );
-        assertExists(
-          match?.groups?.directory,
-          "Cannot determine cloned directory",
-        );
-        const cwd = resolve(
-          directory,
-          options?.directory ?? match.groups.directory,
-        );
+        const cloned = options?.directory ?? match?.groups?.directory;
+        assertExists(cloned, "Cannot determine cloned directory");
+        const cwd = resolve(directory, cloned);
         return git({ ...gitOptions, cwd });
       },
       async add(remoteOrUrl: URL | Remote, options?: RemoteAddOptions) {
