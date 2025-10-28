@@ -918,9 +918,23 @@ Deno.test("git().remote.pull({ tags }) can fetch all tags", async () => {
 });
 
 Deno.test("git().remote.pull({ sign }) cannot use wrong key", async () => {
-  await using upstream = await tempRepository({ bare: true });
-  await using repo = await tempRepository({ clone: upstream });
-  await assertRejects(() => repo.remote.pull({ sign: "not-a-key" }), GitError);
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await using repo = await tempRepository({
+    clone: upstream,
+    config: { pull: { rebase: false } },
+  });
+  await Deno.writeTextFile(upstream.path("file1.txt"), "content1");
+  await upstream.index.add("file1.txt");
+  await upstream.commit.create("commit2");
+  await Deno.writeTextFile(repo.path("file2.txt"), "content2");
+  await repo.index.add("file2.txt");
+  await repo.commit.create("commit3");
+  await assertRejects(
+    () => repo.remote.pull({ sign: "not-a-key" }),
+    GitError,
+    "gpg failed to sign",
+  );
 });
 
 Deno.test("git().remote.push() pushes current branch to remote", async () => {
@@ -939,7 +953,11 @@ Deno.test("git().remote.push() rejects unsynced push", async () => {
   await repo1.commit.create("commit1", { allowEmpty: true });
   await repo2.commit.create("commit2", { allowEmpty: true });
   await repo1.remote.push();
-  await assertRejects(() => repo2.remote.push(), GitError);
+  await assertRejects(
+    () => repo2.remote.push(),
+    GitError,
+    "failed to push some refs",
+  );
 });
 
 Deno.test("git().remote.push({ target }) pushes commits to a remote branch", async () => {
@@ -1406,7 +1424,11 @@ Deno.test("git().branch.switch() can switch to branch by name", async () => {
 Deno.test("git().branch.switch() rejects switching to non-branch reference", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create("commit", { allowEmpty: true });
-  await assertRejects(() => repo.branch.switch(commit.hash), GitError);
+  await assertRejects(
+    () => repo.branch.switch(commit.hash),
+    GitError,
+    "a branch is expected, got commit",
+  );
 });
 
 Deno.test("git().branch.switch() keeps working tree changes", async () => {
@@ -1442,7 +1464,11 @@ Deno.test("git().branch.switch() rejects when switching leads to loss", async ()
   await Deno.writeTextFile(repo.path("file.txt"), "content2");
   await repo.commit.create("commit2", { all: true });
   await Deno.writeTextFile(repo.path("file.txt"), "content3");
-  await assertRejects(() => repo.branch.switch(branch), GitError);
+  await assertRejects(
+    () => repo.branch.switch(branch),
+    GitError,
+    "commit your changes or stash them before you switch branches",
+  );
 });
 
 Deno.test("git().branch.switch({ create }) creates and switches to new branch", async () => {
@@ -1464,6 +1490,7 @@ Deno.test("git().branch.switch({ create }) rejects existing branch", async () =>
   await assertRejects(
     () => repo.branch.switch(branch, { create: true }),
     GitError,
+    "already exists",
   );
   assertEquals(await repo.branch.list(), [branch, main]);
   assertEquals(await repo.commit.log(), [commit2, commit1]);
@@ -1598,7 +1625,11 @@ Deno.test("git().branch.checkout() rejects when switching leads to loss", async 
   await Deno.writeTextFile(repo.path("file.txt"), "content2");
   await repo.commit.create("commit2", { all: true });
   await Deno.writeTextFile(repo.path("file.txt"), "content3");
-  await assertRejects(() => repo.branch.checkout({ target: branch }), GitError);
+  await assertRejects(
+    () => repo.branch.checkout({ target: branch }),
+    GitError,
+    "commit your changes or stash them before you switch branches",
+  );
 });
 
 Deno.test("git().branch.checkout({ target }) can switch to branch", async () => {
@@ -1982,7 +2013,11 @@ Deno.test("git().branch.delete() rejects current branch", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
   const current = await repo.branch.current();
-  await assertRejects(() => repo.branch.delete(current), GitError);
+  await assertRejects(
+    () => repo.branch.delete(current),
+    GitError,
+    "used by worktree",
+  );
 });
 
 Deno.test("git().branch.delete() can delete branch", async () => {
@@ -2011,7 +2046,11 @@ Deno.test("git().branch.delete() rejects unmerged branch", async () => {
   await repo.branch.switch("branch", { create: true });
   await repo.commit.create("commit", { allowEmpty: true });
   await repo.branch.switch(main);
-  await assertRejects(() => repo.branch.delete("branch"), GitError);
+  await assertRejects(
+    () => repo.branch.delete("branch"),
+    GitError,
+    "not fully merged",
+  );
 });
 
 Deno.test("git().branch.delete({ force }) can delete unmerged branch", async () => {
@@ -2446,7 +2485,11 @@ Deno.test("git().index.add() adds files", async () => {
 
 Deno.test("git().index.add() rejects non-existent file", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.index.add("file"), GitError);
+  await assertRejects(
+    () => repo.index.add("file"),
+    GitError,
+    "did not match any files",
+  );
   assertEquals((await repo.index.status()).staged, []);
 });
 
@@ -2456,7 +2499,11 @@ Deno.test("git().index.add() rejects ignored file", async () => {
   await Deno.writeTextFile(repo.path(".gitignore"), "file");
   await repo.index.add(".gitignore");
   await repo.commit.create("commit");
-  await assertRejects(() => repo.index.add("file"), GitError);
+  await assertRejects(
+    () => repo.index.add("file"),
+    GitError,
+    "paths are ignored",
+  );
   assertEquals((await repo.index.status()).staged, []);
 });
 
@@ -2540,14 +2587,22 @@ Deno.test("git().index.move() rejects missing destination if moving multiple fil
 
 Deno.test("git().index.move() rejects non-existent source file", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
+  await assertRejects(
+    () => repo.index.move("old.file", "new.file"),
+    GitError,
+    "bad source",
+  );
   assertEquals((await repo.index.status()).staged, []);
 });
 
 Deno.test("git().index.move() rejects untracked source file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("old.file"), "content");
-  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
+  await assertRejects(
+    () => repo.index.move("old.file", "new.file"),
+    GitError,
+    "not under version control",
+  );
   assertEquals((await repo.index.status()).staged, []);
 });
 
@@ -2557,7 +2612,11 @@ Deno.test("git().index.move() rejects existing destination file", async () => {
   await Deno.writeTextFile(repo.path("new.file"), "content");
   await repo.index.add("old.file");
   await repo.commit.create("commit");
-  await assertRejects(() => repo.index.move("old.file", "new.file"), GitError);
+  await assertRejects(
+    () => repo.index.move("old.file", "new.file"),
+    GitError,
+    "destination exists",
+  );
   assertEquals((await repo.index.status()).staged, []);
 });
 
@@ -2586,7 +2645,11 @@ Deno.test("git().index.remove() removes files", async () => {
 
 Deno.test("git().index.remove() rejects non-existent file", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.index.remove("file"), GitError);
+  await assertRejects(
+    () => repo.index.remove("file"),
+    GitError,
+    "did not match any files",
+  );
   assertEquals((await repo.index.status()).staged, []);
 });
 
@@ -2596,7 +2659,11 @@ Deno.test("git().index.remove() rejects modified file", async () => {
   await repo.index.add("file");
   await repo.commit.create("commit");
   await Deno.writeTextFile(repo.path("file"), "modified content");
-  await assertRejects(() => repo.index.remove("file"), GitError);
+  await assertRejects(
+    () => repo.index.remove("file"),
+    GitError,
+    "file has local modifications",
+  );
   assertEquals((await repo.index.status()).staged, []);
 });
 
@@ -3696,12 +3763,17 @@ Deno.test("git().commit.create() rejects empty summary", async () => {
   await assertRejects(
     () => repo.commit.create("", { allowEmpty: true }),
     GitError,
+    "empty commit message",
   );
 });
 
 Deno.test("git().commit.create() rejects empty commit", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.commit.create("commit"), GitError);
+  await assertRejects(
+    () => repo.commit.create("commit"),
+    GitError,
+    "nothing to commit",
+  );
 });
 
 Deno.test("git().commit.create({ allowEmpty }) allows empty commit", async () => {
@@ -3819,6 +3891,7 @@ Deno.test("git().commit.create({ sign }) cannot use wrong key", async () => {
   await assertRejects(
     () => repo.commit.create("commit", { allowEmpty: true, sign: "not-a-key" }),
     GitError,
+    "gpg failed to sign",
   );
 });
 
@@ -3838,7 +3911,11 @@ Deno.test("git().commit.amend() amends last commit without changing message", as
 
 Deno.test("git().commit.amend() rejects empty repository", async () => {
   await using repo = await tempRepository();
-  await assertRejects(() => repo.commit.amend(), GitError);
+  await assertRejects(
+    () => repo.commit.amend(),
+    GitError,
+    "nothing to amend",
+  );
 });
 
 Deno.test("git().commit.amend({ summary }) changes the commit message", async () => {
@@ -3867,7 +3944,11 @@ Deno.test("git().commit.amend({ summary }) rejects empty summary", async () => {
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commit.create("summary");
-  await assertRejects(() => repo.commit.amend({ summary: "" }), GitError);
+  await assertRejects(
+    () => repo.commit.amend({ summary: "" }),
+    GitError,
+    "empty commit message",
+  );
 });
 
 Deno.test("git().commit.amend({ body }) changes the commit body", async () => {
@@ -3984,6 +4065,7 @@ Deno.test("git().commit.amend({ sign }) cannot use wrong key", async () => {
   await assertRejects(
     () => repo.commit.amend({ sign: "not-a-key" }),
     GitError,
+    "gpg failed to sign",
   );
 });
 
@@ -4356,14 +4438,22 @@ Deno.test("git().tag.create() ignores empty body", {
 Deno.test("git().tag.create() cannot create annotated tag without subject", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
-  await assertRejects(() => repo.tag.create("tag", { sign: true }), GitError);
+  await assertRejects(
+    () => repo.tag.create("tag", { sign: true }),
+    GitError,
+    "no tag message",
+  );
 });
 
 Deno.test("git().tag.create() cannot create duplicate tag", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
   await repo.tag.create("tag");
-  await assertRejects(() => repo.tag.create("tag"), GitError);
+  await assertRejects(
+    () => repo.tag.create("tag"),
+    GitError,
+    "already exists",
+  );
 });
 
 Deno.test("git().tag.create({ target }) creates a tag with commit", async () => {
@@ -4395,9 +4485,11 @@ Deno.test("git().tag.create({ force }) can force move a tag", async () => {
 
 Deno.test("git().tag.create({ sign }) cannot use wrong key", async () => {
   await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
   await assertRejects(
-    () => repo.tag.create("tag", { sign: "not-a-key" }),
+    () => repo.tag.create("tag", { subject: "subject", sign: "not-a-key" }),
     GitError,
+    "gpg failed to sign",
   );
 });
 
@@ -4530,7 +4622,11 @@ Deno.test("git().tag.delete() can delete tag by name", async () => {
 Deno.test("git().tag.delete() rejects non-existent tag", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
-  await assertRejects(() => repo.tag.delete("unknown"), GitError);
+  await assertRejects(
+    () => repo.tag.delete("unknown"),
+    GitError,
+    "not found",
+  );
 });
 
 Deno.test("git().tag.push() can push tag to remote", async () => {
@@ -4549,7 +4645,11 @@ Deno.test("git().tag.push() cannot override remote tag", async () => {
   await upstream.commit.create("new", { allowEmpty: true });
   await upstream.tag.create("tag");
   await repo.tag.create("tag");
-  await assertRejects(() => repo.tag.push("tag"), GitError);
+  await assertRejects(
+    () => repo.tag.push("tag"),
+    GitError,
+    "already exists",
+  );
 });
 
 Deno.test("git().tag.push({ force }) force overrides remote tag", async () => {
