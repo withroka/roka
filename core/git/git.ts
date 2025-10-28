@@ -1333,7 +1333,6 @@ export function git(options?: GitOptions): Git {
             push: [],
           }
           : remoteOrUrl;
-        assertExists(fetch);
         await run(gitOptions, [
           "remote",
           "add",
@@ -2018,8 +2017,7 @@ export function git(options?: GitOptions): Git {
         if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["push", nameArg(remote)],
-          ["tag", nameArg(tag)],
+          ["push", nameArg(remote), "tag", nameArg(tag)],
           flag("--force", options?.force),
         );
       },
