@@ -17,7 +17,7 @@ Deno.test("github().repos.get() uses a named repository", () => {
 
 Deno.test("github().repos.get({ directory }) uses a local repository", async () => {
   await using git = await tempRepository();
-  await git.remote.add("https://github.com/withroka/test.git");
+  await git.remote.add(new URL("https://github.com/withroka/test.git"));
   const repo = await github({ token: token() }).repos.get({
     directory: git.path(),
   });

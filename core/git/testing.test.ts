@@ -5,6 +5,7 @@ import {
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
+import { toFileUrl } from "@std/path";
 import { tempRepository, testCommit } from "./testing.ts";
 
 Deno.test("testCommit() creates a commit with default data", () => {
@@ -61,6 +62,14 @@ Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
   assertEquals(await remote.commit.head(), commit);
 });
 
+Deno.test("tempRepository({ clone }) can clone a repo from URL", async () => {
+  await using remote = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: toFileUrl(remote.path()) });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  await repo.remote.push();
+  assertEquals(await remote.commit.head(), commit);
+});
+
 Deno.test("tempRepository({ chdir }) changes working directory", async () => {
   const cwd = Deno.cwd();
   {
@@ -107,6 +116,11 @@ Deno.test("tempRepository({ chdir }) works recursively", async () => {
 
 Deno.test("tempRepository({ remote }) sets remote name", async () => {
   await using remote = await tempRepository({ bare: true });
+  const url = toFileUrl(remote.path());
   await using repo = await tempRepository({ clone: remote, remote: "remote" });
-  assertEquals((await repo.remote.get("remote")).pushUrl, remote.path());
+  assertEquals(await repo.remote.get({ remote: "remote" }), {
+    name: "remote",
+    fetch: url,
+    push: [url],
+  });
 });

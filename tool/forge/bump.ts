@@ -174,13 +174,8 @@ async function createPullRequest(
   const directory = common(packages.map((pkg) => pkg.root));
   const { repo = await github(options).repos.get({ directory }) } = options ??
     {};
-  const [branch, remote] = await Promise.all([
-    repo.git.branch.current(),
-    repo.git.remote.get(),
-  ]);
-  const base = branch.push?.startsWith(remote.name)
-    ? branch.push.slice(remote.name.length + 1)
-    : branch.name;
+  const branch = await repo.git.branch.current();
+  const base = branch.push?.name ?? branch.name;
   const head = packages.length === 1
     ? `${BUMP_BRANCH}-${packages[0]?.name}`
     : BUMP_BRANCH;
