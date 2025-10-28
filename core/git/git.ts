@@ -1,9 +1,8 @@
 /**
  * A library for interacting with local Git repositories.
  *
- * This package provides incomplete functionality to run
- * {@link https://git-scm.com git} commands. It is intended to be used for
- * simple operations like creating commits, tags, and pushing to remotes.
+ * This package provides mostly complete functionality to run
+ * {@link https://git-scm.com git} commands.
  *
  * The main module provides the {@linkcode git} function that exposes git
  * operations, as well as the {@linkcode Commit}, {@linkcode Tag}, and similar
@@ -11,8 +10,8 @@
  *
  * All options adhere to default Git configurations and behaviors. If an option
  * is explicitly set, it will override any corresponding Git configuration.
- * Similarly, omitted option can potentially be configured externally, even if
- * a default is specified in the documentation.
+ * Similarly, an omitted option can potentially be configured externally, even
+ * if a default is specified in the documentation.
  *
  * ```ts
  * import { git } from "@roka/git";
@@ -37,6 +36,7 @@
  *
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
+ * @todo Add `git().tag.get()`
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
  * @todo Add `git().revert.*`
@@ -59,7 +59,7 @@ import {
   assertGreater,
 } from "@std/assert";
 import { mapValues, slidingWindows } from "@std/collections";
-import { join, normalize, resolve } from "@std/path";
+import { fromFileUrl, join, normalize, resolve, toFileUrl } from "@std/path";
 
 /**
  * An error thrown by the `git` package.
@@ -105,25 +105,37 @@ export interface ConfigOperations {
   set(config: Config): Promise<void>;
 }
 
-/**
- * Remote operations from {@linkcode Git.remote}.
- *
- * Default remote name is `"origin"` for all remote methods.
- */
+/** Remote operations from {@linkcode Git.remote}. */
 export interface RemoteOperations {
   /** Clones a remote repository. */
-  clone(url: string, options?: RemoteCloneOptions): Promise<Git>;
-  /** Returns the remote repository URL. */
-  get(name?: string): Promise<Remote>;
+  clone(url: URL, options?: RemoteCloneOptions): Promise<Git>;
   /** Adds a remote to the repository. */
-  add(url: string, name?: string): Promise<Remote>;
-  /** Removes a remote from the repository. */
-  remove(name?: string): Promise<void>;
+  add(remote: Remote): Promise<Remote>;
+  /** Adds a remote to the repository with a fetch/push URL. */
+  add(url: URL, options?: RemoteAddOptions): Promise<Remote>;
+  /** Lists remotes in the repository. */
+  list(): Promise<Remote[]>;
   /**
-   * Queries the currently checked out branch on the remote.
+   * Returns a remote repository.
+   *
+   * The remote is determined by, in order:
+   * - The {@linkcode RemoteOptions.remote remote} option, if provided.
+   * - The remote configured for the current branch.
+   * - The remote named `"origin"`.
+   * - `undefined`, if no remotes are configured.
+   */
+  get(options?: RemoteOptions): Promise<Remote | undefined>;
+  /** Updates a remote. */
+  set(remote: Remote): Promise<Remote>;
+  /** Updates a remote with a fetch/push URL. */
+  set(remote: string, url: URL): Promise<Remote>;
+  /** Removes a remote from the repository. */
+  remove(options?: RemoteOptions): Promise<void>;
+  /**
+   * Queries the HEAD branch name on the remote.
    * @throws {@linkcode GitError} If remote `HEAD` is detached.
    */
-  head(name?: string): Promise<string>;
+  head(options?: RemoteOptions): Promise<string>;
   /** Fetches branches and tags from a remote. */
   fetch(options?: RemoteFetchOptions): Promise<void>;
   /** Pulls branches and tags from a remote. */
@@ -134,13 +146,17 @@ export interface RemoteOperations {
 
 /** Branch operations from {@linkcode Git.branch}. */
 export interface BranchOperations {
+  /** Creates a branch. */
+  create(name: string, options?: BranchCreateOptions): Promise<Branch>;
+  /** List branches in the repository alphabetically. */
+  list(options?: BranchListOptions): Promise<Branch[]>;
   /**
    * Returns the current branch name.
    * @throws {@linkcode GitError} If `HEAD` is detached.
    */
   current(): Promise<Branch>;
-  /** List branches in the repository alphabetically. */
-  list(options?: BranchListOptions): Promise<Branch[]>;
+  /** Returns a branch. */
+  get(name: string | Branch): Promise<Branch | undefined>;
   /** Switches to an existing or new branch. */
   switch(
     branch: string | Branch,
@@ -150,8 +166,6 @@ export interface BranchOperations {
   checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
   /** Resets the current branch head to a specified state. */
   reset(target: Commitish, options?: BranchResetOptions): Promise<Branch>;
-  /** Creates a branch. */
-  create(name: string, options?: BranchCreateOptions): Promise<Branch>;
   /** Renames a branch. */
   move(
     branch: string | Branch,
@@ -203,6 +217,12 @@ export interface DiffOperations {
 
 /** Commit operations from {@linkcode Git.commit}. */
 export interface CommitOperations {
+  /** Creates a new commit in the repository. */
+  create(summary: string, options?: CommitOptions): Promise<Commit>;
+  /** Amends the last commit in the repository. */
+  amend(options?: CommitAmendOptions): Promise<Commit>;
+  /** Returns the history of commits in the repository. */
+  log(options?: CommitLogOptions): Promise<Commit[]>;
   /**
    * Returns the commit at the tip of `HEAD`.
    * @throws {@linkcode GitError} If there are no commits.
@@ -210,20 +230,14 @@ export interface CommitOperations {
   head(): Promise<Commit>;
   /** Returns a specific commit by its reference. */
   get(ref: Commitish): Promise<Commit | undefined>;
-  /** Returns the history of commits in the repository. */
-  log(options?: CommitLogOptions): Promise<Commit[]>;
-  /** Creates a new commit in the repository. */
-  create(summary: string, options?: CommitOptions): Promise<Commit>;
-  /** Amends the last commit in the repository. */
-  amend(options?: CommitAmendOptions): Promise<Commit>;
 }
 
 /** Tag operations from {@linkcode Git.tag}. */
 export interface TagOperations {
-  /** Lists all tags in the repository. */
-  list(options?: TagListOptions): Promise<Tag[]>;
   /** Creates a new tag in the repository. */
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
+  /** Lists all tags in the repository. */
+  list(options?: TagListOptions): Promise<Tag[]>;
   /** Deletes a tag. */
   delete(tag: string | Tag): Promise<void>;
   /** Pushes a tag to a remote. */
@@ -316,6 +330,16 @@ export interface User {
   email: string;
 }
 
+/** A remote repository configured in a git repository. */
+export interface Remote {
+  /** Remote name. */
+  name: string;
+  /** Remote fetch URL. */
+  fetch: URL;
+  /** Remote push URLs. */
+  push: URL[];
+}
+
 /** A branch in a git repository. */
 export interface Branch {
   /** Short name of the branch. */
@@ -323,13 +347,27 @@ export interface Branch {
   /**
    * Commit at the tip of the branch, if branch has any commits.
    *
-   * This can be unset if the branch is newly created and has no commits yet.
+   * This can be unset if the branch is orphan.
    */
   commit?: Commit;
-  /** Remote push branch name, if set. */
-  push?: string;
-  /** Remote upstream branch name, if set. */
-  upstream?: string;
+  /** Upstream configuration for the branch, if set. */
+  fetch?: {
+    /** Name of the fetch branch in remote repository. */
+    name: string;
+    /** Remote of the upstream fetch branch. */
+    remote: Remote;
+    /** Remote tracking fetch branch. */
+    branch: Branch;
+  };
+  /** Push configuration for the branch, if set. */
+  push?: {
+    /** Name of the push branch in remote repository. */
+    name: string;
+    /** Remote of the push branch. */
+    remote: Remote;
+    /** Remote tracking push branch. */
+    branch: Branch;
+  };
 }
 
 /** Status of files in the index and the working tree. */
@@ -448,16 +486,6 @@ export interface Tag {
 /** A ref that points to a commit object in a git repository. */
 export type Commitish = Commit | Branch | Tag | string;
 
-/** A remote tracked in a git repository. */
-export interface Remote {
-  /** Remote name. */
-  name: string;
-  /** Remote fetch URL. */
-  fetchUrl: string;
-  /** Remote push URL. */
-  pushUrl: string;
-}
-
 /** A revision range over commit history in a git repository. */
 export interface RevisionRange {
   /**
@@ -533,7 +561,7 @@ export interface InitOptions {
 }
 
 /** Options for the {@linkcode RemoteOperations.clone} function. */
-export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
+export interface RemoteCloneOptions extends InitOptions {
   /**
    * The name of a new directory to clone into.
    *
@@ -565,6 +593,11 @@ export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
    */
   local?: boolean;
   /**
+   * Name of the remote for the cloned repository.
+   * @default {"origin"}
+   */
+  remote?: string;
+  /**
    * Clone only the tip of a single branch.
    *
    * The cloned branch is either remote `HEAD` or
@@ -576,6 +609,29 @@ export interface RemoteCloneOptions extends InitOptions, RemoteOptions {
    * @default {true}
    */
   tags?: boolean;
+}
+
+/**
+ * Options common to operations that work with remotes (e.g.
+ * {@linkcode RemoteOperations.push}).
+ */
+export interface RemoteOptions {
+  /**
+   * Remote to operate on.
+   *
+   * The default is the current branch remote, or `"origin"` if a remote is not
+   * configured for the current branch.
+   */
+  remote?: string | Remote;
+}
+
+/** Options for the {@linkcode RemoteOperations.add} function. */
+export interface RemoteAddOptions {
+  /**
+   * Name of the remote.
+   * @default {"origin"}
+   */
+  remote?: string;
 }
 
 /** Options for the {@linkcode RemoteOperations.fetch} function. */
@@ -600,15 +656,15 @@ export interface RemotePullOptions
 }
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
-export interface RemotePushOptions extends TransportOptions, RemoteOptions {
+export interface RemotePushOptions extends RemoteOptions, TransportOptions {
   /**
    * Branch to push commits onto.
    *
-   * The default behaviors is to push the current branch to its upstream.
+   * The default behavior is to push the current branch to its upstream.
    *
-   * This option does not accept tags. To push tags, use {@linkcode Tags.push}
-   * to push a single tag, or set {@linkcode TransportOptions.tags} to `true` to
-   * push all tags.
+   * This option does not accept tags. To push tags, use
+   * {@linkcode TagOperations.push} to push a single tag, or set
+   * {@linkcode TransportOptions.tags} to `true` to push all tags.
    */
   target?: string | Branch;
   /** Push all branches. */
@@ -620,6 +676,58 @@ export interface RemotePushOptions extends TransportOptions, RemoteOptions {
    * @default {false}
    */
   setUpstream?: boolean;
+}
+
+/**
+ * Options for the {@linkcode BranchOperations.create} function.
+ */
+export interface BranchCreateTrackOptions {
+  /**
+   * Setup upstream configuration for a newly created branch.
+   *
+   * The tracking configuration depends on the value of the target of the
+   * created branch.
+   *
+   * - `true`: set the upstream tracking to creation target
+   * - `"inherit"`: copy the upstream configuration from creation target
+   * - `false`: no upstream is set
+   *
+   * The default behavior is to enable upstream tracking only when the target
+   * is a remote branch.
+   */
+  track?: boolean | "inherit";
+}
+
+/**
+ * Options for the {@linkcode BranchOperations.create} function.
+ */
+export interface BranchCreateOptions {
+  /**
+   * Reset branch to {@linkcode BranchCreateOptions.target target} even if it
+   * already exists.
+   *
+   * @default {false}
+   */
+  force?: boolean;
+  /**
+   * Target commit or branch to create the new branch from.
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
+  /**
+   * Setup upstream configuration for a newly created branch.
+   *
+   * The tracking configuration depends on the value of the
+   * {@linkcode BranchCreateOptions.target target} option.
+   *
+   * - `true`: set the upstream tracking to `target`
+   * - `"inherit"`: copy the upstream configuration from `target`
+   * - `false`: no upstream is set
+   *
+   * The default behavior is to enable upstream tracking only when `target` is
+   * a remote branch.
+   */
+  track?: boolean | "inherit";
 }
 
 /** Options for the {@linkcode BranchOperations.list} function. */
@@ -640,12 +748,9 @@ export interface BranchListOptions extends RefListOptions {
 }
 
 /** Options for the {@linkcode BranchOperations.switch} function. */
-export interface BranchSwitchOptions extends BranchTrackOptions {
+export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   /**
-   * Create a new branch with the given name.
-   *
-   * If set to `true`, a new branch is created at the current `HEAD`. If set to
-   * a commitish, the new branch is created at the given commit or branch.
+   * Create a new branch at given target.
    *
    * If the branch already exists, an error is thrown unless
    * {@linkcode BranchSwitchOptions.force force} is set to `true`.
@@ -654,8 +759,11 @@ export interface BranchSwitchOptions extends BranchTrackOptions {
    */
   create?: boolean | Commitish;
   /**
-   * Discard local changes when switching branches, and ignore existing branch
-   * when creating a new branch.
+   * Discard any local changes when switching branches.
+   *
+   * If creating a new branch with
+   * {@linkcode BranchSwitchOptions.create create}, this will reset the new
+   * branch even if it already exists.
    *
    * @default {false}
    */
@@ -663,23 +771,32 @@ export interface BranchSwitchOptions extends BranchTrackOptions {
 }
 
 /** Options for the {@linkcode BranchOperations.checkout} function. */
-export interface BranchCheckoutOptions extends BranchTrackOptions {
+export interface BranchCheckoutOptions extends BranchCreateOptions {
   /**
-   * Checkout at the given commit or branch.
+   * Create a new branch with this name.
    *
-   * A commit target implies {@linkcode BranchCheckoutOptions.detach} to be
-   * `true`.
+   * If the branch already exists, an error is thrown unless
+   * {@linkcode BranchSwitchOptions.force force} is set to `true`.
    *
-   * @default {"HEAD"}
+   * The created branch will point to
+   * {@linkcode BranchCreateOptions.target target}.
    */
-  target?: Commitish;
-  /** Branch to create and switch to. */
   create?: string;
   /**
    * Detach `HEAD` during checkout from the target branch.
    * @default {false}
    */
   detach?: boolean;
+  /**
+   * Discard any local changes when switching branches.
+   *
+   * If creating a new branch with
+   * {@linkcode BranchSwitchOptions.create create}, this will reset the new
+   * branch even if it already exists.
+   *
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode BranchOperations.reset} function. */
@@ -699,17 +816,6 @@ export interface BranchResetOptions {
    * @default {"mixed"}
    */
   mode?: "soft" | "mixed" | "hard" | "merge" | "keep";
-}
-
-/**
- * Options for the {@linkcode BranchOperations.create} function.
- */
-export interface BranchCreateOptions extends BranchTrackOptions {
-  /**
-   * Target commit or branch to create the new branch from.
-   * @default {"HEAD"}
-   */
-  target?: Commitish;
 }
 
 /** Options for the {@linkcode BranchOperations.move} function. */
@@ -737,25 +843,6 @@ export interface BranchDeleteOptions {
    * @default {false}
    */
   force?: boolean;
-}
-
-/**
- * Options common to operations that can setup upstream tracking for branches
- * (e.g. {@linkcode BranchOperations.create}).
- */
-export interface BranchTrackOptions {
-  /**
-   * Setup upstream configuration for a newly created branch.
-   *
-   * Setting to `true` uses start-point branch itself as the upstream. Setting
-   * to `"inherit"` copies the upstream configuration of the
-   * {@linkcode BranchCreateOptions.target target} branch. Setting to `false`
-   * does not setup any upstream configuration.
-   *
-   * The default behavior is to enable upstream tracking only when
-   * {@linkcode BranchCreateOptions.target target} is a remote branch.
-   */
-  track?: boolean | "inherit";
 }
 
 /** Options for the {@linkcode IndexOperations.status} function. */
@@ -804,8 +891,8 @@ export interface IndexAddOptions {
   /**
    * Override the executable bit of the file.
    *
-   * If set, the file mode in the file sytem is ignored, and the executable bit
-   * is set to the given value.
+   * If set, the file mode in the file system is ignored, and the executable
+   * bit is set to the given value.
    */
   executable?: boolean;
   /**
@@ -914,24 +1001,6 @@ export interface DiffPatchOptions extends DiffOptions {
   unified?: number;
 }
 
-/** Options for the {@linkcode CommitOperations.log} function. */
-export interface CommitLogOptions {
-  /** Only commits by an author. */
-  author?: User;
-  /** Only commits by a committer. */
-  committer?: User;
-  /** Only commits that modified any of the given paths. */
-  path?: string | string[];
-  /** Only commits in a range. */
-  range?: RevisionRange;
-  /** Maximum number of commits to return. */
-  maxCount?: number;
-  /** Number of commits to skip. */
-  skip?: number;
-  /** Only commits that either deleted or added the given text. */
-  text?: string;
-}
-
 /**
  * Options for the {@linkcode CommitOperations.create} and
  * {@linkcode CommitOperations.amend} functions.
@@ -973,6 +1042,39 @@ export interface CommitAmendOptions extends CommitOptions {
    * {@linkcode CommitAmendOptions.amend amend} function.
    */
   summary?: string;
+}
+
+/** Options for the {@linkcode CommitOperations.log} function. */
+export interface CommitLogOptions {
+  /** Only commits by an author. */
+  author?: User;
+  /** Only commits by a committer. */
+  committer?: User;
+  /** Only commits that modified any of the given paths. */
+  path?: string | string[];
+  /** Only commits in a range. */
+  range?: RevisionRange;
+  /** Maximum number of commits to return. */
+  maxCount?: number;
+  /** Number of commits to skip. */
+  skip?: number;
+  /** Only commits that either deleted or added the given text. */
+  text?: string;
+}
+
+/** Options for the {@linkcode TagOperations.create} function. */
+export interface TagCreateOptions extends SignOptions {
+  /**
+   * Target reference (commit, branch, or tag) to tag.
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
+  /** Tag message subject. */
+  subject?: string;
+  /** Tag message body. */
+  body?: string;
+  /** Replace existing tags instead of failing. */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode TagOperations.list} function. */
@@ -1017,21 +1119,6 @@ export interface TagListOptions extends RefListOptions {
   sort?: "version";
 }
 
-/** Options for the {@linkcode TagOperations.create} function. */
-export interface TagCreateOptions extends SignOptions {
-  /**
-   * Target reference (commit, branch, or tag) to tag.
-   * @default {"HEAD"}
-   */
-  target?: Commitish;
-  /** Tag message subject. */
-  subject?: string;
-  /** Tag message body. */
-  body?: string;
-  /** Replace existing tags instead of failing. */
-  force?: boolean;
-}
-
 /** Options for the {@linkcode TagOperations.push} function. */
 export interface TagPushOptions extends RemoteOptions {
   /** Force push to remote. */
@@ -1063,18 +1150,6 @@ export interface RefListOptions {
   noContains?: Commitish;
   /** Only refs that point to the given commit. */
   pointsAt?: Commitish;
-}
-
-/**
- * Options common to operations that work with remotes (e.g.
- * {@linkcode RemoteOperations.push}).
- */
-export interface RemoteOptions {
-  /**
-   * Remote name.
-   * @default {"origin"}
-   */
-  remote?: string;
 }
 
 /**
@@ -1223,7 +1298,7 @@ export function git(options?: GitOptions): Git {
             config: { ...gitOptions?.config, ...options?.config },
             stderr: true,
           },
-          ["clone", url],
+          ["clone", urlArg(url)],
           configFlags(options?.config, "--config").flat(),
           flag("--bare", options?.bare),
           flag("--depth", options?.depth),
@@ -1250,30 +1325,116 @@ export function git(options?: GitOptions): Git {
         );
         return git({ ...gitOptions, cwd });
       },
-      async get(name = "origin") {
-        const remotes = (await run(gitOptions, "remote"))
-          .split("\n").filter((x) => x);
-        if (!remotes.includes(name)) throw new GitError("Remote not found");
-        const info = await run(gitOptions, ["remote", "show", "-n", name]);
-        const match = info.match(
-          /\n\s*Fetch URL:\s*(?<fetchUrl>.+)\s*\n\s*Push\s+URL:\s*(?<pushUrl>.+)\s*(\n|$)/,
+      async add(remoteOrUrl: URL | Remote, options?: RemoteAddOptions) {
+        const remote = remoteOrUrl instanceof URL
+          ? {
+            name: options?.remote ?? "origin",
+            fetch: remoteOrUrl,
+            push: [],
+          }
+          : remoteOrUrl;
+        await run(gitOptions, [
+          "remote",
+          "add",
+          nameArg(remote),
+          urlArg(remote.fetch),
+        ]);
+        for (const url of remote.push) {
+          // deno-lint-ignore no-await-in-loop
+          await run(
+            gitOptions,
+            ["remote", "set-url", "--add", "--push"],
+            remote.name,
+            url.toString(),
+          );
+        }
+        const added = await repo.remote.get({ remote });
+        if (!added) throw new GitError("Failed to add remote");
+        return added;
+      },
+      async list() {
+        function toUrl(str: string) {
+          const { value: url } = maybe(() => new URL(str));
+          return url ?? toFileUrl(str);
+        }
+        const output = await run(gitOptions, "remote", "-v");
+        const lines = output.trimEnd().split("\n").filter((x) => x);
+        const remotes: Record<string, Partial<Remote>> = {};
+        for (const line of lines) {
+          const match = line.match(
+            /^(?<name>\S+)\s+(?<url>\S+)\s+\((?<type>fetch|push)\)$/,
+          );
+          const { name, url, type } = { ...match?.groups };
+          if (!name || !url || !type) {
+            throw new GitError("Cannot parse remote list");
+          }
+          remotes[name] ??= { name, push: [] };
+          if (type === "fetch") remotes[name].fetch = toUrl(url);
+          if (type === "push") remotes[name].push?.push(toUrl(url));
+        }
+        return Object.values(remotes).map((remote) => {
+          const { name, fetch, push } = remote;
+          assertExists(name);
+          assertExists(push);
+          if (!fetch) throw new GitError("Cannot determine remote fetch URL");
+          return { name, fetch, push };
+        });
+      },
+      async get(options) {
+        const remote = options?.remote ??
+          (await maybe(() => repo.branch.current())).value?.fetch?.remote ??
+          "origin";
+        const remotes = await repo.remote.list();
+        return remotes.find((r) => r.name === nameArg(remote));
+      },
+      async set(remoteOrName: string | Remote, url?: URL) {
+        const fetch = typeof remoteOrName === "string"
+          ? url
+          : remoteOrName.fetch;
+        assertExists(fetch);
+        const remote = typeof remoteOrName === "string"
+          ? {
+            name: remoteOrName,
+            fetch,
+            push: [],
+          }
+          : remoteOrName;
+        await run(
+          gitOptions,
+          ["remote", "set-url"],
+          nameArg(remote),
+          fetch.toString(),
         );
-        const { fetchUrl, pushUrl } = { ...match?.groups };
-        assertExists(fetchUrl, "Cannot parse remote information");
-        assertExists(pushUrl, "Cannot parse remote information");
-        return { name, fetchUrl, pushUrl };
+        await maybe(() =>
+          run(
+            gitOptions,
+            ["remote", "set-url", "--delete", "--push", remote.name, ".*"],
+          )
+        );
+        for (const url of remote.push) {
+          // deno-lint-ignore no-await-in-loop
+          await run(
+            gitOptions,
+            ["remote", "set-url", "--add", "--push"],
+            remote.name,
+            url.toString(),
+          );
+        }
+        const updated = await repo.remote.get({ remote });
+        if (!updated) throw new GitError("Failed to update remote");
+        return updated;
       },
-      async add(url, name = "origin") {
-        await run(gitOptions, ["remote", "add"], name, url);
-        return repo.remote.get(name);
+      async remove(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
+        await run(gitOptions, ["remote", "remove"], nameArg(remote));
       },
-      async remove(name = "origin") {
-        await run(gitOptions, ["remote", "remove"], name);
-      },
-      async head(name = "origin") {
+      async head(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
         const output = await run(
           gitOptions,
-          ["ls-remote", "--symref", name, "HEAD"],
+          ["ls-remote", "--symref", nameArg(remote), "HEAD"],
         );
         const match = output.match(/^ref: refs\/heads\/(?<head>.+?)\s+HEAD$/m);
         const { head } = { ...match?.groups };
@@ -1281,29 +1442,35 @@ export function git(options?: GitOptions): Git {
         return head;
       },
       async fetch(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["fetch", options?.remote ?? "origin"],
-          refArg(options?.target),
+          ["fetch", nameArg(remote)],
+          nameArg(options?.target),
           flag("--atomic", options?.atomic),
           flag(["--tags", "--no-tags"], options?.tags),
         );
       },
       async pull(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["pull", options?.remote ?? "origin"],
-          refArg(options?.target),
+          ["pull", nameArg(remote)],
+          nameArg(options?.target),
           flag("--atomic", options?.atomic),
           flag(["--tags", "--no-tags"], options?.tags),
           signFlag("commit", options?.sign),
         );
       },
       async push(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["push", options?.remote ?? "origin"],
-          refArg(options?.target),
+          ["push", nameArg(remote)],
+          nameArg(options?.target),
           flag("--set-upstream", options?.setUpstream),
           flag("--force", options?.force),
           flag(["--atomic", "--no-atomic"], options?.atomic),
@@ -1313,14 +1480,18 @@ export function git(options?: GitOptions): Git {
       },
     },
     branch: {
-      async current() {
-        const name = await run(
+      async create(name, options) {
+        await run(
           gitOptions,
-          ["branch", "--no-color", "--show-current"],
+          ["branch", "--no-color", name],
+          flag("--force", options?.force),
+          flag("--track", options?.track === true),
+          flag("--no-track", options?.track === false),
+          flag("--track=inherit", options?.track === "inherit"),
+          commitArg(options?.target),
         );
-        if (!name) throw new GitError("Cannot determine HEAD branch");
         const [branch] = await repo.branch.list({ name });
-        return branch ?? { name }; // unborn branch
+        return branch ?? { name };
       },
       async list(options) {
         const output = await run(
@@ -1339,24 +1510,76 @@ export function git(options?: GitOptions): Git {
           branches
             .filter((branch) => !branch?.name?.includes(" "))
             .map(async (branch) => {
+              if (branch.commit?.hash === undefined) delete branch.commit;
+              if (
+                branch.fetch?.name === undefined ||
+                branch.fetch?.remote?.name === undefined ||
+                branch.fetch?.branch?.name === undefined
+              ) delete branch.fetch;
+              if (
+                branch.push?.name === undefined ||
+                branch.push?.remote?.name === undefined ||
+                branch.push?.branch?.name === undefined
+              ) delete branch.push;
+              await Promise.all([
+                hydrate(
+                  [branch, "commit", "hash"],
+                  (x) => repo.commit.get(x),
+                ),
+                hydrate(
+                  [branch.fetch, "remote", "name"],
+                  (x) => repo.remote.get({ remote: x }),
+                ),
+                hydrate(
+                  [branch.fetch, "branch", "name"],
+                  (x) => repo.branch.get(x),
+                ),
+                hydrate(
+                  [branch.push, "remote", "name"],
+                  (x) => repo.remote.get({ remote: x }),
+                ),
+                hydrate(
+                  [branch.push, "branch", "name"],
+                  (x) => repo.branch.get(x),
+                ),
+              ]);
               assertExists(branch.name, "Branch name not filled");
-              const commit = branch.commit?.hash &&
-                await repo.commit.get(branch.commit?.hash);
-              const name: string = branch.name;
-              return { ...branch, name, ...commit && { commit } };
+              if (branch.fetch !== undefined && branch.push === undefined) {
+                branch.push = branch.fetch;
+              }
+              return {
+                name: branch.name,
+                ...branch.commit && { commit: branch.commit },
+                ...branch.fetch && { fetch: branch.fetch },
+                ...branch.push && { push: branch.push },
+              };
             }),
         );
+      },
+      async current() {
+        const name = await run(
+          gitOptions,
+          ["branch", "--no-color", "--show-current"],
+        );
+        if (!name) throw new GitError("Cannot determine HEAD branch");
+        const [branch] = await repo.branch.list({ name });
+        return branch ?? { name }; // orphan branch
+      },
+      async get(branch: string | Branch) {
+        const name = nameArg(branch);
+        const [found] = await repo.branch.list({ name, all: true });
+        return found;
       },
       async switch(branch, options) {
         await run(
           gitOptions,
           "switch",
+          flag(options?.force ? "-C" : "-c", !!options?.create),
+          nameArg(branch),
           flag("--force", options?.force),
           flag("--track", options?.track === true),
           flag("--no-track", options?.track === false),
           flag("--track=inherit", options?.track === "inherit"),
-          flag(options?.force ? "-C" : "-c", !!options?.create),
-          refArg(branch),
           ...typeof options?.create !== "boolean"
             ? [commitArg(options?.create)]
             : [],
@@ -1367,8 +1590,9 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "checkout",
+          flag(options?.force ? "-B" : "-b", options?.create),
+          flag("--force", options?.force),
           flag("--detach", options?.detach),
-          flag("-b", options?.create),
           flag("--track", options?.track === true),
           flag("--no-track", options?.track === false),
           flag("--track=inherit", options?.track === "inherit"),
@@ -1390,22 +1614,10 @@ export function git(options?: GitOptions): Git {
         );
         return await repo.branch.current();
       },
-      async create(name, options) {
-        await run(
-          gitOptions,
-          ["branch", "--no-color", name],
-          commitArg(options?.target),
-          flag("--track", options?.track === true),
-          flag("--no-track", options?.track === false),
-          flag("--track=inherit", options?.track === "inherit"),
-        );
-        const [branch] = await repo.branch.list({ name });
-        return branch ?? { name };
-      },
       async move(branch, name, options) {
         await run(
           gitOptions,
-          ["branch", "--no-color", "-m", refArg(branch), name],
+          ["branch", "--no-color", "-m", nameArg(branch), name],
           flag("--force", options?.force),
         );
         const [newBranch] = await repo.branch.list({ name });
@@ -1414,7 +1626,7 @@ export function git(options?: GitOptions): Git {
       async copy(branch, name, options) {
         await run(
           gitOptions,
-          ["branch", "--no-color", "-c", refArg(branch), name],
+          ["branch", "--no-color", "-c", nameArg(branch), name],
           flag("--force", options?.force),
         );
         const [newBranch] = await repo.branch.list({ name });
@@ -1423,12 +1635,12 @@ export function git(options?: GitOptions): Git {
       async delete(branch, options) {
         await run(
           gitOptions,
-          ["branch", "--no-color", refArg(branch)],
+          ["branch", "--no-color", nameArg(branch)],
           flag(["-D", "-d"], options?.force ?? false),
         );
       },
       async track(branch, upstream) {
-        const name = refArg(branch);
+        const name = nameArg(branch);
         await run(
           gitOptions,
           ["branch", "--no-color", name, "--set-upstream-to", upstream],
@@ -1437,7 +1649,7 @@ export function git(options?: GitOptions): Git {
         return newBranch ?? { name };
       },
       async untrack(branch) {
-        const name = refArg(branch);
+        const name = nameArg(branch);
         await run(
           gitOptions,
           ["branch", "--no-color", name, "--unset-upstream"],
@@ -1675,45 +1887,6 @@ export function git(options?: GitOptions): Git {
       },
     },
     commit: {
-      async head() {
-        const commit = await repo.commit.get("HEAD");
-        if (!commit) {
-          throw new GitError("Current branch does not have any commits");
-        }
-        return commit;
-      },
-      async get(ref) {
-        const [commit] = await repo.commit.log({
-          maxCount: 1,
-          range: { to: commitArg(ref) },
-        });
-        return commit;
-      },
-      async log(options) {
-        const { value: output, error } = await maybe(() =>
-          run(
-            gitOptions,
-            ["log", "--no-color", `--format=${formatArg(LOG_FORMAT)}`],
-            flag("--author", userArg(options?.author)),
-            flag("--committer", userArg(options?.committer)),
-            flag("--max-count", options?.maxCount),
-            flag("--skip", options?.skip),
-            flag("--pickaxe-regex", options?.text !== undefined),
-            flag("-S", options?.text),
-            rangeArg(options?.range),
-            "--",
-            options?.path,
-          )
-        );
-        if (error) {
-          const { value: head } = await maybe(() =>
-            run(gitOptions, "rev-parse", "HEAD")
-          );
-          if (!head) return [];
-          throw error;
-        }
-        return parseOutput(LOG_FORMAT, output) as Commit[];
-      },
       async create(summary, options) {
         const output = await run(
           gitOptions,
@@ -1762,28 +1935,47 @@ export function git(options?: GitOptions): Git {
         assertExists(commit, "Cannot find created commit");
         return commit;
       },
+      async log(options) {
+        const { value: output, error } = await maybe(() =>
+          run(
+            gitOptions,
+            ["log", "--no-color", `--format=${formatArg(LOG_FORMAT)}`],
+            flag("--author", userArg(options?.author)),
+            flag("--committer", userArg(options?.committer)),
+            flag("--max-count", options?.maxCount),
+            flag("--skip", options?.skip),
+            flag("--pickaxe-regex", options?.text !== undefined),
+            flag("-S", options?.text),
+            rangeArg(options?.range),
+            "--",
+            options?.path,
+          )
+        );
+        if (error) {
+          const { value: head } = await maybe(() =>
+            run(gitOptions, "rev-parse", "HEAD")
+          );
+          if (!head) return [];
+          throw error;
+        }
+        return parseOutput(LOG_FORMAT, output) as Commit[];
+      },
+      async head() {
+        const commit = await repo.commit.get("HEAD");
+        if (!commit) {
+          throw new GitError("Current branch does not have any commits");
+        }
+        return commit;
+      },
+      async get(ref) {
+        const [commit] = await repo.commit.log({
+          maxCount: 1,
+          range: { to: commitArg(ref) },
+        });
+        return commit;
+      },
     },
     tag: {
-      async list(options) {
-        const output = await run(
-          gitOptions,
-          ["tag", "--list", `--format=${formatArg(TAG_FORMAT)}`],
-          options?.name,
-          flag("--contains", commitArg(options?.contains)),
-          flag("--no-contains", commitArg(options?.noContains)),
-          flag("--points-at", commitArg(options?.pointsAt)),
-          flag("--sort=-version:refname", options?.sort === "version"),
-        );
-        const tags = parseOutput(TAG_FORMAT, output);
-        return await Promise.all(tags.map(async (tag) => {
-          assertExists(tag.name, "Tag name not filled");
-          assertExists(tag.commit?.hash, "Commit hash not filled for tag");
-          const commit = await repo.commit.get(tag.commit.hash);
-          assertExists(commit, "Cannot find commit for tag");
-          const name: string = tag.name;
-          return { ...tag, name, commit };
-        }));
-      },
       async create(name, options): Promise<Tag> {
         await run(
           gitOptions,
@@ -1798,13 +1990,34 @@ export function git(options?: GitOptions): Git {
         assertExists(tag, "Cannot find created tag");
         return tag;
       },
+      async list(options) {
+        const output = await run(
+          gitOptions,
+          ["tag", "--list", `--format=${formatArg(TAG_FORMAT)}`],
+          options?.name,
+          flag("--contains", commitArg(options?.contains)),
+          flag("--no-contains", commitArg(options?.noContains)),
+          flag("--points-at", commitArg(options?.pointsAt)),
+          flag("--sort=-version:refname", options?.sort === "version"),
+        );
+        const tags = parseOutput(TAG_FORMAT, output);
+        return await Promise.all(tags.map(async (tag) => {
+          assertExists(tag.name, "Tag name not filled");
+          assertExists(tag.commit?.hash, "Commit hash not filled for tag");
+          await hydrate([tag, "commit", "hash"], repo.commit.get);
+          assertExists(tag.commit, "Cannot find commit for tag");
+          return { ...tag, name: tag.name, commit: tag.commit };
+        }));
+      },
       async delete(tag) {
-        await run(gitOptions, ["tag", "-d", refArg(tag)]);
+        await run(gitOptions, ["tag", "-d", nameArg(tag)]);
       },
       async push(tag, options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["push", options?.remote ?? "origin", "tag", refArg(tag)],
+          ["push", nameArg(remote), "tag", nameArg(tag)],
           flag("--force", options?.force),
         );
       },
@@ -1926,6 +2139,11 @@ function configFlags(config: Config | undefined, flag?: string): string[][] {
   });
 }
 
+function urlArg(url: URL): string {
+  if (url.protocol === "file") return fromFileUrl(url);
+  return url.toString();
+}
+
 function userArg(user: User): string;
 function userArg(user: User | undefined): string | undefined;
 function userArg(user: User | undefined): string | undefined {
@@ -1933,11 +2151,15 @@ function userArg(user: User | undefined): string | undefined {
   return `${user.name} <${user.email}>`;
 }
 
-function refArg(ref: string | Branch | Tag): string;
-function refArg(ref: string | Branch | Tag | undefined): string | undefined;
-function refArg(ref: string | Branch | Tag | undefined): string | undefined {
-  if (ref === undefined) return undefined;
-  return typeof ref === "string" ? ref : ref.name;
+function nameArg(obj: string | Remote | Branch | Tag): string;
+function nameArg(
+  obj: string | Remote | Branch | Tag | undefined,
+): string | undefined;
+function nameArg(
+  obj: string | Remote | Branch | Tag | undefined,
+): string | undefined {
+  if (obj === undefined) return undefined;
+  return typeof obj === "string" ? obj : obj.name;
 }
 
 function commitArg(commit: Commitish): string;
@@ -2086,16 +2308,6 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
       kind: "string",
       format: "%(refname:short)",
     },
-    push: {
-      kind: "string",
-      format: "%(if)%(push:short)%(then)%(push:short)%(else)%00%(end)",
-      optional: true,
-    },
-    upstream: {
-      kind: "string",
-      format: "%(if)%(upstream:short)%(then)%(upstream:short)%(else)%00%(end)",
-      optional: true,
-    },
     commit: {
       kind: "object",
       fields: {
@@ -2109,6 +2321,74 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
         trailers: { kind: "skip" },
         author: { kind: "skip" },
         committer: { kind: "skip" },
+      },
+      optional: true,
+    },
+    fetch: {
+      kind: "object",
+      fields: {
+        name: {
+          kind: "string",
+          format: "%(if)%(upstream)%(then)%(upstream:lstrip=3)%(else)%00%(end)",
+        },
+        remote: {
+          kind: "object",
+          fields: {
+            name: {
+              kind: "string",
+              format:
+                "%(if)%(upstream)%(then)%(upstream:remotename)%(else)%00%(end)",
+            },
+            fetch: { kind: "skip" },
+            push: { kind: "skip" },
+          },
+        },
+        branch: {
+          kind: "object",
+          fields: {
+            name: {
+              kind: "string",
+              format:
+                "%(if)%(upstream)%(then)%(upstream:short)%(else)%00%(end)",
+            },
+            commit: { kind: "skip" },
+            fetch: { kind: "skip" },
+            push: { kind: "skip" },
+          },
+        },
+      },
+      optional: true,
+    },
+    push: {
+      kind: "object",
+      fields: {
+        name: {
+          kind: "string",
+          format: "%(if)%(upstream)%(then)%(push:lstrip=3)%(else)%00%(end)",
+        },
+        remote: {
+          kind: "object",
+          fields: {
+            name: {
+              kind: "string",
+              format: "%(if)%(push)%(then)%(push:remotename)%(else)%00%(end)",
+            },
+            fetch: { kind: "skip" },
+            push: { kind: "skip" },
+          },
+        },
+        branch: {
+          kind: "object",
+          fields: {
+            name: {
+              kind: "string",
+              format: "%(if)%(push)%(then)%(push:short)%(else)%00%(end)",
+            },
+            commit: { kind: "skip" },
+            fetch: { kind: "skip" },
+            push: { kind: "skip" },
+          },
+        },
       },
       optional: true,
     },
@@ -2203,7 +2483,10 @@ function formattedObject<T>(
     })).reduce((a, b) => a + b, 0);
     if (
       format.optional &&
-      Object.values(result).every((v) => v === undefined || v === "\x00")
+      Object.values(result).every((v) =>
+        v === undefined || v === "\x00" ||
+        (v && typeof v === "object" && Object.keys(v).length === 0)
+      )
     ) {
       return [undefined, undefined, length];
     }
@@ -2211,9 +2494,7 @@ function formattedObject<T>(
   }
   const value = parts.shift();
   assertExists(value, "Cannot parse git output");
-  if (format.optional && value === "\x00") {
-    return [undefined, value, value.length];
-  }
+  if (value === "\x00") return [undefined, value, value.length];
   const result = ("transform" in format)
     ? format.transform(value, parent)
     : value as T;
@@ -2241,6 +2522,21 @@ function parseOutput<T>(
       .trimStart();
   }
   return result;
+}
+
+async function hydrate<T, P extends keyof T, K extends keyof NonNullable<T[P]>>(
+  [object, property, key]: [Partial<T> | undefined, P, K],
+  fn: (from: NonNullable<NonNullable<T[P]>[K]>) => Promise<T[P] | undefined>,
+): Promise<void> {
+  if (object === undefined) return;
+  const field = object[property];
+  if (field === undefined || field === null) return;
+  const from = field[key];
+  const value = from !== undefined && from !== null
+    ? await fn(from)
+    : undefined;
+  if (value !== undefined) object[property] = value;
+  else delete object[property];
 }
 
 interface PatchTransform {

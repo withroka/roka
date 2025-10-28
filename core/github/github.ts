@@ -295,7 +295,8 @@ function repositories(api: Octokit): Repositories {
     }
     return (async () => {
       const remote = await git.remote.get();
-      const { owner, repo } = parseRemote(remote.pushUrl);
+      assertExists(remote, "Missing remote");
+      const { owner, repo } = parseRemote(remote.fetch);
       return repository(git, api, owner, repo);
     })();
   }
@@ -333,13 +334,8 @@ function repository(
       async create(options) {
         let head = options?.head;
         if (head === undefined) {
-          const [branch, remote] = await Promise.all([
-            git.branch.current(),
-            git.remote.get(),
-          ]);
-          head = branch.push?.startsWith(remote.name)
-            ? branch.push.slice(remote.name.length + 1)
-            : branch.name;
+          const branch = await git.branch.current();
+          head = branch.push?.name ?? branch.name;
         }
         assertExists(head, "Cannot determine remote push branch");
         const base = options?.base ?? await git.remote.head();
@@ -541,8 +537,8 @@ const REMOTE_URL_PATTERN =
   /^(?<protocol>https:\/\/|git@)(?<host>[^:/]+)[:/](?<owner>[^/]+)\/(?<repo>[^/]+?)(?:\.git)?$/;
 
 /** Gets the owner and repository name from the remote URL. */
-function parseRemote(remote: string): { owner: string; repo: string } {
-  const match = remote.match(REMOTE_URL_PATTERN);
+function parseRemote(remote: URL): { owner: string; repo: string } {
+  const match = remote.toString().match(REMOTE_URL_PATTERN);
   if (
     match?.groups?.host !== "github.com" ||
     !match.groups.owner ||
