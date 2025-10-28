@@ -1318,7 +1318,7 @@ export function git(options?: GitOptions): Git {
           options?.directory,
         );
         const match = output.match(
-          /Cloning into '(?<directory>.+?)'\.\.\.(?:.|\n)*/,
+          /Cloning into '(?<directory>.+?)'\.\.\./,
         );
         const cloned = options?.directory ?? match?.groups?.directory;
         assertExists(cloned, "Cannot determine cloned directory");
