@@ -13,12 +13,11 @@ import { git, GitError } from "./git.ts";
 const codespaces = !!Deno.env.get("CODESPACES");
 
 Deno.test("git() mentions failed command on error", async () => {
-  await using directory = await tempDirectory();
-  const repo = git({ cwd: directory.path() });
+  await using repo = await tempRepository();
   await assertRejects(
-    () => repo.tag.create("no commit"),
+    () => repo.branch.create("branch"),
     GitError,
-    "Error running git command: tag",
+    "Error running git command: branch\n\n",
   );
 });
 

@@ -2058,14 +2058,15 @@ async function run(
   options: GitOptions & { allowCode?: number[]; stderr?: boolean },
   ...commandArgs: (string | string[] | undefined)[]
 ): Promise<string> {
-  const args = [
-    options.cwd !== undefined ? ["-C", normalize(options.cwd)] : [],
-    configFlags(options.config, "-c").flat(),
+  const runArgs = commandArgs.flat().filter((x) => x !== undefined);
+  const fullArgs = [
+    ...options.cwd !== undefined ? ["-C", normalize(options.cwd)] : [],
+    ...configFlags(options.config, "-c").flat(),
     "--no-pager",
-    ...commandArgs,
-  ].flat().filter((x) => x !== undefined);
+    ...runArgs,
+  ];
   const command = new Deno.Command("git", {
-    args,
+    args: fullArgs,
     stdin: "null",
     stdout: "piped",
     env: { GIT_EDITOR: "true" },
@@ -2075,8 +2076,8 @@ async function run(
     if (code !== 0 && !(options.allowCode?.includes(code))) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
       throw new GitError(
-        `Error running git command: ${commandArgs[0]}\n\n${error}`,
-        { cause: { command: "git", args, code } },
+        `Error running git command: ${runArgs[0]}\n\n${error}`,
+        { cause: { command: "git", args: fullArgs, code } },
       );
     }
     return new TextDecoder().decode(options?.stderr ? stderr : stdout)
