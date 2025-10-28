@@ -162,8 +162,8 @@ export interface BranchOperations {
     branch: string | Branch,
     options?: BranchSwitchOptions,
   ): Promise<Branch>;
-  /** Switches to a commit, or an existing or new branch. */
-  checkout(options?: BranchCheckoutOptions): Promise<Branch | undefined>;
+  /** Switch to a commit detached from any branch. */
+  detach(options?: BranchDetachOptions): Promise<void>;
   /** Resets the current branch head to a specified state. */
   reset(target: Commitish, options?: BranchResetOptions): Promise<Branch>;
   /** Renames a branch. */
@@ -775,33 +775,13 @@ export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   force?: boolean;
 }
 
-/** Options for the {@linkcode BranchOperations.checkout} function. */
-export interface BranchCheckoutOptions extends BranchCreateOptions {
+/** Options for the {@linkcode BranchOperations.detach} function. */
+export interface BranchDetachOptions {
   /**
-   * Create a new branch with this name.
-   *
-   * If the branch already exists, an error is thrown unless
-   * {@linkcode BranchSwitchOptions.force force} is set to `true`.
-   *
-   * The created branch will point to
-   * {@linkcode BranchCreateOptions.target target}.
+   * Target commit to detach `HEAD` at.
+   * @default {"HEAD"}
    */
-  create?: string;
-  /**
-   * Detach `HEAD` during checkout from the target branch.
-   * @default {false}
-   */
-  detach?: boolean;
-  /**
-   * Discard any local changes when switching branches.
-   *
-   * If creating a new branch with
-   * {@linkcode BranchSwitchOptions.create create}, this will reset the new
-   * branch even if it already exists.
-   *
-   * @default {false}
-   */
-  force?: boolean;
+  target?: Commitish;
 }
 
 /** Options for the {@linkcode BranchOperations.reset} function. */
@@ -1584,20 +1564,12 @@ export function git(options?: GitOptions): Git {
         );
         return await repo.branch.current();
       },
-      async checkout(options) {
+      async detach(options) {
         await run(
           gitOptions,
-          "checkout",
-          flag(options?.force ? "-B" : "-b", options?.create),
-          flag("--force", options?.force),
-          flag("--detach", options?.detach),
-          flag("--track", options?.track === true),
-          flag("--no-track", options?.track === false),
-          flag("--track=inherit", options?.track === "inherit"),
+          ["switch", "--detach"],
           commitArg(options?.target),
         );
-        const { value: branch } = await maybe(() => repo.branch.current());
-        return branch;
       },
       async reset(target, options) {
         await run(
