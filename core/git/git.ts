@@ -285,6 +285,11 @@ export interface Config {
     /** Default branch name. */
     defaultBranch?: string;
   };
+  /** Pull configuration. */
+  pull?: {
+    /** Merge strategy for pulling. */
+    rebase?: boolean | "merges" | "interactive";
+  };
   /** Status configuration. */
   status?: {
     /** Whether to detect renames and copies. */
