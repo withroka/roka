@@ -1685,9 +1685,8 @@ Deno.test("git().branch.reset() resets branch to commit", async () => {
   await using repo = await tempRepository({ branch: "main" });
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
   await repo.commit.create("commit2", { allowEmpty: true });
-  const branch = await repo.branch.reset({ target: commit1 });
-  assertEquals(await repo.branch.current(), branch);
-  assertEquals(branch, { name: "main", commit: commit1 });
+  await repo.branch.reset({ target: commit1 });
+  assertEquals(await repo.branch.current(), { name: "main", commit: commit1 });
   assertEquals(await repo.commit.head(), commit1);
 });
 
