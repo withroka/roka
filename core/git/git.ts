@@ -480,7 +480,7 @@ export interface Commit {
 export interface Tag {
   /** Tag name. */
   name: string;
-  /** Commit that pointed by the tag. */
+  /** Commit that is pointed to by the tag. */
   commit: Commit;
   /** Tag subject from tag message. */
   subject?: string;
