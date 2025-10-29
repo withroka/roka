@@ -165,7 +165,7 @@ export interface BranchOperations {
   /** Switch to a commit detached from any branch. */
   detach(options?: BranchDetachOptions): Promise<void>;
   /** Resets the current branch head to a specified state. */
-  reset(target: Commitish, options?: BranchResetOptions): Promise<Branch>;
+  reset(options?: BranchResetOptions): Promise<void>;
   /** Renames a branch. */
   move(
     branch: string | Branch,
@@ -787,6 +787,11 @@ export interface BranchResetOptions {
    * @default {"mixed"}
    */
   mode?: "soft" | "mixed" | "hard" | "merge" | "keep";
+  /**
+   * Target commit to move `HEAD` to.
+   * @default {"HEAD"}
+   */
+  target?: Commitish;
 }
 
 /** Options for the {@linkcode BranchOperations.move} function. */
@@ -1557,7 +1562,7 @@ export function git(options?: GitOptions): Git {
           commitArg(options?.target),
         );
       },
-      async reset(target, options) {
+      async reset(options) {
         await run(
           gitOptions,
           ["reset"],
@@ -1566,9 +1571,8 @@ export function git(options?: GitOptions): Git {
           flag("--mixed", options?.mode === "mixed"),
           flag("--merge", options?.mode === "merge"),
           flag("--keep", options?.mode === "keep"),
-          commitArg(target),
+          commitArg(options?.target),
         );
-        return await repo.branch.current();
       },
       async move(branch, name, options) {
         await run(
