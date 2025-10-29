@@ -748,7 +748,7 @@ export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   /**
    * Create a new branch at given target.
    *
-   * An error is thrown if the branch already exists,  unless
+   * An error is thrown if the branch already exists, unless
    * {@linkcode BranchSwitchOptions.force force} is set to `true`.
    *
    * @default {false}
