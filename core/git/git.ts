@@ -38,15 +38,17 @@
  * @todo Extend `git().config.set()`
  * @todo Add `git().tag.get()`
  * @todo Add `git().worktree.*`
- * @todo Add `git().stash.*`
+ * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
  * @todo Add `git().merge.*`
  * @todo Add `git().rebase.*`
  * @todo Add `git().submodule.*`
+ * @todo Add `git().replace.*` (grafts)
+ * @todo Add `git().hook.*`
+ * @todo Add `git().reflog.*`
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
- * @todo Add reflogs.
  *
  * @module git
  */
@@ -352,7 +354,7 @@ export interface Branch {
   /**
    * Commit at the tip of the branch, if branch has any commits.
    *
-   * This can be unset if the branch is orphan.
+   * This can be unset if the branch is unborn.
    */
   commit?: Commit;
   /** Upstream configuration for the branch, if set. */
@@ -478,7 +480,7 @@ export interface Commit {
 export interface Tag {
   /** Tag name. */
   name: string;
-  /** Commit that is tagged. */
+  /** Commit that is pointed to by the tag. */
   commit: Commit;
   /** Tag subject from tag message. */
   subject?: string;
@@ -488,7 +490,7 @@ export interface Tag {
   tagger?: User;
 }
 
-/** A ref that points to a commit object in a git repository. */
+/** A reference that recursively points to a commit object. */
 export type Commitish = Commit | Branch | Tag | string;
 
 /** A revision range over commit history in a git repository. */
@@ -1026,7 +1028,7 @@ export interface CommitLogOptions {
   author?: User;
   /** Only commits by a committer. */
   committer?: User;
-  /** Only commits that modified any of the given paths. */
+  /** Only commits that modified any of the given pathspecs. */
   path?: string | string[];
   /** Only commits in a range. */
   range?: RevisionRange;
@@ -1532,7 +1534,7 @@ export function git(options?: GitOptions): Git {
         );
         if (!name) throw new GitError("Cannot determine HEAD branch");
         const [branch] = await repo.branch.list({ name });
-        return branch ?? { name }; // orphan branch
+        return branch ?? { name }; // unborn branch
       },
       async get(branch: string | Branch) {
         const name = nameArg(branch);
@@ -1735,7 +1737,7 @@ export function git(options?: GitOptions): Git {
           ["diff", "--no-color", "--name-status", "-z"],
           commitArg(options?.target),
           rangeArg(options?.range),
-          flag("--cached", options?.staged),
+          flag("--staged", options?.staged),
           flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--find-copies", options?.copies),
           "--",
@@ -1776,7 +1778,7 @@ export function git(options?: GitOptions): Git {
           ["diff", "--no-color", "--no-prefix"],
           commitArg(options?.target),
           rangeArg(options?.range),
-          flag("--cached", options?.staged),
+          flag("--staged", options?.staged),
           flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--find-copies-harder", options?.copies),
           flag("--diff-algorithm", options?.algorithm),
