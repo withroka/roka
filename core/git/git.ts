@@ -490,7 +490,7 @@ export interface Tag {
   tagger?: User;
 }
 
-/** A reference that recursively point to a commit object. */
+/** A reference that recursively points to a commit object. */
 export type Commitish = Commit | Branch | Tag | string;
 
 /** A revision range over commit history in a git repository. */
