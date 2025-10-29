@@ -6,6 +6,7 @@ import {
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
+import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
 import { git, GitError } from "./git.ts";
 
@@ -289,7 +290,7 @@ Deno.test("git().remote.clone({ depth }) makes a shallow copy", async () => {
     depth: 1,
     local: false,
   });
-  assertEquals(await repo.commit.log(), [commit3]);
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
 });
 
 Deno.test("git().remote.clone({ depth }) can make a shallow copy of multiple branches", async () => {
@@ -310,7 +311,7 @@ Deno.test("git().remote.clone({ depth }) can make a shallow copy of multiple bra
   });
   assertEquals(await repo.commit.log(), [commit1]);
   await repo.branch.switch(branch2);
-  assertEquals(await repo.commit.log(), [commit3]);
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
 });
 
 Deno.test("git().remote.clone({ local }) is no-op for local remote", async () => {
@@ -4016,6 +4017,8 @@ Deno.test("git().commit.log() returns multiple commits", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
   const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  assertEquals(commit1.parent, undefined);
+  assertEquals(commit2.parent, { hash: commit1.hash, short: commit1.short });
   assertEquals(await repo.commit.log(), [commit2, commit1]);
 });
 

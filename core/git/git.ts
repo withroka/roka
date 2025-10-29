@@ -465,6 +465,8 @@ export interface Commit {
   hash: string;
   /** Short hash of commit. */
   short: string;
+  /** Parent commit, if any. */
+  parent?: Pick<Commit, "hash" | "short">;
   /** Commit summary, the first line of the commit message. */
   summary: string;
   /** Commit body, excluding the first line and trailers from the message. */
@@ -1904,7 +1906,7 @@ export function git(options?: GitOptions): Git {
         const { value: output, error } = await maybe(() =>
           run(
             gitOptions,
-            ["log", "--no-color", `--format=${formatArg(LOG_FORMAT)}`],
+            ["log", "--no-color", `--format=${formatArg(COMMIT_FORMAT)}`],
             flag("--author", userArg(options?.author)),
             flag("--committer", userArg(options?.committer)),
             flag("--max-count", options?.maxCount),
@@ -1923,7 +1925,7 @@ export function git(options?: GitOptions): Git {
           if (!head) return [];
           throw error;
         }
-        return parseOutput(LOG_FORMAT, output) as Commit[];
+        return parseOutput(COMMIT_FORMAT, output) as Commit[];
       },
       async head() {
         const commit = await repo.commit.get("HEAD");
@@ -2216,56 +2218,6 @@ type FormatFieldDescriptor<T> =
 
 type FormatDescriptor<T> = { delimiter: string } & FormatFieldDescriptor<T>;
 
-const LOG_FORMAT: FormatDescriptor<Commit> = {
-  delimiter: "<%H>",
-  kind: "object",
-  fields: {
-    hash: { kind: "string", format: "%H" },
-    short: { kind: "string", format: "%h" },
-    author: {
-      kind: "object",
-      fields: {
-        name: { kind: "string", format: "%an" },
-        email: { kind: "string", format: "%ae" },
-      },
-    },
-    committer: {
-      kind: "object",
-      fields: {
-        name: { kind: "string", format: "%cn" },
-        email: { kind: "string", format: "%ce" },
-      },
-    },
-    summary: { kind: "string", format: "%s" },
-    body: {
-      kind: "string",
-      format: "%b%H%(trailers)",
-      optional: true,
-      transform(bodyAndTrailers: string, parent: Record<string, string>) {
-        const hash = parent["hash"];
-        assertExists(hash, "Cannot parse git output");
-        let [body, trailers] = bodyAndTrailers.split(hash, 2);
-        if (trailers && body && body.endsWith(trailers)) {
-          body = body.slice(0, -trailers.length);
-        }
-        body = body?.trimEnd();
-        return body || undefined;
-      },
-    },
-    trailers: {
-      kind: "string",
-      format: "%(trailers:only=true,unfold=true,key_value_separator=: )",
-      transform(trailers: string) {
-        return trailers.split("\n").reduce((trailers, line) => {
-          const [key, value] = line.split(": ", 2);
-          if (key) trailers[key.trim()] = value?.trim() || "";
-          return trailers;
-        }, {} as Record<string, string>);
-      },
-    },
-  },
-} satisfies FormatDescriptor<Commit>;
-
 const BRANCH_FORMAT: FormatDescriptor<Branch> = {
   delimiter: "<%(objectname)>",
   kind: "object",
@@ -2360,6 +2312,72 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
     },
   },
 } satisfies FormatDescriptor<Branch>;
+
+const COMMIT_FORMAT: FormatDescriptor<Commit> = {
+  delimiter: "<%H>",
+  kind: "object",
+  fields: {
+    hash: { kind: "string", format: "%H" },
+    short: { kind: "string", format: "%h" },
+    parent: {
+      kind: "object",
+      fields: {
+        hash: {
+          kind: "string",
+          format: "%P",
+          transform: (value) => value ? value : "\x00",
+        },
+        short: {
+          kind: "string",
+          format: "%p",
+          transform: (value) => value ? value : "\x00",
+        },
+      },
+      optional: true,
+    },
+    author: {
+      kind: "object",
+      fields: {
+        name: { kind: "string", format: "%an" },
+        email: { kind: "string", format: "%ae" },
+      },
+    },
+    committer: {
+      kind: "object",
+      fields: {
+        name: { kind: "string", format: "%cn" },
+        email: { kind: "string", format: "%ce" },
+      },
+    },
+    summary: { kind: "string", format: "%s" },
+    body: {
+      kind: "string",
+      format: "%b%H%(trailers)",
+      optional: true,
+      transform(bodyAndTrailers: string, parent: Record<string, string>) {
+        const hash = parent["hash"];
+        assertExists(hash, "Cannot parse git output");
+        let [body, trailers] = bodyAndTrailers.split(hash, 2);
+        if (trailers && body && body.endsWith(trailers)) {
+          body = body.slice(0, -trailers.length);
+        }
+        body = body?.trimEnd();
+        return body || undefined;
+      },
+    },
+    trailers: {
+      kind: "string",
+      format: "%(trailers:only=true,unfold=true,key_value_separator=: )",
+      transform(trailers: string) {
+        return trailers.split("\n").reduce((trailers, line) => {
+          const [key, value] = line.split(": ", 2);
+          if (key) trailers[key.trim()] = value?.trim() || "";
+          return trailers;
+        }, {} as Record<string, string>);
+      },
+    },
+  },
+} satisfies FormatDescriptor<Commit>;
 
 const TAG_FORMAT: FormatDescriptor<Tag> = {
   delimiter: "<%(objectname)>",
