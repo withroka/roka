@@ -121,10 +121,11 @@ export interface RemoteOperations {
    * Returns a remote repository.
    *
    * The remote is determined by, in order:
-   * - The {@linkcode RemoteOptions.remote remote} option, if provided.
-   * - The remote configured for the current branch.
-   * - The remote named `"origin"`.
-   * - `undefined`, if no remotes are configured.
+   *
+   * - the {@linkcode RemoteOptions.remote remote} option, if provided
+   * - the remote configured for the current branch
+   * - the remote named `"origin"`
+   * - `undefined`, if no remotes are configured
    */
   get(options?: RemoteOptions): Promise<Remote | undefined>;
   /** Updates a remote. */
@@ -588,15 +589,17 @@ export interface RemoteCloneOptions extends InitOptions {
   /**
    * Number of commits to clone at the tip.
    *
-   * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless it is
-   * set to `false` to fetch from the tip of all branches.
+   * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless
+   * it is set to `false` to fetch from the tip of all branches.
    */
   depth?: number;
   /**
-   * Bypasses local transport optimization when set to `false`.
+   * Enable local repository optimizations.
    *
-   * When the remote repository is specified as a URL, this is ignored.
-   * Otherwise, it is implied.
+   * - `false`: disable optimizations, and use remote transport
+   * - `true`: use local transport for local repositories, ignore for remote
+   *
+   * @default {true}
    */
   local?: boolean;
   /**
@@ -745,7 +748,7 @@ export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   /**
    * Create a new branch at given target.
    *
-   * If the branch already exists, an error is thrown unless
+   * An error is thrown if the branch already exists, unless
    * {@linkcode BranchSwitchOptions.force force} is set to `true`.
    *
    * @default {false}
@@ -834,10 +837,11 @@ export interface IndexStatusOptions {
   /**
    * Control the status output for ignored files.
    *
-   * If set to `true`, ignored files and directories are included. In
-   * this mode, files under ignored directories are shown if
-   * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`. If
-   * set to `false`, ignored files are not included.
+   * - `true`: include ignored files and directories
+   * - `false`: exclude ignored files and directories
+   *
+   * Files under ignored directories are included only if
+   * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`.
    *
    * @default {false}
    */
@@ -845,9 +849,8 @@ export interface IndexStatusOptions {
   /**
    * Control the status output for renamed files.
    *
-   * If set to `true`, renamed files are included. If set to `false`, rename
-   * detection is turned off, and paths are listed separately as `"added"` and
-   * `"deleted"`.
+   * - `true`: enable rename detection, and list renamed files as such
+   * - `false`: disable rename detection, and list files as added and deleted
    *
    * @default {true}
    */
@@ -855,9 +858,9 @@ export interface IndexStatusOptions {
   /**
    * Control the status output for untracked files.
    *
-   * If set to `false`, untracked files are not included. If set to `true`,
-   * untracked directories are included, but their files are not listed. If set
-   * to `"all"`, all untracked files are included.
+   * - `false`: exclude untracked files
+   * - `true`: include untracked directories, but not their files
+   * - `"all"`: include all untracked files
    *
    * @default {true}
    */
@@ -938,9 +941,11 @@ export interface DiffOptions {
   /**
    * Control the diff output for copied files.
    *
-   * If set to `true`, copy detection is enabled, and copies are listed as
-   * such. If set to `false`, copies are listed as added files, unless the
-   * behavior is overridden with Git configuration.
+   * - `true`: enable copy detection, and list copied files as such
+   * - `false`: disable copy detection, and list copied files as added
+   *
+   * If copy detection is enabled at the configuration level, this option has
+   * no effect.
    *
    * @default {false}
    */
@@ -950,9 +955,8 @@ export interface DiffOptions {
   /**
    * Control the diff output for renamed files.
    *
-   * If set to `true`, renamed files are included. If set to `false`, rename
-   * detection is turned off, and paths are listed separately as `"added"` and
-   * `"deleted"`.
+   * - `true`: enable rename detection, and list renamed files as such
+   * - `false`: disable rename detection, and list files as added and deleted
    *
    * @default {true}
    */
@@ -1157,12 +1161,11 @@ export interface TransportOptions {
   /**
    * Copy all tags.
    *
-   * During pull, git only fetches tags that point to the downloaded objects.
-   * When this value is set to `true`, all tags are fetched. When it is set to
-   * `false`, no tags are fetched.
+   * - `true`: fetch/push all tags
+   * - `false`: do not fetch/push any tags
    *
-   * During push, no tags are pushed by default. When this value is set to
-   * `true`, all tags are pushed.
+   * During pull, git only fetches tags that point to the downloaded objects by
+   * default. During push, no tags are pushed by default.
    */
   tags?: boolean;
 }
