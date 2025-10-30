@@ -1352,7 +1352,7 @@ export function git(options?: GitOptions): Git {
         flag(
           "--shared",
           typeof options?.shared === "number"
-            ? options.shared.toString(8)
+            ? options.shared.toString(8).padStart(4, "0")
             : options?.shared,
           { equals: true },
         ),
