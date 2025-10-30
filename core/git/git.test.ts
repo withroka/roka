@@ -1809,10 +1809,18 @@ Deno.test("git().branch.reset({ mode }) can reset in keep mode", async () => {
   await repo.index.add("file.txt");
   await repo.commit.create("commit2");
   await Deno.writeTextFile(repo.path("file.txt"), "content3");
-  await assertRejects(() =>
-    repo.branch.reset({ target: commit1, mode: "keep" })
+  await assertRejects(
+    () => repo.branch.reset({ target: commit1, mode: "keep" }),
+    GitError,
+    "'file.txt' not uptodate",
   );
   await Deno.writeTextFile(repo.path("file.txt"), "content2");
+  assertEquals(await repo.index.status(), {
+    staged: [],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
   await repo.branch.reset({ target: commit1, mode: "keep" });
   assertEquals(await repo.commit.log(), [commit1]);
   assertEquals(await repo.index.status(), {
