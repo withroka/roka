@@ -758,7 +758,10 @@ export interface BranchListOptions extends RefListOptions {
 /** Options for the {@linkcode BranchOperations.switch} function. */
 export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   /**
-   * Create a new branch at given target.
+   * Create a new branch at given target, `"HEAD"` if set to `true`.
+   *
+   * Incompatible with the {@linkcode BranchSwitchOptions.orphan orphan}
+   * option.
    *
    * An error is thrown if the branch already exists, unless
    * {@linkcode BranchSwitchOptions.force force} is set to `true`.
@@ -766,6 +769,13 @@ export interface BranchSwitchOptions extends BranchCreateTrackOptions {
    * @default {false}
    */
   create?: boolean | Commitish;
+  /**
+   * Create an unborn branch.
+   *
+   * Incompatible with the {@linkcode BranchSwitchOptions.create create}
+   * option.
+   */
+  orphan?: boolean;
   /**
    * Discard any local changes when switching branches.
    *
@@ -1578,8 +1588,9 @@ export function git(options?: GitOptions): Git {
           flag(["--track", "--no-track"], options?.track, { equals: true }),
           flag(
             options?.force ? "--force-create" : "--create",
-            (options?.create ?? false) !== false,
+            !options?.orphan && (options?.create ?? false) !== false,
           ),
+          flag("--orphan", options?.orphan),
           nameArg(branch),
           ...typeof options?.create !== "boolean"
             ? [commitArg(options?.create)]

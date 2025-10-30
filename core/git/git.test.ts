@@ -1686,6 +1686,32 @@ Deno.test("git().branch.switch({ create }) sets up tracking for remote branch", 
   );
 });
 
+Deno.test("git().branch.switch({ orphan }) creates an unborn branch", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  const main = await repo.branch.current();
+  let branch = await repo.branch.switch("branch", { orphan: true });
+  assertEquals(branch, { name: "branch" });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  branch = await repo.branch.current();
+  assertEquals(branch, { name: "branch", commit: commit2 });
+  assertEquals(await repo.branch.current(), branch);
+  assertEquals(await repo.commit.log(), [commit2]);
+  await repo.branch.switch(main);
+  assertEquals(await repo.commit.log(), [commit1]);
+  assertEquals(await repo.branch.list(), [branch, main]);
+});
+
+Deno.test("git().branch.switch({ orphan }) is incompatible with create option", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  await assertRejects(
+    () => repo.branch.switch("branch", { orphan: true, create: commit }),
+    GitError,
+    "'--orphan' cannot take <start-point>",
+  );
+});
+
 Deno.test("git().branch.switch({ force }) can create over existing branch", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit1", { allowEmpty: true });
