@@ -275,6 +275,19 @@ Deno.test("git().remote.clone() clones a repository", async () => {
   assertEquals(await repo.commit.log(), await upstream.commit.log());
 });
 
+Deno.test("git().remote.clone() clones a repository from remote object", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  await using repo1 = await tempRepository({ clone: upstream });
+  await using directory = await tempDirectory();
+  const remote = await repo1.remote.get();
+  assertExists(remote);
+  const repo2 = await git({ cwd: directory.path() }).remote.clone(remote);
+  assertEquals(repo2.path(), directory.path(basename(upstream.path())));
+  assertEquals(await repo2.commit.log(), await upstream.commit.log());
+});
+
 Deno.test("git().remote.clone({ directory }) clones into specified directory", async () => {
   await using upstream = await tempRepository();
   await upstream.commit.create("commit1", { allowEmpty: true });

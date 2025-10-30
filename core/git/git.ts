@@ -111,7 +111,7 @@ export interface ConfigOperations {
 /** Remote operations from {@linkcode Git.remote}. */
 export interface RemoteOperations {
   /** Clones a remote repository. */
-  clone(url: URL, options?: RemoteCloneOptions): Promise<Git>;
+  clone(remote: URL | Remote, options?: RemoteCloneOptions): Promise<Git>;
   /** Fetches missing objects in a partial clone. */
   backfill(options?: RemoteBackfillOptions): Promise<void>;
   /** Adds a remote to the repository. */
@@ -1374,7 +1374,9 @@ export function git(options?: GitOptions): Git {
       },
     },
     remote: {
-      async clone(url, options) {
+      async clone(remote, options) {
+        const url = remote instanceof URL ? remote : remote.fetch;
+        const origin = remote instanceof URL ? options?.remote : remote.name;
         const reference = typeof options?.local === "object"
           ? options?.local
           : undefined;
@@ -1399,7 +1401,7 @@ export function git(options?: GitOptions): Git {
             reference?.reference,
           ),
           flag("--dissociate", reference?.dissociate),
-          flag("--origin", options?.remote),
+          flag("--origin", origin),
           flag("--depth", options?.shallow?.depth),
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
