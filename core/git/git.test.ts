@@ -1,6 +1,7 @@
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
+import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import {
   assertEquals,
@@ -11,7 +12,6 @@ import {
 } from "@std/assert";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
-import { git, GitError } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
