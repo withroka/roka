@@ -1255,7 +1255,7 @@ export function git(options?: GitOptions): Git {
         },
         "init",
         flag("--bare", options?.bare),
-        flag("--initial-branch", options?.branch),
+        flag("--initial-branch", options?.branch, { equals: true }),
         "--",
         options?.directory,
       );
@@ -1281,7 +1281,7 @@ export function git(options?: GitOptions): Git {
             config: { ...gitOptions?.config, ...options?.config },
             stderr: true,
           },
-          ["clone", urlArg(url)],
+          "clone",
           configFlags(options?.config, "--config").flat(),
           flag("--bare", options?.bare),
           flag("--depth", options?.depth),
@@ -1292,6 +1292,7 @@ export function git(options?: GitOptions): Git {
             ["--single-branch", "--no-single-branch"],
             options?.singleBranch,
           ),
+          urlArg(url),
           "--",
           options?.directory,
         );
@@ -1309,12 +1310,12 @@ export function git(options?: GitOptions): Git {
             push: [],
           }
           : remoteOrUrl;
-        await run(gitOptions, [
-          "remote",
-          "add",
+        await run(
+          gitOptions,
+          ["remote", "add"],
           nameArg(remote),
           urlArg(remote.fetch),
-        ]);
+        );
         for (const url of remote.push) {
           // deno-lint-ignore no-await-in-loop
           await run(
@@ -1333,7 +1334,7 @@ export function git(options?: GitOptions): Git {
           const { value: url } = maybe(() => new URL(str));
           return url ?? toFileUrl(str);
         }
-        const output = await run(gitOptions, "remote", "-v");
+        const output = await run(gitOptions, "remote", "--verbose");
         const lines = output.trimEnd().split("\n").filter((x) => x);
         const remotes: Record<string, Partial<Remote>> = {};
         for (const line of lines) {
@@ -1422,10 +1423,11 @@ export function git(options?: GitOptions): Git {
         if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["fetch", nameArg(remote)],
-          nameArg(options?.target),
+          "fetch",
           flag("--atomic", options?.atomic),
           flag(["--tags", "--no-tags"], options?.tags),
+          nameArg(remote),
+          nameArg(options?.target),
         );
       },
       async pull(options) {
@@ -1433,11 +1435,12 @@ export function git(options?: GitOptions): Git {
         if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["pull", nameArg(remote)],
-          nameArg(options?.target),
+          "pull",
           flag("--atomic", options?.atomic),
           flag(["--tags", "--no-tags"], options?.tags),
           signFlag("commit", options?.sign),
+          nameArg(remote),
+          nameArg(options?.target),
         );
       },
       async push(options) {
@@ -1445,13 +1448,14 @@ export function git(options?: GitOptions): Git {
         if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["push", nameArg(remote)],
-          nameArg(options?.target),
+          "push",
           flag("--set-upstream", options?.setUpstream),
           flag("--force", options?.force),
           flag(["--atomic", "--no-atomic"], options?.atomic),
           flag("--branches", options?.branches),
           flag("--tags", options?.tags),
+          nameArg(remote),
+          nameArg(options?.target),
         );
       },
     },
@@ -1459,11 +1463,10 @@ export function git(options?: GitOptions): Git {
       async create(name, options) {
         await run(
           gitOptions,
-          ["branch", "--no-color", name],
+          ["branch", "--no-color"],
           flag("--force", options?.force),
-          flag("--track", options?.track === true),
-          flag("--no-track", options?.track === false),
-          flag("--track=inherit", options?.track === "inherit"),
+          flag(["--track", "--no-track"], options?.track, { equals: true }),
+          name,
           commitArg(options?.target),
         );
         const [branch] = await repo.branch.list({ name });
@@ -1473,13 +1476,13 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["branch", "--no-color", "--list"],
-          `--format=${formatArg(BRANCH_FORMAT)}`,
-          options?.name,
+          flag("--format", formatArg(BRANCH_FORMAT), { equals: true }),
           flag("--all", options?.all),
           flag("--remotes", options?.remotes),
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
           flag("--points-at", commitArg(options?.pointsAt)),
+          options?.name,
         );
         const branches = parseOutput(BRANCH_FORMAT, output);
         return await Promise.all(
@@ -1550,12 +1553,13 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "switch",
-          flag(options?.force ? "-C" : "-c", !!options?.create),
-          nameArg(branch),
           flag("--force", options?.force),
-          flag("--track", options?.track === true),
-          flag("--no-track", options?.track === false),
-          flag("--track=inherit", options?.track === "inherit"),
+          flag(["--track", "--no-track"], options?.track, { equals: true }),
+          flag(
+            options?.force ? "--force-create" : "--create",
+            (options?.create ?? false) !== false,
+          ),
+          nameArg(branch),
           ...typeof options?.create !== "boolean"
             ? [commitArg(options?.create)]
             : [],
@@ -1572,7 +1576,7 @@ export function git(options?: GitOptions): Git {
       async reset(options) {
         await run(
           gitOptions,
-          ["reset"],
+          "reset",
           flag("--soft", options?.mode === "soft"),
           flag("--hard", options?.mode === "hard"),
           flag("--mixed", options?.mode === "mixed"),
@@ -1584,8 +1588,10 @@ export function git(options?: GitOptions): Git {
       async move(branch, name, options) {
         await run(
           gitOptions,
-          ["branch", "--no-color", "-m", nameArg(branch), name],
+          ["branch", "--no-color", "--move"],
           flag("--force", options?.force),
+          nameArg(branch),
+          name,
         );
         const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
@@ -1593,8 +1599,10 @@ export function git(options?: GitOptions): Git {
       async copy(branch, name, options) {
         await run(
           gitOptions,
-          ["branch", "--no-color", "-c", nameArg(branch), name],
+          ["branch", "--no-color", "--copy"],
           flag("--force", options?.force),
+          nameArg(branch),
+          name,
         );
         const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
@@ -1602,15 +1610,18 @@ export function git(options?: GitOptions): Git {
       async delete(branch, options) {
         await run(
           gitOptions,
-          ["branch", "--no-color", nameArg(branch)],
-          flag(["-D", "-d"], options?.force ?? false),
+          ["branch", "--no-color", "--delete"],
+          flag("--force", options?.force),
+          nameArg(branch),
         );
       },
       async track(branch, upstream) {
         const name = nameArg(branch);
         await run(
           gitOptions,
-          ["branch", "--no-color", name, "--set-upstream-to", upstream],
+          ["branch", "--no-color"],
+          flag("--set-upstream-to", upstream, { equals: true }),
+          name,
         );
         const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
@@ -1619,7 +1630,8 @@ export function git(options?: GitOptions): Git {
         const name = nameArg(branch);
         await run(
           gitOptions,
-          ["branch", "--no-color", name, "--unset-upstream"],
+          ["branch", "--no-color", "--unset-upstream"],
+          name,
         );
         const [newBranch] = await repo.branch.list({ name });
         return newBranch ?? { name };
@@ -1704,23 +1716,23 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "mv",
+          flag("--force", options?.force),
           source,
           destination,
-          flag("--force", options?.force),
         );
       },
       async remove(path, options?: IndexRemoveOptions) {
         await run(
           gitOptions,
           "rm",
-          path,
           flag("--force", options?.force),
+          path,
         );
       },
       async restore(path, options?: IndexRestoreOptions) {
         await run(
           gitOptions,
-          ["restore"],
+          "restore",
           flag(
             "--staged",
             options?.location === "index" || options?.location === "both",
@@ -1729,7 +1741,7 @@ export function git(options?: GitOptions): Git {
             "--worktree",
             options?.location === "worktree" || options?.location === "both",
           ),
-          flag("--source", commitArg(options?.source)),
+          flag("--source", commitArg(options?.source), { equals: true }),
           "--",
           path,
         );
@@ -1740,11 +1752,11 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["diff", "--no-color", "--name-status", "-z"],
-          commitArg(options?.target),
-          rangeArg(options?.range),
           flag("--staged", options?.staged),
           flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--find-copies", options?.copies),
+          commitArg(options?.target),
+          rangeArg(options?.range),
           "--",
           options?.path,
         );
@@ -1781,13 +1793,13 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["diff", "--no-color", "--no-prefix"],
-          commitArg(options?.target),
-          rangeArg(options?.range),
           flag("--staged", options?.staged),
           flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--find-copies-harder", options?.copies),
-          flag("--diff-algorithm", options?.algorithm),
-          flag(`--unified=${options?.unified}`, options?.unified !== undefined),
+          flag("--diff-algorithm", options?.algorithm, { equals: true }),
+          flag("--unified", options?.unified, { equals: true }),
+          commitArg(options?.target),
+          rangeArg(options?.range),
           "--",
           options?.path,
         );
@@ -1858,8 +1870,8 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           "commit",
-          flag("-m", summary),
-          flag("-m", options?.body),
+          flag("--message", summary, { equals: true }),
+          flag("--message", options?.body, { equals: true }),
           trailerFlag(options?.trailers),
           flag("--all", options?.all),
           flag("--allow-empty", options?.allowEmpty),
@@ -1887,13 +1899,13 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["commit", "--amend"],
-          flag("-m", summary),
-          flag("-m", body),
+          flag("--message", summary, { equals: true }),
+          flag("--message", body, { equals: true }),
           trailerFlag(trailers),
           flag("--all", options?.all),
           flag("--allow-empty", options?.allowEmpty),
           flag("--no-edit", !edited),
-          flag("--author", userArg(options?.author)),
+          flag("--author", userArg(options?.author), { equals: true }),
           signFlag("commit", options?.sign),
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
@@ -1906,13 +1918,14 @@ export function git(options?: GitOptions): Git {
         const { value: output, error } = await maybe(() =>
           run(
             gitOptions,
-            ["log", "--no-color", `--format=${formatArg(COMMIT_FORMAT)}`],
-            flag("--author", userArg(options?.author)),
-            flag("--committer", userArg(options?.committer)),
-            flag("--max-count", options?.maxCount),
+            ["log", "--no-color"],
+            flag("--format", formatArg(COMMIT_FORMAT), { equals: true }),
+            flag("--author", userArg(options?.author), { equals: true }),
+            flag("--committer", userArg(options?.committer), { equals: true }),
+            flag("--max-count", options?.maxCount, { equals: true }),
             flag("--skip", options?.skip),
             flag("--pickaxe-regex", options?.text !== undefined),
-            flag("-S", options?.text),
+            flag("-S", options?.text, { join: true }),
             rangeArg(options?.range),
             "--",
             options?.path,
@@ -1946,12 +1959,13 @@ export function git(options?: GitOptions): Git {
       async create(name, options): Promise<Tag> {
         await run(
           gitOptions,
-          ["tag", name],
-          commitArg(options?.target),
-          flag("-m", options?.subject),
-          flag("-m", options?.body),
+          "tag",
+          flag("--message", options?.subject, { equals: true }),
+          flag("--message", options?.body, { equals: true }),
           flag("--force", options?.force),
           signFlag("tag", options?.sign),
+          name,
+          commitArg(options?.target),
         );
         const [tag] = await repo.tag.list({ name });
         assertExists(tag, "Cannot find created tag");
@@ -1960,12 +1974,13 @@ export function git(options?: GitOptions): Git {
       async list(options) {
         const output = await run(
           gitOptions,
-          ["tag", "--list", `--format=${formatArg(TAG_FORMAT)}`],
-          options?.name,
+          ["tag", "--list"],
+          flag("--format", formatArg(TAG_FORMAT), { equals: true }),
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
           flag("--points-at", commitArg(options?.pointsAt)),
           flag("--sort=-version:refname", options?.sort === "version"),
+          options?.name,
         );
         const tags = parseOutput(TAG_FORMAT, output);
         return await Promise.all(tags.map(async (tag) => {
@@ -1977,15 +1992,17 @@ export function git(options?: GitOptions): Git {
         }));
       },
       async delete(tag) {
-        await run(gitOptions, ["tag", "-d", nameArg(tag)]);
+        await run(gitOptions, ["tag", "--delete"], nameArg(tag));
       },
       async push(tag, options) {
         const remote = options?.remote ?? await repo.remote.get();
         if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
-          ["push", nameArg(remote), "tag", nameArg(tag)],
+          "push",
           flag("--force", options?.force),
+          nameArg(remote),
+          ["tag", nameArg(tag)],
         );
       },
     },
@@ -2008,8 +2025,8 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           ["check-ignore", "--verbose", "--non-matching"],
-          path,
           flag("--no-index", options?.index === false),
+          path,
         );
         return output
           .split("\n")
@@ -2059,54 +2076,6 @@ async function run(
   }
 }
 
-function flag(
-  flag: string | [string, string],
-  value: boolean | undefined,
-): string[];
-function flag(
-  flag: string,
-  value: number | string | string[] | undefined,
-): string[];
-function flag(
-  flag: string | [string, string],
-  value: boolean | number | string | string[] | undefined,
-): string[] {
-  if (typeof flag === "string") flag = [flag, ""];
-  if (value === true) return [flag[0]];
-  if (value === false && flag[1]) return [flag[1]];
-  if (typeof value === "number") return [flag[0], value.toString()];
-  if (typeof value === "string") return [flag[0], value];
-  if (Array.isArray(value)) return [flag[0], ...value];
-  return [];
-}
-
-function configFlags(config: Config | undefined, flag?: string): string[][] {
-  if (config === undefined) return [];
-  function args(
-    config: Config,
-  ): { key: string; value: string; opt: string | undefined }[] {
-    return Object.entries(config).map(([key, value]) => {
-      if (Array.isArray(value)) {
-        return value.map((value, index) => ({
-          key,
-          value,
-          opt: index > 0 ? "--add" : undefined,
-        }));
-      }
-      if (typeof value === "object") {
-        const parent = key;
-        return args(value).map(({ key, value, opt }) => (
-          { key: `${parent}.${key}`, value, opt }
-        ));
-      }
-      return [{ key, value: `${value}`, opt: undefined }];
-    }).flat();
-  }
-  return args(config).map(({ key, value, opt }) => {
-    return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
-  });
-}
-
 function urlArg(url: URL): string {
   if (url.protocol === "file") return fromFileUrl(url);
   return url.toString();
@@ -2152,10 +2121,57 @@ function rangeArg(range: RevisionRange | undefined): string | undefined {
   return `${from}${range.symmetric ? "..." : ".."}${to ?? "HEAD"}`;
 }
 
+function flag(
+  flag: string | [string, string],
+  value: boolean | number | string | string[] | undefined,
+  options?: { equals?: boolean; join?: boolean },
+): string[] {
+  const pair = (k: string, v: string) =>
+    options?.equals ? [`${k}=${v}`] : options?.join ? [`${k}${v}`] : [k, v];
+  if (typeof flag === "string") flag = [flag, ""];
+  if (value === true) return [flag[0]];
+  if (value === false && flag[1]) return [flag[1]];
+  if (typeof value === "number") return pair(flag[0], value.toString());
+  if (typeof value === "string") return pair(flag[0], value);
+  if (Array.isArray(value)) {
+    if (options?.equals) return value.map((v) => pair(flag[0], v)).flat();
+    else return [flag[0], ...value];
+  }
+  return [];
+}
+
+function configFlags(config: Config | undefined, flag?: string): string[][] {
+  if (config === undefined) return [];
+  function args(
+    config: Config,
+  ): { key: string; value: string; opt: string | undefined }[] {
+    return Object.entries(config).map(([key, value]) => {
+      if (Array.isArray(value)) {
+        return value.map((value, index) => ({
+          key,
+          value,
+          opt: index > 0 ? "--add" : undefined,
+        }));
+      }
+      if (typeof value === "object") {
+        const parent = key;
+        return args(value).map(({ key, value, opt }) => (
+          { key: `${parent}.${key}`, value, opt }
+        ));
+      }
+      return [{ key, value: `${value}`, opt: undefined }];
+    }).flat();
+  }
+  return args(config).map(({ key, value, opt }) => {
+    return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
+  });
+}
+
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
   if (trailers === undefined) return [];
   return Object.entries(trailers)
-    .map(([token, value]) => `--trailer=${token}: ${value}`);
+    .map(([token, value]) => flag("--trailer", `${token}: ${value}`))
+    .flat();
 }
 
 function signFlag(
@@ -2166,11 +2182,11 @@ function signFlag(
   if (type === "tag") {
     if (sign === false) return ["--no-sign"];
     if (sign === true) return ["--sign"];
-    return [`--local-user=${sign}`];
+    return flag("--local-user", sign, { equals: true });
   }
   if (sign === false) return ["--no-gpg-sign"];
   if (sign === true) return ["--gpg-sign"];
-  return [`--gpg-sign=${sign}`];
+  return flag("--gpg-sign", sign, { equals: true });
 }
 
 function statusKind(code: string): Patch["status"] {
