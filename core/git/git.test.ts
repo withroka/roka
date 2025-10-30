@@ -160,6 +160,84 @@ Deno.test("git().init({ config }) persists configuration", async () => {
   assertEquals(commit?.author, { name: "name", email: "email" });
 });
 
+Deno.test("git().init({ objectFormat }) can specify hashing algorithm", async () => {
+  await using directory = await tempDirectory();
+  const config = {
+    user: { name: "name", email: "email" },
+    commit: { gpgsign: false },
+  };
+  const repo1 = await git().init({
+    directory: directory.path("repo1"),
+    config,
+    objectFormat: "sha1",
+  });
+  const repo2 = await git().init({
+    directory: directory.path("repo2"),
+    config,
+    objectFormat: "sha1",
+  });
+  const repo3 = await git().init({
+    directory: directory.path("repo3"),
+    config,
+    objectFormat: "sha256",
+  });
+  await repo1.commit.create("commit", { allowEmpty: true });
+  await repo2.commit.create("commit", { allowEmpty: true });
+  await repo3.commit.create("commit", { allowEmpty: true });
+  assertEquals(
+    (await repo1?.commit?.head())?.hash,
+    (await repo2?.commit?.head())?.hash,
+  );
+  assertNotEquals(
+    (await repo1?.commit?.head())?.hash,
+    (await repo3?.commit?.head())?.hash,
+  );
+});
+
+Deno.test("git().init({ refFormat }) can specify ref storage format", async () => {
+  await using directory = await tempDirectory();
+  const repo1 = await git().init({
+    directory: directory.path("repo1"),
+    refFormat: "files",
+    bare: true,
+  });
+  const repo2 = await git().init({
+    directory: directory.path("repo2"),
+    refFormat: "reftable",
+    bare: true,
+  });
+  await assertRejects(() => Deno.stat(repo1.path("reftable")));
+  await Deno.stat(repo2.path("reftable"));
+});
+
+Deno.test("git().init({ shared }) can specify repository sharing", async () => {
+  await using directory = await tempDirectory();
+  const repo1 = await git().init({
+    directory: directory.path("repo1"),
+    shared: false,
+    bare: true,
+  });
+  const repo2 = await git().init({
+    directory: directory.path("repo2"),
+    shared: true,
+    bare: true,
+  });
+  const repo3 = await git().init({
+    directory: directory.path("repo3"),
+    shared: "all",
+    bare: true,
+  });
+  const repo4 = await git().init({
+    directory: directory.path("repo4"),
+    shared: 0o775,
+    bare: true,
+  });
+  assertEquals(((await Deno.stat(repo1.path()))?.mode ?? 0) & 0o770, 0o750);
+  assertEquals(((await Deno.stat(repo2.path()))?.mode ?? 0) & 0o770, 0o770);
+  assertEquals(((await Deno.stat(repo3.path()))?.mode ?? 0) & 0o777, 0o775);
+  assertEquals(((await Deno.stat(repo4.path()))?.mode ?? 0) & 0o777, 0o775);
+});
+
 Deno.test("git().config.set() configures single values", async () => {
   await using repo = await tempRepository();
   await repo.config.set({ user: { name: "name", email: "email" } });

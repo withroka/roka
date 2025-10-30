@@ -46,6 +46,7 @@
  * @todo Add `git().replace.*` (grafts)
  * @todo Add `git().hook.*`
  * @todo Add `git().reflog.*`
+ * @todo Add templates.
  * @todo Expose dates.
  * @todo Verify signatures.
  * @todo Add pruning.
@@ -539,10 +540,10 @@ export interface GitOptions {
 }
 
 /**
- * Options for the {@linkcode Git.init} and {@linkcode RemoteOperations.clone}
- * functions.
+ * Options common to {@linkcode Git.init} and
+ * {@linkcode RemoteOperations.clone}.
  */
-export interface InitOptions {
+export interface RepositoryOptions {
   /**
    * The name of a new directory to initialize into.
    *
@@ -555,12 +556,6 @@ export interface InitOptions {
    */
   bare?: boolean;
   /**
-   * Initial branch name.
-   *
-   * Default is `main` in latest versions of `git`.
-   */
-  branch?: string;
-  /**
    * Configuration for the initialized repository.
    *
    * This configuration will apply to initialization operation itself, and it
@@ -569,8 +564,42 @@ export interface InitOptions {
   config?: Config;
 }
 
+/**
+ * Options for the {@linkcode Git.init} and {@linkcode RemoteOperations.clone}
+ * functions.
+ */
+export interface InitOptions extends RepositoryOptions {
+  /**
+   * Initial branch name.
+   *
+   * Default is `main` in latest versions of `git`.
+   */
+  branch?: string;
+  /**
+   * Specify hashing algorithm for the repository.
+   * @default {"sha1"}
+   */
+  objectFormat?: "sha1" | "sha256";
+  /**
+   * Specify ref storage format.
+   * @default {"files"}
+   */
+  refFormat?: "files" | "reftable";
+  /**
+   * Specify user sharing for the repository.
+   *
+   * `false`: use permissiong reported by `umask`
+   * `true`: make repository writable by group
+   * `"all"`: make repository writable by group, and readable by others
+   * mode: set repository mode to given number mode
+   *
+   * @default {false}
+   */
+  shared?: boolean | "all" | number;
+}
+
 /** Options for the {@linkcode RemoteOperations.clone} function. */
-export interface RemoteCloneOptions extends Omit<InitOptions, "branch"> {
+export interface RemoteCloneOptions extends RepositoryOptions {
   /**
    * The name of a new directory to clone into.
    *
@@ -1318,6 +1347,15 @@ export function git(options?: GitOptions): Git {
         "init",
         flag("--bare", options?.bare),
         flag("--initial-branch", options?.branch, { equals: true }),
+        flag("--object-format", options?.objectFormat),
+        flag("--ref-format", options?.refFormat),
+        flag(
+          "--shared",
+          typeof options?.shared === "number"
+            ? options.shared.toString(8)
+            : options?.shared,
+          { equals: true },
+        ),
         "--",
         options?.directory,
       );
