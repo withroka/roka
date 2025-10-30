@@ -238,6 +238,17 @@ Deno.test("git().init({ shared }) can specify repository sharing", async () => {
   assertEquals(((await Deno.stat(repo4.path()))?.mode ?? 0) & 0o777, 0o775);
 });
 
+Deno.test("git().init({ separateGitDir }) can specify git directory", async () => {
+  await using directory = await tempDirectory();
+  const separate = directory.path("separate");
+  const repo = await git().init({
+    directory: directory.path("workdir"),
+    separateGitDir: separate,
+  });
+  assertEquals(repo.path(), directory.path("workdir"));
+  assertEquals((await Deno.stat(separate)).isDirectory, true);
+});
+
 Deno.test("git().config.set() configures single values", async () => {
   await using repo = await tempRepository();
   await repo.config.set({ user: { name: "name", email: "email" } });
@@ -632,6 +643,20 @@ Deno.test("git().remote.clone({ tags }) can skip tags", async () => {
   assertEquals(await repo.tag.list(), []);
   await repo.remote.fetch();
   assertEquals(await repo.tag.list(), []);
+});
+
+Deno.test("git().remote.clone({ separateGitDir }) can specify git directory", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const separate = directory.path("separate");
+  const url = toFileUrl(upstream.path());
+  const repo = await git().remote.clone(url, {
+    directory: directory.path("workdir"),
+    separateGitDir: separate,
+  });
+  assertEquals(repo.path(), directory.path("workdir"));
+  assertEquals((await Deno.stat(separate)).isDirectory, true);
 });
 
 Deno.test("git().remote.add() adds a default remote", async () => {

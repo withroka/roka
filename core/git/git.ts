@@ -562,6 +562,8 @@ export interface RepositoryOptions {
    * will persist in the local repository afterwards.
    */
   config?: Config;
+  /** Create the git directory at given path. */
+  separateGitDir?: string;
 }
 
 /**
@@ -1356,6 +1358,7 @@ export function git(options?: GitOptions): Git {
             : options?.shared,
           { equals: true },
         ),
+        flag("--separate-git-dir", options?.separateGitDir, { equals: true }),
         "--",
         options?.directory,
       );
@@ -1411,6 +1414,7 @@ export function git(options?: GitOptions): Git {
             options?.singleBranch,
           ),
           flag(["--tags", "--no-tags"], options?.tags),
+          flag("--separate-git-dir", options?.separateGitDir, { equals: true }),
           urlArg(url),
           "--",
           options?.directory,
