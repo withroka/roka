@@ -1,6 +1,7 @@
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
+import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import {
   assertEquals,
@@ -11,7 +12,6 @@ import {
 } from "@std/assert";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
-import { git, GitError } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
@@ -526,6 +526,21 @@ Deno.test("git().remote.backfill({ minBatchSize }) rejects negative values", asy
     GitError,
     "expects a non-negative integer value",
   );
+});
+
+Deno.test("git().remote.clone({ tags }) can skip tags", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  await upstream.tag.create("tag");
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo = await git().remote.clone(url, {
+    directory: directory.path(),
+    tags: false,
+  });
+  assertEquals(await repo.tag.list(), []);
+  await repo.remote.fetch();
+  assertEquals(await repo.tag.list(), []);
 });
 
 Deno.test("git().remote.add() adds a default remote", async () => {
