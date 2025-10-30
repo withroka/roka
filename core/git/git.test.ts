@@ -393,7 +393,7 @@ Deno.test("git().remote.clone({ local }) can share objects from remote", async (
   assertGreater(objects.length, 0);
 });
 
-Deno.test("git().remote.clone({ local }) can create share objects from reference", async () => {
+Deno.test("git().remote.clone({ local }) can share objects from reference", async () => {
   await using upstream = await tempRepository();
   await upstream.commit.create("commit", { allowEmpty: true });
   const url = toFileUrl(upstream.path());
