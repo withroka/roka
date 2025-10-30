@@ -299,6 +299,30 @@ Deno.test("git().remote.clone({ config }) persists configuration", async () => {
   assertEquals(commit?.author, { name: "name", email: "email" });
 });
 
+Deno.test("git().remote.clone({ filter }) creates a partial clone", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo1 = await git().remote.clone(url, {
+    directory: directory.path("repo1"),
+    local: false,
+  });
+  const repo2 = await git().remote.clone(url, {
+    directory: directory.path("repo2"),
+    filter: "blob:none",
+    local: false,
+  });
+  const objects1 = await Array.fromAsync(
+    find([repo1.path(".git")], { type: "file", name: "*.promisor" }),
+  );
+  const objects2 = await Array.fromAsync(
+    find([repo2.path(".git")], { type: "file", name: "*.promisor" }),
+  );
+  assertEquals(objects1.length, 0);
+  assertGreater(objects2.length, 0);
+});
+
 Deno.test("git().remote.clone({ local }) can keep local optimizations", async () => {
   await using upstream = await tempRepository();
   await upstream.commit.create("commit", { allowEmpty: true });
@@ -492,6 +516,15 @@ Deno.test("git().remote.clone({ singleBranch }) copies a single branch", async (
     () => repo.branch.switch("branch2"),
     GitError,
     "invalid reference",
+  );
+});
+
+Deno.test("git().remote.backfill({ minBatchSize }) rejects negative values", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.remote.backfill({ minBatchSize: -1 }),
+    GitError,
+    "expects a non-negative integer value",
   );
 });
 
