@@ -553,10 +553,7 @@ export interface InitOptions {
    */
   bare?: boolean;
   /**
-   * Name of the initial branch.
-   *
-   * Creates a new branch with this name for {@linkcode Git.init} and checks
-   * out this branch for {@linkcode RemoteOperations.clone}.
+   * Initial branch name.
    *
    * Default is `main` in latest versions of `git`.
    */
@@ -571,7 +568,7 @@ export interface InitOptions {
 }
 
 /** Options for the {@linkcode RemoteOperations.clone} function. */
-export interface RemoteCloneOptions extends InitOptions {
+export interface RemoteCloneOptions extends Omit<InitOptions, "branch"> {
   /**
    * The name of a new directory to clone into.
    *
@@ -581,6 +578,12 @@ export interface RemoteCloneOptions extends InitOptions {
    * empty.
    */
   directory?: string;
+  /**
+   * Name of the initial branch to checkout after cloning.
+   *
+   * If set to `null`, a checkout is not performed.
+   */
+  branch?: string | null;
   /**
    * Set configuration for the initialized repository.
    *
@@ -1307,6 +1310,8 @@ export function git(options?: GitOptions): Git {
           "clone",
           configFlags(options?.config, "--config").flat(),
           flag("--bare", options?.bare),
+          flag("--branch", options?.branch ?? undefined),
+          flag("--no-checkout", options?.branch === null),
           flag("--depth", options?.depth),
           flag("--local", options?.local === true),
           flag("--no-local", options?.local === false),
@@ -1318,7 +1323,6 @@ export function git(options?: GitOptions): Git {
           ),
           flag("--dissociate", reference?.dissociate),
           flag("--origin", options?.remote),
-          flag("--branch", options?.branch),
           flag(
             ["--single-branch", "--no-single-branch"],
             options?.singleBranch,
