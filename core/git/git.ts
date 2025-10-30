@@ -592,13 +592,6 @@ export interface RemoteCloneOptions extends Omit<InitOptions, "branch"> {
    */
   config?: Config;
   /**
-   * Number of commits to clone at the tip.
-   *
-   * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless
-   * it is set to `false` to fetch from the tip of all branches.
-   */
-  depth?: number;
-  /**
    * Control local repository optimizations.
    *
    * - `false`: disable optimizations, use remote transport
@@ -622,6 +615,23 @@ export interface RemoteCloneOptions extends Omit<InitOptions, "branch"> {
    * @default {"origin"}
    */
   remote?: string;
+  /**
+   * Create a shallow copy of the cloned repository.
+   *
+   * If any of the shallow options are provided, shallow cloning is enabled,
+   * rewriting the history to only include the specified commits.
+   */
+  shallow?: {
+    /**
+     * Number of commits to clone at the tip.
+     *
+     * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless
+     * it is set to `false` to fetch from the tip of all branches.
+     */
+    depth?: number;
+    /** Exclude commits reachable from a specified remote branch or tag. */
+    exclude?: string[];
+  };
   /**
    * Clone only the tip of a single branch.
    *
@@ -1312,7 +1322,6 @@ export function git(options?: GitOptions): Git {
           flag("--bare", options?.bare),
           flag("--branch", options?.branch ?? undefined),
           flag("--no-checkout", options?.branch === null),
-          flag("--depth", options?.depth),
           flag("--local", options?.local === true),
           flag("--no-local", options?.local === false),
           flag("--no-hardlinks", options?.local === "copy"),
@@ -1323,6 +1332,10 @@ export function git(options?: GitOptions): Git {
           ),
           flag("--dissociate", reference?.dissociate),
           flag("--origin", options?.remote),
+          flag("--depth", options?.shallow?.depth),
+          flag("--shallow-exclude", options?.shallow?.exclude, {
+            equals: true,
+          }),
           flag(
             ["--single-branch", "--no-single-branch"],
             options?.singleBranch,

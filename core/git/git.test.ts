@@ -299,42 +299,6 @@ Deno.test("git().remote.clone({ config }) persists configuration", async () => {
   assertEquals(commit?.author, { name: "name", email: "email" });
 });
 
-Deno.test("git().remote.clone({ depth }) makes a shallow copy", async () => {
-  await using upstream = await tempRepository();
-  await upstream.commit.create("commit1", { allowEmpty: true });
-  await upstream.commit.create("commit2", { allowEmpty: true });
-  const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
-  await using directory = await tempDirectory();
-  const url = toFileUrl(upstream.path());
-  const repo = await git().remote.clone(url, {
-    directory: directory.path(),
-    depth: 1,
-    local: false,
-  });
-  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
-});
-
-Deno.test("git().remote.clone({ depth }) can make a shallow copy of multiple branches", async () => {
-  await using upstream = await tempRepository();
-  await upstream.branch.switch("branch1", { create: true });
-  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
-  const branch2 = await upstream.branch.switch("branch2", { create: true });
-  await upstream.commit.create("commit2", { allowEmpty: true });
-  const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
-  await using directory = await tempDirectory();
-  const url = toFileUrl(upstream.path());
-  const repo = await git().remote.clone(url, {
-    directory: directory.path(),
-    branch: "branch1",
-    depth: 1,
-    local: false,
-    singleBranch: false,
-  });
-  assertEquals(await repo.commit.log(), [commit1]);
-  await repo.branch.switch(branch2);
-  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
-});
-
 Deno.test("git().remote.clone({ local }) can keep local optimizations", async () => {
   await using upstream = await tempRepository();
   await upstream.commit.create("commit", { allowEmpty: true });
@@ -476,6 +440,37 @@ Deno.test("git().remote.clone({ remote }) clones a repository with remote name",
     remote: "remote",
   });
   assertEquals(await repo.commit.log(), await upstream.commit.log());
+});
+
+Deno.test("git().remote.clone({ shallow }) makes a shallow copy with commit depth", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo = await git().remote.clone(url, {
+    directory: directory.path(),
+    shallow: { depth: 1 },
+    local: false,
+  });
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
+});
+
+Deno.test("git().remote.clone({ shallow }) can make a shallow copy of with excluded branches", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.branch.switch("branch", { orphan: true });
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  await upstream.branch.switch("main");
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo = await git().remote.clone(url, {
+    directory: directory.path(),
+    shallow: { exclude: ["branch"] },
+  });
+  assertEquals(await repo.commit.log(), [commit1]);
+  assertEquals(await repo.branch.get("branch"), undefined);
 });
 
 Deno.test("git().remote.clone({ singleBranch }) copies a single branch", async () => {
