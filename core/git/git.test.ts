@@ -1692,7 +1692,7 @@ Deno.test("git().branch.switch({ orphan }) creates an unborn branch", async () =
   const main = await repo.branch.current();
   let branch = await repo.branch.switch("branch", { orphan: true });
   assertEquals(branch, { name: "branch" });
-  const commit2 = await repo.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
   branch = await repo.branch.current();
   assertEquals(branch, { name: "branch", commit: commit2 });
   assertEquals(await repo.branch.current(), branch);
