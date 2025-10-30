@@ -249,6 +249,24 @@ Deno.test("git().remote.clone({ branch }) checks out a branch", async () => {
   assertEquals(await repo.commit.head(), commit1);
 });
 
+Deno.test("git().remote.clone({ branch }) can clone without checkout", async () => {
+  await using upstream = await tempRepository();
+  await Deno.writeTextFile(upstream.path("file.txt"), "content");
+  await upstream.index.add("file.txt");
+  const commit = await upstream.commit.create("commit");
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo = await git().remote.clone(url, {
+    directory: directory.path(),
+    branch: null,
+  });
+  assertEquals(await repo.commit.head(), commit);
+  await assertRejects(
+    () => Deno.stat(repo.path("file.txt")),
+    Deno.errors.NotFound,
+  );
+});
+
 Deno.test("git().remote.clone({ config }) applies to initialization", async () => {
   await using upstream = await tempRepository();
   await upstream.commit.create("commit", { allowEmpty: true });
