@@ -596,14 +596,24 @@ export interface RemoteCloneOptions extends InitOptions {
    */
   depth?: number;
   /**
-   * Enable local repository optimizations.
+   * Control local repository optimizations.
    *
-   * - `false`: disable optimizations, and use remote transport
-   * - `true`: use local transport for local repositories, ignore for remote
+   * - `false`: disable optimizations, use remote transport
+   * - `true`: use local transport with hardlinks
+   * - `"copy"`: copy objects without hardlinks
+   * - `"shared"`: share objects with source repository
+   * - `{ reference }`: use given repository as an alternate object store
    *
    * @default {true}
    */
-  local?: boolean;
+  local?: boolean | "copy" | "shared" | {
+    /** Path to the reference repository. */
+    reference: string;
+    /** Only use the reference repository if able to do so. */
+    ifAble?: boolean;
+    /** Use reference repository during initial clone only. */
+    dissociate?: boolean;
+  };
   /**
    * Name of the remote for the cloned repository.
    * @default {"origin"}
@@ -1275,6 +1285,9 @@ export function git(options?: GitOptions): Git {
     },
     remote: {
       async clone(url, options) {
+        const reference = typeof options?.local === "object"
+          ? options?.local
+          : undefined;
         const output = await run(
           {
             ...gitOptions,
@@ -1285,7 +1298,15 @@ export function git(options?: GitOptions): Git {
           configFlags(options?.config, "--config").flat(),
           flag("--bare", options?.bare),
           flag("--depth", options?.depth),
-          flag(["--local", "--no-local"], options?.local),
+          flag("--local", options?.local === true),
+          flag("--no-local", options?.local === false),
+          flag("--no-hardlinks", options?.local === "copy"),
+          flag("--shared", options?.local === "shared"),
+          flag(
+            reference?.ifAble ? "--reference-if-able" : "--reference",
+            reference?.reference,
+          ),
+          flag("--dissociate", reference?.dissociate),
           flag("--origin", options?.remote),
           flag("--branch", options?.branch),
           flag(
@@ -2076,8 +2097,11 @@ async function run(
   }
 }
 
-function urlArg(url: URL): string {
-  if (url.protocol === "file") return fromFileUrl(url);
+function urlArg(url: URL): string;
+function urlArg(url: URL | undefined): string | undefined;
+function urlArg(url: URL | undefined): string | undefined {
+  if (url === undefined) return undefined;
+  if (url.protocol === "file:") return fromFileUrl(url);
   return url.toString();
 }
 
