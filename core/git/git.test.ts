@@ -457,7 +457,7 @@ Deno.test("git().remote.clone({ shallow }) makes a shallow copy with commit dept
   assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
 });
 
-Deno.test("git().remote.clone({ shallow }) can make a shallow copy of with excluded branches", async () => {
+Deno.test("git().remote.clone({ shallow }) can make a shallow copy with excluded branches", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
   await upstream.branch.switch("branch", { orphan: true });
