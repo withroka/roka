@@ -588,7 +588,7 @@ export interface InitOptions extends RepositoryOptions {
   /**
    * Specify user sharing for the repository.
    *
-   * `false`: use permissiong reported by `umask`
+   * `false`: use permissions reported by `umask`
    * `true`: make repository writable by group
    * `"all"`: make repository writable by group, and readable by others
    * mode: set repository mode to given number mode
