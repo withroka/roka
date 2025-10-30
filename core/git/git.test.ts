@@ -528,6 +528,21 @@ Deno.test("git().remote.backfill({ minBatchSize }) rejects negative values", asy
   );
 });
 
+Deno.test("git().remote.clone({ tags }) can skip tags", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  await upstream.tag.create("tag");
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo = await git().remote.clone(url, {
+    directory: directory.path(),
+    tags: false,
+  });
+  assertEquals(await repo.tag.list(), []);
+  await repo.remote.fetch();
+  assertEquals(await repo.tag.list(), []);
+});
+
 Deno.test("git().remote.add() adds a default remote", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository();

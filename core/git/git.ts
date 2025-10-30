@@ -657,7 +657,10 @@ export interface RemoteCloneOptions extends Omit<InitOptions, "branch"> {
    */
   singleBranch?: boolean;
   /**
-   * Fetch tags.
+   * Fetch tags during clone.
+   *
+   * If set to `false`, the repository is configured to not fetch tags.
+   *
    * @default {true}
    */
   tags?: boolean;
@@ -1367,6 +1370,7 @@ export function git(options?: GitOptions): Git {
             ["--single-branch", "--no-single-branch"],
             options?.singleBranch,
           ),
+          flag(["--tags", "--no-tags"], options?.tags),
           urlArg(url),
           "--",
           options?.directory,
