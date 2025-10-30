@@ -1,8 +1,11 @@
+import { pool } from "@roka/async/pool";
+import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
 import { tempRepository } from "@roka/git/testing";
 import {
   assertEquals,
   assertExists,
+  assertGreater,
   assertNotEquals,
   assertRejects,
 } from "@std/assert";
@@ -314,18 +317,135 @@ Deno.test("git().remote.clone({ depth }) can make a shallow copy of multiple bra
   assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
 });
 
-Deno.test("git().remote.clone({ local }) is no-op for local remote", async () => {
+Deno.test("git().remote.clone({ local }) can keep local optimizations", async () => {
   await using upstream = await tempRepository();
-  const commit = await upstream.commit.create("commit", {
-    allowEmpty: true,
-  });
-  await using directory = await tempDirectory();
+  await upstream.commit.create("commit", { allowEmpty: true });
   const url = toFileUrl(upstream.path());
+  const directory = await tempDirectory();
   const repo = await git().remote.clone(url, {
-    directory: directory.path(),
+    directory: directory.path("repo1"),
+    bare: true,
     local: true,
   });
-  assertEquals(await repo.commit.log(), [commit]);
+  const objects = await Array.fromAsync(
+    find([repo.path("objects")], { type: "file" }),
+  );
+  assertGreater(objects.length, 0);
+  await pool(
+    objects,
+    async (file) => assertGreater((await Deno.stat(file)).nlink, 1),
+  );
+});
+
+Deno.test("git().remote.clone({ local }) can disable local optimizations", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  const directory = await tempDirectory();
+  const repo = await git().remote.clone(url, {
+    directory: directory.path("repo1"),
+    bare: true,
+    local: false,
+  });
+  const objects = await Array.fromAsync(
+    find([repo.path("objects")], { type: "file" }),
+  );
+  assertGreater(objects.length, 0);
+  await pool(
+    objects,
+    async (file) => assertEquals((await Deno.stat(file)).nlink, 1),
+  );
+});
+
+Deno.test("git().remote.clone({ local }) can disable hardlinks", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  const directory = await tempDirectory();
+  const repo = await git().remote.clone(url, {
+    directory: directory.path("repo1"),
+    bare: true,
+    local: "copy",
+  });
+  const objects = await Array.fromAsync(
+    find([repo.path("objects")], { type: "file" }),
+  );
+  assertGreater(objects.length, 0);
+  await pool(
+    objects,
+    async (file) => assertEquals((await Deno.stat(file)).nlink, 1),
+  );
+});
+
+Deno.test("git().remote.clone({ local }) can share objects from remote", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  const directory = await tempDirectory();
+  const repo = await git().remote.clone(url, {
+    directory: directory.path("repo1"),
+    bare: true,
+    local: "shared",
+  });
+  const objects = await Array.fromAsync(
+    find([repo.path("objects/info/alternates")], { type: "file" }),
+  );
+  assertGreater(objects.length, 0);
+});
+
+Deno.test("git().remote.clone({ local }) can create share objects from reference", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  const directory = await tempDirectory();
+  await using reference = await tempRepository({ clone: upstream });
+  const repo = await git().remote.clone(url, {
+    directory: directory.path("repo1"),
+    bare: true,
+    local: { reference: reference.path() },
+  });
+  await Deno.stat(repo.path("objects/info/alternates"));
+});
+
+Deno.test("git().remote.clone({ local }) can optionally create share objects from reference", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  const directory = await tempDirectory();
+  await using reference = await tempRepository({ clone: upstream });
+  assertRejects(async () => {
+    await git().remote.clone(url, {
+      directory: directory.path("repo1"),
+      bare: true,
+      local: { reference: reference.path("unknown"), ifAble: false },
+    });
+  });
+  const repo = await git().remote.clone(url, {
+    directory: directory.path("repo2"),
+    bare: true,
+    local: { reference: reference.path("unknown"), ifAble: true },
+  });
+  await assertRejects(
+    () => Deno.stat(repo.path("objects/info/alternates")),
+    Deno.errors.NotFound,
+  );
+});
+
+Deno.test("git().remote.clone({ local }) can create share objects from reference during transfer only", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  const directory = await tempDirectory();
+  await using reference = await tempRepository({ clone: upstream });
+  const repo = await git().remote.clone(url, {
+    directory: directory.path("repo1"),
+    bare: true,
+    local: { reference: reference.path(), dissociate: true },
+  });
+  await assertRejects(
+    () => Deno.stat(repo.path("objects/info/alternates")),
+    Deno.errors.NotFound,
+  );
 });
 
 Deno.test("git().remote.clone({ remote }) clones a repository with remote name", async () => {
