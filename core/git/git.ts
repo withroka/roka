@@ -111,6 +111,8 @@ export interface ConfigOperations {
 export interface RemoteOperations {
   /** Clones a remote repository. */
   clone(url: URL, options?: RemoteCloneOptions): Promise<Git>;
+  /** Fetches missing objects in a partial clone. */
+  backfill(options?: RemoteBackfillOptions): Promise<void>;
   /** Adds a remote to the repository. */
   add(remote: Remote): Promise<Remote>;
   /** Adds a remote to the repository with a fetch/push URL. */
@@ -592,6 +594,21 @@ export interface RemoteCloneOptions extends Omit<InitOptions, "branch"> {
    */
   config?: Config;
   /**
+   * Filter objects with given filter specification to create a partial clone.
+   *
+   * This will result in a partial clone where some objects are omitted from
+   * the initial clone, which are fetched on-demand later. The
+   * {@linkcode RemoteOperations.backfill backfill} function can be also used
+   * to fetch missing objects later.
+   *
+   * Common filter values:
+   *
+   * - `"blob:none"`: omit all blobs (file contents)
+   * - `"blob:limit=<size>"`: omit blobs larger than the specified size
+   * - `"tree:0"`: omit all trees and blobs
+   */
+  filter?: string | string[];
+  /**
    * Control local repository optimizations.
    *
    * - `false`: disable optimizations, use remote transport
@@ -658,6 +675,15 @@ export interface RemoteOptions {
    * configured for the current branch.
    */
   remote?: string | Remote;
+}
+
+/** Options for the {@linkcode RemoteOperations.backfill} function. */
+export interface RemoteBackfillOptions extends RemoteOptions {
+  /**
+   * Minimum number of objects to backfill in a single batch.
+   * @default {50000}
+   */
+  minBatchSize?: number;
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -1322,6 +1348,7 @@ export function git(options?: GitOptions): Git {
           flag("--bare", options?.bare),
           flag("--branch", options?.branch ?? undefined),
           flag("--no-checkout", options?.branch === null),
+          flag("--filter", options?.filter, { equals: true }),
           flag("--local", options?.local === true),
           flag("--no-local", options?.local === false),
           flag("--no-hardlinks", options?.local === "copy"),
@@ -1349,6 +1376,13 @@ export function git(options?: GitOptions): Git {
         assertExists(cloned, "Cannot determine cloned directory");
         const cwd = resolve(directory, cloned);
         return git({ ...gitOptions, cwd });
+      },
+      async backfill(options) {
+        await run(
+          gitOptions,
+          "backfill",
+          flag("--min-batch-size", options?.minBatchSize),
+        );
       },
       async add(remoteOrUrl: URL | Remote, options?: RemoteAddOptions) {
         const remote = remoteOrUrl instanceof URL
