@@ -556,8 +556,8 @@ Deno.test("git().remote.clone({ remote }) clones a repository with remote name",
   assertEquals(await repo.commit.log(), await upstream.commit.log());
 });
 
-Deno.test("git().remote.clone({ shallow }) makes a shallow copy with commit depth", async () => {
-  await using upstream = await tempRepository();
+Deno.test("git().remote.clone({ shallow }) can exclude history by depth", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
   await upstream.commit.create("commit1", { allowEmpty: true });
   await upstream.commit.create("commit2", { allowEmpty: true });
   const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
@@ -567,22 +567,26 @@ Deno.test("git().remote.clone({ shallow }) makes a shallow copy with commit dept
     shallow: { depth: 1 },
     local: false,
   });
-  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
+  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+    omit(commit3, ["parent"]),
+  ]);
 });
 
-Deno.test("git().remote.clone({ shallow }) can make a shallow copy with excluded branches", async () => {
+Deno.test("git().remote.clone({ shallow }) can exclude history by target", async () => {
   await using upstream = await tempRepository({ branch: "main" });
-  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
-  await upstream.branch.switch("branch", { orphan: true });
+  await upstream.commit.create("commit1", { allowEmpty: true });
   await upstream.commit.create("commit2", { allowEmpty: true });
-  await upstream.branch.switch("main");
+  const tag = await upstream.tag.create("tag");
+  const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
   await using directory = await tempDirectory();
   const repo = await git().remote.clone(upstream.path(), {
     directory: directory.path(),
-    shallow: { exclude: ["branch"] },
+    shallow: { exclude: [tag.name] },
+    local: false,
   });
-  assertEquals(await repo.commit.log(), [commit1]);
-  assertEquals(await repo.branch.get("branch"), undefined);
+  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+    omit(commit3, ["parent"]),
+  ]);
 });
 
 Deno.test("git().remote.clone({ singleBranch }) copies a single branch", async () => {
@@ -807,26 +811,39 @@ Deno.test("git().remote.fetch({ filter }) filters fetched objects", async () => 
 
 Deno.test("git().remote.fetch({ shallow }) limits fetch by commit depth", async () => {
   await using upstream = await tempRepository({ branch: "main" });
-  await using repo = await tempRepository({ clone: upstream });
-  await upstream.commit.create("commit1", { allowEmpty: true });
-  await upstream.commit.create("commit2", { allowEmpty: true });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
   const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
-  await repo.remote.fetch({ shallow: { depth: 1 } });
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+    commit3,
+    commit2,
+    commit1,
+  ]);
+  await repo.remote.pull({ shallow: { depth: 1 } });
   assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
     omit(commit3, ["parent"]),
   ]);
 });
 
-Deno.test("git().remote.fetch({ shallow }) can make a shallow copy with excluded branches", async () => {
+Deno.test("git().remote.fetch({ shallow }) can exclude history by target", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
-  await upstream.branch.switch("branch", { orphan: true });
-  await upstream.commit.create("commit2", { allowEmpty: true });
-  await upstream.branch.switch("main");
+  const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
+  const tag = await upstream.tag.create("tag");
+  const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
   await using repo = await tempRepository({ clone: upstream });
-  await repo.remote.fetch({ shallow: { exclude: ["branch"] } });
-  assertEquals(await repo.commit.log(), [commit1]);
-  assertEquals(await repo.branch.get("branch"), undefined);
+  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+    commit3,
+    commit2,
+    commit1,
+  ]);
+  await repo.remote.fetch({
+    shallow: { exclude: [tag.name] },
+  });
+  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+    omit(commit3, ["parent"]),
+  ]);
 });
 
 Deno.test("git().remote.fetch({ tags }) can skip tags", async () => {
@@ -1042,6 +1059,29 @@ Deno.test("git().remote.pull({ sign }) cannot use wrong key", async () => {
     GitError,
     "gpg failed to sign",
   );
+});
+
+Deno.test("git().remote.pull({ shallow }) can exclude history by depth", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
+  const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
+  await repo.remote.pull({ shallow: { depth: 1 } });
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
+});
+
+Deno.test("git().remote.pull({ shallow }) can exclude history by target", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
+  const tag = await upstream.tag.create("tag");
+  const commit3 = await upstream.commit.create("commit3", { allowEmpty: true });
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
+  await repo.remote.pull({ shallow: { exclude: [tag.name] } });
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
 });
 
 Deno.test("git().remote.pull({ tags }) can skip tags", async () => {

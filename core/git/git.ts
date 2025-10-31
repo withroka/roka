@@ -665,9 +665,8 @@ export interface RemoteTrackOptions {
 }
 
 /**
- * Options common to {@linkcode RemoteOperations.push} and
- * {@linkcode RemoteOperations.pull} for controlling what is updated in
- * repositories.
+ * Options common to operations that use remote transport
+ * (e.g. {@linkcode RemoteOperations.push}).
  */
 export interface RemoteTransportOptions {
   /** Either update all refs on the other side or don't update any.*/
@@ -705,6 +704,13 @@ export interface RemoteFilterOptions {
    * - `"tree:0"`: omit all trees and blobs
    */
   filter?: string | string[];
+}
+
+/**
+ * Options common to operations that can create partial repositories
+ * (e.g. {@linkcode RemoteOperations.pull}).
+ */
+export interface RemoteShallowOptions {
   /**
    * Create a shallow fetch.
    *
@@ -728,7 +734,7 @@ export interface RemoteFilterOptions {
 
 /** Options for the {@linkcode RemoteOperations.clone} function. */
 export interface RemoteCloneOptions
-  extends RepositoryOptions, RemoteFilterOptions {
+  extends RepositoryOptions, RemoteFilterOptions, RemoteShallowOptions {
   /**
    * The name of a new directory to clone into.
    *
@@ -794,7 +800,11 @@ export interface RemoteCloneOptions
 
 /** Options for the {@linkcode RemoteOperations.fetch} function. */
 export interface RemoteFetchOptions
-  extends RemoteTransportOptions, RemoteTrackOptions, RemoteFilterOptions {
+  extends
+    RemoteTransportOptions,
+    RemoteTrackOptions,
+    RemoteFilterOptions,
+    RemoteShallowOptions {
   /**
    * Fetch from a repository, or multiple repositories.
    *
@@ -826,7 +836,11 @@ export interface RemoteBackfillOptions extends RemoteOptions {
 
 /** Options for the {@linkcode RemoteOperations.pull} function. */
 export interface RemotePullOptions
-  extends RemoteTransportOptions, RemoteTrackOptions, SignOptions {
+  extends
+    RemoteTransportOptions,
+    RemoteTrackOptions,
+    RemoteShallowOptions,
+    SignOptions {
   /**
    * Pull from a repository, or from all repositories.
    *
@@ -1526,9 +1540,13 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "pull",
           flag("--atomic", options?.atomic),
+          flag("--depth", options?.shallow?.depth),
+          flag("--shallow-exclude", options?.shallow?.exclude, {
+            equals: true,
+          }),
+          signFlag("commit", options?.sign),
           flag(["--tags", "--no-tags"], options?.tags),
           flag("--set-upstream", options?.track),
-          signFlag("commit", options?.sign),
           remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
           nameArg(options?.target),
         );
