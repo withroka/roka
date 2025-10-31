@@ -111,16 +111,13 @@ export interface ConfigOperations {
 /** Remote operations from {@linkcode Git.remote}. */
 export interface RemoteOperations {
   /** Clones a remote repository. */
-  clone(
-    remote: string | URL | Remote,
-    options?: RemoteCloneOptions,
-  ): Promise<Git>;
+  clone(remote: RemoteRef, options?: RemoteCloneOptions): Promise<Git>;
   /** Fetches branches and tags from a remote. */
   fetch(options?: RemoteFetchOptions): Promise<void>;
   /** Fetches missing objects in a partial clone. */
   backfill(options?: RemoteBackfillOptions): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
-  unshallow(options?: RemoteUnshallowOptions): Promise<void>;
+  unshallow(options?: RemoteOptions): Promise<void>;
   /** Pulls branches and tags from a remote. */
   pull(options?: RemotePullOptions): Promise<void>;
   /** Pushes branches and tags to a remote. */
@@ -141,13 +138,13 @@ export interface RemoteOperations {
    * - the remote named `"origin"`
    * - `undefined`, if no remotes are configured
    */
-  get(options?: RemoteOptions): Promise<Remote | undefined>;
+  get(options?: RemoteNameOptions): Promise<Remote | undefined>;
   /** Updates a remote. */
   set(remote: Remote): Promise<Remote>;
   /** Updates a remote with a fetch/push URL. */
   set(remote: string, url: string | URL): Promise<Remote>;
   /** Removes a remote from the repository. */
-  remove(options?: RemoteOptions): Promise<void>;
+  remove(options?: RemoteNameOptions): Promise<void>;
   /**
    * Queries the HEAD branch name on the remote.
    * @throws {@linkcode GitError} If remote `HEAD` is detached.
@@ -357,6 +354,9 @@ export interface Remote {
   /** Remote push URLs. */
   push: URL[];
 }
+
+/** A type that refers to a remote repository. */
+export type RemoteRef = string | URL | Remote;
 
 /** A branch in a git repository. */
 export interface Branch {
@@ -644,7 +644,21 @@ export interface InitOptions extends RepositoryOptions {
  */
 export interface RemoteOptions {
   /**
-   * Remote to operate on.
+   * Remote repository to operate on.
+   *
+   * The default is the current branch remote, or `"origin"` if a remote is not
+   * configured for the current branch.
+   */
+  remote?: RemoteRef;
+}
+
+/**
+ * Options common to operations that work with remote names (e.g.
+ * {@linkcode RemoteOperations.add}).
+ */
+export interface RemoteNameOptions {
+  /**
+   * Remote repository to operate on.
    *
    * The default is the current branch remote, or `"origin"` if a remote is not
    * configured for the current branch.
@@ -810,19 +824,17 @@ export interface RemoteFetchOptions
    *
    * If set to `"all"`, fetches from all configured remotes.
    *
-   * If a URL is provided, fetches from the specified URL directly.
-   *
    * If omitted, fetches from the current branch remote, or `"origin"` if a
    * remote is not configured for the current branch.
    */
-  remote?: string | URL | Remote | (string | URL | Remote)[] | "all";
+  remote?: RemoteRef | (string | Remote)[] | "all";
   /**
    * Branch or tag to fetch commits from.
    *
    * The default behavior is to fetch from all remote branches.
    *
    * This option cannot be specified if fetching multiple repositories with
-   * {@linkcode RemoteMultipleOptions.remote remote}.
+   * {@linkcode RemoteFetchOptions.remote}.
    */
   target?: string | Branch | Tag;
 }
@@ -834,19 +846,6 @@ export interface RemoteBackfillOptions extends RemoteOptions {
    * @default {50000}
    */
   minBatchSize?: number;
-}
-
-/** Options for the {@linkcode RemoteOperations.unshallow} function. */
-export interface RemoteUnshallowOptions {
-  /**
-   * Remote to unshallow from.
-   *
-   * If a URL is provided, unshallows from the specified URL directly.
-   *
-   * The default is the current branch remote, or `"origin"` if a remote is not
-   * configured for the current branch.
-   */
-  remote?: string | URL | Remote;
 }
 
 /** Options for the {@linkcode RemoteOperations.pull} function. */
@@ -861,35 +860,24 @@ export interface RemotePullOptions
    *
    * If set to `"all"`, fetches from all configured remotes.
    *
-   * If a URL is provided, pulls from the specified URL directly.
-   *
    * If omitted, pulls from the current branch remote, or `"origin"` if a
    * remote is not configured for the current branch.
    */
-  remote?: string | URL | Remote | "all";
+  remote?: RemoteRef | "all";
   /**
    * Branch or tag to pull commits from.
    *
    * The default behavior is to pull from the upstream of the current branch.
    *
    * This option cannot be specified if pulling from multiple repositories with
-   * {@linkcode RemoteMultipleOptions.remote remote}.
+   * {@linkcode RemotePullOptions.remote}.
    */
   target?: string | Branch | Tag;
 }
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
 export interface RemotePushOptions
-  extends RemoteTrackOptions, RemoteTransportOptions {
-  /**
-   * Remote to push to.
-   *
-   * If a URL is provided, pushes to the specified URL directly.
-   *
-   * The default is the current branch remote, or `"origin"` if a remote is not
-   * configured for the current branch.
-   */
-  remote?: string | URL | Remote;
+  extends RemoteOptions, RemoteTrackOptions, RemoteTransportOptions {
   /**
    * Branch to push commits onto.
    *
@@ -1475,9 +1463,10 @@ export function git(options?: GitOptions): Git {
     },
     remote: {
       async clone(remote, options) {
-        const origin = typeof remote === "string" || remote instanceof URL
-          ? options?.remote
-          : remote.name;
+        const origin = options?.remote ??
+          (typeof remote === "string" || remote instanceof URL
+            ? undefined
+            : remote.name);
         const reference = typeof options?.local === "object"
           ? options?.local
           : undefined;
@@ -1528,10 +1517,6 @@ export function git(options?: GitOptions): Git {
           options?.target !== undefined &&
           (options?.remote === "all" || Array.isArray(options?.remote))
         ) throw new GitError("Cannot specify target with multiple remotes");
-        if (
-          Array.isArray(options?.remote) &&
-          options?.remote.some((r) => r instanceof URL)
-        ) throw new GitError("Cannot fetch from multiple URLs");
         await run(
           gitOptions,
           "fetch",
@@ -1566,9 +1551,6 @@ export function git(options?: GitOptions): Git {
         if (options?.target !== undefined && (options?.remote === "all")) {
           throw new GitError("Cannot specify target with multiple remotes");
         }
-        const remote = options?.remote instanceof URL
-          ? urlArg(options.remote)
-          : (remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()));
         await run(
           gitOptions,
           "pull",
@@ -1580,7 +1562,7 @@ export function git(options?: GitOptions): Git {
           signFlag("commit", options?.sign),
           flag(["--tags", "--no-tags"], options?.tags),
           flag("--set-upstream", options?.track),
-          remote,
+          remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
           nameArg(options?.target),
         );
       },
@@ -1599,10 +1581,7 @@ export function git(options?: GitOptions): Git {
           nameArg(options?.target),
         );
       },
-      async add(
-        remoteOrUrl: string | URL | Remote,
-        options?: RemoteAddOptions,
-      ) {
+      async add(remoteOrUrl: RemoteRef, options?: RemoteAddOptions) {
         const remote = options?.remote ?? (
           typeof remoteOrUrl === "string" || remoteOrUrl instanceof URL
             ? "origin"
@@ -1615,7 +1594,7 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           ["remote", "add"],
-          nameArg(remote),
+          remoteArg(remote),
           urlArg(remoteOrUrl),
         );
         for (const url of push) {
@@ -1623,8 +1602,8 @@ export function git(options?: GitOptions): Git {
           await run(
             gitOptions,
             ["remote", "set-url", "--add", "--push"],
-            nameArg(remote),
-            url.toString(),
+            remoteArg(remote),
+            url.href,
           );
         }
         const added = await repo.remote.get({ remote });
@@ -1667,7 +1646,7 @@ export function git(options?: GitOptions): Git {
           (await maybe(() => repo.branch.current())).value?.fetch?.remote ??
           "origin";
         const remotes = await repo.remote.list();
-        return remotes.find((r) => r.name === nameArg(remote));
+        return remotes.find((r) => r.name === remoteArg(remote));
       },
       async set(remote: string | Remote, url?: string | URL) {
         const fetch = typeof remote === "string" ? urlArg(url) : remote.fetch;
@@ -1676,14 +1655,14 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           ["remote", "set-url"],
-          nameArg(remote),
+          remoteArg(remote),
           urlArg(fetch),
         );
         await maybe(() =>
           run(
             gitOptions,
             ["remote", "set-url", "--delete", "--push"],
-            nameArg(remote),
+            remoteArg(remote),
             ".*",
           )
         );
@@ -1692,8 +1671,8 @@ export function git(options?: GitOptions): Git {
           await run(
             gitOptions,
             ["remote", "set-url", "--add", "--push"],
-            nameArg(remote),
-            url.toString(),
+            remoteArg(remote),
+            url.href,
           );
         }
         const updated = await repo.remote.get({ remote });
@@ -1703,14 +1682,14 @@ export function git(options?: GitOptions): Git {
       async remove(options) {
         const remote = options?.remote ?? await repo.remote.get();
         if (remote === undefined) throw new GitError("No remote configured");
-        await run(gitOptions, ["remote", "remove"], nameArg(remote));
+        await run(gitOptions, ["remote", "remove"], remoteArg(remote));
       },
       async head(options) {
         const remote = options?.remote ?? await repo.remote.get();
         if (remote === undefined) throw new GitError("No remote configured");
         const output = await run(
           gitOptions,
-          ["ls-remote", "--symref", nameArg(remote), "HEAD"],
+          ["ls-remote", "--symref", remoteArg(remote), "HEAD"],
         );
         const match = output.match(/^ref: refs\/heads\/(?<head>.+?)\s+HEAD$/m);
         const { head } = { ...match?.groups };
@@ -2261,7 +2240,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "push",
           flag("--force", options?.force),
-          nameArg(remote),
+          remoteArg(remote),
           ["tag", nameArg(tag)],
         );
       },
@@ -2336,13 +2315,20 @@ async function run(
   }
 }
 
-function urlArg(url: string | URL | Remote): string;
-function urlArg(url: string | URL | Remote | undefined): string | undefined;
-function urlArg(url: string | URL | Remote | undefined): string | undefined {
+function urlArg(url: RemoteRef): string;
+function urlArg(url: RemoteRef | undefined): string | undefined;
+function urlArg(url: RemoteRef | undefined): string | undefined {
   if (url === undefined) return undefined;
   if (typeof url === "string") return url;
-  if (url instanceof URL) return url.toString();
-  return url.fetch.toString();
+  if (url instanceof URL) return url.href;
+  return url.fetch.href;
+}
+
+function remoteArg(remote: RemoteRef): string;
+function remoteArg(remote: RemoteRef | undefined): string | undefined;
+function remoteArg(remote: RemoteRef | undefined): string | undefined {
+  if (remote === undefined) return undefined;
+  return remote instanceof URL ? remote.href : nameArg(remote);
 }
 
 function userArg(user: User): string;
@@ -2431,19 +2417,8 @@ function configFlags(config: Config | undefined, flag?: string): string[][] {
   });
 }
 
-function remoteArg(remote: string | URL | Remote): string;
-function remoteArg(
-  remote: string | URL | Remote | undefined,
-): string | undefined;
-function remoteArg(
-  remote: string | URL | Remote | undefined,
-): string | undefined {
-  if (remote === undefined) return undefined;
-  return remote instanceof URL ? urlArg(remote) : nameArg(remote);
-}
-
 function remotesFlags(
-  remotes: RemoteFetchOptions["remote"],
+  remotes: RemoteRef | RemoteRef[] | "all" | undefined,
 ): string[] | undefined {
   if (remotes === undefined) return undefined;
   if (remotes === "all") return ["--all"];
