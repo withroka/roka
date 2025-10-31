@@ -115,8 +115,14 @@ export interface RemoteOperations {
     remote: string | URL | Remote,
     options?: RemoteCloneOptions,
   ): Promise<Git>;
+  /** Fetches branches and tags from a remote. */
+  fetch(options?: RemoteFetchOptions): Promise<void>;
   /** Fetches missing objects in a partial clone. */
   backfill(options?: RemoteBackfillOptions): Promise<void>;
+  /** Pulls branches and tags from a remote. */
+  pull(options?: RemotePullOptions): Promise<void>;
+  /** Pushes branches and tags to a remote. */
+  push(options?: RemotePushOptions): Promise<void>;
   /** Adds a remote to the repository. */
   add(remote: Remote): Promise<Remote>;
   /** Adds a remote to the repository with a fetch/push URL. */
@@ -145,12 +151,6 @@ export interface RemoteOperations {
    * @throws {@linkcode GitError} If remote `HEAD` is detached.
    */
   head(options?: RemoteOptions): Promise<string>;
-  /** Fetches branches and tags from a remote. */
-  fetch(options?: RemoteFetchOptions): Promise<void>;
-  /** Pulls branches and tags from a remote. */
-  pull(options?: RemotePullOptions): Promise<void>;
-  /** Pushes branches and tags to a remote. */
-  push(options?: RemotePushOptions): Promise<void>;
 }
 
 /** Branch operations from {@linkcode Git.branch}. */
@@ -545,6 +545,37 @@ export interface GitOptions {
 }
 
 /**
+ * Options common to the {@linkcode BranchOperations.list} and
+ * {@linkcode TagOperations.list} functions for ref filtering.
+ */
+export interface RefListOptions {
+  /** Ref selection pattern. The default is all relevant refs. */
+  name?: string;
+  /** Only refs that contain the specific commit. */
+  contains?: Commitish;
+  /** Only refs that do not contain the specific commit. */
+  noContains?: Commitish;
+  /** Only refs that point to the given commit. */
+  pointsAt?: Commitish;
+}
+
+/**
+ * Options common to {@linkcode CommitOperations.create} and
+ * {@linkcode TagOperations.create} for GPG signing.
+ */
+export interface SignOptions {
+  /**
+   * Sign the commit with GPG.
+   *
+   * If `true` or a string, the object is signed with the default or given GPG
+   * key.
+   *
+   * If `false`, the commit is not signed.
+   */
+  sign?: boolean | string;
+}
+
+/**
  * Options common to {@linkcode Git.init} and
  * {@linkcode RemoteOperations.clone}.
  */
@@ -605,8 +636,69 @@ export interface InitOptions extends RepositoryOptions {
   shared?: boolean | "all" | number;
 }
 
+/**
+ * Options common to operations that work with remotes (e.g.
+ * {@linkcode RemoteOperations.push}).
+ */
+export interface RemoteOptions {
+  /**
+   * Remote to operate on.
+   *
+   * The default is the current branch remote, or `"origin"` if a remote is not
+   * configured for the current branch.
+   */
+  remote?: string | Remote;
+}
+
+/**
+ * Options common to {@linkcode RemoteOperations.push} and
+ * {@linkcode RemoteOperations.pull} for controlling what is updated in
+ * repositories.
+ */
+export interface RemoteTransportOptions {
+  /** Either update all refs on the other side or don't update any.*/
+  atomic?: boolean;
+  /**
+   * Copy all tags.
+   *
+   * - `true`: fetch/push all tags
+   * - `false`: do not fetch/push any tags
+   *
+   * During pull, git only fetches tags that point to the downloaded objects by
+   * default. During push, no tags are pushed by default.
+   */
+  tags?: boolean;
+}
+
+/**
+ * Options common to {@linkcode RemoteOperations.clone} and
+ * {@linkcode RemoteOperations.fetch} for filtering fetched objects.
+ */
+export interface RemoteFilterOptions {
+  /**
+   * Create a shallow fetch.
+   *
+   * If any of the shallow options are provided, shallow fetching is enabled,
+   * rewriting the history to only include the specified commits.
+   */
+  shallow?: {
+    /**
+     * Limit to the specified number of commits from the tip of each remote
+     * branch.
+     *
+     * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch} when
+     * cloning, unless it is set to `false` to fetch from the tip of all
+     * branches.
+     */
+    depth?: number;
+    /** Exclude commits reachable from a specified remote branch or tag. */
+    exclude?: string[];
+  };
+}
+
 /** Options for the {@linkcode RemoteOperations.clone} function. */
-export interface RemoteCloneOptions extends RepositoryOptions {
+export interface RemoteCloneOptions
+  extends RepositoryOptions, RemoteFilterOptions {
   /**
    * The name of a new directory to clone into.
    *
@@ -669,23 +761,6 @@ export interface RemoteCloneOptions extends RepositoryOptions {
    */
   remote?: string;
   /**
-   * Create a shallow copy of the cloned repository.
-   *
-   * If any of the shallow options are provided, shallow cloning is enabled,
-   * rewriting the history to only include the specified commits.
-   */
-  shallow?: {
-    /**
-     * Number of commits to clone at the tip.
-     *
-     * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch}, unless
-     * it is set to `false` to fetch from the tip of all branches.
-     */
-    depth?: number;
-    /** Exclude commits reachable from a specified remote branch or tag. */
-    exclude?: string[];
-  };
-  /**
    * Clone only the tip of a single branch.
    *
    * The cloned branch is either remote `HEAD` or
@@ -702,18 +777,15 @@ export interface RemoteCloneOptions extends RepositoryOptions {
   tags?: boolean;
 }
 
-/**
- * Options common to operations that work with remotes (e.g.
- * {@linkcode RemoteOperations.push}).
- */
-export interface RemoteOptions {
+/** Options for the {@linkcode RemoteOperations.fetch} function. */
+export interface RemoteFetchOptions
+  extends RemoteOptions, RemoteTransportOptions, RemoteFilterOptions {
   /**
-   * Remote to operate on.
+   * Branch or tag to fetch commits from.
    *
-   * The default is the current branch remote, or `"origin"` if a remote is not
-   * configured for the current branch.
+   * The default behavior is to fetch from all remote branches.
    */
-  remote?: string | Remote;
+  target?: string | Branch | Tag;
 }
 
 /** Options for the {@linkcode RemoteOperations.backfill} function. */
@@ -725,28 +797,9 @@ export interface RemoteBackfillOptions extends RemoteOptions {
   minBatchSize?: number;
 }
 
-/** Options for the {@linkcode RemoteOperations.add} function. */
-export interface RemoteAddOptions {
-  /**
-   * Name of the remote.
-   * @default {"origin"}
-   */
-  remote?: string;
-}
-
-/** Options for the {@linkcode RemoteOperations.fetch} function. */
-export interface RemoteFetchOptions extends RemoteOptions, TransportOptions {
-  /**
-   * Branch or tag to fetch commits from.
-   *
-   * The default behavior is to fetch from all remote branches.
-   */
-  target?: string | Branch | Tag;
-}
-
 /** Options for the {@linkcode RemoteOperations.pull} function. */
 export interface RemotePullOptions
-  extends RemoteOptions, TransportOptions, SignOptions {
+  extends RemoteOptions, RemoteTransportOptions, SignOptions {
   /**
    * Branch or tag to pull commits from.
    *
@@ -756,7 +809,8 @@ export interface RemotePullOptions
 }
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
-export interface RemotePushOptions extends RemoteOptions, TransportOptions {
+export interface RemotePushOptions
+  extends RemoteOptions, RemoteTransportOptions {
   /**
    * Branch to push commits onto.
    *
@@ -764,7 +818,7 @@ export interface RemotePushOptions extends RemoteOptions, TransportOptions {
    *
    * This option does not accept tags. To push tags, use
    * {@linkcode TagOperations.push} to push a single tag, or set
-   * {@linkcode TransportOptions.tags} to `true` to push all tags.
+   * {@linkcode RemoteTransportOptions.tags} to `true` to push all tags.
    */
   target?: string | Branch;
   /** Push all branches. */
@@ -776,6 +830,15 @@ export interface RemotePushOptions extends RemoteOptions, TransportOptions {
    * @default {false}
    */
   setUpstream?: boolean;
+}
+
+/** Options for the {@linkcode RemoteOperations.add} function. */
+export interface RemoteAddOptions {
+  /**
+   * Name of the remote.
+   * @default {"origin"}
+   */
+  remote?: string;
 }
 
 /**
@@ -1220,57 +1283,6 @@ export interface IgnoreFilterOptions {
 }
 
 /**
- * Options common to the {@linkcode BranchOperations.list} and
- * {@linkcode TagOperations.list} functions for ref filtering.
- */
-export interface RefListOptions {
-  /** Ref selection pattern. The default is all relevant refs. */
-  name?: string;
-  /** Only refs that contain the specific commit. */
-  contains?: Commitish;
-  /** Only refs that do not contain the specific commit. */
-  noContains?: Commitish;
-  /** Only refs that point to the given commit. */
-  pointsAt?: Commitish;
-}
-
-/**
- * Options common to {@linkcode CommitOperations.create} and
- * {@linkcode TagOperations.create} for GPG signing.
- */
-export interface SignOptions {
-  /**
-   * Sign the commit with GPG.
-   *
-   * If `true` or a string, the object is signed with the default or given GPG
-   * key.
-   *
-   * If `false`, the commit is not signed.
-   */
-  sign?: boolean | string;
-}
-
-/**
- * Options common to {@linkcode RemoteOperations.push} and
- * {@linkcode RemoteOperations.pull} for controlling what is updated in
- * repositories.
- */
-export interface TransportOptions {
-  /** Either update all refs on the other side or don't update any.*/
-  atomic?: boolean;
-  /**
-   * Copy all tags.
-   *
-   * - `true`: fetch/push all tags
-   * - `false`: do not fetch/push any tags
-   *
-   * During pull, git only fetches tags that point to the downloaded objects by
-   * default. During push, no tags are pushed by default.
-   */
-  tags?: boolean;
-}
-
-/**
  * Creates a new {@linkcode Git} instance for a local repository for running
  * git operations.
  *
@@ -1431,11 +1443,55 @@ export function git(options?: GitOptions): Git {
         const cwd = resolve(directory, cloned);
         return git({ ...gitOptions, cwd });
       },
+      async fetch(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
+        await run(
+          gitOptions,
+          "fetch",
+          flag("--atomic", options?.atomic),
+          flag("--depth", options?.shallow?.depth),
+          flag("--shallow-exclude", options?.shallow?.exclude, {
+            equals: true,
+          }),
+          flag(["--tags", "--no-tags"], options?.tags),
+          nameArg(remote),
+          nameArg(options?.target),
+        );
+      },
       async backfill(options) {
         await run(
           gitOptions,
           "backfill",
           flag("--min-batch-size", options?.minBatchSize),
+        );
+      },
+      async pull(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
+        await run(
+          gitOptions,
+          "pull",
+          flag("--atomic", options?.atomic),
+          flag(["--tags", "--no-tags"], options?.tags),
+          signFlag("commit", options?.sign),
+          nameArg(remote),
+          nameArg(options?.target),
+        );
+      },
+      async push(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        if (remote === undefined) throw new GitError("No remote configured");
+        await run(
+          gitOptions,
+          "push",
+          flag("--set-upstream", options?.setUpstream),
+          flag("--force", options?.force),
+          flag(["--atomic", "--no-atomic"], options?.atomic),
+          flag("--branches", options?.branches),
+          flag("--tags", options?.tags),
+          nameArg(remote),
+          nameArg(options?.target),
         );
       },
       async add(
@@ -1555,46 +1611,6 @@ export function git(options?: GitOptions): Git {
         const { head } = { ...match?.groups };
         if (!head) throw new GitError("Cannot determine remote HEAD branch");
         return head;
-      },
-      async fetch(options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
-        await run(
-          gitOptions,
-          "fetch",
-          flag("--atomic", options?.atomic),
-          flag(["--tags", "--no-tags"], options?.tags),
-          nameArg(remote),
-          nameArg(options?.target),
-        );
-      },
-      async pull(options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
-        await run(
-          gitOptions,
-          "pull",
-          flag("--atomic", options?.atomic),
-          flag(["--tags", "--no-tags"], options?.tags),
-          signFlag("commit", options?.sign),
-          nameArg(remote),
-          nameArg(options?.target),
-        );
-      },
-      async push(options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
-        await run(
-          gitOptions,
-          "push",
-          flag("--set-upstream", options?.setUpstream),
-          flag("--force", options?.force),
-          flag(["--atomic", "--no-atomic"], options?.atomic),
-          flag("--branches", options?.branches),
-          flag("--tags", options?.tags),
-          nameArg(remote),
-          nameArg(options?.target),
-        );
       },
     },
     branch: {
