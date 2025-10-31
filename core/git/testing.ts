@@ -16,7 +16,6 @@
  * @module testing
  */
 
-import { toFileUrl } from "@std/path";
 import { type Commit, type Config, type Git, git } from "./git.ts";
 
 /**
@@ -108,7 +107,9 @@ export async function tempRepository(
     ? await git().remote.clone(
       clone instanceof URL
         ? clone
-        : toFileUrl(typeof clone === "string" ? clone : clone.path()),
+        : typeof clone === "string"
+        ? clone
+        : clone.path(),
       { directory, bare, config, remote },
     )
     : await git().init({ bare, branch, config, directory });

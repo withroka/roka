@@ -62,7 +62,7 @@ import {
   assertGreater,
 } from "@std/assert";
 import { mapValues, slidingWindows } from "@std/collections";
-import { fromFileUrl, join, normalize, resolve, toFileUrl } from "@std/path";
+import { join, normalize, resolve, toFileUrl } from "@std/path";
 
 /**
  * An error thrown by the `git` package.
@@ -111,13 +111,16 @@ export interface ConfigOperations {
 /** Remote operations from {@linkcode Git.remote}. */
 export interface RemoteOperations {
   /** Clones a remote repository. */
-  clone(remote: URL | Remote, options?: RemoteCloneOptions): Promise<Git>;
+  clone(
+    remote: string | URL | Remote,
+    options?: RemoteCloneOptions,
+  ): Promise<Git>;
   /** Fetches missing objects in a partial clone. */
   backfill(options?: RemoteBackfillOptions): Promise<void>;
   /** Adds a remote to the repository. */
   add(remote: Remote): Promise<Remote>;
   /** Adds a remote to the repository with a fetch/push URL. */
-  add(url: URL, options?: RemoteAddOptions): Promise<Remote>;
+  add(url: string | URL, options?: RemoteAddOptions): Promise<Remote>;
   /** Lists remotes in the repository. */
   list(): Promise<Remote[]>;
   /**
@@ -134,7 +137,7 @@ export interface RemoteOperations {
   /** Updates a remote. */
   set(remote: Remote): Promise<Remote>;
   /** Updates a remote with a fetch/push URL. */
-  set(remote: string, url: URL): Promise<Remote>;
+  set(remote: string, url: string | URL): Promise<Remote>;
   /** Removes a remote from the repository. */
   remove(options?: RemoteOptions): Promise<void>;
   /**
@@ -1378,8 +1381,9 @@ export function git(options?: GitOptions): Git {
     },
     remote: {
       async clone(remote, options) {
-        const url = remote instanceof URL ? remote : remote.fetch;
-        const origin = remote instanceof URL ? options?.remote : remote.name;
+        const origin = typeof remote === "string" || remote instanceof URL
+          ? options?.remote
+          : remote.name;
         const reference = typeof options?.local === "object"
           ? options?.local
           : undefined;
@@ -1415,7 +1419,7 @@ export function git(options?: GitOptions): Git {
           ),
           flag(["--tags", "--no-tags"], options?.tags),
           flag("--separate-git-dir", options?.separateGitDir, { equals: true }),
-          urlArg(url),
+          urlArg(remote),
           "--",
           options?.directory,
         );
@@ -1432,26 +1436,31 @@ export function git(options?: GitOptions): Git {
           flag("--min-batch-size", options?.minBatchSize),
         );
       },
-      async add(remoteOrUrl: URL | Remote, options?: RemoteAddOptions) {
-        const remote = remoteOrUrl instanceof URL
-          ? {
-            name: options?.remote ?? "origin",
-            fetch: remoteOrUrl,
-            push: [],
-          }
-          : remoteOrUrl;
+      async add(
+        remoteOrUrl: string | URL | Remote,
+        options?: RemoteAddOptions,
+      ) {
+        const remote = options?.remote ?? (
+          typeof remoteOrUrl === "string" || remoteOrUrl instanceof URL
+            ? "origin"
+            : remoteOrUrl
+        );
+        const push =
+          typeof remoteOrUrl === "string" || remoteOrUrl instanceof URL
+            ? []
+            : remoteOrUrl.push;
         await run(
           gitOptions,
           ["remote", "add"],
           nameArg(remote),
-          urlArg(remote.fetch),
+          urlArg(remoteOrUrl),
         );
-        for (const url of remote.push) {
+        for (const url of push) {
           // deno-lint-ignore no-await-in-loop
           await run(
             gitOptions,
             ["remote", "set-url", "--add", "--push"],
-            remote.name,
+            nameArg(remote),
             url.toString(),
           );
         }
@@ -1494,36 +1503,30 @@ export function git(options?: GitOptions): Git {
         const remotes = await repo.remote.list();
         return remotes.find((r) => r.name === nameArg(remote));
       },
-      async set(remoteOrName: string | Remote, url?: URL) {
-        const fetch = typeof remoteOrName === "string"
-          ? url
-          : remoteOrName.fetch;
+      async set(remote: string | Remote, url?: string | URL) {
+        const fetch = typeof remote === "string" ? urlArg(url) : remote.fetch;
         assertExists(fetch);
-        const remote = typeof remoteOrName === "string"
-          ? {
-            name: remoteOrName,
-            fetch,
-            push: [],
-          }
-          : remoteOrName;
+        const push = typeof remote === "string" ? [] : remote.push;
         await run(
           gitOptions,
           ["remote", "set-url"],
           nameArg(remote),
-          fetch.toString(),
+          urlArg(fetch),
         );
         await maybe(() =>
           run(
             gitOptions,
-            ["remote", "set-url", "--delete", "--push", remote.name, ".*"],
+            ["remote", "set-url", "--delete", "--push"],
+            nameArg(remote),
+            ".*",
           )
         );
-        for (const url of remote.push) {
+        for (const url of push) {
           // deno-lint-ignore no-await-in-loop
           await run(
             gitOptions,
             ["remote", "set-url", "--add", "--push"],
-            remote.name,
+            nameArg(remote),
             url.toString(),
           );
         }
@@ -2207,12 +2210,13 @@ async function run(
   }
 }
 
-function urlArg(url: URL): string;
-function urlArg(url: URL | undefined): string | undefined;
-function urlArg(url: URL | undefined): string | undefined {
+function urlArg(url: string | URL | Remote): string;
+function urlArg(url: string | URL | Remote | undefined): string | undefined;
+function urlArg(url: string | URL | Remote | undefined): string | undefined {
   if (url === undefined) return undefined;
-  if (url.protocol === "file:") return fromFileUrl(url);
-  return url.toString();
+  if (typeof url === "string") return url;
+  if (url instanceof URL) return url.toString();
+  return url.fetch.toString();
 }
 
 function userArg(user: User): string;
