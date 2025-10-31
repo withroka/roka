@@ -667,6 +667,26 @@ Deno.test("git().remote.fetch() does not fetch all tags", async () => {
   assertEquals(await repo1.tag.list(), [tag1]);
 });
 
+Deno.test("git().remote.fetch({ filter }) filters fetched objects", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const repo = await git().remote.clone(upstream.path(), {
+    directory: directory.path(),
+    local: false,
+  });
+  const objects1 = await Array.fromAsync(
+    find([repo.path(".git")], { type: "file", name: "*.promisor" }),
+  );
+  assertEquals(objects1.length, 0);
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  await repo.remote.fetch({ filter: "blob:none" });
+  const objects2 = await Array.fromAsync(
+    find([repo.path(".git")], { type: "file", name: "*.promisor" }),
+  );
+  assertGreater(objects2.length, 0);
+});
+
 Deno.test("git().remote.fetch({ target }) can fetch commits from a branch", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   const main = await upstream.branch.current();
