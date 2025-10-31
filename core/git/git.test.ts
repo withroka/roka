@@ -264,6 +264,11 @@ Deno.test("git().remote.clone() clones a repository", async () => {
   const url = toFileUrl(upstream.path());
   const repo = await git({ cwd: directory.path() }).remote.clone(url);
   assertEquals(repo.path(), directory.path(basename(upstream.path())));
+  assertEquals(await repo.remote.get({ remote: "origin" }), {
+    name: "origin",
+    fetch: url,
+    push: [url],
+  });
   assertEquals(await repo.commit.log(), await upstream.commit.log());
 });
 
@@ -271,12 +276,57 @@ Deno.test("git().remote.clone() clones a repository from remote object", async (
   await using upstream = await tempRepository();
   await upstream.commit.create("commit1", { allowEmpty: true });
   await upstream.commit.create("commit2", { allowEmpty: true });
-  await using repo1 = await tempRepository({ clone: upstream });
+  await using repo1 = await tempRepository({
+    clone: upstream,
+    remote: "remote",
+  });
   await using directory = await tempDirectory();
   const remote = await repo1.remote.get();
   assertExists(remote);
   const repo2 = await git({ cwd: directory.path() }).remote.clone(remote);
   assertEquals(repo2.path(), directory.path(basename(upstream.path())));
+  assertEquals(await repo2.remote.get({ remote: "remote" }), remote);
+  assertEquals(await repo2.commit.log(), await upstream.commit.log());
+});
+
+Deno.test("git().remote.clone() can set remote name", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo = await git({ cwd: directory.path() }).remote.clone(url, {
+    remote: "remote",
+  });
+  assertEquals(repo.path(), directory.path(basename(upstream.path())));
+  assertEquals(await repo.remote.get({ remote: "remote" }), {
+    name: "remote",
+    fetch: url,
+    push: [url],
+  });
+  assertEquals(await repo.commit.log(), await upstream.commit.log());
+});
+
+Deno.test("git().remote.clone() can set remote name over object name", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.commit.create("commit2", { allowEmpty: true });
+  await using repo1 = await tempRepository({
+    clone: upstream,
+    remote: "remote1",
+  });
+  await using directory = await tempDirectory();
+  const remote1 = await repo1.remote.get();
+  assertExists(remote1);
+  const repo2 = await git({ cwd: directory.path() }).remote.clone(remote1, {
+    remote: "remote2",
+  });
+  assertEquals(repo2.path(), directory.path(basename(upstream.path())));
+  assertEquals(await repo2.remote.get({ remote: "remote2" }), {
+    name: "remote2",
+    fetch: remote1.fetch,
+    push: remote1.push,
+  });
   assertEquals(await repo2.commit.log(), await upstream.commit.log());
 });
 
@@ -652,7 +702,7 @@ Deno.test("git().remote.fetch() does not fetch all tags", async () => {
   assertEquals(await repo1.tag.list(), [tag1]);
 });
 
-Deno.test("git().remote.fetch({ remote }) fetches from a remote with name", async () => {
+Deno.test("git().remote.fetch({ remote }) can from a remote by name", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository({ branch: "main" });
   const commit = await upstream.commit.create("commit", { allowEmpty: true });
@@ -667,6 +717,18 @@ Deno.test("git().remote.fetch({ remote }) fetches from a remote with name", asyn
     { name: "remote/main", commit },
   ]);
   assertEquals(await repo.commit.log(), []);
+});
+
+Deno.test("git().remote.fetch({ remote }) can from a remote by address", async () => {
+  await using repo = await tempRepository();
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  await repo.remote.fetch({
+    remote: url,
+    target: "refs/heads/main:refs/heads/branch",
+  });
+  assertEquals(await repo.branch.get("branch"), { name: "branch", commit });
 });
 
 Deno.test("git().remote.fetch({ remote }) can fetch from multiple remotes", async () => {
@@ -945,13 +1007,22 @@ Deno.test("git().remote.pull() does not pull all tags", async () => {
   assertEquals(await repo1.tag.list(), [tag1]);
 });
 
-Deno.test("git().remote.pull({ remote }) pulls from a remote with name", async () => {
+Deno.test("git().remote.pull({ remote }) can pull from a remote by name", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository();
   const commit = await upstream.commit.create("commit", { allowEmpty: true });
   const branch = await upstream.branch.current();
   await repo.remote.add(upstream.path(), { remote: "remote" });
   await repo.remote.pull({ remote: "remote", target: branch });
+  assertEquals(await repo.commit.log(), [commit]);
+});
+
+Deno.test("git().remote.pull({ remote }) can pull from a remote by address", async () => {
+  await using repo = await tempRepository();
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  await repo.remote.pull({ remote: url });
   assertEquals(await repo.commit.log(), [commit]);
 });
 
@@ -1142,13 +1213,23 @@ Deno.test("git().remote.push() rejects unsynced push", async () => {
   );
 });
 
-Deno.test("git().remote.push({ remote }) pushes commits to a remote with name", async () => {
+Deno.test("git().remote.push({ remote }) can push commits to a remote by name", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository({ bare: true });
   const branch = await upstream.branch.current();
-  await repo.remote.add(upstream.path(), { remote: "remote" });
   const commit = await repo.commit.create("commit", { allowEmpty: true });
+  await repo.remote.add(upstream.path(), { remote: "remote" });
   await repo.remote.push({ remote: "remote", target: branch });
+  assertEquals(await upstream.commit.log(), [commit]);
+});
+
+Deno.test("git().remote.push({ remote }) can push commits to a remote by address", async () => {
+  await using repo = await tempRepository();
+  await using upstream = await tempRepository({ bare: true });
+  const branch = await upstream.branch.current();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  await repo.remote.push({ remote: url, target: branch });
   assertEquals(await upstream.commit.log(), [commit]);
 });
 
@@ -1273,7 +1354,7 @@ Deno.test("git().remote.add() rejects adding existing remote", async () => {
   );
 });
 
-Deno.test("git().remote.add({ remote }) adds a remote by name", async () => {
+Deno.test("git().remote.add({ remote }) can add a remote by name", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository();
   const url = toFileUrl(upstream.path());
