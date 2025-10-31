@@ -653,6 +653,18 @@ export interface RemoteOptions {
 }
 
 /**
+ * Options common to operations that can setup upstream tracking with remotes
+ * (e.g. {@linkcode RemoteOperations.push}).
+ */
+export interface RemoteTrackOptions {
+  /**
+   * Set upstream tracking for every branch successfully fetched or pushed.
+   * @default {false}
+   */
+  track?: boolean;
+}
+
+/**
  * Options common to {@linkcode RemoteOperations.push} and
  * {@linkcode RemoteOperations.pull} for controlling what is updated in
  * repositories.
@@ -782,7 +794,7 @@ export interface RemoteCloneOptions
 
 /** Options for the {@linkcode RemoteOperations.fetch} function. */
 export interface RemoteFetchOptions
-  extends RemoteTransportOptions, RemoteFilterOptions {
+  extends RemoteTransportOptions, RemoteTrackOptions, RemoteFilterOptions {
   /**
    * Fetch from a repository, or multiple repositories.
    *
@@ -813,7 +825,8 @@ export interface RemoteBackfillOptions extends RemoteOptions {
 }
 
 /** Options for the {@linkcode RemoteOperations.pull} function. */
-export interface RemotePullOptions extends RemoteTransportOptions, SignOptions {
+export interface RemotePullOptions
+  extends RemoteTransportOptions, RemoteTrackOptions, SignOptions {
   /**
    * Pull from a repository, or from all repositories.
    *
@@ -836,7 +849,7 @@ export interface RemotePullOptions extends RemoteTransportOptions, SignOptions {
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
 export interface RemotePushOptions
-  extends RemoteOptions, RemoteTransportOptions {
+  extends RemoteOptions, RemoteTrackOptions, RemoteTransportOptions {
   /**
    * Branch to push commits onto.
    *
@@ -847,15 +860,16 @@ export interface RemotePushOptions
    * {@linkcode RemoteTransportOptions.tags} to `true` to push all tags.
    */
   target?: string | Branch;
-  /** Push all branches. */
-  branches?: boolean;
-  /** Force push to remote. */
-  force?: boolean;
   /**
-   * Set upstream tracking for every branch successfully pushed.
+   * Push all branches.
    * @default {false}
    */
-  setUpstream?: boolean;
+  branches?: boolean;
+  /**
+   * Force push to remote.
+   * @default {false}
+   */
+  force?: boolean;
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -1484,6 +1498,7 @@ export function git(options?: GitOptions): Git {
             equals: true,
           }),
           flag(["--tags", "--no-tags"], options?.tags),
+          flag("--set-upstream", options?.track),
           remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
           nameArg(options?.target),
         );
@@ -1512,6 +1527,7 @@ export function git(options?: GitOptions): Git {
           "pull",
           flag("--atomic", options?.atomic),
           flag(["--tags", "--no-tags"], options?.tags),
+          flag("--set-upstream", options?.track),
           signFlag("commit", options?.sign),
           remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
           nameArg(options?.target),
@@ -1523,11 +1539,11 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "push",
-          flag("--set-upstream", options?.setUpstream),
           flag("--force", options?.force),
           flag(["--atomic", "--no-atomic"], options?.atomic),
           flag("--branches", options?.branches),
           flag("--tags", options?.tags),
+          flag("--set-upstream", options?.track),
           nameArg(remote),
           nameArg(options?.target),
         );
