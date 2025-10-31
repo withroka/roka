@@ -727,6 +727,24 @@ Deno.test("git().remote.list() returns empty list with no remotes", async () => 
   assertEquals(await repo.remote.list(), []);
 });
 
+Deno.test("git().remote.list() returns filters in partial clone", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const url = toFileUrl(upstream.path());
+  const repo = await git().remote.clone(url, {
+    directory: directory.path(),
+    filter: ["blob:none", "tree:0"],
+    local: false,
+  });
+  assertEquals(await repo.remote.list(), [{
+    name: "origin",
+    fetch: url,
+    push: [url],
+    filter: "combine:blob:none+tree:0",
+  }]);
+});
+
 Deno.test("git().remote.get() returns default remote", async () => {
   await using upstream = await tempRepository();
   await using repo = await tempRepository({ clone: upstream });
