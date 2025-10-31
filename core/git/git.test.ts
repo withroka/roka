@@ -879,6 +879,45 @@ Deno.test("git().remote.fetch({ tags }) can fetch all tags", async () => {
   assertEquals(await repo1.tag.list(), [tag1, tag2]);
 });
 
+Deno.test("git().remote.fetch({ remote }) can fetch from a URL", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  await using repo = await tempRepository();
+  await repo.init({ branch: "main" });
+  const url = toFileUrl(upstream.path());
+  await repo.remote.fetch({ remote: url, target: "main" });
+  assertEquals(await repo.commit.log({ range: { to: "FETCH_HEAD" } }), [
+    commit1,
+  ]);
+});
+
+Deno.test("git().remote.fetch({ remote }) can fetch from a string URL", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  await using repo = await tempRepository();
+  await repo.init({ branch: "main" });
+  const url = upstream.path();
+  await repo.remote.fetch({ remote: url, target: "main" });
+  assertEquals(await repo.commit.log({ range: { to: "FETCH_HEAD" } }), [
+    commit1,
+  ]);
+});
+
+Deno.test("git().remote.fetch({ remote }) rejects multiple URLs", async () => {
+  await using upstream1 = await tempRepository({ branch: "main" });
+  await upstream1.commit.create("commit1", { allowEmpty: true });
+  await using upstream2 = await tempRepository({ branch: "main" });
+  await upstream2.commit.create("commit2", { allowEmpty: true });
+  await using repo = await tempRepository();
+  const url1 = toFileUrl(upstream1.path());
+  const url2 = toFileUrl(upstream2.path());
+  await assertRejects(
+    () => repo.remote.fetch({ remote: [url1, url2] }),
+    GitError,
+    "Cannot fetch from multiple URLs",
+  );
+});
+
 Deno.test("git().remote.backfill({ minBatchSize }) rejects negative values", async () => {
   await using repo = await tempRepository();
   await assertRejects(
@@ -1119,6 +1158,26 @@ Deno.test("git().remote.pull({ track }) sets upstream tracking", async () => {
   );
 });
 
+Deno.test("git().remote.pull({ remote }) can pull from a URL", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  await using repo = await tempRepository({ clone: upstream });
+  const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  await repo.remote.pull({ remote: url, target: "main" });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+});
+
+Deno.test("git().remote.pull({ remote }) can pull from a string URL", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  await using repo = await tempRepository({ clone: upstream });
+  const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
+  const url = upstream.path();
+  await repo.remote.pull({ remote: url, target: "main" });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+});
+
 Deno.test("git().remote.push() pushes current branch to remote", async () => {
   await using upstream = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: upstream });
@@ -1251,6 +1310,26 @@ Deno.test("git().remote.push({ track }) sets upstream tracking", async () => {
       push: { name: "branch", remote, branch: remoteBranch },
     },
   ]);
+});
+
+Deno.test("git().remote.push({ remote }) can push to a URL", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository();
+  await repo.init({ branch: "main" });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const url = toFileUrl(upstream.path());
+  await repo.remote.push({ remote: url, target: "main" });
+  assertEquals(await upstream.commit.log(), [commit]);
+});
+
+Deno.test("git().remote.push({ remote }) can push to a string URL", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository();
+  await repo.init({ branch: "main" });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const url = upstream.path();
+  await repo.remote.push({ remote: url, target: "main" });
+  assertEquals(await upstream.commit.log(), [commit]);
 });
 
 Deno.test("git().remote.add() adds a default remote", async () => {

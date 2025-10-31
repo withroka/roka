@@ -120,7 +120,7 @@ export interface RemoteOperations {
   /** Fetches missing objects in a partial clone. */
   backfill(options?: RemoteBackfillOptions): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
-  unshallow(options?: RemoteOptions): Promise<void>;
+  unshallow(options?: RemoteUnshallowOptions): Promise<void>;
   /** Pulls branches and tags from a remote. */
   pull(options?: RemotePullOptions): Promise<void>;
   /** Pushes branches and tags to a remote. */
@@ -810,10 +810,12 @@ export interface RemoteFetchOptions
    *
    * If set to `"all"`, fetches from all configured remotes.
    *
+   * If a URL is provided, fetches from the specified URL directly.
+   *
    * If omitted, fetches from the current branch remote, or `"origin"` if a
    * remote is not configured for the current branch.
    */
-  remote?: string | Remote | (string | Remote)[] | "all";
+  remote?: string | URL | Remote | (string | URL | Remote)[] | "all";
   /**
    * Branch or tag to fetch commits from.
    *
@@ -834,6 +836,19 @@ export interface RemoteBackfillOptions extends RemoteOptions {
   minBatchSize?: number;
 }
 
+/** Options for the {@linkcode RemoteOperations.unshallow} function. */
+export interface RemoteUnshallowOptions {
+  /**
+   * Remote to unshallow from.
+   *
+   * If a URL is provided, unshallows from the specified URL directly.
+   *
+   * The default is the current branch remote, or `"origin"` if a remote is not
+   * configured for the current branch.
+   */
+  remote?: string | URL | Remote;
+}
+
 /** Options for the {@linkcode RemoteOperations.pull} function. */
 export interface RemotePullOptions
   extends
@@ -846,10 +861,12 @@ export interface RemotePullOptions
    *
    * If set to `"all"`, fetches from all configured remotes.
    *
+   * If a URL is provided, pulls from the specified URL directly.
+   *
    * If omitted, pulls from the current branch remote, or `"origin"` if a
    * remote is not configured for the current branch.
    */
-  remote?: string | Remote | "all";
+  remote?: string | URL | Remote | "all";
   /**
    * Branch or tag to pull commits from.
    *
@@ -863,7 +880,16 @@ export interface RemotePullOptions
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
 export interface RemotePushOptions
-  extends RemoteOptions, RemoteTrackOptions, RemoteTransportOptions {
+  extends RemoteTrackOptions, RemoteTransportOptions {
+  /**
+   * Remote to push to.
+   *
+   * If a URL is provided, pushes to the specified URL directly.
+   *
+   * The default is the current branch remote, or `"origin"` if a remote is not
+   * configured for the current branch.
+   */
+  remote?: string | URL | Remote;
   /**
    * Branch to push commits onto.
    *
@@ -1502,6 +1528,10 @@ export function git(options?: GitOptions): Git {
           options?.target !== undefined &&
           (options?.remote === "all" || Array.isArray(options?.remote))
         ) throw new GitError("Cannot specify target with multiple remotes");
+        if (
+          Array.isArray(options?.remote) &&
+          options?.remote.some((r) => r instanceof URL)
+        ) throw new GitError("Cannot fetch from multiple URLs");
         await run(
           gitOptions,
           "fetch",
@@ -1526,16 +1556,22 @@ export function git(options?: GitOptions): Git {
       },
       async unshallow(options) {
         const remote = options?.remote ?? await repo.remote.get();
+        const remoteArg = remote instanceof URL
+          ? urlArg(remote)
+          : nameArg(remote);
         await run(
           gitOptions,
           ["fetch", "--unshallow"],
-          nameArg(remote),
+          remoteArg,
         );
       },
       async pull(options) {
         if (options?.target !== undefined && (options?.remote === "all")) {
           throw new GitError("Cannot specify target with multiple remotes");
         }
+        const remote = options?.remote instanceof URL
+          ? urlArg(options.remote)
+          : (remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()));
         await run(
           gitOptions,
           "pull",
@@ -1547,13 +1583,16 @@ export function git(options?: GitOptions): Git {
           signFlag("commit", options?.sign),
           flag(["--tags", "--no-tags"], options?.tags),
           flag("--set-upstream", options?.track),
-          remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
+          remote,
           nameArg(options?.target),
         );
       },
       async push(options) {
         const remote = options?.remote ?? await repo.remote.get();
         if (remote === undefined) throw new GitError("No remote configured");
+        const remoteArg = remote instanceof URL
+          ? urlArg(remote)
+          : nameArg(remote);
         await run(
           gitOptions,
           "push",
@@ -1562,7 +1601,7 @@ export function git(options?: GitOptions): Git {
           flag("--branches", options?.branches),
           flag("--tags", options?.tags),
           flag("--set-upstream", options?.track),
-          nameArg(remote),
+          remoteArg,
           nameArg(options?.target),
         );
       },
@@ -2406,10 +2445,10 @@ function remotesFlags(
   if (Array.isArray(remotes)) {
     return [
       "--multiple",
-      ...remotes.map((x) => nameArg(x)),
+      ...remotes.map((x) => x instanceof URL ? urlArg(x) : nameArg(x)),
     ];
   }
-  return [nameArg(remotes)];
+  return [remotes instanceof URL ? urlArg(remotes) : nameArg(remotes)];
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
