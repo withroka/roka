@@ -350,6 +350,8 @@ export interface Remote {
   name: string;
   /** Remote fetch URL. */
   fetch: URL;
+  /** Fetch filter, if the repository is a partial clone. */
+  filter?: string;
   /** Remote push URLs. */
   push: URL[];
 }
@@ -1478,14 +1480,15 @@ export function git(options?: GitOptions): Git {
         const remotes: Record<string, Partial<Remote>> = {};
         for (const line of lines) {
           const match = line.match(
-            /^(?<name>\S+)\s+(?<url>\S+)\s+\((?<type>fetch|push)\)$/,
+            /^(?<name>\S+)\s+(?<url>\S+)\s+\((?<type>fetch|push)\)(?: \[(?<filter>\S+)\])?$/,
           );
-          const { name, url, type } = { ...match?.groups };
+          const { name, url, type, filter } = { ...match?.groups };
           if (!name || !url || !type) {
             throw new GitError("Cannot parse remote list");
           }
           remotes[name] ??= { name, push: [] };
           if (type === "fetch") remotes[name].fetch = toUrl(url);
+          if (filter !== undefined) remotes[name].filter = filter;
           if (type === "push") remotes[name].push?.push(toUrl(url));
         }
         return Object.values(remotes).map((remote) => {
@@ -1493,7 +1496,7 @@ export function git(options?: GitOptions): Git {
           assertExists(name);
           assertExists(push);
           if (!fetch) throw new GitError("Cannot determine remote fetch URL");
-          return { name, fetch, push };
+          return { ...remote, name, fetch, push };
         });
       },
       async get(options) {
