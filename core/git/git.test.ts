@@ -994,7 +994,7 @@ Deno.test("git().remote.pull({ target }) rejects multiple remotes", async () => 
   await repo.remote.add(upstream1.path(), { remote: "remote1" });
   await repo.remote.add(upstream2.path(), { remote: "remote2" });
   await assertRejects(
-    () => repo.remote.fetch({ remote: "all", target: "main" }),
+    () => repo.remote.pull({ remote: "all", target: "main" }),
     GitError,
     "Cannot specify target with multiple remotes",
   );
