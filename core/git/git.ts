@@ -1556,13 +1556,10 @@ export function git(options?: GitOptions): Git {
       },
       async unshallow(options) {
         const remote = options?.remote ?? await repo.remote.get();
-        const remoteArg = remote instanceof URL
-          ? urlArg(remote)
-          : nameArg(remote);
         await run(
           gitOptions,
           ["fetch", "--unshallow"],
-          remoteArg,
+          remoteArg(remote),
         );
       },
       async pull(options) {
@@ -1590,9 +1587,6 @@ export function git(options?: GitOptions): Git {
       async push(options) {
         const remote = options?.remote ?? await repo.remote.get();
         if (remote === undefined) throw new GitError("No remote configured");
-        const remoteArg = remote instanceof URL
-          ? urlArg(remote)
-          : nameArg(remote);
         await run(
           gitOptions,
           "push",
@@ -1601,7 +1595,7 @@ export function git(options?: GitOptions): Git {
           flag("--branches", options?.branches),
           flag("--tags", options?.tags),
           flag("--set-upstream", options?.track),
-          remoteArg,
+          remoteArg(remote),
           nameArg(options?.target),
         );
       },
@@ -2437,6 +2431,17 @@ function configFlags(config: Config | undefined, flag?: string): string[][] {
   });
 }
 
+function remoteArg(remote: string | URL | Remote): string;
+function remoteArg(
+  remote: string | URL | Remote | undefined,
+): string | undefined;
+function remoteArg(
+  remote: string | URL | Remote | undefined,
+): string | undefined {
+  if (remote === undefined) return undefined;
+  return remote instanceof URL ? urlArg(remote) : nameArg(remote);
+}
+
 function remotesFlags(
   remotes: RemoteFetchOptions["remote"],
 ): string[] | undefined {
@@ -2445,10 +2450,10 @@ function remotesFlags(
   if (Array.isArray(remotes)) {
     return [
       "--multiple",
-      ...remotes.map((x) => x instanceof URL ? urlArg(x) : nameArg(x)),
+      ...remotes.map((x) => remoteArg(x)),
     ];
   }
-  return [remotes instanceof URL ? urlArg(remotes) : nameArg(remotes)];
+  return [remoteArg(remotes)];
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
