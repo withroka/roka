@@ -125,11 +125,6 @@ export interface RemoteOperations {
   pull(options?: RemotePullOptions): Promise<void>;
   /** Pushes branches and tags to a remote. */
   push(options?: RemotePushOptions): Promise<void>;
-  /**
-   * Queries the HEAD branch name on the remote.
-   * @throws {@linkcode GitError} If remote `HEAD` is detached.
-   */
-  head(options?: RemoteOptions): Promise<string>;
   /** Adds a remote to the repository. */
   add(remote: Remote): Promise<Remote>;
   /** Adds a remote to the repository with a fetch/push URL. */
@@ -153,6 +148,11 @@ export interface RemoteOperations {
   set(remote: string, url: string | URL): Promise<Remote>;
   /** Removes a remote from the repository. */
   remove(options?: RemoteOptions): Promise<void>;
+  /**
+   * Queries the HEAD branch name on the remote.
+   * @throws {@linkcode GitError} If remote `HEAD` is detached.
+   */
+  head(options?: RemoteOptions): Promise<string>;
 }
 
 /** Branch operations from {@linkcode Git.branch}. */
