@@ -1487,8 +1487,10 @@ export function git(options?: GitOptions): Git {
             throw new GitError("Cannot parse remote list");
           }
           remotes[name] ??= { name, push: [] };
-          if (type === "fetch") remotes[name].fetch = toUrl(url);
-          if (filter !== undefined) remotes[name].filter = filter;
+          if (type === "fetch") {
+            remotes[name].fetch = toUrl(url);
+            if (filter !== undefined) remotes[name].filter = filter;
+          }
           if (type === "push") remotes[name].push?.push(toUrl(url));
         }
         return Object.values(remotes).map((remote) => {
