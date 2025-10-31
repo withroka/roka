@@ -234,7 +234,7 @@ Deno.test("git().init({ shared }) can specify repository sharing", async () => {
   });
   assertEquals(((await Deno.stat(repo1.path()))?.mode ?? 0) & 0o770, 0o750);
   assertEquals(((await Deno.stat(repo2.path()))?.mode ?? 0) & 0o770, 0o770);
-  assertEquals(((await Deno.stat(repo3.path()))?.mode ?? 0) & 0o777, 0o775);
+  assertEquals(((await Deno.stat(repo3.path()))?.mode ?? 0) & 0o775, 0o775);
   assertEquals(((await Deno.stat(repo4.path()))?.mode ?? 0) & 0o777, 0o775);
 });
 
