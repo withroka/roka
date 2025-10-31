@@ -161,36 +161,17 @@ Deno.test("git().init({ config }) persists configuration", async () => {
 });
 
 Deno.test("git().init({ objectFormat }) can specify hashing algorithm", async () => {
+  await using upstream = await tempRepository();
+  upstream.commit.create("commit", { allowEmpty: true });
   await using directory = await tempDirectory();
-  const config = {
-    user: { name: "name", email: "email" },
-    commit: { gpgsign: false },
-  };
-  const repo1 = await git().init({
-    directory: directory.path("repo1"),
-    config,
-    objectFormat: "sha1",
-  });
-  const repo2 = await git().init({
-    directory: directory.path("repo2"),
-    config,
-    objectFormat: "sha1",
-  });
   const repo3 = await git().init({
-    directory: directory.path("repo3"),
-    config,
+    directory: directory.path(),
     objectFormat: "sha256",
   });
-  await repo1.commit.create("commit", { allowEmpty: true });
-  await repo2.commit.create("commit", { allowEmpty: true });
-  await repo3.commit.create("commit", { allowEmpty: true });
-  assertEquals(
-    (await repo1?.commit?.head())?.hash,
-    (await repo2?.commit?.head())?.hash,
-  );
-  assertNotEquals(
-    (await repo1?.commit?.head())?.hash,
-    (await repo3?.commit?.head())?.hash,
+  await assertRejects(
+    () => repo3.remote.fetch({ remote: upstream.path() }),
+    GitError,
+    "mismatched algorithms: client sha256; server sha1",
   );
 });
 
