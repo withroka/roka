@@ -782,11 +782,23 @@ export interface RemoteCloneOptions
 
 /** Options for the {@linkcode RemoteOperations.fetch} function. */
 export interface RemoteFetchOptions
-  extends RemoteOptions, RemoteTransportOptions, RemoteFilterOptions {
+  extends RemoteTransportOptions, RemoteFilterOptions {
+  /**
+   * Fetch from a repository, or multiple repositories.
+   *
+   * If set to `"all"`, fetches from all configured remotes.
+   *
+   * If omitted, fetches from the current branch remote, or `"origin"` if a
+   * remote is not configured for the current branch.
+   */
+  remote?: string | Remote | (string | Remote)[] | "all";
   /**
    * Branch or tag to fetch commits from.
    *
    * The default behavior is to fetch from all remote branches.
+   *
+   * This option cannot be specified if fetching multiple repositories with
+   * {@linkcode RemoteMultipleOptions.remote remote}.
    */
   target?: string | Branch | Tag;
 }
@@ -801,12 +813,23 @@ export interface RemoteBackfillOptions extends RemoteOptions {
 }
 
 /** Options for the {@linkcode RemoteOperations.pull} function. */
-export interface RemotePullOptions
-  extends RemoteOptions, RemoteTransportOptions, SignOptions {
+export interface RemotePullOptions extends RemoteTransportOptions, SignOptions {
+  /**
+   * Pull from a repository, or from all repositories.
+   *
+   * If set to `"all"`, fetches from all configured remotes.
+   *
+   * If omitted, pulls from the current branch remote, or `"origin"` if a
+   * remote is not configured for the current branch.
+   */
+  remote?: string | Remote | "all";
   /**
    * Branch or tag to pull commits from.
    *
    * The default behavior is to pull from the upstream of the current branch.
+   *
+   * This option cannot be specified if pulling from multiple repositories with
+   * {@linkcode RemoteMultipleOptions.remote remote}.
    */
   target?: string | Branch | Tag;
 }
@@ -1447,8 +1470,10 @@ export function git(options?: GitOptions): Git {
         return git({ ...gitOptions, cwd });
       },
       async fetch(options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
+        if (
+          options?.target !== undefined &&
+          (options?.remote === "all" || Array.isArray(options?.remote))
+        ) throw new GitError("Cannot specify target with multiple remotes");
         await run(
           gitOptions,
           "fetch",
@@ -1459,7 +1484,7 @@ export function git(options?: GitOptions): Git {
             equals: true,
           }),
           flag(["--tags", "--no-tags"], options?.tags),
-          nameArg(remote),
+          remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
           nameArg(options?.target),
         );
       },
@@ -1479,15 +1504,16 @@ export function git(options?: GitOptions): Git {
         );
       },
       async pull(options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
+        if (options?.target !== undefined && (options?.remote === "all")) {
+          throw new GitError("Cannot specify target with multiple remotes");
+        }
         await run(
           gitOptions,
           "pull",
           flag("--atomic", options?.atomic),
           flag(["--tags", "--no-tags"], options?.tags),
           signFlag("commit", options?.sign),
-          nameArg(remote),
+          remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
           nameArg(options?.target),
         );
       },
@@ -2336,6 +2362,20 @@ function configFlags(config: Config | undefined, flag?: string): string[][] {
   return args(config).map(({ key, value, opt }) => {
     return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
   });
+}
+
+function remotesFlags(
+  remotes: RemoteFetchOptions["remote"],
+): string[] | undefined {
+  if (remotes === undefined) return undefined;
+  if (remotes === "all") return ["--all"];
+  if (Array.isArray(remotes)) {
+    return [
+      "--multiple",
+      ...remotes.map((x) => nameArg(x)),
+    ];
+  }
+  return [nameArg(remotes)];
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
