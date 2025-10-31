@@ -802,6 +802,36 @@ Deno.test("git().remote.backfill({ minBatchSize }) rejects negative values", asy
   );
 });
 
+Deno.test("git().remote.unshallow() unshallows a shallow repository", async () => {
+  await using upstream = await tempRepository();
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const repo = await git().remote.clone(upstream.path(), {
+    directory: directory.path(),
+    shallow: { depth: 1 },
+    local: false,
+  });
+  assertEquals(await repo.commit.log(), [omit(commit2, ["parent"])]);
+  await repo.remote.unshallow();
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+});
+
+Deno.test("git().remote.unshallow() rejects complete repository", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit1", { allowEmpty: true });
+  await using directory = await tempDirectory();
+  const repo = await git().remote.clone(upstream.path(), {
+    directory: directory.path(),
+    local: false,
+  });
+  await assertRejects(
+    () => repo.remote.unshallow(),
+    GitError,
+    "complete repository",
+  );
+});
+
 Deno.test("git().remote.pull() pulls commits and tags", async () => {
   await using upstream = await tempRepository();
   await using repo = await tempRepository({ clone: upstream });

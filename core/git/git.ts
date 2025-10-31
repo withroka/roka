@@ -119,6 +119,8 @@ export interface RemoteOperations {
   fetch(options?: RemoteFetchOptions): Promise<void>;
   /** Fetches missing objects in a partial clone. */
   backfill(options?: RemoteBackfillOptions): Promise<void>;
+  /** Fetches missing objects after a shallow clone or fetch. */
+  unshallow(options?: RemoteOptions): Promise<void>;
   /** Pulls branches and tags from a remote. */
   pull(options?: RemotePullOptions): Promise<void>;
   /** Pushes branches and tags to a remote. */
@@ -1466,6 +1468,14 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "backfill",
           flag("--min-batch-size", options?.minBatchSize),
+        );
+      },
+      async unshallow(options) {
+        const remote = options?.remote ?? await repo.remote.get();
+        await run(
+          gitOptions,
+          ["fetch", "--unshallow"],
+          nameArg(remote),
         );
       },
       async pull(options) {
