@@ -676,6 +676,22 @@ export interface RemoteTransportOptions {
  */
 export interface RemoteFilterOptions {
   /**
+   * Filter objects with given filter specification to create a partial clone.
+   *
+   * When cloning, this will result in a partial clone where some objects are
+   * omitted from the initial clone, which are fetched on-demand later.
+   *
+   * The {@linkcode RemoteOperations.backfill backfill} function can be used
+   * to fetch missing objects later.
+   *
+   * Common filter values:
+   *
+   * - `"blob:none"`: omit all blobs (file contents)
+   * - `"blob:limit=<size>"`: omit blobs larger than the specified size
+   * - `"tree:0"`: omit all trees and blobs
+   */
+  filter?: string | string[];
+  /**
    * Create a shallow fetch.
    *
    * If any of the shallow options are provided, shallow fetching is enabled,
@@ -721,21 +737,6 @@ export interface RemoteCloneOptions
    * persist in the local repository afterwards.
    */
   config?: Config;
-  /**
-   * Filter objects with given filter specification to create a partial clone.
-   *
-   * This will result in a partial clone where some objects are omitted from
-   * the initial clone, which are fetched on-demand later. The
-   * {@linkcode RemoteOperations.backfill backfill} function can be also used
-   * to fetch missing objects later.
-   *
-   * Common filter values:
-   *
-   * - `"blob:none"`: omit all blobs (file contents)
-   * - `"blob:limit=<size>"`: omit blobs larger than the specified size
-   * - `"tree:0"`: omit all trees and blobs
-   */
-  filter?: string | string[];
   /**
    * Control local repository optimizations.
    *
@@ -1450,6 +1451,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "fetch",
           flag("--atomic", options?.atomic),
+          flag("--filter", options?.filter, { equals: true }),
           flag("--depth", options?.shallow?.depth),
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
