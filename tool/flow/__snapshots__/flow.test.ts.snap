@@ -24,6 +24,7 @@ Options:
   -h, --help     - Show this help.
   -V, --version  - Show the version number for this program.
   --check        - Check for problems only.                   (Default: false)
+  --doc          - Check for doc lint problems.               (Default: false)
 
 Commands:
 
@@ -136,6 +137,73 @@ file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 }
 `;
 
+snapshot[`flow --doc [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Checked 1 file
+
+example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow --doc [invalid-code] 1`] = `
+{
+  code: 1,
+  output: "
+
+TS2367 [ERROR]: This comparison appears to be unintentional because the types '42' and '43' have no overlap.
+  if (42 !== 43) throw new Error(\\"fail\\");
+      ~~~~~~~~~
+    at file://<directory>/invalid-code.ts:4:7
+
+
+TS2322 [ERROR]: Type 'Location' is not assignable to type 'string'.
+  const a: string = window?.location;
+        ^
+    at file://<directory>/invalid-code.ts:8:9
+
+
+TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
+  return \\"42\\";
+  ~~~~~~
+    at file://<directory>/invalid-code.ts:9:3
+
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-code.ts:4:7
+  |
+4 |   if (42 !== 43) throw new Error(\\"fail\\");
+  |       ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-code.ts:8:9
+  |
+8 |   const a: string = globalThis?.location;
+  |         ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[missing-jsdoc]: exported symbol is missing JSDoc documentation
+ --> <directory>/invalid-code.ts:7:1
+  |
+7 | export function example(): number {
+  | ^
+
+❌ Checked 1 file, found 6 problems
+",
+}
+`;
+
 snapshot[`flow fmt [invalid-code] 1`] = `
 {
   code: 0,
@@ -205,8 +273,8 @@ snapshot[`flow fmt --check [invalid-code] 1`] = `
   output: '
 
 from <directory>/invalid-code.ts:
- 7 | -function example( ): number {
- 7 | +function example(): number {
+ 7 | -export function example( ): number {
+ 7 | +export function example(): number {
  8 | -   const a: string = window?.location;
  8 | +  const a: string = window?.location;
  9 | -   return "42";
@@ -403,16 +471,6 @@ error[no-constant-condition]: Use of a constant expressions as conditions is not
   docs: https://docs.deno.com/lint/rules/no-constant-condition
 
 
-error[no-unused-vars]: \`example\` is never used
- --> <directory>/invalid-code.ts:7:10
-  |
-7 | function example( ): number {
-  |          ^^^^^^^
-  = hint: If this is intentional, prefix it with an underscore like \`_example\`
-
-  docs: https://docs.deno.com/lint/rules/no-unused-vars
-
-
 error[no-unused-vars]: \`a\` is never used
  --> <directory>/invalid-code.ts:8:10
   |
@@ -432,7 +490,7 @@ error[no-window]: Window is no longer available in Deno
 
   docs: https://docs.deno.com/lint/rules/no-window
 
-❌ Linted 1 file, found 4 problems
+❌ Linted 1 file, found 3 problems
 ',
 }
 `;
@@ -553,6 +611,61 @@ snapshot[`flow lint [missing-file] 1`] = `
 }
 `;
 
+snapshot[`flow lint --doc [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Linted 1 file
+",
+}
+`;
+
+snapshot[`flow lint --doc [invalid-code] 1`] = `
+{
+  code: 1,
+  output: '
+
+error[missing-jsdoc]: exported symbol is missing JSDoc documentation
+ --> <directory>/invalid-code.ts:7:1
+  |
+7 | export function example( ): number {
+  | ^
+
+
+error[no-constant-condition]: Use of a constant expressions as conditions is not allowed.
+ --> <directory>/invalid-code.ts:4:7
+  |
+4 |   if (42 !== 43) throw new Error("fail");
+  |       ^^^^^^^^^
+  = hint: Remove the constant expression
+
+  docs: https://docs.deno.com/lint/rules/no-constant-condition
+
+
+error[no-unused-vars]: \`a\` is never used
+ --> <directory>/invalid-code.ts:8:10
+  |
+8 |    const a: string = window?.location;
+  |          ^
+  = hint: If this is intentional, prefix it with an underscore like \`_a\`
+
+  docs: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+error[no-window]: Window is no longer available in Deno
+ --> <directory>/invalid-code.ts:8:22
+  |
+8 |    const a: string = window?.location;
+  |                      ^^^^^^
+  = hint: Instead, use \`globalThis\`
+
+  docs: https://docs.deno.com/lint/rules/no-window
+
+❌ Linted 1 file, found 4 problems
+',
+}
+`;
+
 snapshot[`flow lint --fix [valid-code] 1`] = `
 {
   code: 0,
@@ -586,16 +699,6 @@ error[no-constant-condition]: Use of a constant expressions as conditions is not
   docs: https://docs.deno.com/lint/rules/no-constant-condition
 
 
-error[no-unused-vars]: \`example\` is never used
- --> <directory>/invalid-code.ts:7:10
-  |
-7 | function example( ): number {
-  |          ^^^^^^^
-  = hint: If this is intentional, prefix it with an underscore like \`_example\`
-
-  docs: https://docs.deno.com/lint/rules/no-unused-vars
-
-
 error[no-unused-vars]: \`a\` is never used
  --> <directory>/invalid-code.ts:8:10
   |
@@ -605,7 +708,7 @@ error[no-unused-vars]: \`a\` is never used
 
   docs: https://docs.deno.com/lint/rules/no-unused-vars
 
-❌ Linted 1 file, found 3 problems
+❌ Linted 1 file, found 2 problems
 ',
 }
 `;
