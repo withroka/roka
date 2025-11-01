@@ -916,6 +916,7 @@ export interface RemotePullSingleOptions
    * The default behavior is to pull from the upstream of the current branch.
    */
   target?: string | Branch | Tag;
+  /** Cannot be specified with {@linkcode RemotePullSingleOptions.remote}. */
   all?: never;
 }
 
@@ -931,7 +932,9 @@ export interface RemotePullAllOptions
     SignOptions {
   /** Pull from all configured repositories. */
   all: true;
+  /** Cannot be specified with {@linkcode RemotePullAllOptions.all}. */
   remote?: never;
+  /** Cannot be specified with {@linkcode RemotePullAllOptions.all}. */
   target?: never;
 }
 
