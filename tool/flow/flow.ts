@@ -132,8 +132,7 @@ export async function flow(): Promise<number> {
         (files) => cmds.check(files, { permitNoFiles: true }),
         (files) => cmds.lint(files, { fix, permitNoFiles: true }),
         doc
-          ? (files: string[]) =>
-            cmds.doc(files, { lint: true, permitNoFiles: true })
+          ? (files) => cmds.doc(files, { lint: true, permitNoFiles: true })
           : undefined,
       ], { prefix: "Checked" });
       await run(found, [
@@ -204,9 +203,7 @@ function lintCommand() {
       const found = await files(paths);
       if (found.length === 0) return;
       await run(found, [
-        doc
-          ? (files: string[]) => deno(options()).doc(files, { lint: true })
-          : undefined,
+        doc ? (files) => deno(options()).doc(files, { lint: true }) : undefined,
         (files) => deno(options()).lint(files, { fix }),
       ], { prefix: "Linted" });
     });
