@@ -1012,8 +1012,10 @@ export interface RemotePushTagOptions
   branches?: never;
 }
 
-/** Options common to different push variants of
- * {@linkcode RemoteOperations.push} to control forcing behavior. */
+/**
+ * Options common to different push variants of
+ * {@linkcode RemoteOperations.push} to control forcing behavior.
+ */
 export interface RemotePushForceOptions {
   /**
    * Force push to remote.
