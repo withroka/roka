@@ -6,10 +6,6 @@ permissions: {}
 
 jobs:
   test:
-    strategy:
-      matrix:
-        component: [core, tool]
-
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +16,7 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Test
-        run: deno task -q flow --check --doc ${{ matrix.component}}
+        run: deno task -q flow --check .
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
@@ -28,10 +24,6 @@ jobs:
           fail_ci_if_error: true
 
   build:
-    strategy:
-      matrix:
-        component: [tool]
-
     runs-on: ubuntu-latest
 
     steps:
@@ -42,4 +34,4 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Build
-        run: deno task -q forge compile ${{ matrix.component}}/*
+        run: deno task -q forge compile
