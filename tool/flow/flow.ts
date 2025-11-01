@@ -131,9 +131,8 @@ export async function flow(): Promise<number> {
         (files) => cmds.fmt(files, { check, permitNoFiles: true }),
         (files) => cmds.check(files, { permitNoFiles: true }),
         (files) => cmds.lint(files, { fix, permitNoFiles: true }),
-        doc
-          ? (files) => cmds.doc(files, { lint: true, permitNoFiles: true })
-          : undefined,
+        async (files) =>
+          doc && await cmds.doc(files, { lint: true, permitNoFiles: true }),
       ], { prefix: "Checked" });
       await run(found, [
         (files) => cmds.test(files, { permitNoFiles: true }),
@@ -203,7 +202,8 @@ function lintCommand() {
       const found = await files(paths);
       if (found.length === 0) return;
       await run(found, [
-        doc ? (files) => deno(options()).doc(files, { lint: true }) : undefined,
+        async (files) =>
+          doc && await deno(options()).doc(files, { lint: true }),
         (files) => deno(options()).lint(files, { fix }),
       ], { prefix: "Linted" });
     });
@@ -309,13 +309,12 @@ async function files(paths: string[]): Promise<string[]> {
 
 async function run(
   files: string[],
-  fns: (((files: string[]) => Promise<FileResult[]>) | undefined)[],
+  fns: ((files: string[]) => Promise<FileResult[] | false>)[],
   options?: { prefix?: string; test?: boolean },
 ): Promise<void> {
   const results = Object.values(
-    (await pool(fns.filter((fn) => fn !== undefined), (fn) => fn(files), {
-      concurrency: 1,
-    }))
+    (await pool(fns, (fn) => fn(files), { concurrency: 1 }))
+      .filter((r): r is FileResult[] => Array.isArray(r))
       .map((r) => associateBy(r, (f) => f.file))
       .reduce((a, b) => deepMerge(a, b)),
   );
