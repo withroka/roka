@@ -251,8 +251,6 @@ export interface TagOperations {
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Deletes a tag. */
   delete(tag: string | Tag): Promise<void>;
-  /** Pushes a tag to a remote. */
-  push(tag: string | Tag, options?: TagPushOptions): Promise<void>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
@@ -939,23 +937,86 @@ export interface RemotePullAllOptions
 }
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
-export interface RemotePushOptions
-  extends RemoteRepositoryOptions, RemoteTrackOptions, RemoteTransportOptions {
+export type RemotePushOptions =
+  | RemotePushBranchOptions
+  | RemotePushAllBranchesOptions
+  | RemotePushTagOptions;
+
+/**
+ * Options for the {@linkcode RemoteOperations.push} function when pushing
+ * branches.
+ */
+export interface RemotePushBranchOptions
+  extends
+    RemoteRepositoryOptions,
+    RemotePushForceOptions,
+    RemoteTrackOptions,
+    RemoteTransportOptions {
   /**
-   * Branch to push commits onto.
+   * Branch or branches to push to remote.
    *
-   * The default behavior is to push the current branch to its upstream.
-   *
-   * This option does not accept tags. To push tags, use
-   * {@linkcode TagOperations.push} to push a single tag, or set
-   * {@linkcode RemoteTransportOptions.tags} to `true` to push all tags.
+   * The default behavior is to push the current branch.
    */
-  target?: string | Branch;
+  target?: string | Branch | (string | Branch)[];
   /**
-   * Push all branches.
-   * @default {false}
+   * Cannot be specified with {@linkcode RemotePushBranchOptions.target}.
    */
-  branches?: boolean;
+  branches?: never;
+  /**
+   * Cannot be specified with {@linkcode RemotePushBranchOptions.target}.
+   */
+  tag?: never;
+}
+
+/**
+ * Options for the {@linkcode RemoteOperations.push} function when pushing
+ * all branches.
+ */
+export interface RemotePushAllBranchesOptions
+  extends
+    RemoteRepositoryOptions,
+    RemotePushForceOptions,
+    RemoteTrackOptions,
+    RemoteTransportOptions {
+  /** Push all branches to remote. */
+  branches: "all";
+  /**
+   * Cannot be specified with {@linkcode RemotePushAllBranchesOptions.branches}.
+   */
+  target?: never;
+  /**
+   * Cannot be specified with {@linkcode RemotePushAllBranchesOptions.branches}.
+   */
+  tag?: never;
+}
+
+/**
+ * Options for the {@linkcode RemoteOperations.push} function when pushing a
+ * single tag.
+ */
+export interface RemotePushTagOptions
+  extends
+    RemoteRepositoryOptions,
+    RemotePushForceOptions,
+    RemoteTrackOptions,
+    RemoteTransportOptions {
+  /** Tag to push to remote. */
+  tag: string | Tag;
+  /**
+   * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
+   */
+  target?: never;
+  /**
+   * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
+   */
+  branches?: never;
+}
+
+/**
+ * Options common to different push variants of
+ * {@linkcode RemoteOperations.push} to control forcing behavior.
+ */
+export interface RemotePushForceOptions {
   /**
    * Force push to remote.
    * @default {false}
@@ -1638,11 +1699,13 @@ export function git(options?: GitOptions): Git {
           "push",
           flag("--force", options?.force),
           flag(["--atomic", "--no-atomic"], options?.atomic),
-          flag("--branches", options?.branches),
           flag("--tags", options?.tags),
           flag("--set-upstream", options?.track),
+          flag("--branches", options?.branches === "all"),
           remoteArg(remote),
           nameArg(options?.target),
+          flag("tag", options?.tag !== undefined),
+          nameArg(options?.tag),
         );
       },
       async add(remoteOrUrl, options?: RemoteAddOptions) {
@@ -2297,17 +2360,6 @@ export function git(options?: GitOptions): Git {
       async delete(tag) {
         await run(gitOptions, ["tag", "--delete"], nameArg(tag));
       },
-      async push(tag, options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
-        await run(
-          gitOptions,
-          "push",
-          flag("--force", options?.force),
-          remoteArg(remote),
-          ["tag", nameArg(tag)],
-        );
-      },
     },
     ignore: {
       async filter(path, options) {
@@ -2419,14 +2471,19 @@ function userArg(user: User | undefined): string | undefined {
   return `${user.name} <${user.email}>`;
 }
 
-function nameArg(obj: string | Remote | Branch | Tag): string;
+type Named = string | Remote | Branch | Tag;
+function nameArg(obj: Named): string;
+function nameArg(obj: Named[]): string[];
+function nameArg(obj: Named | undefined): string | undefined;
+function nameArg(obj: Named[] | undefined): string[] | undefined;
 function nameArg(
-  obj: string | Remote | Branch | Tag | undefined,
-): string | undefined;
+  obj: Named | Named[] | undefined,
+): string | string[] | undefined;
 function nameArg(
-  obj: string | Remote | Branch | Tag | undefined,
-): string | undefined {
+  obj: Named | Named[] | undefined,
+): string | string[] | undefined {
   if (obj === undefined) return undefined;
+  if (Array.isArray(obj)) return obj.map((x) => nameArg(x));
   return typeof obj === "string" ? obj : obj.name;
 }
 
