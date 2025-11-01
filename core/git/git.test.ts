@@ -1315,6 +1315,32 @@ Deno.test("git().remote.push({ tags }) pushes all tags", async () => {
   assertEquals(await upstream.tag.list(), [tag1, tag2]);
 });
 
+Deno.test("git().remote.push({ tags }) pushes all tags with multiple branches", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: upstream });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  await repo.branch.create("branch1");
+  await repo.branch.create("branch2");
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  await repo.remote.push({ tags: true, target: ["branch1", "branch2"] });
+  assertEquals(await upstream.tag.list(), [tag1, tag2]);
+  assertEquals(await upstream.branch.list(), [
+    { name: "branch1", commit },
+    { name: "branch2", commit },
+  ]);
+});
+
+Deno.test("git().remote.push({ tags }) rejects pushing with all branches", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: upstream });
+  await assertRejects(
+    () => repo.remote.push({ tags: true, branches: "all" }),
+    GitError,
+    "cannot be used together",
+  );
+});
+
 Deno.test("git().remote.push({ force }) force pushes", async () => {
   await using upstream = await tempRepository({ bare: true });
   await using repo1 = await tempRepository({ clone: upstream });
