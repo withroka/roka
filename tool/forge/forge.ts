@@ -320,6 +320,8 @@ const DESCRIPTION = `
  * Options for the {@link forge} function.
  *
  * These are used for testing.
+ *
+ * @internal
  */
 export interface ForgeOptions {
   /** GitHub repository to use. */

@@ -116,12 +116,13 @@ export async function flow(): Promise<number> {
     .usage("<command> [options]")
     .arguments("[paths...:file]")
     .option("--check", "Check for problems only.", { default: false })
+    .option("--doc", "Check for doc lint problems.", { default: false })
     .option("--verbose", "Print additional information.", {
       hidden: true,
       global: true,
       action: () => verbose = true,
     })
-    .action(async ({ check }, ...paths) => {
+    .action(async ({ check, doc }, ...paths) => {
       const fix = !check;
       const found = await files(paths);
       if (found.length === 0) return;
@@ -129,13 +130,11 @@ export async function flow(): Promise<number> {
       await run(found, [
         (files) => cmds.fmt(files, { check, permitNoFiles: true }),
         (files) => cmds.check(files, { permitNoFiles: true }),
-        ...paths.includes(".")
-          ? [
-            (files: string[]) =>
-              cmds.doc(files, { lint: true, permitNoFiles: true }),
-          ]
-          : [],
         (files) => cmds.lint(files, { fix, permitNoFiles: true }),
+        doc
+          ? (files: string[]) =>
+            cmds.doc(files, { lint: true, permitNoFiles: true })
+          : undefined,
       ], { prefix: "Checked" });
       await run(found, [
         (files) => cmds.test(files, { permitNoFiles: true }),
@@ -193,19 +192,21 @@ function lintCommand() {
   return new Command()
     .description("Lint code.")
     .example("flow lint", "Lint modified files.")
+    .example("flow lint --doc", "Check also for doc lint problems.")
     .example("flow lint --fix", "Fix any fixable linting problems.")
     .example("flow lint .", "Lint all files.")
     .example("flow lint **/*.ts", "Lint all TypeScript files.")
     .example("flow lint core/", "Lint files in the core directory.")
     .arguments("[paths...:file]")
+    .option("--doc", "Check for doc lint problems.", { default: false })
     .option("--fix", "Fix any fixable linting errors.", { default: false })
-    .action(async ({ fix }, ...paths) => {
+    .action(async ({ doc, fix }, ...paths) => {
       const found = await files(paths);
       if (found.length === 0) return;
       await run(found, [
-        ...paths.includes(".")
-          ? [(files: string[]) => deno(options()).doc(files, { lint: true })]
-          : [],
+        doc
+          ? (files: string[]) => deno(options()).doc(files, { lint: true })
+          : undefined,
         (files) => deno(options()).lint(files, { fix }),
       ], { prefix: "Linted" });
     });
@@ -311,11 +312,13 @@ async function files(paths: string[]): Promise<string[]> {
 
 async function run(
   files: string[],
-  fns: ((files: string[]) => Promise<FileResult[]>)[],
+  fns: (((files: string[]) => Promise<FileResult[]>) | undefined)[],
   options?: { prefix?: string; test?: boolean },
 ): Promise<void> {
   const results = Object.values(
-    (await pool(fns, (fn) => fn(files)))
+    (await pool(fns.filter((fn) => fn !== undefined), (fn) => fn(files), {
+      concurrency: 1,
+    }))
       .map((r) => associateBy(r, (f) => f.file))
       .reduce((a, b) => deepMerge(a, b)),
   );
