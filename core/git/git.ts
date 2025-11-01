@@ -730,20 +730,15 @@ export interface RemoteShallowOptions {
    *
    * If any of the shallow options are provided, shallow fetching is enabled,
    * rewriting the history to only include the specified commits.
+   *
+   * - `depth`: limit to the number of commits from the tip of each branch
+   * - `exclude`: exclude commits reachable from specified branches or tags
+   *
+   * Only one shallow option can be set at a time.
    */
-  shallow?: {
-    /**
-     * Limit to the specified number of commits from the tip of each remote
-     * branch.
-     *
-     * Implies {@linkcode RemoteCloneOptions.singleBranch singleBranch} when
-     * cloning, unless it is set to `false` to fetch from the tip of all
-     * branches.
-     */
-    depth?: number;
-    /** Exclude commits reachable from a specified remote branch or tag. */
-    exclude?: string[];
-  };
+  shallow?:
+    | { depth: number; exclude?: never }
+    | { exclude: string[]; depth?: never };
 }
 
 /** Options for the {@linkcode RemoteOperations.clone} function. */
@@ -779,15 +774,14 @@ export interface RemoteCloneOptions
    * - `"copy"`: copy objects without hardlinks
    * - `"shared"`: share objects with source repository
    * - `{ reference }`: use given repository as an alternate object store
+   * - `{ reference, ifAble }`: only use reference if able to do so
+   * - `{ reference, dissociate }`: use reference during clone only
    *
    * @default {true}
    */
   local?: boolean | "copy" | "shared" | {
-    /** Path to the reference repository. */
     reference: string;
-    /** Only use the reference repository if able to do so. */
     ifAble?: boolean;
-    /** Use reference repository during initial clone only. */
     dissociate?: boolean;
   };
   /**
@@ -813,7 +807,16 @@ export interface RemoteCloneOptions
 }
 
 /** Options for the {@linkcode RemoteOperations.fetch} function. */
-export interface RemoteFetchOptions
+export type RemoteFetchOptions =
+  | RemoteFetchSingleOptions
+  | RemoteFetchMultipleOptions
+  | RemoteFetchAllOptions;
+
+/**
+ * Options for the {@linkcode RemoteOperations.fetch} function when fetching
+ * from a single repository.
+ */
+export interface RemoteFetchSingleOptions
   extends
     RemoteTransportOptions,
     RemoteTrackOptions,
@@ -822,21 +825,53 @@ export interface RemoteFetchOptions
   /**
    * Fetch from a repository, or multiple repositories.
    *
-   * If set to `"all"`, fetches from all configured remotes.
-   *
    * If omitted, fetches from the current branch remote, or `"origin"` if a
    * remote is not configured for the current branch.
    */
-  remote?: RemoteRef | (string | Remote)[] | "all";
+  remote?: RemoteRef;
   /**
    * Branch or tag to fetch commits from.
    *
    * The default behavior is to fetch from all remote branches.
-   *
-   * This option cannot be specified if fetching multiple repositories with
-   * {@linkcode RemoteFetchOptions.remote}.
    */
   target?: string | Branch | Tag;
+  all?: never;
+}
+
+/**
+ * Options for the {@linkcode RemoteOperations.fetch} function when fetching
+ * from multiple repositories.
+ */
+export interface RemoteFetchMultipleOptions
+  extends
+    RemoteTransportOptions,
+    RemoteTrackOptions,
+    RemoteFilterOptions,
+    RemoteShallowOptions {
+  /**
+   * Fetch from multiple repositories.
+   *
+   * If set to `"all"`, fetches from all configured remotes.
+   */
+  remote: (string | Remote)[];
+  all?: never;
+  target?: never;
+}
+
+/**
+ * Options for the {@linkcode RemoteOperations.fetch} function when fetching
+ * from all repositories.
+ */
+export interface RemoteFetchAllOptions
+  extends
+    RemoteTransportOptions,
+    RemoteTrackOptions,
+    RemoteFilterOptions,
+    RemoteShallowOptions {
+  /** Fetch from  all configured repositories. */
+  all: true;
+  remote?: never;
+  target?: never;
 }
 
 /** Options for the {@linkcode RemoteOperations.backfill} function. */
@@ -849,7 +884,15 @@ export interface RemoteBackfillOptions extends RemoteOptions {
 }
 
 /** Options for the {@linkcode RemoteOperations.pull} function. */
-export interface RemotePullOptions
+export type RemotePullOptions =
+  | RemotePullSingleOptions
+  | RemotePullAllOptions;
+
+/**
+ * Options for the {@linkcode RemoteOperations.pull} function when pulling from
+ * a single repository.
+ */
+export interface RemotePullSingleOptions
   extends
     RemoteTransportOptions,
     RemoteTrackOptions,
@@ -858,21 +901,33 @@ export interface RemotePullOptions
   /**
    * Pull from a repository, or from all repositories.
    *
-   * If set to `"all"`, fetches from all configured remotes.
-   *
    * If omitted, pulls from the current branch remote, or `"origin"` if a
    * remote is not configured for the current branch.
    */
-  remote?: RemoteRef | "all";
+  remote?: RemoteRef;
   /**
    * Branch or tag to pull commits from.
    *
    * The default behavior is to pull from the upstream of the current branch.
-   *
-   * This option cannot be specified if pulling from multiple repositories with
-   * {@linkcode RemotePullOptions.remote}.
    */
   target?: string | Branch | Tag;
+  all?: never;
+}
+
+/**
+ * Options for the {@linkcode RemoteOperations.pull} function when pulling from
+ * all repositories.
+ */
+export interface RemotePullAllOptions
+  extends
+    RemoteTransportOptions,
+    RemoteTrackOptions,
+    RemoteShallowOptions,
+    SignOptions {
+  /** Pull from  all configured repositories. */
+  all: true;
+  remote?: never;
+  target?: never;
 }
 
 /** Options for the {@linkcode RemoteOperations.push} function. */
@@ -1513,10 +1568,6 @@ export function git(options?: GitOptions): Git {
         return git({ ...gitOptions, cwd });
       },
       async fetch(options) {
-        if (
-          options?.target !== undefined &&
-          (options?.remote === "all" || Array.isArray(options?.remote))
-        ) throw new GitError("Cannot specify target with multiple remotes");
         await run(
           gitOptions,
           "fetch",
@@ -1528,7 +1579,11 @@ export function git(options?: GitOptions): Git {
           }),
           flag(["--tags", "--no-tags"], options?.tags),
           flag("--set-upstream", options?.track),
-          remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
+          flag("--all", options?.all),
+          flag("--multiple", Array.isArray(options?.remote)),
+          options?.all
+            ? []
+            : remoteArg(options?.remote ?? await repo.remote.get()),
           nameArg(options?.target),
         );
       },
@@ -1548,9 +1603,6 @@ export function git(options?: GitOptions): Git {
         );
       },
       async pull(options) {
-        if (options?.target !== undefined && (options?.remote === "all")) {
-          throw new GitError("Cannot specify target with multiple remotes");
-        }
         await run(
           gitOptions,
           "pull",
@@ -1562,7 +1614,11 @@ export function git(options?: GitOptions): Git {
           signFlag("commit", options?.sign),
           flag(["--tags", "--no-tags"], options?.tags),
           flag("--set-upstream", options?.track),
-          remotesFlags(options?.remote) ?? nameArg(await repo.remote.get()),
+          flag("--all", options?.all),
+          flag("--multiple", Array.isArray(options?.remote)),
+          options?.all
+            ? []
+            : remoteArg(options?.remote ?? await repo.remote.get()),
           nameArg(options?.target),
         );
       },
@@ -2324,10 +2380,15 @@ function urlArg(url: RemoteRef | undefined): string | undefined {
   return url.fetch.href;
 }
 
-function remoteArg(remote: RemoteRef): string;
-function remoteArg(remote: RemoteRef | undefined): string | undefined;
-function remoteArg(remote: RemoteRef | undefined): string | undefined {
+function remoteArg(remote: RemoteRef | RemoteRef[]): string;
+function remoteArg(
+  remote: RemoteRef | RemoteRef[] | undefined,
+): string | string[] | undefined;
+function remoteArg(
+  remote: RemoteRef | RemoteRef[] | undefined,
+): string | string[] | undefined {
   if (remote === undefined) return undefined;
+  if (Array.isArray(remote)) return remote.map((x) => remoteArg(x));
   return remote instanceof URL ? remote.href : nameArg(remote);
 }
 
@@ -2415,20 +2476,6 @@ function configFlags(config: Config | undefined, flag?: string): string[][] {
   return args(config).map(({ key, value, opt }) => {
     return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
   });
-}
-
-function remotesFlags(
-  remotes: RemoteRef | RemoteRef[] | "all" | undefined,
-): string[] | undefined {
-  if (remotes === undefined) return undefined;
-  if (remotes === "all") return ["--all"];
-  if (Array.isArray(remotes)) {
-    return [
-      "--multiple",
-      ...remotes.map((x) => remoteArg(x)),
-    ];
-  }
-  return [remoteArg(remotes)];
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
