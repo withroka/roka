@@ -684,15 +684,15 @@ export interface RemoteTransportOptions {
   /** Either update all refs on the other side or don't update any.*/
   atomic?: boolean;
   /**
-   * Copy all tags.
+   * Control fetching or pushing tags.
    *
-   * - `true`: fetch/push all tags
-   * - `false`: do not fetch/push any tags
+   * - `true`: copy all tags
+   * - `false`: do not copy any tags (push default)
+   * - `"follow"`: copy only tags that point to copied objects (fetch default)
    *
-   * During pull, git only fetches tags that point to the downloaded objects by
-   * default. During push, no tags are pushed by default.
+   * When pushing, only annotated tags are copied when following.
    */
-  tags?: boolean;
+  tags?: boolean | "follow";
 }
 
 /**
@@ -1646,7 +1646,8 @@ export function git(options?: GitOptions): Git {
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
           }),
-          flag(["--tags", "--no-tags"], options?.tags),
+          flag("--tags", options?.tags === true),
+          flag("--no-tags", options?.tags === false),
           flag("--set-upstream", options?.track),
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
@@ -1683,7 +1684,8 @@ export function git(options?: GitOptions): Git {
             equals: true,
           }),
           signFlag("commit", options?.sign),
-          flag(["--tags", "--no-tags"], options?.tags),
+          flag("--tags", options?.tags === true),
+          flag("--no-tags", options?.tags === false),
           flag("--set-upstream", options?.track),
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
@@ -1703,7 +1705,9 @@ export function git(options?: GitOptions): Git {
           "push",
           flag("--force", options?.force),
           flag(["--atomic", "--no-atomic"], options?.atomic),
-          flag("--tags", options?.tags),
+          flag("--tags", options?.tags === true),
+          flag("--no-tags", options?.tags === false),
+          flag("--follow-tags", options?.tags === "follow"),
           flag("--set-upstream", options?.track),
           flag("--branches", options?.branches === "all"),
           remoteArg(remote),
