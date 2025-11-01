@@ -693,11 +693,11 @@ Deno.test("git().remote.fetch() does not fetch all tags", async () => {
   await repo2.commit.create("commit1", { allowEmpty: true });
   const tag1 = await repo2.tag.create("tag1");
   await repo2.remote.push();
-  await repo2.tag.push(tag1);
+  await repo2.remote.push({ tag: tag1 });
   await repo2.branch.switch("branch", { create: true });
   await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
-  await repo2.tag.push(tag2);
+  await repo2.remote.push({ tag: tag2 });
   await repo1.remote.fetch();
   assertEquals(await repo1.tag.list(), [tag1]);
 });
@@ -812,11 +812,11 @@ Deno.test("git().remote.fetch({ target }) can fetch commits from a tag", async (
   await repo2.commit.create("commit", { allowEmpty: true });
   const tag1 = await repo2.tag.create("tag1");
   await repo2.remote.push();
-  await repo2.tag.push(tag1);
+  await repo2.remote.push({ tag: tag1 });
   await repo2.branch.switch("branch", { create: true });
   await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
-  await repo2.tag.push(tag2);
+  await repo2.remote.push({ tag: tag2 });
   await repo1.remote.fetch({ target: tag2 });
   assertEquals(await repo1.commit.log(), []);
   assertEquals(await repo1.tag.list(), []);
@@ -922,11 +922,11 @@ Deno.test("git().remote.fetch({ tags }) can fetch all tags", async () => {
   await repo2.commit.create("commit1", { allowEmpty: true });
   const tag1 = await repo2.tag.create("tag1");
   await repo2.remote.push();
-  await repo2.tag.push(tag1);
+  await repo2.remote.push({ tag: tag1 });
   await repo2.branch.switch("branch", { create: true });
   await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
-  await repo2.tag.push(tag2);
+  await repo2.remote.push({ tag: tag2 });
   await repo1.remote.fetch({ tags: true });
   assertEquals(await repo1.tag.list(), [tag1, tag2]);
 });
@@ -987,11 +987,11 @@ Deno.test("git().remote.pull() does not pull all tags", async () => {
   const commit1 = await repo2.commit.create("commit1", { allowEmpty: true });
   const tag1 = await repo2.tag.create("tag1");
   await repo2.remote.push();
-  await repo2.tag.push(tag1);
+  await repo2.remote.push({ tag: tag1 });
   await repo2.branch.switch("branch", { create: true });
   await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
-  await repo2.tag.push(tag2);
+  await repo2.remote.push({ tag: tag2 });
   await repo1.remote.pull();
   assertEquals(await repo1.commit.log(), [commit1]);
   assertEquals(await repo1.tag.list(), [tag1]);
@@ -1060,11 +1060,11 @@ Deno.test("git().remote.pull({ target }) can pull commits from a tag", async () 
   const commit1 = await repo2.commit.create("commit", { allowEmpty: true });
   const tag1 = await repo2.tag.create("tag1");
   await repo2.remote.push();
-  await repo2.tag.push(tag1);
+  await repo2.remote.push({ tag: tag1 });
   await repo2.branch.switch("branch", { create: true });
   const commit2 = await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
-  await repo2.tag.push(tag2);
+  await repo2.remote.push({ tag: tag2 });
   await repo1.remote.pull({ target: tag2 });
   assertEquals(await repo1.commit.log(), [commit2, commit1]);
   assertEquals(await repo1.tag.list(), []);
@@ -1120,7 +1120,7 @@ Deno.test("git().remote.pull({ tags }) can skip tags", async () => {
   const commit = await repo2.commit.create("commit", { allowEmpty: true });
   const tag = await repo2.tag.create("tag");
   await repo2.remote.push();
-  await repo2.tag.push(tag);
+  await repo2.remote.push({ tag: tag });
   await repo1.remote.pull({ tags: false });
   assertEquals(await repo1.commit.log(), [commit]);
   assertEquals(await repo1.tag.list(), []);
@@ -1133,11 +1133,11 @@ Deno.test("git().remote.pull({ tags }) can fetch all tags", async () => {
   const commit = await repo2.commit.create("commit", { allowEmpty: true });
   const tag1 = await repo2.tag.create("tag1");
   await repo2.remote.push();
-  await repo2.tag.push(tag1);
+  await repo2.remote.push({ tag: tag1 });
   await repo2.branch.switch("branch", { create: true });
   await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
-  await repo2.tag.push(tag2);
+  await repo2.remote.push({ tag: tag2 });
   await repo1.remote.pull({ tags: true });
   assertEquals(await repo1.commit.log(), [commit]);
   assertEquals(await repo1.tag.list(), [tag1, tag2]);
@@ -1228,6 +1228,19 @@ Deno.test("git().remote.push({ target }) pushes commits to a remote branch", asy
   assertEquals(await upstream.commit.log(), [commit2, commit1]);
 });
 
+Deno.test("git().remote.push({ target }) can push multiple branches", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: upstream });
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const branch1 = await repo.branch.create("branch1");
+  const branch2 = await repo.branch.create("branch2");
+  await repo.remote.push({ target: [branch1, branch2] });
+  assertEquals(await upstream.branch.list(), [
+    { name: "branch1", commit },
+    { name: "branch2", commit },
+  ]);
+});
+
 Deno.test("git().remote.push({ target }) rejects tags", async () => {
   await using upstream = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: upstream });
@@ -1245,22 +1258,61 @@ Deno.test("git().remote.push({ target }) rejects tags", async () => {
   );
 });
 
-Deno.test("git().remote.push({ branches }) pushes all tags", async () => {
+Deno.test("git().remote.push({ branches }) can push all branches", async () => {
   await using upstream = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: upstream });
-  const commit1 = await repo.commit.create("commit", { allowEmpty: true });
+  const commit = await repo.commit.create("commit1", { allowEmpty: true });
   await repo.branch.create("branch1");
-  const commit2 = await repo.commit.create("commit", { allowEmpty: true });
   await repo.branch.create("branch2");
-  await repo.remote.push({ branches: true });
-  assertEquals(await repo.branch.list({ name: "branch*" }), [
-    { name: "branch1", commit: commit1 },
-    { name: "branch2", commit: commit2 },
+  await repo.remote.push({ branches: "all" });
+  assertEquals(await upstream.branch.list(), [
+    { name: "branch1", commit },
+    { name: "branch2", commit },
+    { name: "main", commit },
   ]);
-  assertEquals(await upstream.branch.list({ name: "branch*" }), [
-    { name: "branch1", commit: commit1 },
-    { name: "branch2", commit: commit2 },
-  ]);
+});
+
+Deno.test("git().remote.push({ tag }) can push tag to remote", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: upstream });
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag = await repo.tag.create("tag");
+  await repo.remote.push({ tag });
+  assertEquals(await upstream.tag.list(), [tag]);
+});
+
+Deno.test("git().remote.push({ tag }) cannot override remote tag", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  await using repo = await tempRepository({ clone: upstream });
+  await upstream.commit.create("new", { allowEmpty: true });
+  await upstream.tag.create("tag");
+  await repo.tag.create("tag");
+  await assertRejects(
+    () => repo.remote.push({ tag: "tag" }),
+    GitError,
+    "already exists",
+  );
+});
+
+Deno.test("git().remote.push({ tag }) force overrides remote tag", async () => {
+  await using upstream = await tempRepository();
+  await upstream.commit.create("commit", { allowEmpty: true });
+  await using repo = await tempRepository({ clone: upstream });
+  await upstream.commit.create("new", { allowEmpty: true });
+  await upstream.tag.create("tag");
+  await repo.tag.create("tag");
+  await repo.remote.push({ tag: "tag", force: true });
+});
+
+Deno.test("git().remote.push({ tags }) pushes all tags", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: upstream });
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  await repo.remote.push({ tags: true });
+  assertEquals(await upstream.tag.list(), [tag1, tag2]);
 });
 
 Deno.test("git().remote.push({ force }) force pushes", async () => {
@@ -1272,16 +1324,6 @@ Deno.test("git().remote.push({ force }) force pushes", async () => {
   await repo1.remote.push();
   await repo2.remote.push({ force: true });
   assertEquals(await upstream.commit.log(), [commit2]);
-});
-
-Deno.test("git().remote.push({ tags }) pushes all tags", async () => {
-  await using upstream = await tempRepository({ bare: true });
-  await using repo = await tempRepository({ clone: upstream });
-  await repo.commit.create("commit", { allowEmpty: true });
-  const tag1 = await repo.tag.create("tag1");
-  const tag2 = await repo.tag.create("tag2");
-  await repo.remote.push({ tags: true });
-  assertEquals(await upstream.tag.list(), [tag1, tag2]);
 });
 
 Deno.test("git().remote.push({ track }) sets upstream tracking", async () => {
@@ -5164,39 +5206,6 @@ Deno.test("git().tag.delete() rejects non-existent tag", async () => {
     GitError,
     "not found",
   );
-});
-
-Deno.test("git().tag.push() can push tag to remote", async () => {
-  await using upstream = await tempRepository({ bare: true });
-  await using repo = await tempRepository({ clone: upstream });
-  await repo.commit.create("commit", { allowEmpty: true });
-  const tag = await repo.tag.create("tag");
-  await repo.tag.push(tag);
-  assertEquals(await upstream.tag.list(), [tag]);
-});
-
-Deno.test("git().tag.push() cannot override remote tag", async () => {
-  await using upstream = await tempRepository();
-  await upstream.commit.create("commit", { allowEmpty: true });
-  await using repo = await tempRepository({ clone: upstream });
-  await upstream.commit.create("new", { allowEmpty: true });
-  await upstream.tag.create("tag");
-  await repo.tag.create("tag");
-  await assertRejects(
-    () => repo.tag.push("tag"),
-    GitError,
-    "already exists",
-  );
-});
-
-Deno.test("git().tag.push({ force }) force overrides remote tag", async () => {
-  await using upstream = await tempRepository();
-  await upstream.commit.create("commit", { allowEmpty: true });
-  await using repo = await tempRepository({ clone: upstream });
-  await upstream.commit.create("new", { allowEmpty: true });
-  await upstream.tag.create("tag");
-  await repo.tag.create("tag");
-  await repo.tag.push("tag", { force: true });
 });
 
 Deno.test("git().ignore.filter() returns empty array for non-ignored files", async () => {
