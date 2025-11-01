@@ -1650,9 +1650,11 @@ export function git(options?: GitOptions): Git {
           flag("--set-upstream", options?.track),
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
-          options?.all
-            ? []
-            : remoteArg(options?.remote ?? await repo.remote.get()),
+          remoteArg(
+            options?.all
+              ? undefined
+              : options?.remote ?? await repo.remote.get(),
+          ),
           nameArg(options?.target),
         );
       },
@@ -1685,9 +1687,11 @@ export function git(options?: GitOptions): Git {
           flag("--set-upstream", options?.track),
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
-          options?.all
-            ? []
-            : remoteArg(options?.remote ?? await repo.remote.get()),
+          remoteArg(
+            options?.all
+              ? undefined
+              : options?.remote ?? await repo.remote.get(),
+          ),
           nameArg(options?.target),
         );
       },
