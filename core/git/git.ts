@@ -1651,7 +1651,9 @@ export function git(options?: GitOptions): Git {
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
           remoteArg(
-            options?.all ? [] : options?.remote ?? await repo.remote.get(),
+            options?.all
+              ? undefined
+              : options?.remote ?? await repo.remote.get(),
           ),
           nameArg(options?.target),
         );
@@ -1686,7 +1688,9 @@ export function git(options?: GitOptions): Git {
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
           remoteArg(
-            options?.all ? [] : options?.remote ?? await repo.remote.get(),
+            options?.all
+              ? undefined
+              : options?.remote ?? await repo.remote.get(),
           ),
           nameArg(options?.target),
         );
