@@ -1353,6 +1353,16 @@ Deno.test("git().remote.push({ tag }) can push tag to remote", async () => {
   assertEquals(await upstream.tag.list(), [tag]);
 });
 
+Deno.test("git().remote.push({ tag }) can push multiple tags to remote", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo = await tempRepository({ clone: upstream });
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  await repo.remote.push({ tag: [tag1, tag2] });
+  assertEquals(await upstream.tag.list(), [tag1, tag2]);
+});
+
 Deno.test("git().remote.push({ tag }) cannot override remote tag", async () => {
   await using upstream = await tempRepository();
   await upstream.commit.create("commit", { allowEmpty: true });

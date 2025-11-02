@@ -995,8 +995,8 @@ export interface RemotePushTagOptions
     RemotePushForceOptions,
     RemoteTrackOptions,
     SignOptions {
-  /** Tag to push to remote. */
-  tag: string | Tag;
+  /** Tag or tags to push to remote. */
+  tag: string | Tag | (string | Tag)[];
   /**
    * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
    */
