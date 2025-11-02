@@ -1455,10 +1455,10 @@ Deno.test("git().remote.push({ tags }) can push followed tags with all branches"
 Deno.test("git().remote.push({ delete }) can delete remote branch", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   const commit = await upstream.commit.create("commit", { allowEmpty: true });
-  const branch1 = await upstream.branch.create("branch1");
+  await upstream.branch.create("branch1");
   const branch2 = await upstream.branch.create("branch2");
   await using repo = await tempRepository({ clone: upstream });
-  await repo.remote.push({ target: branch1, delete: true });
+  await repo.remote.push({ target: "branch1", delete: true });
   assertEquals(await upstream.branch.list(), [
     { name: "branch2", commit },
     { name: "main", commit },
@@ -1470,22 +1470,32 @@ Deno.test("git().remote.push({ delete }) can delete remote branch", async () => 
 Deno.test("git().remote.push({ delete }) can delete multiple remote branches", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   const commit = await upstream.commit.create("commit", { allowEmpty: true });
-  const branch1 = await upstream.branch.create("branch1");
-  const branch2 = await upstream.branch.create("branch2");
+  await upstream.branch.create("branch1");
+  await upstream.branch.create("branch2");
   await using repo = await tempRepository({ clone: upstream });
-  await repo.remote.push({ target: [branch1, branch2], delete: true });
+  await repo.remote.push({ target: ["branch1", "branch2"], delete: true });
   assertEquals(await upstream.branch.list(), [{ name: "main", commit }]);
 });
 
 Deno.test("git().remote.push({ delete }) can delete remote tag", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   await upstream.commit.create("commit", { allowEmpty: true });
-  const tag1 = await upstream.tag.create("tag1");
+  await upstream.tag.create("tag1");
   const tag2 = await upstream.tag.create("tag2");
   await using repo = await tempRepository({ clone: upstream });
-  await repo.remote.push({ tag: tag1, delete: true });
+  await repo.remote.push({ tag: "tag1", delete: true });
   assertEquals(await upstream.tag.list(), [tag2]);
-  await repo.remote.push({ tag: tag2, delete: true });
+  await repo.remote.push({ tag: "tag2", delete: true });
+  assertEquals(await upstream.tag.list(), []);
+});
+
+Deno.test("git().remote.push({ delete }) can delete multiple remote tags", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  await upstream.commit.create("commit", { allowEmpty: true });
+  await upstream.tag.create("tag1");
+  await upstream.tag.create("tag2");
+  await using repo = await tempRepository({ clone: upstream });
+  await repo.remote.push({ tag: ["tag1", "tag2"], delete: true });
   assertEquals(await upstream.tag.list(), []);
 });
 
