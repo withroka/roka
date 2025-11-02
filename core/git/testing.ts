@@ -104,7 +104,7 @@ export async function tempRepository(
     ...options?.config,
   };
   const repo = clone
-    ? await git().remote.clone(
+    ? await git().clone(
       clone instanceof URL
         ? clone
         : typeof clone === "string"
