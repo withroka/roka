@@ -870,7 +870,7 @@ export interface RemoteFetchAllOptions
     RemoteFilterOptions,
     RemoteShallowOptions {
   /** Fetch from all configured repositories. */
-  all: true;
+  all: boolean;
   /** Cannot be specified with {@linkcode RemoteFetchAllOptions.all}. */
   remote?: never;
   /** Cannot be specified with {@linkcode RemoteFetchAllOptions.all}. */
@@ -929,7 +929,7 @@ export interface RemotePullAllOptions
     RemoteShallowOptions,
     SignOptions {
   /** Pull from all configured repositories. */
-  all: true;
+  all: boolean;
   /** Cannot be specified with {@linkcode RemotePullAllOptions.all}. */
   remote?: never;
   /** Cannot be specified with {@linkcode RemotePullAllOptions.all}. */
