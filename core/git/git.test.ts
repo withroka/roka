@@ -1076,7 +1076,7 @@ Deno.test("git().remote.pull({ all }) can pull from all remotes", async () => {
   );
 });
 
-Deno.test("git().remote.pull({ all }) can be false to fetch from single remote", async () => {
+Deno.test("git().remote.pull({ all }) can be false to pull from single remote", async () => {
   await using upstream1 = await tempRepository({ branch: "main" });
   const commit1 = await upstream1.commit.create("commit1", {
     allowEmpty: true,
