@@ -862,6 +862,20 @@ Deno.test("git().remote.fetch({ filter }) filters fetched objects", async () => 
   assertGreater(objects2.length, 0);
 });
 
+Deno.test("git().remote.fetch({ prune }) removes deleted remote branches", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.branch.create("branch");
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(
+    await repo.branch.get("origin/branch"),
+    { name: "origin/branch", commit },
+  );
+  await upstream.branch.delete("branch");
+  await repo.remote.fetch({ prune: true });
+  assertEquals(await repo.branch.get("origin/branch"), undefined);
+});
+
 Deno.test("git().remote.fetch({ shallow }) limits fetch by commit depth", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
@@ -1143,6 +1157,20 @@ Deno.test("git().remote.pull({ sign }) cannot use wrong key", async () => {
     GitError,
     "gpg failed to sign",
   );
+});
+
+Deno.test("git().remote.pull({ prune }) removes deleted remote branches", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.branch.create("branch");
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(
+    await repo.branch.get("origin/branch"),
+    { name: "origin/branch", commit },
+  );
+  await upstream.branch.delete("branch");
+  await repo.remote.pull({ prune: true });
+  assertEquals(await repo.branch.get("origin/branch"), undefined);
 });
 
 Deno.test("git().remote.pull({ shallow }) can exclude history by depth", async () => {
@@ -1543,6 +1571,24 @@ Deno.test("git().remote.push({ force }) can force push with lease if includes", 
   assertEquals(await upstream.commit.log(), [commit2, commit1]);
 });
 
+Deno.test("git().remote.push({ prune }) removes deleted remote branches", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.branch.create("branch");
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(
+    await repo.branch.get("origin/branch"),
+    { name: "origin/branch", commit },
+  );
+  // await repo.branch.delete("origin/branch", { remote: true });
+  await new Deno.Command("git", {
+    cwd: repo.path(),
+    args: ["branch", "-rd", "origin/branch"],
+  }).output();
+  await repo.remote.push({ prune: true });
+  assertEquals(await repo.branch.get("origin/branch"), undefined);
+});
+
 Deno.test("git().remote.push({ track }) sets upstream tracking", async () => {
   await using upstream = await tempRepository({ bare: true });
   await using repo = await tempRepository({
@@ -1568,6 +1614,50 @@ Deno.test("git().remote.push({ track }) sets upstream tracking", async () => {
       push: { name: "branch", remote, branch: remoteBranch },
     },
   ]);
+});
+
+Deno.test("git().remote.prune() removes deleted remote branches for single remote", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit1", { allowEmpty: true });
+  await upstream.branch.create("branch");
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(
+    await repo.branch.get("origin/branch"),
+    { name: "origin/branch", commit },
+  );
+  await upstream.branch.delete("branch");
+  await repo.remote.prune("origin");
+  assertEquals(await repo.branch.get("origin/branch"), undefined);
+});
+
+Deno.test("git().remote.prune() removes deleted remote branches for multiple remotes", async () => {
+  await using upstream1 = await tempRepository({ branch: "main" });
+  const commit1 = await upstream1.commit.create("commit1", {
+    allowEmpty: true,
+  });
+  await upstream1.branch.create("branch1");
+  await using upstream2 = await tempRepository({ branch: "main" });
+  const commit2 = await upstream2.commit.create("commit2", {
+    allowEmpty: true,
+  });
+  await upstream2.branch.create("branch2");
+  await using repo = await tempRepository();
+  await repo.remote.add(upstream1.path(), { remote: "remote1" });
+  await repo.remote.add(upstream2.path(), { remote: "remote2" });
+  await repo.remote.fetch({ remote: ["remote1", "remote2"] });
+  assertEquals(
+    await repo.branch.get("remote1/branch1"),
+    { name: "remote1/branch1", commit: commit1 },
+  );
+  assertEquals(
+    await repo.branch.get("remote2/branch2"),
+    { name: "remote2/branch2", commit: commit2 },
+  );
+  await upstream1.branch.delete("branch1");
+  await upstream2.branch.delete("branch2");
+  await repo.remote.prune(["remote1", "remote2"]);
+  assertEquals(await repo.branch.get("remote1/branch1"), undefined);
+  assertEquals(await repo.branch.get("remote2/branch2"), undefined);
 });
 
 Deno.test("git().remote.add() adds a default remote", async () => {

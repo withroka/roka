@@ -49,7 +49,7 @@
  * @todo Add templates.
  * @todo Expose dates.
  * @todo Verify signatures.
- * @todo Add pruning.
+ * @todo Add local branch pruning.
  *
  * @module git
  */
@@ -146,6 +146,8 @@ export interface RemoteOperations {
   set(remote: Remote): Promise<Remote>;
   /** Updates a remote with a fetch/push URL. */
   set(remote: string, url: string | URL): Promise<Remote>;
+  /** Prunes stale references to remote branches. */
+  prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
   /** Removes a remote from the repository. */
   remove(options?: RemoteNameOptions): Promise<void>;
   /**
@@ -681,8 +683,10 @@ export interface RemoteTrackOptions {
  * (e.g. {@linkcode RemoteOperations.push}).
  */
 export interface RemoteTransportOptions {
-  /** Either update all refs on the other side or don't update any.*/
+  /** Either update all refs or don't update any.*/
   atomic?: boolean;
+  /** Prune refs that no longer exist on the updated repository. */
+  prune?: boolean;
   /**
    * Control fetching or pushing tags.
    *
@@ -1661,6 +1665,7 @@ export function git(options?: GitOptions): Git {
           "fetch",
           flag("--atomic", options?.atomic),
           flag("--filter", options?.filter, { equals: true }),
+          flag("--prune", options?.prune),
           flag("--depth", options?.shallow?.depth),
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
@@ -1698,6 +1703,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "pull",
           flag("--atomic", options?.atomic),
+          flag("--prune", options?.prune),
           flag("--depth", options?.shallow?.depth),
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
@@ -1724,6 +1730,7 @@ export function git(options?: GitOptions): Git {
           "push",
           flag(["--atomic", "--no-atomic"], options?.atomic),
           flag("--delete", options?.delete),
+          flag("--prune", options?.prune),
           flag("--force", options?.force === true),
           flag(
             "--force-with-lease",
@@ -1842,6 +1849,13 @@ export function git(options?: GitOptions): Git {
         const updated = await repo.remote.get({ remote });
         if (!updated) throw new GitError("Failed to update remote");
         return updated;
+      },
+      async prune(remote) {
+        await run(
+          gitOptions,
+          ["remote", "prune"],
+          remoteArg(remote),
+        );
       },
       async remove(options) {
         const remote = options?.remote ?? await repo.remote.get();
