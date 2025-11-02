@@ -685,7 +685,7 @@ export interface RemoteTrackOptions {
 export interface RemoteTransportOptions {
   /** Either update all refs or don't update any.*/
   atomic?: boolean;
-  /** Prune refs that no longer exists on the updated repository. */
+  /** Prune refs that no longer exist on the updated repository. */
   prune?: boolean;
   /**
    * Control fetching or pushing tags.
