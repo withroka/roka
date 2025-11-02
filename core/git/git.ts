@@ -729,8 +729,8 @@ export interface RemoteShallowOptions {
    * If any of the shallow options are provided, shallow fetching is enabled,
    * rewriting the history to only include the specified commits.
    *
-   * - `depth`: limit to the number of commits from the tip of each branch
-   * - `exclude`: exclude commits reachable from specified branches or tags
+   * - `{ depth }`: limit to the number of commits from the tip of each branch
+   * - `{ exclude }`: exclude commits reachable from specified branches or tags
    *
    * Only one shallow option can be set at a time.
    */
@@ -768,7 +768,7 @@ export interface RemoteCloneOptions
    * Control local repository optimizations.
    *
    * - `false`: disable optimizations, use remote transport
-   * - `true`: use local transport with hardlinks
+   * - `true`: use local transport with hardlinks (default)
    * - `"copy"`: copy objects without hardlinks
    * - `"shared"`: share objects with source repository
    * - `{ reference }`: use given repository as an alternate object store
@@ -1019,9 +1019,15 @@ export interface RemotePushTagOptions
 export interface RemotePushForceOptions {
   /**
    * Force push to remote.
+   *
+   * - `false`: do not force push (default)
+   * - `true`: force push unconditionally
+   * - `"with-lease"`: force push only if remote tip is fetched
+   * - `"with-lease-if-includes"`: force push only if remote tip is integrated
+   *
    * @default {false}
    */
-  force?: boolean;
+  force?: boolean | "with-lease" | "with-lease-if-includes";
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -1136,7 +1142,7 @@ export interface BranchResetOptions {
    * Reset mode.
    *
    * - `"soft"`: only move HEAD, keep index and working tree
-   * - `"mixed"`: reset index, keep working tree
+   * - `"mixed"`: reset index, keep working tree (default)
    * - `"hard"`: reset index and working tree, discard all changes
    * - `"merge"`: reset but keep non-conflicting changes, abort if unsafe
    * - `"keep"`: reset but abort if any modified file differs between commits
@@ -1193,7 +1199,7 @@ export interface IndexStatusOptions {
    * Control the status output for ignored files.
    *
    * - `true`: include ignored files and directories
-   * - `false`: exclude ignored files and directories
+   * - `false`: exclude ignored files and directories (default)
    *
    * Files under ignored directories are included only if
    * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`.
@@ -1204,7 +1210,7 @@ export interface IndexStatusOptions {
   /**
    * Control the status output for renamed files.
    *
-   * - `true`: enable rename detection, and list renamed files as such
+   * - `true`: enable rename detection, and list renamed files as such (default)
    * - `false`: disable rename detection, and list files as added and deleted
    *
    * @default {true}
@@ -1214,7 +1220,7 @@ export interface IndexStatusOptions {
    * Control the status output for untracked files.
    *
    * - `false`: exclude untracked files
-   * - `true`: include untracked directories, but not their files
+   * - `true`: include untracked directories, but not their files (default)
    * - `"all"`: include all untracked files
    *
    * @default {true}
@@ -1297,7 +1303,7 @@ export interface DiffOptions {
    * Control the diff output for copied files.
    *
    * - `true`: enable copy detection, and list copied files as such
-   * - `false`: disable copy detection, and list copied files as added
+   * - `false`: disable copy detection, and list copied files as added (default)
    *
    * If copy detection is enabled at the configuration level, this option has
    * no effect.
@@ -1310,7 +1316,7 @@ export interface DiffOptions {
   /**
    * Control the diff output for renamed files.
    *
-   * - `true`: enable rename detection, and list renamed files as such
+   * - `true`: enable rename detection, and list renamed files as such (default)
    * - `false`: disable rename detection, and list files as added and deleted
    *
    * @default {true}
@@ -1703,8 +1709,17 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "push",
-          flag("--force", options?.force),
           flag(["--atomic", "--no-atomic"], options?.atomic),
+          flag("--force", options?.force === true),
+          flag(
+            "--force-with-lease",
+            options?.force === "with-lease" ||
+              options?.force === "with-lease-if-includes",
+          ),
+          flag(
+            "--force-if-includes",
+            options?.force === "with-lease-if-includes",
+          ),
           flag("--tags", options?.tags === true),
           flag("--no-tags", options?.tags === false),
           flag("--follow-tags", options?.tags === "follow"),
