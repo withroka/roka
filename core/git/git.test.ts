@@ -1630,7 +1630,7 @@ Deno.test("git().remote.prune() removes deleted remote branches for single remot
   assertEquals(await repo.branch.get("origin/branch"), undefined);
 });
 
-Deno.test("git().remote.prune() removes deleted remote branches for multiple remote", async () => {
+Deno.test("git().remote.prune() removes deleted remote branches for multiple remotes", async () => {
   await using upstream1 = await tempRepository({ branch: "main" });
   const commit1 = await upstream1.commit.create("commit1", {
     allowEmpty: true,
