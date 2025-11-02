@@ -904,7 +904,7 @@ Deno.test("git().remote.fetch({ tags }) can skip tags", async () => {
   await using repo = await tempRepository({ clone: upstream });
   const commit = await upstream.commit.create("commit2", { allowEmpty: true });
   await upstream.tag.create("tag");
-  await repo.remote.fetch({ tags: false });
+  await repo.remote.fetch({ tags: "none" });
   assertEquals(await repo.branch.list({ name: "origin/main", remotes: true }), [
     { name: "origin/main", commit },
   ]);
@@ -947,7 +947,7 @@ Deno.test("git().remote.fetch({ tags }) can fetch all tags", async () => {
   await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
   await repo2.remote.push({ tag: tag2 });
-  await repo1.remote.fetch({ tags: true });
+  await repo1.remote.fetch({ tags: "all" });
   assertEquals(await repo1.tag.list(), [tag1, tag2]);
 });
 
@@ -1176,7 +1176,7 @@ Deno.test("git().remote.pull({ tags }) can skip tags", async () => {
   const tag = await repo2.tag.create("tag");
   await repo2.remote.push();
   await repo2.remote.push({ tag: tag });
-  await repo1.remote.pull({ tags: false });
+  await repo1.remote.pull({ tags: "none" });
   assertEquals(await repo1.commit.log(), [commit]);
   assertEquals(await repo1.tag.list(), []);
 });
@@ -1193,7 +1193,7 @@ Deno.test("git().remote.pull({ tags }) can fetch all tags", async () => {
   await repo2.commit.create("commit2", { allowEmpty: true });
   const tag2 = await repo2.tag.create("tag2");
   await repo2.remote.push({ tag: tag2 });
-  await repo1.remote.pull({ tags: true });
+  await repo1.remote.pull({ tags: "all" });
   assertEquals(await repo1.commit.log(), [commit]);
   assertEquals(await repo1.tag.list(), [tag1, tag2]);
 });
@@ -1383,7 +1383,7 @@ Deno.test("git().remote.push({ tags }) can push all tags", async () => {
   await repo.commit.create("commit", { allowEmpty: true });
   const tag1 = await repo.tag.create("tag1");
   const tag2 = await repo.tag.create("tag2");
-  await repo.remote.push({ tags: true });
+  await repo.remote.push({ tags: "all" });
   assertEquals(await upstream.tag.list(), [tag1, tag2]);
 });
 
@@ -1395,7 +1395,7 @@ Deno.test("git().remote.push({ tags }) can push all tags with multiple branches"
   await repo.branch.create("branch2");
   const tag1 = await repo.tag.create("tag1");
   const tag2 = await repo.tag.create("tag2");
-  await repo.remote.push({ tags: true, target: ["branch1", "branch2"] });
+  await repo.remote.push({ tags: "all", target: ["branch1", "branch2"] });
   assertEquals(await upstream.tag.list(), [tag1, tag2]);
   assertEquals(await upstream.branch.list(), [
     { name: "branch1", commit },
@@ -1407,7 +1407,7 @@ Deno.test("git().remote.push({ tags }) rejects pushing all tags with all branche
   await using upstream = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: upstream });
   await assertRejects(
-    () => repo.remote.push({ tags: true, branches: "all" }),
+    () => repo.remote.push({ tags: "all", branches: "all" }),
     GitError,
     "cannot be used together",
   );

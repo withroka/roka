@@ -686,13 +686,13 @@ export interface RemoteTransportOptions {
   /**
    * Control fetching or pushing tags.
    *
-   * - `true`: copy all tags
-   * - `false`: do not copy any tags (push default)
+   * - `"none"`: do not copy any tags (push default)
    * - `"follow"`: copy only tags that point to copied objects (fetch default)
+   * - `"all"`: copy all tags
    *
    * When pushing, only annotated tags are copied when following.
    */
-  tags?: boolean | "follow";
+  tags?: "none" | "follow" | "all";
 }
 
 /**
@@ -816,17 +816,11 @@ export type RemoteFetchOptions =
  */
 export interface RemoteFetchSingleOptions
   extends
+    RemoteRepositoryOptions,
     RemoteTransportOptions,
     RemoteTrackOptions,
     RemoteFilterOptions,
     RemoteShallowOptions {
-  /**
-   * Fetch from a repository, or multiple repositories.
-   *
-   * If omitted, fetches from the current branch remote, or `"origin"` if a
-   * remote is not configured for the current branch.
-   */
-  remote?: string | URL | Remote;
   /**
    * Branch or tag to fetch commits from.
    *
@@ -897,17 +891,11 @@ export type RemotePullOptions =
  */
 export interface RemotePullSingleOptions
   extends
+    RemoteRepositoryOptions,
     RemoteTransportOptions,
     RemoteTrackOptions,
     RemoteShallowOptions,
     SignOptions {
-  /**
-   * Pull from a repository, or from all repositories.
-   *
-   * If omitted, pulls from the current branch remote, or `"origin"` if a
-   * remote is not configured for the current branch.
-   */
-  remote?: string | URL | Remote;
   /**
    * Branch or tag to pull commits from.
    *
@@ -949,13 +937,18 @@ export type RemotePushOptions =
 export interface RemotePushBranchOptions
   extends
     RemoteRepositoryOptions,
+    RemoteTransportOptions,
     RemotePushForceOptions,
     RemoteTrackOptions,
-    RemoteTransportOptions {
+    SignOptions {
   /**
    * Branch or branches to push to remote.
    *
    * The default behavior is to push the current branch.
+   *
+   * Note that this does not accept tag names. To push tags, use
+   * {@linkcode RemotePushTagOptions.tag tag} or
+   * {@linkcode RemoteTransportOptions.tags tags}.
    */
   target?: string | Branch | (string | Branch)[];
   /**
@@ -975,9 +968,10 @@ export interface RemotePushBranchOptions
 export interface RemotePushAllBranchesOptions
   extends
     RemoteRepositoryOptions,
+    RemoteTransportOptions,
     RemotePushForceOptions,
     RemoteTrackOptions,
-    RemoteTransportOptions {
+    SignOptions {
   /** Push all branches to remote. */
   branches: "all";
   /**
@@ -997,9 +991,10 @@ export interface RemotePushAllBranchesOptions
 export interface RemotePushTagOptions
   extends
     RemoteRepositoryOptions,
+    RemoteTransportOptions,
     RemotePushForceOptions,
     RemoteTrackOptions,
-    RemoteTransportOptions {
+    SignOptions {
   /** Tag to push to remote. */
   tag: string | Tag;
   /**
@@ -1010,6 +1005,10 @@ export interface RemotePushTagOptions
    * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
    */
   branches?: never;
+  /**
+   * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
+   */
+  tags?: never;
 }
 
 /**
@@ -1652,8 +1651,8 @@ export function git(options?: GitOptions): Git {
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
           }),
-          flag("--tags", options?.tags === true),
-          flag("--no-tags", options?.tags === false),
+          flag("--no-tags", options?.tags === "none"),
+          flag("--tags", options?.tags === "all"),
           flag("--set-upstream", options?.track),
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
@@ -1690,8 +1689,8 @@ export function git(options?: GitOptions): Git {
             equals: true,
           }),
           signFlag("commit", options?.sign),
-          flag("--tags", options?.tags === true),
-          flag("--no-tags", options?.tags === false),
+          flag("--no-tags", options?.tags === "none"),
+          flag("--tags", options?.tags === "all"),
           flag("--set-upstream", options?.track),
           flag("--all", options?.all),
           flag("--multiple", Array.isArray(options?.remote)),
@@ -1720,8 +1719,8 @@ export function git(options?: GitOptions): Git {
             "--force-if-includes",
             options?.force === "with-lease-if-includes",
           ),
-          flag("--tags", options?.tags === true),
-          flag("--no-tags", options?.tags === false),
+          flag("--no-tags", options?.tags === "none"),
+          flag("--tags", options?.tags === "all"),
           flag("--follow-tags", options?.tags === "follow"),
           flag("--set-upstream", options?.track),
           flag("--branches", options?.branches === "all"),
