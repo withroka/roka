@@ -1453,6 +1453,39 @@ Deno.test("git().remote.push({ force }) force pushes", async () => {
   assertEquals(await upstream.commit.log(), [commit2]);
 });
 
+Deno.test("git().remote.push({ force }) can force push with lease", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo1 = await tempRepository({ clone: upstream });
+  await using repo2 = await tempRepository({ clone: upstream });
+  const commit1 = await repo1.commit.create("commit1", { allowEmpty: true });
+  const commit2 = await repo2.commit.create("commit2", { allowEmpty: true });
+  await repo1.remote.push();
+  await assertRejects(() => repo2.remote.push({ force: "with-lease" }));
+  await repo2.remote.fetch();
+  assertEquals(await upstream.commit.log(), [commit1]);
+  await repo2.remote.push({ force: "with-lease" });
+  assertEquals(await upstream.commit.log(), [commit2]);
+});
+
+Deno.test("git().remote.push({ force }) can force push with lease if includes", async () => {
+  await using upstream = await tempRepository({ bare: true });
+  await using repo1 = await tempRepository({ clone: upstream });
+  await using repo2 = await tempRepository({ clone: upstream });
+  const commit1 = await repo1.commit.create("commit1", { allowEmpty: true });
+  await repo2.commit.create("commit2", { allowEmpty: true });
+  await repo1.remote.push();
+  await assertRejects(() => repo2.remote.push({ force: "with-lease" }));
+  await repo2.remote.fetch();
+  await assertRejects(() =>
+    repo2.remote.push({ force: "with-lease-if-includes" })
+  );
+  assertEquals(await upstream.commit.log(), [commit1]);
+  await repo2.branch.reset({ target: commit1, mode: "hard" });
+  const commit2 = await repo2.commit.create("commit2", { allowEmpty: true });
+  await repo2.remote.push({ force: "with-lease-if-includes" });
+  assertEquals(await upstream.commit.log(), [commit2, commit1]);
+});
+
 Deno.test("git().remote.push({ track }) sets upstream tracking", async () => {
   await using upstream = await tempRepository({ bare: true });
   await using repo = await tempRepository({
