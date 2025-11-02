@@ -754,7 +754,7 @@ Deno.test("git().remote.fetch({ remote }) can fetch from multiple remotes", asyn
   assertEquals(await repo.commit.log(), []);
 });
 
-Deno.test("git().remote.fetch({ remote }) can fetch from all remotes", async () => {
+Deno.test("git().remote.fetch({ all }) can fetch from all remotes", async () => {
   await using upstream1 = await tempRepository({ branch: "main" });
   const commit1 = await upstream1.commit.create("commit1", {
     allowEmpty: true,
@@ -781,6 +781,26 @@ Deno.test("git().remote.fetch({ remote }) can fetch from all remotes", async () 
       { name: "remote2/main", commit: commit2 },
       { name: "remote3/main", commit: commit3 },
     ],
+  );
+  assertEquals(await repo.commit.log(), [commit1]);
+});
+
+Deno.test("git().remote.fetch({ all }) can be false to fetch from single remote", async () => {
+  await using upstream1 = await tempRepository({ branch: "main" });
+  const commit1 = await upstream1.commit.create("commit1", {
+    allowEmpty: true,
+  });
+  await using upstream2 = await tempRepository({ branch: "main" });
+  await upstream2.commit.create("commit2", { allowEmpty: true });
+  await using repo = await tempRepository({
+    clone: upstream1,
+    remote: "remote1",
+  });
+  await repo.remote.add(upstream2.path(), { remote: "remote2" });
+  await repo.remote.fetch({ all: false });
+  assertEquals(
+    await repo.branch.list({ name: "*/main", remotes: true }),
+    [{ name: "remote1/main", commit: commit1 }],
   );
   assertEquals(await repo.commit.log(), [commit1]);
 });
@@ -1032,7 +1052,7 @@ Deno.test("git().remote.pull({ remote }) can pull from a remote by address", asy
   assertEquals(await repo.commit.log(), [commit]);
 });
 
-Deno.test("git().remote.pull({ remote }) can pull from all remotes", async () => {
+Deno.test("git().remote.pull({ all }) can pull from all remotes", async () => {
   await using upstream1 = await tempRepository({ branch: "main" });
   const commit1 = await upstream1.commit.create("commit1", {
     allowEmpty: true,
@@ -1053,6 +1073,25 @@ Deno.test("git().remote.pull({ remote }) can pull from all remotes", async () =>
       { name: "remote1/main", commit: commit1 },
       { name: "remote2/main", commit: commit2 },
     ],
+  );
+});
+
+Deno.test("git().remote.pull({ all }) can be false to pull from single remote", async () => {
+  await using upstream1 = await tempRepository({ branch: "main" });
+  const commit1 = await upstream1.commit.create("commit1", {
+    allowEmpty: true,
+  });
+  await using upstream2 = await tempRepository({ branch: "main" });
+  await upstream2.commit.create("commit2", { allowEmpty: true });
+  await using repo = await tempRepository({
+    clone: upstream1,
+    remote: "remote1",
+  });
+  await repo.remote.add(upstream2.path(), { remote: "remote2" });
+  await repo.remote.pull({ all: false });
+  assertEquals(
+    await repo.branch.list({ name: "*/main", remotes: true }),
+    [{ name: "remote1/main", commit: commit1 }],
   );
 });
 
