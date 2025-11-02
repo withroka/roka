@@ -952,6 +952,11 @@ export interface RemotePushBranchOptions
    */
   target?: string | Branch | (string | Branch)[];
   /**
+   * Delete the specified branch or branches on remote.
+   * @default {false}
+   */
+  delete?: boolean;
+  /**
    * Cannot be specified with {@linkcode RemotePushBranchOptions.target}.
    */
   branches?: never;
@@ -982,6 +987,10 @@ export interface RemotePushAllBranchesOptions
    * Cannot be specified with {@linkcode RemotePushAllBranchesOptions.branches}.
    */
   tag?: never;
+  /**
+   * Cannot be specified with {@linkcode RemotePushAllBranchesOptions.branches}.
+   */
+  delete?: never;
 }
 
 /**
@@ -997,6 +1006,11 @@ export interface RemotePushTagOptions
     SignOptions {
   /** Tag or tags to push to remote. */
   tag: string | Tag | (string | Tag)[];
+  /**
+   * Delete the specified tag or tags on remote.
+   * @default {false}
+   */
+  delete?: boolean;
   /**
    * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
    */
@@ -1709,6 +1723,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "push",
           flag(["--atomic", "--no-atomic"], options?.atomic),
+          flag("--delete", options?.delete),
           flag("--force", options?.force === true),
           flag(
             "--force-with-lease",
