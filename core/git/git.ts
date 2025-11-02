@@ -1007,7 +1007,7 @@ export interface RemotePushTagOptions
   /** Tag or tags to push to remote. */
   tag: string | Tag | (string | Tag)[];
   /**
-   * Delete the specified tag on remote.
+   * Delete the specified tag or tags on remote.
    * @default {false}
    */
   delete?: boolean;
