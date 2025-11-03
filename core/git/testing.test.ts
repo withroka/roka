@@ -49,7 +49,7 @@ Deno.test("tempRepository({ branch }) sets default branch name", async () => {
 Deno.test("tempRepository({ clone }) clones a repo from another repo", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote });
-  assertEquals(await repo.remote.get(), {
+  assertEquals(await repo.remote.current(), {
     name: "origin",
     fetch: toFileUrl(remote.path()),
     push: [toFileUrl(remote.path())],
@@ -62,7 +62,7 @@ Deno.test("tempRepository({ clone }) clones a repo from another repo", async () 
 Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
   await using remote = await tempRepository({ bare: true });
   await using repo = await tempRepository({ clone: remote.path() });
-  assertEquals(await repo.remote.get(), {
+  assertEquals(await repo.remote.current(), {
     name: "origin",
     fetch: toFileUrl(remote.path()),
     push: [toFileUrl(remote.path())],
@@ -76,7 +76,7 @@ Deno.test("tempRepository({ clone }) can clone a repo from URL", async () => {
   await using remote = await tempRepository({ bare: true });
   const url = toFileUrl(remote.path());
   await using repo = await tempRepository({ clone: toFileUrl(remote.path()) });
-  assertEquals(await repo.remote.get(), {
+  assertEquals(await repo.remote.current(), {
     name: "origin",
     fetch: url,
     push: [url],
@@ -134,7 +134,7 @@ Deno.test("tempRepository({ remote }) sets remote name", async () => {
   await using remote = await tempRepository({ bare: true });
   const url = toFileUrl(remote.path());
   await using repo = await tempRepository({ clone: remote, remote: "remote" });
-  assertEquals(await repo.remote.get({ remote: "remote" }), {
+  assertEquals(await repo.remote.get("remote"), {
     name: "remote",
     fetch: url,
     push: [url],
