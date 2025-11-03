@@ -1503,7 +1503,7 @@ export interface RemoteBackfillOptions extends RemoteRepositoryOptions {
  * ```ts
  * import { git } from "@roka/git";
  * (async () => {
- *   const branch = await git().remote.head();
+ *   const branch = await git().remote.head("origin");
  *   return { branch };
  * });
  * ```
