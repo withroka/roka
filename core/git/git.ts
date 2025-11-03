@@ -110,50 +110,6 @@ export interface ConfigOperations {
   set(config: Config): Promise<void>;
 }
 
-/** Remote operations from {@linkcode Git.remote}. */
-export interface RemoteOperations {
-  /** Lists remotes in the repository. */
-  list(): Promise<Remote[]>;
-  /**
-   * Returns a remote repository.
-   *
-   * The remote is determined by, in order:
-   *
-   * - the {@linkcode RemoteOptions.remote remote} option, if provided
-   * - the remote configured for the current branch
-   * - the remote named `"origin"`
-   * - `undefined`, if no remotes are configured
-   */
-  get(options?: RemoteNameOptions): Promise<Remote | undefined>;
-  /**
-   * Queries the HEAD branch name on the remote.
-   * @throws {@linkcode GitError} If remote `HEAD` is detached.
-   */
-  head(options?: RemoteRepositoryOptions): Promise<string>;
-  /** Adds a remote to the repository. */
-  add(remote: Remote): Promise<Remote>;
-  /** Adds a remote to the repository with a fetch/push URL. */
-  add(url: string | URL, options?: RemoteAddOptions): Promise<Remote>;
-  /** Updates a remote. */
-  set(remote: Remote): Promise<Remote>;
-  /** Updates a remote with a fetch/push URL. */
-  set(remote: string, url: string | URL): Promise<Remote>;
-  /** Removes a remote from the repository. */
-  remove(options?: RemoteNameOptions): Promise<void>;
-  /** Fetches branches and tags from a remote. */
-  fetch(options?: RemoteFetchOptions): Promise<void>;
-  /** Pulls branches and tags from a remote. */
-  pull(options?: RemotePullOptions): Promise<void>;
-  /** Pushes branches and tags to a remote. */
-  push(options?: RemotePushOptions): Promise<void>;
-  /** Prunes stale references to remote branches. */
-  prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
-  /** Fetches missing objects after a shallow clone or fetch. */
-  unshallow(options?: RemoteRepositoryOptions): Promise<void>;
-  /** Fetches missing objects in a partial clone. */
-  backfill(options?: RemoteBackfillOptions): Promise<void>;
-}
-
 /** Branch operations from {@linkcode Git.branch}. */
 export interface BranchOperations {
   /** List branches in the repository alphabetically. */
@@ -264,6 +220,45 @@ export interface IgnoreOperations {
     path: string | string[],
     options?: IgnoreFilterOptions,
   ): Promise<string[]>;
+}
+
+/** Remote operations from {@linkcode Git.remote}. */
+export interface RemoteOperations {
+  /** Lists remotes in the repository. */
+  list(): Promise<Remote[]>;
+  /** Returns the current remote configured for current branch. */
+  current(): Promise<Remote | undefined>;
+  /** Returns a remote repository. */
+  get(remote: string | Remote): Promise<Remote | undefined>;
+  /**
+   * Queries the HEAD branch name on a remote repository.
+   * @throws {@linkcode GitError} If remote `HEAD` is detached.
+   */
+  head(remote: string | URL | Remote): Promise<string>;
+  /** Adds a remote to the repository. */
+  add(remote: string, url: string | URL): Promise<Remote>;
+  /** Adds given remote to the repository. */
+  add(remote: Remote): Promise<Remote>;
+  /** Renames a remote in the repository. */
+  rename(remote: string | Remote, name: string): Promise<Remote>;
+  /** Updates a remote. */
+  set(remote: Remote): Promise<Remote>;
+  /** Updates a remote with a fetch/push URL. */
+  set(remote: string, url: string | URL): Promise<Remote>;
+  /** Fetches branches and tags from a remote. */
+  fetch(options?: RemoteFetchOptions): Promise<void>;
+  /** Pulls branches and tags from a remote. */
+  pull(options?: RemotePullOptions): Promise<void>;
+  /** Pushes branches and tags to a remote. */
+  push(options?: RemotePushOptions): Promise<void>;
+  /** Prunes stale references to remote branches. */
+  prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
+  /** Fetches missing objects after a shallow clone or fetch. */
+  unshallow(options?: RemoteRepositoryOptions): Promise<void>;
+  /** Fetches missing objects in a partial clone. */
+  backfill(options?: RemoteBackfillOptions): Promise<void>;
+  /** Removes a remote from the repository. */
+  remove(remote: string | Remote): Promise<void>;
 }
 
 /** Configuration for a git repository. */
@@ -1135,27 +1130,12 @@ export interface TagCreateOptions extends SignOptions {
   force?: boolean;
 }
 
-/**
- * Options common to operations that work with remote names (e.g.
- * {@linkcode RemoteOperations.add}).
- */
-export interface RemoteNameOptions {
-  /**
-   * Remote repository to operate on.
-   *
-   * The default is the current branch remote, or `"origin"` if a remote is not
-   * configured for the current branch.
-   */
-  remote?: string | Remote;
-}
-
 /** Options for the {@linkcode RemoteOperations.add} function. */
 export interface RemoteAddOptions {
-  /**
-   * Name of the remote.
-   * @default {"origin"}
-   */
-  remote?: string;
+  /** Fetch remote immediately after adding. */
+  fetch?: boolean;
+  /** Control fetching tags. */
+  tags?: "none" | "all";
 }
 
 /**
@@ -2025,26 +2005,11 @@ export function git(options?: GitOptions): Git {
                 branch.push?.branch?.name === undefined
               ) delete branch.push;
               await Promise.all([
-                hydrate(
-                  [branch, "commit", "hash"],
-                  (x) => repo.commit.get(x),
-                ),
-                hydrate(
-                  [branch.fetch, "remote", "name"],
-                  (x) => repo.remote.get({ remote: x }),
-                ),
-                hydrate(
-                  [branch.fetch, "branch", "name"],
-                  (x) => repo.branch.get(x),
-                ),
-                hydrate(
-                  [branch.push, "remote", "name"],
-                  (x) => repo.remote.get({ remote: x }),
-                ),
-                hydrate(
-                  [branch.push, "branch", "name"],
-                  (x) => repo.branch.get(x),
-                ),
+                hydrate([branch, "commit", "hash"], repo.commit.get),
+                hydrate([branch.fetch, "remote", "name"], repo.remote.get),
+                hydrate([branch.fetch, "branch", "name"], repo.branch.get),
+                hydrate([branch.push, "remote", "name"], repo.remote.get),
+                hydrate([branch.push, "branch", "name"], repo.branch.get),
               ]);
               assertExists(branch.name, "Branch name not filled");
               if (branch.fetch !== undefined && branch.push === undefined) {
@@ -2246,16 +2211,17 @@ export function git(options?: GitOptions): Git {
           return { ...remote, name, fetch, push };
         });
       },
-      async get(options) {
-        const remote = options?.remote ??
+      async current() {
+        const remote =
           (await maybe(() => repo.branch.current())).value?.fetch?.remote ??
-          "origin";
+            "origin";
+        return repo.remote.get(remote);
+      },
+      async get(remote) {
         const remotes = await repo.remote.list();
         return remotes.find((r) => r.name === remoteArg(remote));
       },
-      async head(options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
+      async head(remote) {
         const output = await run(
           gitOptions,
           ["ls-remote", "--symref", remoteArg(remote), "HEAD"],
@@ -2265,21 +2231,14 @@ export function git(options?: GitOptions): Git {
         if (!head) throw new GitError("Cannot determine remote HEAD branch");
         return head;
       },
-      async add(remoteOrUrl, options?: RemoteAddOptions) {
-        const remote = options?.remote ?? (
-          typeof remoteOrUrl === "string" || remoteOrUrl instanceof URL
-            ? "origin"
-            : remoteOrUrl
-        );
-        const push =
-          typeof remoteOrUrl === "string" || remoteOrUrl instanceof URL
-            ? []
-            : remoteOrUrl.push;
+      async add(remote, url?: string | URL) {
+        url = url ?? (typeof remote === "string" ? undefined : remote.fetch);
+        const push = typeof remote === "string" ? [] : remote.push;
         await run(
           gitOptions,
           ["remote", "add"],
           remoteArg(remote),
-          urlArg(remoteOrUrl),
+          urlArg(url),
         );
         for (const url of push) {
           // deno-lint-ignore no-await-in-loop
@@ -2290,9 +2249,20 @@ export function git(options?: GitOptions): Git {
             url.href,
           );
         }
-        const added = await repo.remote.get({ remote });
+        const added = await repo.remote.get(remote);
         if (!added) throw new GitError("Failed to add remote");
         return added;
+      },
+      async rename(remote, name) {
+        await run(
+          gitOptions,
+          ["remote", "rename"],
+          remoteArg(remote),
+          name,
+        );
+        const renamed = await repo.remote.get(name);
+        if (!renamed) throw new GitError("Failed to rename remote");
+        return renamed;
       },
       async set(remote: string | Remote, url?: string | URL) {
         const fetch = typeof remote === "string" ? urlArg(url) : remote.fetch;
@@ -2321,14 +2291,9 @@ export function git(options?: GitOptions): Git {
             url.href,
           );
         }
-        const updated = await repo.remote.get({ remote });
+        const updated = await repo.remote.get(remote);
         if (!updated) throw new GitError("Failed to update remote");
         return updated;
-      },
-      async remove(options) {
-        const remote = options?.remote ?? await repo.remote.get();
-        if (remote === undefined) throw new GitError("No remote configured");
-        await run(gitOptions, ["remote", "remove"], remoteArg(remote));
       },
       async fetch(options) {
         await run(
@@ -2349,7 +2314,7 @@ export function git(options?: GitOptions): Git {
           remoteArg(
             options?.all
               ? undefined
-              : options?.remote ?? await repo.remote.get(),
+              : options?.remote ?? await repo.remote.current(),
           ),
           nameArg(options?.target),
         );
@@ -2373,13 +2338,13 @@ export function git(options?: GitOptions): Git {
           remoteArg(
             options?.all
               ? undefined
-              : options?.remote ?? await repo.remote.get(),
+              : options?.remote ?? await repo.remote.current(),
           ),
           nameArg(options?.target),
         );
       },
       async push(options) {
-        const remote = options?.remote ?? await repo.remote.get();
+        const remote = options?.remote ?? await repo.remote.current();
         if (remote === undefined) throw new GitError("No remote configured");
         await run(
           gitOptions,
@@ -2416,7 +2381,7 @@ export function git(options?: GitOptions): Git {
         );
       },
       async unshallow(options) {
-        const remote = options?.remote ?? await repo.remote.get();
+        const remote = options?.remote ?? await repo.remote.current();
         await run(
           gitOptions,
           ["fetch", "--unshallow"],
@@ -2429,6 +2394,9 @@ export function git(options?: GitOptions): Git {
           "backfill",
           flag("--min-batch-size", options?.minBatchSize),
         );
+      },
+      async remove(remote) {
+        await run(gitOptions, ["remote", "remove"], remoteArg(remote));
       },
     },
   };
@@ -2486,20 +2454,15 @@ function urlArg(
   return url.fetch.href;
 }
 
+function remoteArg(remote: string | URL | Remote): string;
 function remoteArg(
-  remote: RemoteRepositoryOptions["remote"] | RemoteNameOptions["remote"][],
-): string;
+  remote: string | URL | Remote | undefined,
+): string | undefined;
 function remoteArg(
-  remote:
-    | RemoteRepositoryOptions["remote"]
-    | RemoteNameOptions["remote"][]
-    | undefined,
+  remote: string | URL | Remote | (string | URL | Remote)[] | undefined,
 ): string | string[] | undefined;
 function remoteArg(
-  remote:
-    | RemoteRepositoryOptions["remote"]
-    | RemoteNameOptions["remote"][]
-    | undefined,
+  remote: string | URL | Remote | (string | URL | Remote)[] | undefined,
 ): string | string[] | undefined {
   if (remote === undefined) return undefined;
   if (Array.isArray(remote)) return remote.map((x) => remoteArg(x));
