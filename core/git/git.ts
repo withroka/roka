@@ -251,12 +251,12 @@ export interface RemoteOperations {
   pull(options?: RemotePullOptions): Promise<void>;
   /** Pushes branches and tags to a remote. */
   push(options?: RemotePushOptions): Promise<void>;
-  /** Prunes stale references to remote branches. */
-  prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
   unshallow(options?: RemoteRepositoryOptions): Promise<void>;
   /** Fetches missing objects in a partial clone. */
   backfill(options?: RemoteBackfillOptions): Promise<void>;
+  /** Prunes stale references to remote branches. */
+  prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
   /** Removes a remote from the repository. */
   remove(remote: string | Remote): Promise<void>;
 }
@@ -2373,13 +2373,6 @@ export function git(options?: GitOptions): Git {
           nameArg(options?.tag),
         );
       },
-      async prune(remote) {
-        await run(
-          gitOptions,
-          ["remote", "prune"],
-          remoteArg(remote),
-        );
-      },
       async unshallow(options) {
         const remote = options?.remote ?? await repo.remote.current();
         await run(
@@ -2393,6 +2386,13 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "backfill",
           flag("--min-batch-size", options?.minBatchSize),
+        );
+      },
+      async prune(remote) {
+        await run(
+          gitOptions,
+          ["remote", "prune"],
+          remoteArg(remote),
         );
       },
       async remove(remote) {
