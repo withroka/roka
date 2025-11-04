@@ -535,6 +535,30 @@ export interface RevisionRange {
   symmetric?: boolean;
 }
 
+/**
+ * A pattern to search for in diffs.
+ *
+ * The pickaxe identifies diffs where the number of occurrences of text
+ * matching a given pattern changes. This enables the discovery of commits
+ * where text is either added or removed.
+ *
+ * If {@linkcode Pickaxe.updated updated} is set, the pickaxe also matches all
+ * modifications, even if the number of occurrences remains unchanged.
+ */
+export interface Pickaxe {
+  /** Extended regular expression pattern to search in changes. */
+  pattern: string;
+  /**
+   * Match any diff line containing the pattern.
+   *
+   * - `false`: only find additions or deletions (`-S` behavior)
+   * - `true`: also find modifications (`-G` behavior)
+   *
+   * @default {false}
+   */
+  updated?: boolean;
+}
+
 /** Options for the {@linkcode git} function. */
 export interface GitOptions {
   /**
@@ -828,6 +852,8 @@ export interface DiffOptions {
    * @default {false}
    */
   copies?: boolean;
+  /** Filters for files where the given pattern is added or deleted. */
+  pickaxe?: string | Pickaxe;
   /** Revision range to diff against. */
   range?: RevisionRange;
   /**
@@ -885,10 +911,10 @@ export interface CommitLogOptions {
   range?: RevisionRange;
   /** Maximum number of commits to return. */
   maxCount?: number;
+  /** Filters for commits where the given pattern is added or deleted. */
+  pickaxe?: string | Pickaxe;
   /** Number of commits to skip. */
   skip?: number;
-  /** Only commits that either deleted or added the given text. */
-  text?: string;
 }
 
 /**
@@ -1742,8 +1768,9 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["diff", "--no-color", "--name-status", "-z"],
           flag("--staged", options?.staged),
-          flag(["--find-renames", "--no-renames"], options?.renames),
           flag("--find-copies", options?.copies),
+          pickaxeFlags(options?.pickaxe),
+          flag(["--find-renames", "--no-renames"], options?.renames),
           commitArg(options?.target),
           rangeArg(options?.range),
           "--",
@@ -1782,10 +1809,11 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["diff", "--no-color", "--no-prefix"],
-          flag("--staged", options?.staged),
-          flag(["--find-renames", "--no-renames"], options?.renames),
-          flag("--find-copies-harder", options?.copies),
           flag("--diff-algorithm", options?.algorithm, { equals: true }),
+          flag("--find-copies-harder", options?.copies),
+          pickaxeFlags(options?.pickaxe),
+          flag(["--find-renames", "--no-renames"], options?.renames),
+          flag("--staged", options?.staged),
           flag("--unified", options?.unified, { equals: true }),
           commitArg(options?.target),
           rangeArg(options?.range),
@@ -1892,9 +1920,8 @@ export function git(options?: GitOptions): Git {
             flag("--author", userArg(options?.author), { equals: true }),
             flag("--committer", userArg(options?.committer), { equals: true }),
             flag("--max-count", options?.maxCount, { equals: true }),
+            pickaxeFlags(options?.pickaxe),
             flag("--skip", options?.skip),
-            flag("--pickaxe-regex", options?.text !== undefined),
-            flag("-S", options?.text, { join: true }),
             rangeArg(options?.range),
             "--",
             options?.path,
@@ -2581,6 +2608,15 @@ function signFlag(
   if (sign === false) return ["--no-gpg-sign"];
   if (sign === true) return ["--gpg-sign"];
   return flag("--gpg-sign", sign, { equals: true });
+}
+
+function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
+  if (pickaxe === undefined) return [];
+  pickaxe = typeof pickaxe === "string" ? { pattern: pickaxe } : pickaxe;
+  return [
+    `${pickaxe.updated ? "-G" : "-S"}${pickaxe.pattern}`,
+    ...pickaxe.updated ? [] : ["--pickaxe-regex"],
+  ];
 }
 
 function statusKind(code: string): Patch["status"] {
