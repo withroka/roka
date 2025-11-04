@@ -114,6 +114,66 @@ export interface ConfigOperations {
   set(config: Config): Promise<void>;
 }
 
+/** Index operations from {@linkcode Git.index}. */
+export interface IndexOperations {
+  /** Returns the status of the index and the local working tree. */
+  status(options?: IndexStatusOptions): Promise<Status>;
+  /** Stages files for commit. */
+  add(path: string | string[], options?: IndexAddOptions): Promise<void>;
+  /** Move or rename a file, a directory, or a symlink. */
+  move(
+    source: string | string[],
+    destination: string,
+    options?: IndexMoveOptions,
+  ): Promise<void>;
+  /** Restores files in the working tree and index from a source. */
+  restore(
+    path: string | string[],
+    options?: IndexRestoreOptions,
+  ): Promise<void>;
+  /** Removes files or directories from the working tree and index. */
+  remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
+}
+
+/** Difference operations from {@linkcode Git.diff}. */
+export interface DiffOperations {
+  /** Returns the list of changed file paths with their status. */
+  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
+  /** Returns the patch text for changes. */
+  patch(options?: DiffPatchOptions): Promise<Patch[]>;
+}
+
+/** Ignore operations from {@linkcode Git.ignore}. */
+export interface IgnoreOperations {
+  /** Checks paths against gitignore list and returns the ignored patterns. */
+  filter(
+    path: string | string[],
+    options?: IgnoreFilterOptions,
+  ): Promise<string[]>;
+  /** Checks paths against gitignore list and returns the unignored patterns. */
+  omit(
+    path: string | string[],
+    options?: IgnoreFilterOptions,
+  ): Promise<string[]>;
+}
+
+/** Commit operations from {@linkcode Git.commit}. */
+export interface CommitOperations {
+  /** Returns the history of commits in the repository. */
+  log(options?: CommitLogOptions): Promise<Commit[]>;
+  /**
+   * Returns the commit at the tip of `HEAD`.
+   * @throws {@linkcode GitError} If there are no commits.
+   */
+  head(): Promise<Commit>;
+  /** Returns a specific commit by its reference. */
+  get(ref: Commitish): Promise<Commit | undefined>;
+  /** Creates a new commit in the repository. */
+  create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
+  /** Amends the last commit in the repository. */
+  amend(options?: CommitAmendOptions): Promise<Commit>;
+}
+
 /** Branch operations from {@linkcode Git.branch}. */
 export interface BranchOperations {
   /** List branches in the repository alphabetically. */
@@ -156,52 +216,6 @@ export interface BranchOperations {
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
 }
 
-/** Index operations from {@linkcode Git.index}. */
-export interface IndexOperations {
-  /** Returns the status of the index and the local working tree. */
-  status(options?: IndexStatusOptions): Promise<Status>;
-  /** Stages files for commit. */
-  add(path: string | string[], options?: IndexAddOptions): Promise<void>;
-  /** Move or rename a file, a directory, or a symlink. */
-  move(
-    source: string | string[],
-    destination: string,
-    options?: IndexMoveOptions,
-  ): Promise<void>;
-  /** Restores files in the working tree and index from a source. */
-  restore(
-    path: string | string[],
-    options?: IndexRestoreOptions,
-  ): Promise<void>;
-  /** Removes files or directories from the working tree and index. */
-  remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
-}
-
-/** Difference operations from {@linkcode Git.diff}. */
-export interface DiffOperations {
-  /** Returns the list of changed file paths with their status. */
-  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
-  /** Returns the patch text for changes. */
-  patch(options?: DiffPatchOptions): Promise<Patch[]>;
-}
-
-/** Commit operations from {@linkcode Git.commit}. */
-export interface CommitOperations {
-  /** Returns the history of commits in the repository. */
-  log(options?: CommitLogOptions): Promise<Commit[]>;
-  /**
-   * Returns the commit at the tip of `HEAD`.
-   * @throws {@linkcode GitError} If there are no commits.
-   */
-  head(): Promise<Commit>;
-  /** Returns a specific commit by its reference. */
-  get(ref: Commitish): Promise<Commit | undefined>;
-  /** Creates a new commit in the repository. */
-  create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
-  /** Amends the last commit in the repository. */
-  amend(options?: CommitAmendOptions): Promise<Commit>;
-}
-
 /** Tag operations from {@linkcode Git.tag}. */
 export interface TagOperations {
   /** Lists all tags in the repository. */
@@ -210,20 +224,6 @@ export interface TagOperations {
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
   /** Deletes a tag. */
   delete(tag: string | Tag): Promise<void>;
-}
-
-/** Ignore operations from {@linkcode Git.ignore}. */
-export interface IgnoreOperations {
-  /** Checks paths against gitignore list and returns the ignored patterns. */
-  filter(
-    path: string | string[],
-    options?: IgnoreFilterOptions,
-  ): Promise<string[]>;
-  /** Checks paths against gitignore list and returns the unignored patterns. */
-  omit(
-    path: string | string[],
-    options?: IgnoreFilterOptions,
-  ): Promise<string[]>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -582,8 +582,8 @@ export interface SignOptions {
 }
 
 /**
- * Options common to {@linkcode Git.init} and
- * {@linkcode RemoteOperations.clone}.
+ * Options common to the {@linkcode Git.init} and {@linkcode Git.clone}
+ * functions.
  */
 export interface RepositoryOptions {
   /**
@@ -608,10 +608,7 @@ export interface RepositoryOptions {
   separateGitDir?: string;
 }
 
-/**
- * Options for the {@linkcode Git.init} and {@linkcode RemoteOperations.clone}
- * functions.
- */
+/** Options for the {@linkcode Git.init} function. */
 export interface InitOptions extends RepositoryOptions {
   /**
    * Initial branch name.
@@ -642,7 +639,7 @@ export interface InitOptions extends RepositoryOptions {
   shared?: boolean | "all" | number;
 }
 
-/** Options for the {@linkcode RemoteOperations.clone} function. */
+/** Options for the {@linkcode Git.clone} function. */
 export interface CloneOptions
   extends RepositoryOptions, SyncShallowOptions, SyncFilterOptions {
   /**
@@ -1219,8 +1216,8 @@ export interface SyncShallowOptions {
 }
 
 /**
- * Options common to {@linkcode SyncOperations.clone} and
- * {@linkcode SyncOperations.fetch} for filtering fetched objects.
+ * Options common to {@linkcode Git.clone} and {@linkcode SyncOperations.fetch}
+ * for filtering fetched objects.
  */
 export interface SyncFilterOptions {
   /**
