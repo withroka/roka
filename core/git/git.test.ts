@@ -11,7 +11,7 @@ import {
 } from "@std/assert";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
-import { git, GitError } from "./git.ts";
+import { git, GitError, type Patch } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
@@ -1504,6 +1504,66 @@ Deno.test("git().diff.status({ path }) filters by path", async () => {
   assertEquals(await repo.diff.status({ path: "nonexistent" }), []);
 });
 
+Deno.test("git().diff.status({ pickaxe }) finds added and deleted lines", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create("commit");
+  await repo.index.remove("file1");
+  await Deno.writeTextFile(repo.path("file2"), "content2 with more");
+  await repo.index.add("file2");
+  assertEquals(
+    await repo.diff.status({ pickaxe: "content1", staged: true }),
+    [{ path: "file1", status: "deleted" }],
+  );
+  assertEquals(
+    await repo.diff.status({ pickaxe: "content2", staged: true }),
+    [],
+  );
+});
+
+Deno.test("git().diff.status({ pickaxe }) can use pickaxe object", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create("commit");
+  await repo.index.remove("file1");
+  await Deno.writeTextFile(repo.path("file2"), "content2 with more");
+  await repo.index.add("file2");
+  assertEquals(
+    await repo.diff.status({ pickaxe: { pattern: "content1" }, staged: true }),
+    [{ path: "file1", status: "deleted" }],
+  );
+  assertEquals(
+    await repo.diff.status({ pickaxe: { pattern: "content2" }, staged: true }),
+    [],
+  );
+  assertEquals(
+    await repo.diff.status({
+      pickaxe: { pattern: "content2", updated: true },
+      staged: true,
+    }),
+    [{ path: "file2", status: "modified" }],
+  );
+});
+
+Deno.test("git().diff.status({ pickaxe }) can match extended regular expressions", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await repo.index.add("file1");
+  assertEquals(
+    await repo.diff.status({ pickaxe: "content[[:digit:]]", staged: true }),
+    [
+      { path: "file1", status: "added" },
+    ],
+  );
+  assertEquals(await repo.diff.status({ pickaxe: ".+\d?", staged: true }), [
+    { path: "file1", status: "added" },
+  ]);
+});
+
 Deno.test("git().diff.status({ range }) lists files changed in range", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit", { allowEmpty: true });
@@ -2186,6 +2246,101 @@ Deno.test("git().diff.patch({ copies }) can detect copies", async () => {
   );
 });
 
+Deno.test("git().diff.patch({ pickaxe }) finds added and deleted lines", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1\n");
+  await Deno.writeTextFile(repo.path("file2"), "content2\n");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create("commit");
+  await repo.index.remove("file1");
+  await Deno.writeTextFile(repo.path("file2"), "content2 with more\n");
+  await repo.index.add("file2");
+  assertEquals(
+    await repo.diff.patch({ pickaxe: "content1", staged: true }),
+    [{
+      path: "file1",
+      status: "deleted",
+      mode: { old: 0o100644 },
+      hunks: [{
+        line: { old: 1, new: 0 },
+        lines: [{ content: "content1", type: "deleted" }],
+      }],
+    }],
+  );
+  assertEquals(
+    await repo.diff.patch({ pickaxe: "content2", staged: true }),
+    [],
+  );
+});
+
+Deno.test("git().diff.patch({ pickaxe }) can use pickaxe object", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1\n");
+  await Deno.writeTextFile(repo.path("file2"), "content2\n");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create("commit");
+  await repo.index.remove("file1");
+  await Deno.writeTextFile(repo.path("file2"), "content2 with more\n");
+  await repo.index.add("file2");
+  assertEquals(
+    await repo.diff.patch({ pickaxe: { pattern: "content1" }, staged: true }),
+    [{
+      path: "file1",
+      status: "deleted",
+      mode: { old: 0o100644 },
+      hunks: [{
+        line: { old: 1, new: 0 },
+        lines: [{ content: "content1", type: "deleted" }],
+      }],
+    }],
+  );
+  assertEquals(
+    await repo.diff.patch({ pickaxe: { pattern: "content2" }, staged: true }),
+    [],
+  );
+  assertEquals(
+    await repo.diff.patch({
+      pickaxe: { pattern: "content2", updated: true },
+      staged: true,
+    }),
+    [{
+      path: "file2",
+      status: "modified",
+      mode: { new: 0o100644 },
+      hunks: [{
+        line: { old: 1, new: 1 },
+        lines: [
+          { content: "content2", type: "deleted" },
+          { content: "content2 with more", type: "added" },
+        ],
+      }],
+    }],
+  );
+});
+
+Deno.test("git().diff.patch({ pickaxe }) can match extended regular expressions", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1\n");
+  await repo.index.add("file1");
+  const patch: Patch = {
+    path: "file1",
+    status: "added",
+    mode: { new: 0o100644 },
+    hunks: [{
+      line: { old: 0, new: 1 },
+      lines: [{ content: "content1", type: "added" }],
+    }],
+  };
+  assertEquals(
+    await repo.diff.patch({ pickaxe: "content[[:digit:]]", staged: true }),
+    [patch],
+  );
+  assertEquals(
+    await repo.diff.patch({ pickaxe: ".+\d?", staged: true }),
+    [patch],
+  );
+});
+
 Deno.test("git().diff.patch({ range }) generates patch for range", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
@@ -2621,46 +2776,57 @@ Deno.test("git().commit.log({ skip }) skips a number of commits", async () => {
   assertEquals(await repo.commit.log({ skip: 1, maxCount: 1 }), [commit]);
 });
 
-Deno.test("git().commit.log({ text }) returns blame", async () => {
+Deno.test("git().commit.log({ pickaxe }) finds added and deleted lines", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
   const commit1 = await repo.commit.create("commit1");
+  await Deno.remove(repo.path("file1"));
   await Deno.writeTextFile(repo.path("file2"), "content2");
-  await repo.index.add("file2");
+  await repo.index.add(["file1", "file2"]);
   const commit2 = await repo.commit.create("commit2");
-  assertEquals(await repo.commit.log({ text: "content1" }), [commit1]);
-  assertEquals(await repo.commit.log({ text: "content2" }), [commit2]);
-});
-
-Deno.test("git().commit.log({ text }) returns blame from multiple files", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file1"), "content1");
-  await repo.index.add("file1");
-  const commit1 = await repo.commit.create("commit1");
-  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await Deno.writeTextFile(repo.path("file2"), "content2 with more");
   await repo.index.add("file2");
-  const commit2 = await repo.commit.create("commit2");
-  assertEquals(await repo.commit.log({ text: "content" }), [commit2, commit1]);
-});
-
-Deno.test("git().commit.log({ text }) returns blame from specific file", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file1"), "content1");
-  await repo.index.add("file1");
-  const commit1 = await repo.commit.create("commit1");
-  await Deno.writeTextFile(repo.path("file2"), "content2");
-  await repo.index.add("file2");
-  const commit2 = await repo.commit.create("commit2");
-  assertEquals(await repo.commit.log({ path: ["file1"], text: "content" }), [
+  await repo.commit.create("commit2");
+  assertEquals(await repo.commit.log({ pickaxe: "content1" }), [
+    commit2,
     commit1,
   ]);
-  assertEquals(await repo.commit.log({ path: ["file2"], text: "content" }), [
+  assertEquals(await repo.commit.log({ pickaxe: "content2" }), [
     commit2,
   ]);
 });
 
-Deno.test("git().commit.log({ text }) can match extended regexp", async () => {
+Deno.test("git().commit.log({ pickaxe }) can use pickaxe object", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create("commit1");
+  await Deno.remove(repo.path("file1"));
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  const commit2 = await repo.commit.create("commit2");
+  await Deno.writeTextFile(repo.path("file2"), "content2 with more");
+  await repo.index.add("file2");
+  const commit3 = await repo.commit.create("commit2");
+  assertEquals(await repo.commit.log({ pickaxe: { pattern: "content1" } }), [
+    commit2,
+    commit1,
+  ]);
+  assertEquals(await repo.commit.log({ pickaxe: { pattern: "content2" } }), [
+    commit2,
+  ]);
+  assertEquals(
+    await repo.commit.log({ pickaxe: { pattern: "content2", updated: false } }),
+    [commit2],
+  );
+  assertEquals(
+    await repo.commit.log({ pickaxe: { pattern: "content2", updated: true } }),
+    [commit3, commit2],
+  );
+});
+
+Deno.test("git().commit.log({ pickaxe }) finds changes from multiple files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
@@ -2668,11 +2834,31 @@ Deno.test("git().commit.log({ text }) can match extended regexp", async () => {
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
   const commit2 = await repo.commit.create("commit2");
-  assertEquals(await repo.commit.log({ text: "content[12]" }), [
+  assertEquals(await repo.commit.log({ pickaxe: "content" }), [
     commit2,
     commit1,
   ]);
-  assertEquals(await repo.commit.log({ text: ".+\d?" }), [commit2, commit1]);
+  assertEquals(await repo.commit.log({ pickaxe: "content", path: ["file1"] }), [
+    commit1,
+  ]);
+  assertEquals(await repo.commit.log({ pickaxe: "content", path: ["file2"] }), [
+    commit2,
+  ]);
+});
+
+Deno.test("git().commit.log({ pickaxe }) can match extended regular expressions", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create("commit1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create("commit2");
+  assertEquals(await repo.commit.log({ pickaxe: "content[[:digit:]]" }), [
+    commit2,
+    commit1,
+  ]);
+  assertEquals(await repo.commit.log({ pickaxe: ".+\d?" }), [commit2, commit1]);
 });
 
 Deno.test("git().commit.head() rejects empty repository", async () => {
