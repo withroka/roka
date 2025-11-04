@@ -3200,7 +3200,7 @@ Deno.test("git().commit.amend({ body }) overrides commit trailers", async () => 
   assertEquals(amended.trailers, {});
 });
 
-Deno.test("git().commit.create({ path }) ammends specified paths instead of staged files", async () => {
+Deno.test("git().commit.create({ path }) amends specified paths instead of staged files", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
   await Deno.writeTextFile(repo.path("file1"), "content1");
