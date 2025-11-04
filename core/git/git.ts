@@ -102,6 +102,10 @@ export interface Git {
   tag: TagOperations;
   /** Remote operations. */
   remote: RemoteOperations;
+  /** Sync (fetch/pull/push) operations. */
+  sync: SyncOperations;
+  /** Administration and maintenance operations. */
+  admin: AdminOperations;
 }
 
 /** Config operations from {@linkcode Git.config}. */
@@ -245,20 +249,28 @@ export interface RemoteOperations {
   set(remote: Remote): Promise<Remote>;
   /** Updates a remote with a fetch/push URL. */
   set(remote: string, url: string | URL): Promise<Remote>;
-  /** Fetches branches and tags from a remote. */
-  fetch(options?: RemoteFetchOptions): Promise<void>;
-  /** Pulls branches and tags from a remote. */
-  pull(options?: RemotePullOptions): Promise<void>;
-  /** Pushes branches and tags to a remote. */
-  push(options?: RemotePushOptions): Promise<void>;
-  /** Fetches missing objects after a shallow clone or fetch. */
-  unshallow(options?: RemoteRepositoryOptions): Promise<void>;
-  /** Fetches missing objects in a partial clone. */
-  backfill(options?: RemoteBackfillOptions): Promise<void>;
   /** Prunes stale references to remote branches. */
   prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
   /** Removes a remote from the repository. */
   remove(remote: string | Remote): Promise<void>;
+}
+
+/** Sync operations from {@linkcode Git.sync}. */
+export interface SyncOperations {
+  /** Fetches branches and tags from a remote. */
+  fetch(options?: SyncFetchOptions): Promise<void>;
+  /** Pulls branches and tags from a remote. */
+  pull(options?: SyncPullOptions): Promise<void>;
+  /** Pushes branches and tags to a remote. */
+  push(options?: SyncPushOptions): Promise<void>;
+  /** Fetches missing objects after a shallow clone or fetch. */
+  unshallow(options?: SyncRemoteOptions): Promise<void>;
+}
+
+/** Administration operations from {@linkcode Git.admin}. */
+export interface AdminOperations {
+  /** Fetches missing objects in a partial clone. */
+  backfill(options?: AdminBackfillOptions): Promise<void>;
 }
 
 /** Configuration for a git repository. */
@@ -632,7 +644,7 @@ export interface InitOptions extends RepositoryOptions {
 
 /** Options for the {@linkcode RemoteOperations.clone} function. */
 export interface CloneOptions
-  extends RepositoryOptions, RemoteShallowOptions, RemoteFilterOptions {
+  extends RepositoryOptions, SyncShallowOptions, SyncFilterOptions {
   /**
    * The name of a new directory to clone into.
    *
@@ -1140,9 +1152,9 @@ export interface RemoteAddOptions {
 
 /**
  * Options common to operations that work with remotes (e.g.
- * {@linkcode RemoteOperations.push}).
+ * {@linkcode SyncOperations.push}).
  */
-export interface RemoteRepositoryOptions {
+export interface SyncRemoteOptions {
   /**
    * Remote repository to operate on.
    *
@@ -1153,10 +1165,10 @@ export interface RemoteRepositoryOptions {
 }
 
 /**
- * Options common to operations that use remote transport
- * (e.g. {@linkcode RemoteOperations.push}).
+ * Options common to operations that use remote transport synchronization
+ * (e.g. {@linkcode SyncOperations.push}).
  */
-export interface RemoteTransportOptions {
+export interface SyncOptions {
   /** Either update all refs or don't update any.*/
   atomic?: boolean;
   /** Prune refs that no longer exist on the updated repository. */
@@ -1175,9 +1187,9 @@ export interface RemoteTransportOptions {
 
 /**
  * Options common to operations that can setup upstream tracking with remotes
- * (e.g. {@linkcode RemoteOperations.push}).
+ * (e.g. {@linkcode SyncOperations.push}).
  */
-export interface RemoteTrackOptions {
+export interface SyncTrackOptions {
   /**
    * Set upstream tracking for every branch successfully fetched or pushed.
    * @default {false}
@@ -1187,9 +1199,9 @@ export interface RemoteTrackOptions {
 
 /**
  * Options common to operations that can create partial repositories
- * (e.g. {@linkcode RemoteOperations.pull}).
+ * (e.g. {@linkcode SyncOperations.pull}).
  */
-export interface RemoteShallowOptions {
+export interface SyncShallowOptions {
   /**
    * Create a shallow fetch.
    *
@@ -1207,17 +1219,17 @@ export interface RemoteShallowOptions {
 }
 
 /**
- * Options common to {@linkcode RemoteOperations.clone} and
- * {@linkcode RemoteOperations.fetch} for filtering fetched objects.
+ * Options common to {@linkcode SyncOperations.clone} and
+ * {@linkcode SyncOperations.fetch} for filtering fetched objects.
  */
-export interface RemoteFilterOptions {
+export interface SyncFilterOptions {
   /**
    * Filter objects with given filter specification to create a partial clone.
    *
    * When cloning, this will result in a partial clone where some objects are
    * omitted from the initial clone, which are fetched on-demand later.
    *
-   * The {@linkcode RemoteOperations.backfill backfill} function can be used
+   * The {@linkcode AdminOperations.backfill backfill} function can be used
    * to fetch missing objects later.
    *
    * Common filter values:
@@ -1229,88 +1241,80 @@ export interface RemoteFilterOptions {
   filter?: string | string[];
 }
 
-/** Options for the {@linkcode RemoteOperations.fetch} function. */
-export type RemoteFetchOptions =
-  | RemoteFetchSingleOptions
-  | RemoteFetchMultipleOptions
-  | RemoteFetchAllOptions;
+/** Options for the {@linkcode SyncOperations.fetch} function. */
+export type SyncFetchOptions =
+  | SyncFetchSingleOptions
+  | SyncFetchMultipleOptions
+  | SyncFetchAllOptions;
 
 /**
- * Options for the {@linkcode RemoteOperations.fetch} function when fetching
+ * Options for the {@linkcode SyncOperations.fetch} function when fetching
  * from a single repository.
  */
-export interface RemoteFetchSingleOptions
+export interface SyncFetchSingleOptions
   extends
-    RemoteRepositoryOptions,
-    RemoteTransportOptions,
-    RemoteTrackOptions,
-    RemoteShallowOptions,
-    RemoteFilterOptions {
+    SyncRemoteOptions,
+    SyncOptions,
+    SyncTrackOptions,
+    SyncShallowOptions,
+    SyncFilterOptions {
   /**
    * Branch or tag to fetch commits from.
    *
    * The default behavior is to fetch from all remote branches.
    */
   target?: string | Branch | Tag;
-  /** Cannot be specified with {@linkcode RemoteFetchSingleOptions.remote}. */
+  /** Cannot be specified with {@linkcode SyncFetchSingleOptions.remote}. */
   all?: never;
 }
 
 /**
- * Options for the {@linkcode RemoteOperations.fetch} function when fetching
+ * Options for the {@linkcode SyncOperations.fetch} function when fetching
  * from multiple repositories.
  */
-export interface RemoteFetchMultipleOptions
-  extends
-    RemoteTransportOptions,
-    RemoteTrackOptions,
-    RemoteShallowOptions,
-    RemoteFilterOptions {
+export interface SyncFetchMultipleOptions
+  extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SyncFilterOptions {
   /**
    * Fetch from multiple repositories.
    *
    * If set to `"all"`, fetches from all configured remotes.
    */
   remote: (string | Remote)[];
-  /** Cannot be specified with {@linkcode RemoteFetchMultipleOptions.remote}. */
+  /** Cannot be specified with {@linkcode SyncFetchMultipleOptions.remote}. */
   all?: never;
-  /** Cannot be specified with {@linkcode RemoteFetchMultipleOptions.remote}. */
+  /** Cannot be specified with {@linkcode SyncFetchMultipleOptions.remote}. */
   target?: never;
 }
 
 /**
- * Options for the {@linkcode RemoteOperations.fetch} function when fetching
+ * Options for the {@linkcode SyncOperations.fetch} function when fetching
  * from all repositories.
  */
-export interface RemoteFetchAllOptions
-  extends
-    RemoteTransportOptions,
-    RemoteTrackOptions,
-    RemoteShallowOptions,
-    RemoteFilterOptions {
+export interface SyncFetchAllOptions
+  extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SyncFilterOptions {
   /** Fetch from all configured repositories. */
   all: boolean;
-  /** Cannot be specified with {@linkcode RemoteFetchAllOptions.all}. */
+  /** Cannot be specified with {@linkcode SyncFetchAllOptions.all}. */
   remote?: never;
-  /** Cannot be specified with {@linkcode RemoteFetchAllOptions.all}. */
+  /** Cannot be specified with {@linkcode SyncFetchAllOptions.all}. */
   target?: never;
 }
 
-/** Options for the {@linkcode RemoteOperations.pull} function. */
-export type RemotePullOptions =
-  | RemotePullSingleOptions
-  | RemotePullAllOptions;
+/** Options for the {@linkcode SyncOperations.pull} function. */
+export type SyncPullOptions =
+  | SyncPullSingleOptions
+  | SyncPullAllOptions;
 
 /**
- * Options for the {@linkcode RemoteOperations.pull} function when pulling from
+ * Options for the {@linkcode SyncOperations.pull} function when pulling from
  * a single repository.
  */
-export interface RemotePullSingleOptions
+export interface SyncPullSingleOptions
   extends
-    RemoteRepositoryOptions,
-    RemoteTransportOptions,
-    RemoteTrackOptions,
-    RemoteShallowOptions,
+    SyncRemoteOptions,
+    SyncOptions,
+    SyncTrackOptions,
+    SyncShallowOptions,
     SignOptions {
   /**
    * Branch or tag to pull commits from.
@@ -1318,44 +1322,40 @@ export interface RemotePullSingleOptions
    * The default behavior is to pull from the upstream of the current branch.
    */
   target?: string | Branch | Tag;
-  /** Cannot be specified with {@linkcode RemotePullSingleOptions.remote}. */
+  /** Cannot be specified with {@linkcode SyncPullSingleOptions.remote}. */
   all?: never;
 }
 
 /**
- * Options for the {@linkcode RemoteOperations.pull} function when pulling from
+ * Options for the {@linkcode SyncOperations.pull} function when pulling from
  * all repositories.
  */
-export interface RemotePullAllOptions
-  extends
-    RemoteTransportOptions,
-    RemoteTrackOptions,
-    RemoteShallowOptions,
-    SignOptions {
+export interface SyncPullAllOptions
+  extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SignOptions {
   /** Pull from all configured repositories. */
   all: boolean;
-  /** Cannot be specified with {@linkcode RemotePullAllOptions.all}. */
+  /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
   remote?: never;
-  /** Cannot be specified with {@linkcode RemotePullAllOptions.all}. */
+  /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
   target?: never;
 }
 
-/** Options for the {@linkcode RemoteOperations.push} function. */
-export type RemotePushOptions =
-  | RemotePushBranchOptions
-  | RemotePushAllBranchesOptions
-  | RemotePushTagOptions;
+/** Options for the {@linkcode SyncOperations.push} function. */
+export type SyncPushOptions =
+  | SyncPushBranchOptions
+  | SyncPushAllBranchesOptions
+  | SyncPushTagOptions;
 
 /**
- * Options for the {@linkcode RemoteOperations.push} function when pushing
+ * Options for the {@linkcode SyncOperations.push} function when pushing
  * branches.
  */
-export interface RemotePushBranchOptions
+export interface SyncPushBranchOptions
   extends
-    RemoteRepositoryOptions,
-    RemoteTransportOptions,
-    RemotePushForceOptions,
-    RemoteTrackOptions,
+    SyncRemoteOptions,
+    SyncOptions,
+    SyncPushForceOptions,
+    SyncTrackOptions,
     SignOptions {
   /**
    * Branch or branches to push to remote.
@@ -1363,8 +1363,8 @@ export interface RemotePushBranchOptions
    * The default behavior is to push the current branch.
    *
    * Note that this does not accept tag names. To push tags, use
-   * {@linkcode RemotePushTagOptions.tag tag} or
-   * {@linkcode RemoteTransportOptions.tags tags}.
+   * {@linkcode SyncPushTagOptions.tag tag} or
+   * {@linkcode SyncOptions.tags tags}.
    */
   target?: string | Branch | (string | Branch)[];
   /**
@@ -1373,52 +1373,52 @@ export interface RemotePushBranchOptions
    */
   delete?: boolean;
   /**
-   * Cannot be specified with {@linkcode RemotePushBranchOptions.target}.
+   * Cannot be specified with {@linkcode SyncPushBranchOptions.target}.
    */
   branches?: never;
   /**
-   * Cannot be specified with {@linkcode RemotePushBranchOptions.target}.
+   * Cannot be specified with {@linkcode SyncPushBranchOptions.target}.
    */
   tag?: never;
 }
 
 /**
- * Options for the {@linkcode RemoteOperations.push} function when pushing
+ * Options for the {@linkcode SyncOperations.push} function when pushing
  * all branches.
  */
-export interface RemotePushAllBranchesOptions
+export interface SyncPushAllBranchesOptions
   extends
-    RemoteRepositoryOptions,
-    RemoteTransportOptions,
-    RemotePushForceOptions,
-    RemoteTrackOptions,
+    SyncRemoteOptions,
+    SyncOptions,
+    SyncPushForceOptions,
+    SyncTrackOptions,
     SignOptions {
   /** Push all branches to remote. */
   branches: "all";
   /**
-   * Cannot be specified with {@linkcode RemotePushAllBranchesOptions.branches}.
+   * Cannot be specified with {@linkcode SyncPushAllBranchesOptions.branches}.
    */
   target?: never;
   /**
-   * Cannot be specified with {@linkcode RemotePushAllBranchesOptions.branches}.
+   * Cannot be specified with {@linkcode SyncPushAllBranchesOptions.branches}.
    */
   tag?: never;
   /**
-   * Cannot be specified with {@linkcode RemotePushAllBranchesOptions.branches}.
+   * Cannot be specified with {@linkcode SyncPushAllBranchesOptions.branches}.
    */
   delete?: never;
 }
 
 /**
- * Options for the {@linkcode RemoteOperations.push} function when pushing a
+ * Options for the {@linkcode SyncOperations.push} function when pushing a
  * single tag.
  */
-export interface RemotePushTagOptions
+export interface SyncPushTagOptions
   extends
-    RemoteRepositoryOptions,
-    RemoteTransportOptions,
-    RemotePushForceOptions,
-    RemoteTrackOptions,
+    SyncRemoteOptions,
+    SyncOptions,
+    SyncPushForceOptions,
+    SyncTrackOptions,
     SignOptions {
   /** Tag or tags to push to remote. */
   tag: string | Tag | (string | Tag)[];
@@ -1428,24 +1428,24 @@ export interface RemotePushTagOptions
    */
   delete?: boolean;
   /**
-   * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
+   * Cannot be specified with {@linkcode SyncPushTagOptions.tag}.
    */
   target?: never;
   /**
-   * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
+   * Cannot be specified with {@linkcode SyncPushTagOptions.tag}.
    */
   branches?: never;
   /**
-   * Cannot be specified with {@linkcode RemotePushTagOptions.tag}.
+   * Cannot be specified with {@linkcode SyncPushTagOptions.tag}.
    */
   tags?: never;
 }
 
 /**
  * Options common to different push variants of
- * {@linkcode RemoteOperations.push} to control forcing behavior.
+ * {@linkcode SyncOperations.push} to control forcing behavior.
  */
-export interface RemotePushForceOptions {
+export interface SyncPushForceOptions {
   /**
    * Force push to remote.
    *
@@ -1459,8 +1459,8 @@ export interface RemotePushForceOptions {
   force?: boolean | "with-lease" | "with-lease-if-includes";
 }
 
-/** Options for the {@linkcode RemoteOperations.backfill} function. */
-export interface RemoteBackfillOptions extends RemoteRepositoryOptions {
+/** Options for the {@linkcode AdminOperations.backfill} function. */
+export interface AdminBackfillOptions {
   /**
    * Minimum number of objects to backfill in a single batch.
    * @default {50000}
@@ -2295,6 +2295,18 @@ export function git(options?: GitOptions): Git {
         if (!updated) throw new GitError("Failed to update remote");
         return updated;
       },
+      async prune(remote) {
+        await run(
+          gitOptions,
+          ["remote", "prune"],
+          remoteArg(remote),
+        );
+      },
+      async remove(remote) {
+        await run(gitOptions, ["remote", "remove"], remoteArg(remote));
+      },
+    },
+    sync: {
       async fetch(options) {
         await run(
           gitOptions,
@@ -2381,22 +2393,14 @@ export function git(options?: GitOptions): Git {
           remoteArg(remote),
         );
       },
+    },
+    admin: {
       async backfill(options) {
         await run(
           gitOptions,
           "backfill",
           flag("--min-batch-size", options?.minBatchSize),
         );
-      },
-      async prune(remote) {
-        await run(
-          gitOptions,
-          ["remote", "prune"],
-          remoteArg(remote),
-        );
-      },
-      async remove(remote) {
-        await run(gitOptions, ["remote", "remove"], remoteArg(remote));
       },
     },
   };
@@ -2441,12 +2445,12 @@ async function run(
   }
 }
 
-function urlArg(url: RemoteRepositoryOptions["remote"]): string;
+function urlArg(url: SyncRemoteOptions["remote"]): string;
 function urlArg(
-  url: RemoteRepositoryOptions["remote"] | undefined,
+  url: SyncRemoteOptions["remote"] | undefined,
 ): string | undefined;
 function urlArg(
-  url: RemoteRepositoryOptions["remote"] | undefined,
+  url: SyncRemoteOptions["remote"] | undefined,
 ): string | undefined {
   if (url === undefined) return undefined;
   if (typeof url === "string") return url;

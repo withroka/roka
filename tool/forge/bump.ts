@@ -209,10 +209,10 @@ async function createPullRequest(
     await repo.git.commit.create(title, { body: commitBody });
     let [pr] = await repo.pulls.list({ base, head, closed: false });
     if (pr) {
-      await repo.git.remote.push({ force: true, target: head });
+      await repo.git.sync.push({ force: true, target: head });
       pr.update({ title, body: prBody });
     } else {
-      await repo.git.remote.push({ target: head });
+      await repo.git.sync.push({ target: head });
       pr = await repo.pulls.create({
         base,
         head,

@@ -55,7 +55,7 @@ Deno.test("tempRepository({ clone }) clones a repo from another repo", async () 
     push: [toFileUrl(remote.path())],
   });
   const commit = await repo.commit.create("commit", { allowEmpty: true });
-  await repo.remote.push();
+  await repo.sync.push();
   assertEquals(await remote.commit.head(), commit);
 });
 
@@ -68,7 +68,7 @@ Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
     push: [toFileUrl(remote.path())],
   });
   const commit = await repo.commit.create("commit", { allowEmpty: true });
-  await repo.remote.push();
+  await repo.sync.push();
   assertEquals(await remote.commit.head(), commit);
 });
 
@@ -82,7 +82,7 @@ Deno.test("tempRepository({ clone }) can clone a repo from URL", async () => {
     push: [url],
   });
   const commit = await repo.commit.create("commit", { allowEmpty: true });
-  await repo.remote.push();
+  await repo.sync.push();
   assertEquals(await remote.commit.head(), commit);
 });
 

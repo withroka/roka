@@ -86,7 +86,7 @@ export interface TempRepositoryOptions {
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
  * const commit = await repo.commit.create("feat: add feature");
- * await repo.remote.push();
+ * await repo.sync.push();
  *
  * assertEquals(await remote.commit.head(), commit);
  * ```
