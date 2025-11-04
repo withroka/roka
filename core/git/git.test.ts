@@ -3041,6 +3041,28 @@ Deno.test("git().commit.create({ body }) ignores empty body", async () => {
   assertEquals(commit?.trailers, {});
 });
 
+Deno.test("git().commit.create({ path }) commits specified paths instead of staged files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add("file2");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  const commit2 = await repo.commit.create("commit", { path: "file1" });
+  assertEquals(await repo.commit.head(), commit2);
+  assertEquals(
+    await repo.diff.status({ range: { from: commit1, to: commit2 } }),
+    [{ path: "file1", status: "modified" }],
+  );
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file2", status: "added" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
+});
+
 Deno.test("git().commit.create({ sign }) cannot use wrong key", async () => {
   await using repo = await tempRepository();
   await assertRejects(
@@ -3176,6 +3198,29 @@ Deno.test("git().commit.amend({ body }) overrides commit trailers", async () => 
   assertEquals(amended.summary, "summary");
   assertEquals(amended.body, "new body");
   assertEquals(amended.trailers, {});
+});
+
+Deno.test("git().commit.create({ path }) amends specified paths instead of staged files", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await repo.index.add("file1");
+  await repo.commit.create("commit2", { allowEmpty: true });
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add("file2");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  const amended2 = await repo.commit.amend({ path: "file1" });
+  assertEquals(await repo.commit.head(), amended2);
+  assertEquals(
+    await repo.diff.status({ range: { from: commit1, to: amended2 } }),
+    [{ path: "file1", status: "added" }],
+  );
+  assertEquals(await repo.index.status(), {
+    staged: [{ path: "file2", status: "added" }],
+    unstaged: [],
+    untracked: [],
+    ignored: [],
+  });
 });
 
 Deno.test("git().commit.amend({ sign }) cannot use wrong key", async () => {

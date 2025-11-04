@@ -942,6 +942,11 @@ export interface CommitCreateOptions extends SignOptions {
    * to be kept.
    */
   body?: string;
+  /**
+   * Commit the contents of the listed file or files instead of the staged
+   * changes on index.
+   */
+  path?: string | string[];
   /** Trailers to append to the commit message. */
   trailers?: Record<string, string>;
 }
@@ -1961,6 +1966,8 @@ export function git(options?: GitOptions): Git {
           flag("--allow-empty", options?.allowEmpty),
           flag("--author", userArg(options?.author)),
           signFlag("commit", options?.sign),
+          "--",
+          options?.path,
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
@@ -1991,6 +1998,8 @@ export function git(options?: GitOptions): Git {
           flag("--no-edit", !edited),
           flag("--author", userArg(options?.author), { equals: true }),
           signFlag("commit", options?.sign),
+          "--",
+          options?.path,
         );
         const hash = output.match(/^\[.+ (?<hash>[0-9a-f]+)\]/)?.groups?.hash;
         assertExists(hash, "Cannot find created commit");
