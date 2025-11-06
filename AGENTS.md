@@ -72,8 +72,8 @@ export function process(value?: string): string | undefined {
 
 ```ts
 export function process(value?: string): string | undefined {
-  if (value?.length === 0) return undefined;
-  return value?.toLowerCase();
+  if (!value || value.length === 0) return undefined;
+  return value.toLowerCase();
 }
 ```
 
