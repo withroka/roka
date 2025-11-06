@@ -1,10 +1,9 @@
 # Coding Agents Guidelines
 
-## Coding
+## Setup
 
-- Match style from the surrounding code and adhere to
-  [CONTRIBUTING.md](./CONTRIBUTING.md).
-- Write minimal code, avoiding unnecessary variables, comments, and lines.
+- Install Deno: `curl -fsSL https://deno.land/install.sh | sh`
+- Dependencies are automatically managed by Deno.
 
 ## Directories
 
@@ -12,14 +11,98 @@
 - **flow** tool: `tool/flow/`
 - **forge** tool: `tool/forge/`
 
-## Commands
+## Workflow
 
-- Check changed code: `deno task flow`
-- Check all code: `deno task flow .`
-  - must be passing before commit
-- Behind a firewall: `export DENO_TLS_CA_STORE=system`
-  - to resolve firewall and certificate related problems
-- Run forge locally: `deno task forge`
+- Run `deno task forge list --modules` to explore modules.
+- Make code changes.
+- Run `deno task flow` to test changed files.
+- Before commit: `deno task flow .` must pass.
+
+## Coding
+
+- Match style from the surrounding code and adhere to
+  [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+### ❌ Avoid unnecessary variables and comments
+
+```ts
+export function validate(input?: string): string | undefined {
+  // Check if input exists
+  const hasInput = input !== undefined;
+
+  // If no input, return undefined
+  if (!hasInput) {
+    return undefined;
+  }
+
+  // Trim the input
+  const trimmed = input.trim();
+
+  // Return the result
+  return trimmed;
+}
+```
+
+### ✅ Prefer minimal code with early returns
+
+```ts
+export function validate(input?: string): string | undefined {
+  if (!input) return undefined;
+  return input.trim();
+}
+```
+
+### ❌ Avoid nested conditions
+
+```ts
+export function process(value?: string): string | undefined {
+  if (value !== undefined) {
+    if (value.length > 0) {
+      return value.toLowerCase();
+    } else {
+      return undefined;
+    }
+  } else {
+    return undefined;
+  }
+}
+```
+
+### ✅ Prefer guard clauses
+
+```ts
+export function process(value?: string): string | undefined {
+  if (value?.length === 0) return undefined;
+  return value?.toLowerCase();
+}
+```
+
+### ❌ Avoid long variable names
+
+```ts
+export function format(inputString?: string): string | undefined {
+  const trimmedInputString = inputString?.trim();
+  const lowercaseInputString = trimmedInputString?.toLowerCase();
+  const normalizedInputString = lowercaseInputString?.replace(/\s+/g, " ");
+  return normalizedInputString;
+}
+```
+
+### ✅ Prefer concise names
+
+```ts
+export function format(input?: string): string | undefined {
+  const trimmed = input?.trim();
+  const lowercase = trimmed?.toLowerCase();
+  return lowercase?.replace(/\s+/g, " ");
+}
+```
+
+## Restrictions
+
+- Do not create new packages without discussion.
+- Do not delete tests without discussion.
+- Focus on code quality and tests passing locally.
 
 ## PRs
 
