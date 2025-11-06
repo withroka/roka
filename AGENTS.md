@@ -15,8 +15,8 @@
 
 ## Coding
 
-- Match style from the surrounding code and adhere to
-  [CONTRIBUTING.md](./CONTRIBUTING.md).
+Match style from the surrounding code and adhere to
+[CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ### ❌ Avoid unnecessary variables and comments
 
