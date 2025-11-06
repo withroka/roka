@@ -80,21 +80,24 @@ export function process(value?: string): string | undefined {
 ### ❌ Avoid long variable names
 
 ```ts
-export function format(inputString?: string): string | undefined {
-  const trimmedInputString = inputString?.trim();
-  const lowercaseInputString = trimmedInputString?.toLowerCase();
-  const normalizedInputString = lowercaseInputString?.replace(/\s+/g, " ");
-  return normalizedInputString;
+export function parse(commitMessage?: string): string | undefined {
+  const trimmedCommitMessage = commitMessage?.trim();
+  const firstLineOfCommitMessage = trimmedCommitMessage?.split("\n")[0];
+  const commitMessageWithoutPrefix = firstLineOfCommitMessage?.replace(
+    /^(fix|feat|chore):\s*/,
+    "",
+  );
+  return commitMessageWithoutPrefix;
 }
 ```
 
 ### ✅ Prefer concise names
 
 ```ts
-export function format(input?: string): string | undefined {
-  const trimmed = input?.trim();
-  const lowercase = trimmed?.toLowerCase();
-  return lowercase?.replace(/\s+/g, " ");
+export function parse(message?: string): string | undefined {
+  const trimmed = message?.trim();
+  const first = trimmed?.split("\n")[0];
+  return first?.replace(/^(fix|feat|chore):\s*/, "");
 }
 ```
 
