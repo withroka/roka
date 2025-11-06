@@ -1,10 +1,5 @@
 # Coding Agents Guidelines
 
-## Setup
-
-- Install Deno: `curl -fsSL https://deno.land/install.sh | sh`
-- Dependencies are automatically managed by Deno.
-
 ## Directories
 
 - Core libraries: `core/`
