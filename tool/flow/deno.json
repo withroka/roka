@@ -11,7 +11,10 @@
     "default": {
       "read": true,
       "write": true,
-      "run": ["deno", "git"]
+      "run": [
+        "deno",
+        "git"
+      ]
     }
   }
 }

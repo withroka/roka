@@ -11,10 +11,16 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true
   },
-  "exclude": ["**/__testdata__/**"],
+  "exclude": [
+    "**/__testdata__/**"
+  ],
   "lint": {
     "rules": {
-      "tags": ["recommended", "workspace", "jsr"],
+      "tags": [
+        "recommended",
+        "workspace",
+        "jsr"
+      ],
       "include": [
         "camelcase",
         "default-param-last",
@@ -52,5 +58,7 @@
     "@std/streams": "jsr:@std/streams@^1.0.12",
     "@std/testing": "jsr:@std/testing@^1.0.15"
   },
-  "unstable": ["kv"]
+  "unstable": [
+    "kv"
+  ]
 }
