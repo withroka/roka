@@ -15,7 +15,7 @@
  * flow
  * ```
  *
- * This command formats, types-checks, lints, and tests all project files in
+ * This command formats, type-checks, lints, and tests all project files in
  * directories that have been modified in the current branch. It compares these
  * changes against the default branch of the repository, which is likely “main”.
  *
