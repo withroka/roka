@@ -10,7 +10,9 @@
     "permissions": {
       "read": true,
       "write": true,
-      "env": ["FAKE_ENV"]
+      "env": [
+        "FAKE_ENV"
+      ]
     }
   }
 }

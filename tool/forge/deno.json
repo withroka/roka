@@ -16,11 +16,23 @@
   },
   "permissions": {
     "default": {
-      "env": ["GIT_NAME", "GIT_EMAIL", "GITHUB_TOKEN", "HOME"],
+      "env": [
+        "GIT_NAME",
+        "GIT_EMAIL",
+        "GITHUB_TOKEN",
+        "HOME"
+      ],
       "read": true,
       "write": true,
-      "net": ["api.github.com"],
-      "run": ["deno", "git", "tar", "zip"]
+      "net": [
+        "api.github.com"
+      ],
+      "run": [
+        "deno",
+        "git",
+        "tar",
+        "zip"
+      ]
     }
   },
   "test": {
@@ -28,8 +40,13 @@
       "read": true,
       "write": true,
       "run": true,
-      "env": ["GITHUB_TOKEN", "HOME"],
-      "net": ["api.github.com"]
+      "env": [
+        "GITHUB_TOKEN",
+        "HOME"
+      ],
+      "net": [
+        "api.github.com"
+      ]
     }
   }
 }

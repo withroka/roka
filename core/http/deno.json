@@ -9,8 +9,12 @@
   },
   "test": {
     "permissions": {
-      "read": ["."],
-      "write": ["."]
+      "read": [
+        "."
+      ],
+      "write": [
+        "."
+      ]
     }
   }
 }

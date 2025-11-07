@@ -10,8 +10,12 @@
     "permissions": {
       "read": true,
       "write": true,
-      "env": ["CODESPACES"],
-      "run": ["git"]
+      "env": [
+        "CODESPACES"
+      ],
+      "run": [
+        "git"
+      ]
     }
   }
 }
