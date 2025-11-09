@@ -62,9 +62,16 @@
  */
 import { Command } from "@cliffy/command";
 import { pool } from "@roka/async/pool";
-import { deno, type DenoOptions, type FileResult, type Info } from "@roka/deno";
+import {
+  deno,
+  type DenoCommands,
+  type DenoOptions,
+  type FileResult,
+  type Info,
+} from "@roka/deno";
 import { version } from "@roka/forge/version";
 import { find } from "@roka/fs/find";
+import { tempDirectory } from "@roka/fs/temp";
 import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
 import { assertEquals, assertExists } from "@std/assert";
@@ -81,7 +88,8 @@ import {
   sumOf,
 } from "@std/collections";
 import { bold, dim, green, red, yellow } from "@std/fmt/colors";
-import { dirname } from "@std/path";
+import { dirname, format, parse, toFileUrl } from "@std/path";
+import { toText } from "@std/streams";
 
 const DESCRIPTION = `
   ${bold("🍃 flow")}
@@ -126,17 +134,20 @@ export async function flow(): Promise<number> {
       const fix = !check;
       const found = await files(paths);
       if (found.length === 0) return;
-      const cmds = deno(options());
       await run(found, [
-        (files) => cmds.fmt(files, { check, permitNoFiles: true }),
-        (files) => cmds.check(files, { permitNoFiles: true }),
-        (files) => cmds.lint(files, { fix, permitNoFiles: true }),
-        async (files) =>
-          doc && await cmds.doc(files, { lint: true, permitNoFiles: true }),
-      ], { prefix: "Checked" });
+        (deno, files) => deno.fmt(files, { check, permitNoFiles: true }),
+        (deno, files) => deno.check(files, { permitNoFiles: true }),
+        (deno, files) => deno.lint(files, { fix, permitNoFiles: true }),
+        async (deno, files) =>
+          doc && await deno.doc(files, { lint: true, permitNoFiles: true }),
+      ], {
+        prefix: "Checked",
+      });
       await run(found, [
-        (files) => cmds.test(files, { permitNoFiles: true }),
-      ], { test: true });
+        (deno, files) => deno.test(files, { permitNoFiles: true }),
+      ], {
+        test: true,
+      });
     })
     .command("fmt", fmtCommand())
     .command("check", checkCommand())
@@ -158,14 +169,21 @@ function fmtCommand() {
     .example("flow fmt .", "Format all files.")
     .example("flow fmt **/*.ts", "Format all TypeScript files.")
     .example("flow fmt core/", "Format files in the core directory.")
+    .example("flow fmt --stdin=json", "Format input assuming JSON content.")
     .arguments("[paths...:file]")
     .option("--check", "Check if files are formatted.", { default: false })
-    .action(async ({ check }, ...paths) => {
-      const found = await files(paths);
-      if (found.length === 0) return;
+    .option("--stdin=[filename]", "Pass content to format from stdin.", {
+      equalsSign: true,
+    })
+    .action(async ({ check, stdin = false }, ...paths) => {
+      const found = await files(paths, { stdin });
+      if (!stdin && found.length === 0) return;
       await run(found, [
-        (files) => deno(options()).fmt(files, { check }),
-      ], { prefix: check ? "Checked formatting in" : "Formatted" });
+        (deno, files) => deno.fmt(files, { check }),
+      ], {
+        prefix: check ? "Checked formatting in" : "Formatted",
+        stdin,
+      });
     });
 }
 
@@ -181,8 +199,10 @@ function checkCommand() {
       const found = await files(paths);
       if (found.length === 0) return;
       await run(found, [
-        (files) => deno(options()).check(files),
-      ], { prefix: "Type-checked" });
+        (deno, files) => deno.check(files),
+      ], {
+        prefix: "Type-checked",
+      });
     });
 }
 
@@ -202,10 +222,11 @@ function lintCommand() {
       const found = await files(paths);
       if (found.length === 0) return;
       await run(found, [
-        async (files) =>
-          doc && await deno(options()).doc(files, { lint: true }),
-        (files) => deno(options()).lint(files, { fix }),
-      ], { prefix: "Linted" });
+        async (deno, files) => doc && await deno.doc(files, { lint: true }),
+        async (deno, files) => await deno.lint(files, { fix }),
+      ], {
+        prefix: "Linted",
+      });
     });
 }
 
@@ -223,12 +244,25 @@ function testCommand() {
       const found = await files(paths);
       if (found.length === 0) return;
       await run(found, [
-        (files) => deno(options()).test(files, { update }),
-      ], { test: true });
+        (deno, files) => deno.test(files, { update }),
+      ], {
+        test: true,
+      });
     });
 }
 
-function options(): DenoOptions {
+interface InputOptions {
+  stdin?: boolean | string;
+}
+
+interface MessageOptions {
+  prefix?: string;
+  test?: boolean;
+}
+
+type RunOptions = InputOptions & MessageOptions;
+
+function denoOptions(): DenoOptions {
   let reported = false;
   function testLine(report: Partial<Info>) {
     assertEquals(report.kind, "test");
@@ -247,7 +281,7 @@ function options(): DenoOptions {
     }
     return line;
   }
-  const options: DenoOptions = {
+  return {
     onError({ message }) {
       console.error();
       console.error(message);
@@ -275,10 +309,18 @@ function options(): DenoOptions {
       (report.success ? console.log : console.warn)(testLine(report));
     },
   };
-  return options;
 }
 
-async function files(paths: string[]): Promise<string[]> {
+async function files(
+  paths: string[],
+  options?: InputOptions,
+): Promise<string[]> {
+  if (options?.stdin) {
+    if (paths.length > 0) {
+      throw new Error("Cannot specify paths when reading from stdin");
+    }
+    return [];
+  }
   if (paths.length === 0) {
     // determine modified directories if in a Git repository
     const { value } = await maybe(async () => {
@@ -311,24 +353,59 @@ async function files(paths: string[]): Promise<string[]> {
 
 async function run(
   files: string[],
-  fns: ((files: string[]) => Promise<FileResult[] | false>)[],
-  options?: { prefix?: string; test?: boolean },
+  fns:
+    ((deno: DenoCommands, files: string[]) => Promise<FileResult[] | false>)[],
+  options?: RunOptions,
 ): Promise<void> {
-  const results = Object.values(
-    (await pool(fns, (fn) => fn(files), { concurrency: 1 }))
-      .filter((r): r is FileResult[] => Array.isArray(r))
-      .map((r) => associateBy(r, (f) => f.file))
-      .reduce((a, b) => deepMerge(a, b)),
-  );
-  const [output, error] = message(results, options);
-  if (output) console.log(`✅`, output);
-  if (error) throw new Error(error);
+  await using stdinFile = await fileFromStdin(options);
+  if (stdinFile) files = [stdinFile.path()];
+  const commands = deno(denoOptions());
+  const { error, errors } = await maybe(async () => {
+    const results = Object.values(
+      (await pool(fns, (fn) => fn(commands, files), { concurrency: 1 }))
+        .filter((r): r is FileResult[] => Array.isArray(r))
+        .map((r) => associateBy(r, (f) => f.file))
+        .reduce((a, b) => deepMerge(a, b)),
+    );
+    const output = message(results, options);
+    if (stdinFile) {
+      const content = await Deno.readTextFile(stdinFile.path());
+      console.log(content.trimEnd());
+    } else {
+      console.log("✅", output);
+    }
+  });
+  if (stdinFile && errors) {
+    for (const error of errors) {
+      error.message = error.message
+        .replaceAll(toFileUrl(stdinFile.path()).toString(), "")
+        .replaceAll(stdinFile.path(), "");
+    }
+  }
+  if (error) throw error;
+}
+
+async function fileFromStdin(options?: InputOptions) {
+  const { stdin } = options ?? {};
+  if (!stdin) return undefined;
+  const directory = await tempDirectory();
+  const name = parse(typeof stdin === "string" ? stdin : "");
+  const file = format({
+    dir: directory.path(),
+    name: name.ext ? name.name : "stdin",
+    ext: `.${name.ext.slice(1) || name.name.replace(/^\.+/, "") || "ts"}`,
+  });
+  await Deno.writeTextFile(file, await toText(Deno.stdin.readable));
+  return {
+    path: () => file,
+    [Symbol.asyncDispose]: directory[Symbol.asyncDispose],
+  };
 }
 
 function message(
   results: FileResult[],
-  options?: { prefix?: string; test?: boolean },
-): [string | undefined, string | undefined] {
+  options?: MessageOptions,
+): string | undefined {
   let { prefix, test } = options ?? {};
   const count = (value: number, name: string) =>
     `${value} ${name}${value === 1 ? "" : "s"}`;
@@ -354,7 +431,8 @@ function message(
       dim(`(${passingTests} passed, ` + `${failingTests} failed)`)
     }`;
   }
-  return (errorCount === 0) ? [message, undefined] : [undefined, message];
+  if (errorCount === 0) return message;
+  throw new Error(message);
 }
 
 if (import.meta.main) Deno.exit(await flow());

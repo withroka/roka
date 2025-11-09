@@ -321,6 +321,67 @@ from <directory>/invalid-doc.md:
 }
 `;
 
+snapshot[`flow fmt --stdin 1`] = `
+{
+  code: 0,
+  output: "
+console.log();
+",
+}
+`;
+
+snapshot[`flow fmt --stdin=json 1`] = `
+{
+  code: 0,
+  output: '
+{ "a": 0 }
+',
+}
+`;
+
+snapshot[`flow fmt --stdin=.json 1`] = `
+{
+  code: 0,
+  output: '
+{ "a": 0 }
+',
+}
+`;
+
+snapshot[`flow fmt --stdin=valid.json 1`] = `
+{
+  code: 0,
+  output: '
+{ "a": 0 }
+',
+}
+`;
+
+snapshot[`flow fmt --stdin=invalid.json 1`] = `
+{
+  code: 1,
+  output: "
+❌ Error running deno command: fmt
+
+Error formatting:
+   Line 1, column 4: Unexpected close brace
+
+  {a:}
+     ~
+error: Failed to format 1 of 1 checked file
+",
+}
+`;
+
+snapshot[`flow fmt [valid-code] --stdin 1`] = `
+{
+  code: 1,
+  output: "
+❌ Cannot specify paths when reading from stdin
+",
+}
+`;
+
 snapshot[`flow check [valid-code] 1`] = `
 {
   code: 0,
