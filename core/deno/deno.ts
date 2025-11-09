@@ -1107,11 +1107,12 @@ class Runner implements AsyncDisposable {
       ),
     );
     for (const match of matches) {
-      const { url, file, bline, a1, a2, a3, a4, a5, al, c } = match.groups ??
+      let { url, file, bline, a1, a2, a3, a4, a5, al, c } = match.groups ??
         {};
       assertExists(url, `Cannot parse (url): ${data.message}`);
       assertExists(file, `Cannot parse (file): ${data.message}`);
       assertExists(bline, `Cannot parse (bl): ${data.message}`);
+      file = stripAnsiCode(file);
       if (al !== undefined && c !== undefined) {
         const isCurrent = data.file && resolve(file) === resolve(data.file);
         const isJSDoc = isCurrent && extname(file) !== ".md";
