@@ -1,7 +1,7 @@
 [
   {
     "adapter": "JavaScript",
-    "label": "Deno",
+    "label": "Run",
     "request": "launch",
     "type": "pwa-node",
     "cwd": "$ZED_WORKTREE_ROOT",
@@ -9,8 +9,31 @@
     "runtimeExecutable": "deno",
     "runtimeArgs": [
       "run",
+      "--no-check",
       "--allow-all",
       "--inspect-wait"
+    ],
+    "attachSimplePort": 9229
+  },
+  {
+    "adapter": "JavaScript",
+    "label": "Test",
+    "request": "launch",
+    "type": "pwa-node",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "program": "$ZED_FILE",
+    "runtimeExecutable": "deno",
+    "runtimeArgs": [
+      "test",
+      "--no-check",
+      "--allow-all",
+      "--inspect-wait",
+      "--filter",
+      "$ZED_CUSTOM_DENO_TEST_NAME",
+      "$ZED_FILE"
+    ],
+    "tags": [
+      "js-test"
     ],
     "attachSimplePort": 9229
   }
