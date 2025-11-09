@@ -88,7 +88,7 @@ import {
   sumOf,
 } from "@std/collections";
 import { bold, dim, green, red, yellow } from "@std/fmt/colors";
-import { dirname, format, parse, toFileUrl } from "@std/path";
+import { basename, dirname, toFileUrl } from "@std/path";
 import { toText } from "@std/streams";
 
 const DESCRIPTION = `
@@ -389,12 +389,10 @@ async function fileFromStdin(options?: InputOptions) {
   const { stdin } = options ?? {};
   if (!stdin) return undefined;
   const directory = await tempDirectory();
-  const name = parse(typeof stdin === "string" ? stdin : "");
-  const file = format({
-    dir: directory.path(),
-    name: name.ext ? name.name : "stdin",
-    ext: `.${name.ext.slice(1) || name.name.replace(/^\.+/, "") || "ts"}`,
-  });
+  const name = typeof stdin === "string"
+    ? `stdin.${basename(stdin)}`
+    : "stdin.ts";
+  const file = directory.path(name);
   await Deno.writeTextFile(file, await toText(Deno.stdin.readable));
   return {
     path: () => file,

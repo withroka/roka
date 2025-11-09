@@ -351,9 +351,18 @@ snapshot[`flow fmt --stdin=.json 1`] = `
 snapshot[`flow fmt --stdin=valid.json 1`] = `
 {
   code: 0,
-  output: '
-{ "a": 0 }
-',
+  output: "
+{}
+",
+}
+`;
+
+snapshot[`flow fmt --stdin=dir/file.json 1`] = `
+{
+  code: 0,
+  output: "
+{}
+",
 }
 `;
 
@@ -369,6 +378,15 @@ Error formatting:
   {a:}
      ~
 error: Failed to format 1 of 1 checked file
+",
+}
+`;
+
+snapshot[`flow fmt --stdin=unknown 1`] = `
+{
+  code: 1,
+  output: "
+❌ No target files found
 ",
 }
 `;
