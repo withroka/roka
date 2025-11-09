@@ -6,7 +6,12 @@ import { basename, dirname, fromFileUrl, join } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { flow } from "./flow.ts";
 
-async function run(context: Deno.TestContext) {
+interface Options {
+  input?: string;
+}
+
+async function run(context: Deno.TestContext, options?: Options) {
+  const { input } = options ?? {};
   await using remote = await tempRepository();
   await remote.commit.create("initial", { allowEmpty: true });
   await using repo = await tempRepository({ clone: remote, chdir: true });
@@ -34,20 +39,33 @@ async function run(context: Deno.TestContext) {
       .split(" ").slice(1),
   );
   using console = fakeConsole();
-  const code = await flow();
-  return {
-    code,
-    // deno-lint-ignore no-console
-    output: console
-      .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
-      .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
-      .replace(/\(\d+ms\)/g, "(?ms)")
-      .replaceAll(Deno.cwd(), "<directory>"),
-  };
+  if (input !== undefined) {
+    Object.defineProperty(Deno.stdin, "readable", {
+      get: () => ReadableStream.from([new TextEncoder().encode(input)]),
+      configurable: true,
+    });
+  }
+  const stdin = input !== undefined
+    ? Object.getOwnPropertyDescriptor(Deno.stdin, "readable")
+    : undefined;
+  try {
+    const code = await flow();
+    return {
+      code,
+      // deno-lint-ignore no-console
+      output: console
+        .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
+        .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
+        .replace(/\(\d+ms\)/g, "(?ms)")
+        .replaceAll(Deno.cwd(), "<directory>"),
+    };
+  } finally {
+    if (stdin) Object.defineProperty(Deno.stdin, "readable", stdin);
+  }
 }
 
-async function test(t: Deno.TestContext) {
-  await assertSnapshot(t, await run(t));
+async function test(t: Deno.TestContext, options?: Options) {
+  await assertSnapshot(t, await run(t, options));
 }
 
 Deno.test("flow --help", test);
@@ -71,6 +89,14 @@ Deno.test("flow fmt --check [valid-doc]", test);
 Deno.test("flow fmt --check [invalid-code]", test);
 Deno.test("flow fmt --check [invalid-comment]", test);
 Deno.test("flow fmt --check [invalid-doc]", test);
+Deno.test("flow fmt --stdin", (t) => test(t, { input: "console.log( )" }));
+Deno.test("flow fmt --stdin=json", (t) => test(t, { input: "{a: 0}" }));
+Deno.test("flow fmt --stdin=.json", (t) => test(t, { input: "{a: 0}" }));
+Deno.test("flow fmt --stdin=valid.json", (t) => test(t, { input: "{}" }));
+Deno.test("flow fmt --stdin=dir/file.json", (t) => test(t, { input: "{}" }));
+Deno.test("flow fmt --stdin=invalid.json", (t) => test(t, { input: "{a:}" }));
+Deno.test("flow fmt --stdin=unknown", (t) => test(t, { input: "{}" }));
+Deno.test("flow fmt [valid-code] --stdin", test);
 Deno.test("flow check [valid-code]", test);
 Deno.test("flow check [valid-doc]", test);
 Deno.test("flow check [invalid-code]", test);
