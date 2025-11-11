@@ -22,9 +22,18 @@ Deno.test("testCommit() creates a commit with default data", () => {
 });
 
 Deno.test("testCommit() creates a commit with custom data", () => {
-  const commit = testCommit({ summary: "custom-summary", body: "custom-body" });
+  const commit = testCommit({
+    summary: "custom-summary",
+    body: "custom-body",
+    author: {
+      name: "custom-author-name",
+      email: "custom-author-email",
+    },
+  });
   assertEquals(commit.summary, "custom-summary");
   assertEquals(commit.body, "custom-body");
+  assertEquals(commit.author.name, "custom-author-name");
+  assertEquals(commit.author.email, "custom-author-email");
 });
 
 Deno.test("tempRepository() creates a disposable repo", async () => {
