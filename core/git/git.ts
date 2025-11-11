@@ -2083,7 +2083,7 @@ export function git(options?: GitOptions): Git {
       async get(branch: string | Branch, options?: BranchGetOptions) {
         const remote = remoteArg(options?.remote);
         const name = remote ? `${remote}/${nameArg(branch)}` : nameArg(branch);
-        const type = remote ? "remote" : "local";
+        const type = remote ? "remote" : "all";
         const [found] = await repo.branch.list({ name, type });
         if (!found) return undefined;
         // ignore branches found by pattern matching
