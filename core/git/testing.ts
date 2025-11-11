@@ -36,7 +36,7 @@ export function testCommit(data?: Partial<Commit>): Commit {
     short: "short",
     summary: "summary",
     body: "body",
-    trailers: { "trailer": "value" },
+    trailers: {},
     author: { name: "author-name", email: "author-email" },
     committer: { name: "committer-name", email: "committer-email" },
     ...data,
