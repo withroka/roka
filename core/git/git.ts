@@ -184,7 +184,10 @@ export interface BranchOperations {
    */
   current(): Promise<Branch>;
   /** Returns a branch. */
-  get(name: string | Branch): Promise<Branch | undefined>;
+  get(
+    name: string | Branch,
+    options?: BranchGetOptions,
+  ): Promise<Branch | undefined>;
   /** Creates a branch. */
   create(name: string, options?: BranchCreateOptions): Promise<Branch>;
   /** Switches to an existing or new branch. */
@@ -967,18 +970,29 @@ export interface CommitAmendOptions extends CommitCreateOptions {
 /** Options for the {@linkcode BranchOperations.list} function. */
 export interface BranchListOptions extends RefListOptions {
   /**
-   * Include remote branches.
-   * @default {false}
+   * Type of branches to list.
+   * @default {"local"}
    */
-  all?: boolean;
+  type?: "local" | "remote" | "all";
+}
+
+/** Options for the {@linkcode BranchOperations.get} function. */
+export interface BranchGetOptions {
   /**
-   * Only remote branches.
+   * Remote of the branch, to look up a remote branch.
    *
-   * Implies {@linkcode BranchListOptions.all all} to be `true`.
+   * If not set, a remote branch can still be looked up by providing the
+   * remote name as part of the branch name (e.g., `origin/main`). However,
+   * setting this option allows looking up remote branches without the remote
+   * name in the branch name.
    *
-   * @default {false}
+   * This option becomes necessary in name collision cases. For example, if
+   * there is both a `refs/heads/origin/main` and a `refs/remotes/origin/main`,
+   * a lookup for `origin/main` will return the local branch. A lookup for
+   * `main` with this option set to `origin` will return the remote branch
+   * instead.
    */
-  remotes?: boolean;
+  remote?: string | Remote;
 }
 
 /**
@@ -2014,8 +2028,8 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["branch", "--no-color", "--list"],
           flag("--format", formatArg(BRANCH_FORMAT), { equals: true }),
-          flag("--all", options?.all),
-          flag("--remotes", options?.remotes),
+          flag("--all", options?.type === "all"),
+          flag("--remotes", options?.type === "remote"),
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
           flag("--points-at", commitArg(options?.pointsAt)),
@@ -2066,9 +2080,18 @@ export function git(options?: GitOptions): Git {
         const [branch] = await repo.branch.list({ name });
         return branch ?? { name }; // unborn branch
       },
-      async get(branch: string | Branch) {
-        const name = nameArg(branch);
-        const [found] = await repo.branch.list({ name, all: true });
+      async get(branch: string | Branch, options?: BranchGetOptions) {
+        const remote = remoteArg(options?.remote);
+        const name = remote ? `${remote}/${nameArg(branch)}` : nameArg(branch);
+        const type = remote ? "remote" : "all";
+        const [found] = await repo.branch.list({ name, type });
+        if (!found) return undefined;
+        // ignore branches found by pattern matching
+        if (
+          found.name !== name &&
+          found.name !== `heads/${name}` &&
+          found.name !== `remotes/${name}`
+        ) return undefined;
         return found;
       },
       async create(name, options) {

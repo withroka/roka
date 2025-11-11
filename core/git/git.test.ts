@@ -3332,39 +3332,6 @@ Deno.test("git().branch.list() can return branches from detached state", async (
   assertEquals(await repo.branch.list(), [branch, main]);
 });
 
-Deno.test("git().branch.list({ all }) returns all branches", async () => {
-  await using upstream = await tempRepository({ branch: "main" });
-  const commit = await upstream.commit.create("commit", { allowEmpty: true });
-  await upstream.branch.create("branch");
-  await using repo = await tempRepository({ clone: upstream });
-  const remote = await repo.remote.current();
-  assertExists(remote);
-  const remoteMain = await repo.branch.get("origin/main");
-  const remoteBranch = await repo.branch.get("origin/branch");
-  assertExists(remoteMain);
-  assertExists(remoteBranch);
-  await repo.branch.create("branch", { target: "origin/branch" });
-  await repo.branch.create("untracked");
-  assertEquals(await repo.branch.list({ all: true }), [
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "branch", remote, branch: remoteBranch },
-      push: { name: "branch", remote, branch: remoteBranch },
-    },
-    {
-      name: "main",
-      commit,
-      fetch: { name: "main", remote, branch: remoteMain },
-      push: { name: "main", remote, branch: remoteMain },
-    },
-    { name: "untracked", commit },
-    { name: "origin", commit },
-    { name: "origin/branch", commit },
-    { name: "origin/main", commit },
-  ]);
-});
-
 Deno.test("git().branch.list({ contains }) returns branches that contain commit", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
@@ -3426,13 +3393,46 @@ Deno.test("git().branch.list({ pointsAt }) returns branches that point to a comm
   assertEquals(await repo.branch.list({ pointsAt: commit2 }), [branch2]);
 });
 
-Deno.test("git().branch.list({ remotes }) returns only remote branches", async () => {
+Deno.test("git().branch.list({ type }) can return only remote branches", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   const commit = await upstream.commit.create("commit", { allowEmpty: true });
   await upstream.branch.create("branch");
   await using repo = await tempRepository({ clone: upstream });
   await repo.branch.create("local");
-  assertEquals(await repo.branch.list({ remotes: true }), [
+  assertEquals(await repo.branch.list({ type: "remote" }), [
+    { name: "origin", commit },
+    { name: "origin/branch", commit },
+    { name: "origin/main", commit },
+  ]);
+});
+
+Deno.test("git().branch.list({ type }) can return all branches", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit", { allowEmpty: true });
+  await upstream.branch.create("branch");
+  await using repo = await tempRepository({ clone: upstream });
+  const remote = await repo.remote.current();
+  assertExists(remote);
+  const remoteMain = await repo.branch.get("origin/main");
+  const remoteBranch = await repo.branch.get("origin/branch");
+  assertExists(remoteMain);
+  assertExists(remoteBranch);
+  await repo.branch.create("branch", { target: "origin/branch" });
+  await repo.branch.create("untracked");
+  assertEquals(await repo.branch.list({ type: "all" }), [
+    {
+      name: "branch",
+      commit,
+      fetch: { name: "branch", remote, branch: remoteBranch },
+      push: { name: "branch", remote, branch: remoteBranch },
+    },
+    {
+      name: "main",
+      commit,
+      fetch: { name: "main", remote, branch: remoteMain },
+      push: { name: "main", remote, branch: remoteMain },
+    },
+    { name: "untracked", commit },
     { name: "origin", commit },
     { name: "origin/branch", commit },
     { name: "origin/main", commit },
@@ -3466,10 +3466,7 @@ Deno.test("git().branch.get() returns branch by name", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create("commit", { allowEmpty: true });
   await repo.branch.create("branch");
-  assertEquals(await repo.branch.get("branch"), {
-    name: "branch",
-    commit,
-  });
+  assertEquals(await repo.branch.get("branch"), { name: "branch", commit });
 });
 
 Deno.test("git().branch.get() returns tracked branch by name", async () => {
@@ -3515,6 +3512,63 @@ Deno.test("git().branch.get() can return branch from detached state", async () =
 Deno.test("git().branch.get() returns undefined for unknown branch", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.branch.get("unknown"), undefined);
+});
+
+Deno.test("git().branch.get() does not find by pattern", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  await repo.branch.create("branch");
+  assertEquals(await repo.branch.get("b*"), undefined);
+});
+
+Deno.test("git().branch.get() returns local branch created after conflicting remote branch", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  await using repo = await tempRepository({
+    clone: upstream,
+    remote: "remote",
+  });
+  await repo.branch.switch("remote/main", { create: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  assertEquals(await repo.branch.get("remote/main"), {
+    name: "heads/remote/main",
+    commit: commit2,
+  });
+  assertEquals(await repo.branch.get("main", { remote: "remote" }), {
+    name: "remotes/remote/main",
+    commit: commit1,
+  });
+});
+
+Deno.test("git().branch.get() returns local branch created before conflicting remote branch", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create("commit1", { allowEmpty: true });
+  await using repo = await tempRepository();
+  await repo.branch.switch("remote/main", { create: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  await repo.remote.add("remote", upstream.path());
+  await repo.sync.fetch({ remote: "remote" });
+  assertEquals(await repo.branch.get("remote/main"), {
+    name: "heads/remote/main",
+    commit: commit2,
+  });
+  assertEquals(await repo.branch.get("main", { remote: "remote" }), {
+    name: "remotes/remote/main",
+    commit: commit1,
+  });
+});
+
+Deno.test("git().branch.get() returns remote branch by short name", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit", { allowEmpty: true });
+  await using repo = await tempRepository({
+    clone: upstream,
+    remote: "remote",
+  });
+  assertEquals(await repo.branch.get("main", { remote: "remote" }), {
+    name: "remote/main",
+    commit,
+  });
 });
 
 Deno.test("git().branch.create() creates a branch", async () => {
@@ -4889,14 +4943,16 @@ Deno.test("git().sync.fetch() fetches commits and tags", async () => {
   await using repo = await tempRepository({ clone: upstream });
   const commit2 = await upstream.commit.create("commit2", { allowEmpty: true });
   const tag = await upstream.tag.create("tag");
-  assertEquals(await repo.branch.list({ name: "origin/main", remotes: true }), [
-    { name: "origin/main", commit: commit1 },
-  ]);
+  assertEquals(await repo.branch.get("origin/main"), {
+    name: "origin/main",
+    commit: commit1,
+  });
   assertEquals(await repo.tag.list(), []);
   await repo.sync.fetch();
-  assertEquals(await repo.branch.list({ name: "origin/main", remotes: true }), [
-    { name: "origin/main", commit: commit2 },
-  ]);
+  assertEquals(await repo.branch.get("origin/main"), {
+    name: "origin/main",
+    commit: commit2,
+  });
   assertEquals(await repo.tag.list(), [tag]);
   assertEquals(await repo.commit.log(), [commit1]);
 });
@@ -4938,7 +4994,7 @@ Deno.test("git().sync.fetch({ all }) can fetch from all remotes", async () => {
   await repo.remote.add("remote3", upstream3.path());
   await repo.sync.fetch({ all: true });
   assertEquals(
-    await repo.branch.list({ name: "*/main", remotes: true }),
+    await repo.branch.list({ name: "*/main", type: "remote" }),
     [
       { name: "remote1/main", commit: commit1 },
       { name: "remote2/main", commit: commit2 },
@@ -4962,7 +5018,7 @@ Deno.test("git().sync.fetch({ all }) can be false to fetch from single remote", 
   await repo.remote.add("remote2", upstream2.path());
   await repo.sync.fetch({ all: false });
   assertEquals(
-    await repo.branch.list({ name: "*/main", remotes: true }),
+    await repo.branch.list({ name: "*/main", type: "remote" }),
     [{ name: "remote1/main", commit: commit1 }],
   );
   assertEquals(await repo.commit.log(), [commit1]);
@@ -5008,14 +5064,12 @@ Deno.test("git().sync.fetch({ remote }) can from a remote by name", async () => 
   const commit = await upstream.commit.create("commit", { allowEmpty: true });
   const branch = await upstream.branch.current();
   await repo.remote.add("remote", upstream.path());
-  assertEquals(
-    await repo.branch.list({ name: "remote/main", remotes: true }),
-    [],
-  );
+  assertEquals(await repo.branch.get("remote/main"), undefined);
   await repo.sync.fetch({ remote: "remote", target: branch });
-  assertEquals(await repo.branch.list({ name: "remote/main", remotes: true }), [
-    { name: "remote/main", commit },
-  ]);
+  assertEquals(await repo.branch.get("remote/main"), {
+    name: "remote/main",
+    commit,
+  });
   assertEquals(await repo.commit.log(), []);
 });
 
@@ -5045,7 +5099,7 @@ Deno.test("git().sync.fetch({ remote }) can fetch from multiple remotes", async 
   await repo.remote.add("remote2", upstream2.path());
   await repo.sync.fetch({ remote: ["remote1", "remote2"] });
   assertEquals(
-    await repo.branch.list({ name: "*/main", remotes: true }),
+    await repo.branch.list({ name: "*/main", type: "remote" }),
     [
       { name: "remote1/main", commit: commit1 },
       { name: "remote2/main", commit: commit2 },
@@ -5097,9 +5151,10 @@ Deno.test("git().sync.fetch({ tags }) can skip tags", async () => {
   const commit = await upstream.commit.create("commit2", { allowEmpty: true });
   await upstream.tag.create("tag");
   await repo.sync.fetch({ tags: "none" });
-  assertEquals(await repo.branch.list({ name: "origin/main", remotes: true }), [
-    { name: "origin/main", commit },
-  ]);
+  assertEquals(await repo.branch.get("origin/main"), {
+    name: "origin/main",
+    commit,
+  });
   assertEquals(await repo.tag.list(), []);
 });
 
@@ -5143,15 +5198,15 @@ Deno.test("git().sync.fetch({ target }) can fetch commits from a branch", async 
   const commit2 = await upstream.commit.create("commit", { allowEmpty: true });
   await upstream.branch.switch(main);
   await using repo = await tempRepository({ clone: upstream });
-  assertEquals(
-    await repo.branch.list({ name: "origin/main", remotes: true }),
-    [{ name: "origin/main", commit: commit1 }],
-  );
+  assertEquals(await repo.branch.get("origin/main"), {
+    name: "origin/main",
+    commit: commit1,
+  });
   await repo.sync.fetch({ target: branch });
-  assertEquals(
-    await repo.branch.list({ name: "origin/branch", remotes: true }),
-    [{ name: "origin/branch", commit: commit2 }],
-  );
+  assertEquals(await repo.branch.get("origin/branch"), {
+    name: "origin/branch",
+    commit: commit2,
+  });
   assertEquals(await repo.commit.log(), [commit1]);
 });
 
@@ -5239,7 +5294,7 @@ Deno.test("git().sync.pull({ all }) can pull from all remotes", async () => {
   await repo.remote.add("remote2", upstream2.path());
   await repo.sync.pull({ all: true });
   assertEquals(
-    await repo.branch.list({ name: "*/main", remotes: true }),
+    await repo.branch.list({ name: "*/main", type: "remote" }),
     [
       { name: "remote1/main", commit: commit1 },
       { name: "remote2/main", commit: commit2 },
@@ -5261,7 +5316,7 @@ Deno.test("git().sync.pull({ all }) can be false to pull from single remote", as
   await repo.remote.add("remote2", upstream2.path());
   await repo.sync.pull({ all: false });
   assertEquals(
-    await repo.branch.list({ name: "*/main", remotes: true }),
+    await repo.branch.list({ name: "*/main", type: "remote" }),
     [{ name: "remote1/main", commit: commit1 }],
   );
 });
