@@ -2086,6 +2086,7 @@ export function git(options?: GitOptions): Git {
         const type = remote ? "remote" : "local";
         const [found] = await repo.branch.list({ name, type });
         if (!found) return undefined;
+        // ignore branches found by pattern matching
         if (
           found.name !== name &&
           found.name !== `heads/${name}` &&
