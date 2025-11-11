@@ -71,7 +71,7 @@ export function conventional(commit: Commit): ConventionalCommit {
   const footers = extractFooters(commit);
   const footerBreaking = footers["BREAKING-CHANGE"];
   const match = commit.summary?.match(
-    /^(?:\s*?(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\s*?\))?(?<exclamation>!?):s*)?\s*?(?<description>[^\s].*)$/,
+    /^(?:\s*?(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\s*?\))?(?<exclamation>!?):\s*)?\s*?(?<description>[^\s].*)$/,
   );
   const { type, scopes, exclamation, description } = { ...match?.groups };
   assertExists(description, "Commit must have description");
