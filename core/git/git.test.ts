@@ -3350,6 +3350,61 @@ Deno.test("git().branch.list({ contains }) returns branches that contain commit"
   ]);
 });
 
+Deno.test("git().branch.list({ noContains }) returns branches that do not contain commit", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  const branch1 = await repo.branch.create("branch1");
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  await repo.branch.create("branch2");
+  await repo.commit.create("commit3", { allowEmpty: true });
+  assertEquals(await repo.branch.list({ noContains: commit1 }), []);
+  assertEquals(await repo.branch.list({ noContains: commit2 }), [branch1]);
+});
+
+Deno.test("git().branch.list({ merged }) returns branches merged into commit", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await repo.branch.switch("branch1", { create: true });
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  await repo.branch.switch("branch2", { create: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  await repo.branch.switch("branch3", { create: true, orphan: true });
+  const commit3 = await repo.commit.create("commit3", { allowEmpty: true });
+  const [branch1, branch2, branch3] = await Promise.all([
+    repo.branch.get("branch1"),
+    repo.branch.get("branch2"),
+    repo.branch.get("branch3"),
+  ]);
+  assertEquals(await repo.branch.list({ merged: commit1 }), [branch1]);
+  assertEquals(await repo.branch.list({ merged: commit2 }), [branch1, branch2]);
+  assertEquals(await repo.branch.list({ merged: commit3 }), [branch3]);
+});
+
+Deno.test("git().branch.list({ noMerged }) returns branches not merged into commit", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await repo.branch.switch("branch1", { create: true });
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  await repo.branch.switch("branch2", { create: true });
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  await repo.branch.switch("branch3", { create: true, orphan: true });
+  const commit3 = await repo.commit.create("commit3", { allowEmpty: true });
+  const [branch1, branch2, branch3] = await Promise.all([
+    repo.branch.get("branch1"),
+    repo.branch.get("branch2"),
+    repo.branch.get("branch3"),
+  ]);
+  assertEquals(await repo.branch.list({ noMerged: commit1 }), [
+    branch2,
+    branch3,
+  ]);
+  assertEquals(await repo.branch.list({ noMerged: commit2 }), [
+    branch3,
+  ]);
+  assertEquals(await repo.branch.list({ noMerged: commit3 }), [
+    branch1,
+    branch2,
+  ]);
+});
+
 Deno.test("git().branch.list({ name }) matches branch name", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create("commit", { allowEmpty: true });
@@ -3371,17 +3426,6 @@ Deno.test("git().branch.list({ name }) can match branch pattern", async () => {
   ]);
 });
 
-Deno.test("git().branch.list({ noContains }) returns branches that do not contain commit", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
-  const branch1 = await repo.branch.create("branch1");
-  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
-  await repo.branch.create("branch2");
-  await repo.commit.create("commit3", { allowEmpty: true });
-  assertEquals(await repo.branch.list({ noContains: commit1 }), []);
-  assertEquals(await repo.branch.list({ noContains: commit2 }), [branch1]);
-});
-
 Deno.test("git().branch.list({ pointsAt }) returns branches that point to a commit", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
@@ -3391,44 +3435,6 @@ Deno.test("git().branch.list({ pointsAt }) returns branches that point to a comm
   await repo.commit.create("commit3", { allowEmpty: true });
   assertEquals(await repo.branch.list({ pointsAt: commit1 }), [branch1]);
   assertEquals(await repo.branch.list({ pointsAt: commit2 }), [branch2]);
-});
-
-Deno.test("git().branch.list({ merged }) returns branches merged into commit", async () => {
-  await using repo = await tempRepository();
-  await repo.commit.create("commit1", { allowEmpty: true });
-  const mainName = (await repo.branch.current()).name;
-  await repo.branch.switch("feature1", { create: true });
-  await repo.commit.create("commit2", { allowEmpty: true });
-  await repo.branch.switch(mainName);
-  await repo.commit.create("commit3", { allowEmpty: true });
-  const commit3 = await repo.commit.head();
-  await repo.branch.switch("feature2", { create: true });
-  await repo.commit.create("commit4", { allowEmpty: true });
-  await repo.branch.switch(mainName);
-  const main = await repo.branch.current();
-  const merged = await repo.branch.list({ merged: commit3 });
-  assertEquals(merged, [main]);
-  const mergedFeature1 = await repo.branch.list({ merged: "feature1" });
-  const feature1 = await repo.branch.get("feature1");
-  assertEquals(mergedFeature1, [feature1]);
-});
-
-Deno.test("git().branch.list({ noMerged }) returns branches not merged into commit", async () => {
-  await using repo = await tempRepository();
-  await repo.commit.create("commit1", { allowEmpty: true });
-  const mainName = (await repo.branch.current()).name;
-  await repo.branch.switch("feature1", { create: true });
-  await repo.commit.create("commit2", { allowEmpty: true });
-  await repo.branch.switch(mainName);
-  await repo.commit.create("commit3", { allowEmpty: true });
-  await repo.branch.switch("feature2", { create: true });
-  await repo.commit.create("commit4", { allowEmpty: true });
-  await repo.branch.switch(mainName);
-  const main = await repo.branch.current();
-  const feature1 = await repo.branch.get("feature1");
-  const feature2 = await repo.branch.get("feature2");
-  const noMerged = await repo.branch.list({ noMerged: main });
-  assertEquals(noMerged, [feature1, feature2]);
 });
 
 Deno.test("git().branch.list({ type }) can return only remote branches", async () => {
@@ -4410,6 +4416,40 @@ Deno.test("git().tag.list({ contains }) returns tags that contain commit", async
   assertEquals(await repo.tag.list({ contains: commit2 }), [tag2]);
 });
 
+Deno.test("git().tag.list({ noContains }) returns tags that do not contain commit", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  await repo.tag.create("tag2");
+  assertEquals(await repo.tag.list({ noContains: commit1 }), []);
+  assertEquals(await repo.tag.list({ noContains: commit2 }), [tag1]);
+});
+
+Deno.test("git().tag.list({ merged }) returns tags merged into commit", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  const tag1 = await repo.tag.create("v1.0.0");
+  const branch = await repo.branch.create("branch");
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  const tag2 = await repo.tag.create("v2.0.0");
+  assertEquals(await repo.tag.list({ merged: commit1 }), [tag1]);
+  assertEquals(await repo.tag.list({ merged: commit2 }), [tag1, tag2]);
+  assertEquals(await repo.tag.list({ merged: branch }), [tag1]);
+});
+
+Deno.test("git().tag.list({ noMerged }) returns tags not merged into commit", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
+  await repo.tag.create("v1.0.0");
+  const branch = await repo.branch.create("branch");
+  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
+  const tag2 = await repo.tag.create("v2.0.0");
+  assertEquals(await repo.tag.list({ noMerged: commit1 }), [tag2]);
+  assertEquals(await repo.tag.list({ noMerged: commit2 }), []);
+  assertEquals(await repo.tag.list({ noMerged: branch }), [tag2]);
+});
+
 Deno.test("git().tag.list({ name }) matches tag name", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
@@ -4426,16 +4466,6 @@ Deno.test("git().tag.list({ name }) can match tag pattern", async () => {
   assertEquals(await repo.tag.list({ name: "tag*" }), [tag1, tag2]);
 });
 
-Deno.test("git().tag.list({ noContains }) returns tags that do not contain commit", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
-  const tag1 = await repo.tag.create("tag1");
-  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
-  await repo.tag.create("tag2");
-  assertEquals(await repo.tag.list({ noContains: commit1 }), []);
-  assertEquals(await repo.tag.list({ noContains: commit2 }), [tag1]);
-});
-
 Deno.test("git().tag.list({ pointsAt }) returns tags that point to a commit", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
@@ -4444,27 +4474,6 @@ Deno.test("git().tag.list({ pointsAt }) returns tags that point to a commit", as
   const tag2 = await repo.tag.create("tag2", { subject: "subject" });
   assertEquals(await repo.tag.list({ pointsAt: commit1 }), [tag1]);
   assertEquals(await repo.tag.list({ pointsAt: commit2 }), [tag2]);
-});
-
-Deno.test("git().tag.list({ merged }) returns tags merged into commit", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
-  const tag1 = await repo.tag.create("v1.0.0");
-  const commit2 = await repo.commit.create("commit2", { allowEmpty: true });
-  const tag2 = await repo.tag.create("v2.0.0");
-  assertEquals(await repo.tag.list({ merged: commit2 }), [tag1, tag2]);
-  assertEquals(await repo.tag.list({ merged: commit1 }), [tag1]);
-});
-
-Deno.test("git().tag.list({ noMerged }) returns tags not merged into commit", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
-  await repo.tag.create("v1.0.0");
-  const branch = await repo.branch.create("feature");
-  await repo.commit.create("commit2", { allowEmpty: true });
-  const tag2 = await repo.tag.create("v2.0.0");
-  assertEquals(await repo.tag.list({ noMerged: commit1 }), [tag2]);
-  assertEquals(await repo.tag.list({ noMerged: branch }), [tag2]);
 });
 
 Deno.test("git().tag.list({ sort }) can sort by version", async () => {
