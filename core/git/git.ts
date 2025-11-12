@@ -581,13 +581,17 @@ export interface GitOptions {
  * Options common to the {@linkcode BranchOperations.list} and
  * {@linkcode TagOperations.list} functions for ref filtering.
  */
-export interface RefListOptions {
+export interface ListOptions {
   /** Ref selection pattern. The default is all relevant refs. */
   name?: string;
   /** Only refs that contain the specific commit. */
   contains?: Commitish;
   /** Only refs that do not contain the specific commit. */
   noContains?: Commitish;
+  /** Only refs whose tips are reachable from the commit. */
+  merged?: Commitish;
+  /** Only refs whose tips are not reachable from the commit. */
+  noMerged?: Commitish;
   /** Only refs that point to the given commit. */
   pointsAt?: Commitish;
 }
@@ -968,7 +972,7 @@ export interface CommitAmendOptions extends CommitCreateOptions {
 }
 
 /** Options for the {@linkcode BranchOperations.list} function. */
-export interface BranchListOptions extends RefListOptions {
+export interface BranchListOptions extends ListOptions {
   /**
    * Type of branches to list.
    * @default {"local"}
@@ -1128,7 +1132,7 @@ export interface BranchDeleteOptions {
 }
 
 /** Options for the {@linkcode TagOperations.list} function. */
-export interface TagListOptions extends RefListOptions {
+export interface TagListOptions extends ListOptions {
   /**
    * Sort option.
    *
@@ -2032,6 +2036,8 @@ export function git(options?: GitOptions): Git {
           flag("--remotes", options?.type === "remote"),
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
+          flag("--merged", commitArg(options?.merged)),
+          flag("--no-merged", commitArg(options?.noMerged)),
           flag("--points-at", commitArg(options?.pointsAt)),
           options?.name,
         );
@@ -2203,6 +2209,8 @@ export function git(options?: GitOptions): Git {
           flag("--format", formatArg(TAG_FORMAT), { equals: true }),
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
+          flag("--merged", commitArg(options?.merged)),
+          flag("--no-merged", commitArg(options?.noMerged)),
           flag("--points-at", commitArg(options?.pointsAt)),
           flag("--sort=-version:refname", options?.sort === "version"),
           options?.name,
