@@ -2814,8 +2814,8 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
     hash: { kind: "string", format: "%H" },
     short: { kind: "string", format: "%h" },
     parent: {
-      optional: true,
       kind: "object",
+      optional: true,
       fields: {
         hash: {
           kind: "string",
