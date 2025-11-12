@@ -581,7 +581,7 @@ export interface GitOptions {
  * Options common to the {@linkcode BranchOperations.list} and
  * {@linkcode TagOperations.list} functions for ref filtering.
  */
-export interface ListOptions {
+export interface RefListOptions {
   /** Ref selection pattern. The default is all relevant refs. */
   name?: string;
   /** Only refs that contain the specific commit. */
@@ -972,7 +972,7 @@ export interface CommitAmendOptions extends CommitCreateOptions {
 }
 
 /** Options for the {@linkcode BranchOperations.list} function. */
-export interface BranchListOptions extends ListOptions {
+export interface BranchListOptions extends RefListOptions {
   /**
    * Type of branches to list.
    * @default {"local"}
@@ -1132,7 +1132,7 @@ export interface BranchDeleteOptions {
 }
 
 /** Options for the {@linkcode TagOperations.list} function. */
-export interface TagListOptions extends ListOptions {
+export interface TagListOptions extends RefListOptions {
   /**
    * Sort option.
    *
