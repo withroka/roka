@@ -3332,6 +3332,36 @@ Deno.test("git().branch.list() can return branches from detached state", async (
   assertEquals(await repo.branch.list(), [branch, main]);
 });
 
+Deno.test("git().branch.list() detects deleted upstream branches", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create("commit", { allowEmpty: true });
+  await upstream.branch.create("branch");
+  await using repo = await tempRepository({ clone: upstream });
+  const remote = await repo.remote.current();
+  assertExists(remote);
+  await repo.branch.create("branch", { target: "origin/branch" });
+  const remoteBranch = await repo.branch.get("origin/branch");
+  assertExists(remoteBranch);
+  assertEquals(await repo.branch.list({ name: "branch" }), [
+    {
+      name: "branch",
+      commit,
+      fetch: { name: "branch", remote, branch: remoteBranch },
+      push: { name: "branch", remote, branch: remoteBranch },
+    },
+  ]);
+  await upstream.branch.delete("branch");
+  await repo.sync.fetch({ prune: true });
+  assertEquals(await repo.branch.list({ name: "branch" }), [
+    {
+      name: "branch",
+      commit,
+      fetch: { name: "branch", remote },
+      push: { name: "branch", remote },
+    },
+  ]);
+});
+
 Deno.test("git().branch.list({ contains }) returns branches that contain commit", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create("commit1", { allowEmpty: true });
