@@ -381,8 +381,12 @@ export interface Branch {
     name: string;
     /** Remote of the upstream fetch branch. */
     remote: Remote;
-    /** Remote tracking fetch branch. */
-    branch: Branch;
+    /**
+     * Remote tracking fetch branch.
+     *
+     * This can be unset if the upstream branch is deleted in the remote.
+     */
+    branch?: Branch;
   };
   /** Push configuration for the branch, if set. */
   push?: {
@@ -390,8 +394,12 @@ export interface Branch {
     name: string;
     /** Remote of the push branch. */
     remote: Remote;
-    /** Remote tracking push branch. */
-    branch: Branch;
+    /**
+     * Remote tracking push branch.
+     *
+     * This can be unset if the upstream branch is deleted in the remote.
+     */
+    branch?: Branch;
   };
 }
 
@@ -1557,29 +1565,28 @@ export interface AdminBackfillOptions {
  * @example Create a new git repository and add a file.
  * ```ts
  * import { git } from "@roka/git";
- * import { tempDirectory } from "@roka/fs/temp";
- * import { assertEquals } from "@std/assert";
- *
- * await using directory = await tempDirectory();
- * const repo = await git().init({
- *   directory: directory.path(),
- *   config: { user: { name: "name", email: "email" } },
+ * (async () => {
+ *   const repo = await git().init({ directory: "/path/to/repo" });
+ *   await Deno.writeTextFile(repo.path("file.txt"), "content");
+ *   await repo.index.add("file.txt");
+ *   const commit = await repo.commit.create("Initial commit");
+ *   return { commit };
  * });
+ * ```
  *
- * await Deno.writeTextFile(repo.path("file.txt"), "content");
- * await repo.index.add("file.txt");
- * assertEquals(
- *   await repo.diff.status({ staged: true }),
- *   [{ path: "file.txt", status: "added" }],
- * );
- * const commit = await repo.commit.create("Initial commit", { sign: false });
- * assertEquals(await repo.commit.log(), [commit]);
- *
- * await Deno.writeTextFile(repo.path("file.txt"), "update");
- * assertEquals(
- *   await repo.diff.status(),
- *   [{ path: "file.txt", status: "modified" }],
- * );
+ * @example Delete local branches with pruned tracking branches.
+ * ```ts
+ * import { git } from "@roka/git";
+ * import { pool } from "@roka/async/pool";
+ * (async () => {
+ *   const repo = git({ cwd: "/path/to/repo" });
+ *   await repo.sync.fetch({ prune: true });
+ *   await pool(await repo.branch.list({ type: "local" }), async (branch) => {
+ *     if (branch.fetch?.remote && !branch.fetch.branch) {
+ *       await repo.branch.delete(branch.name);
+ *     }
+ *   }, { concurrency: 1 });
+ * });
  * ```
  */
 export function git(options?: GitOptions): Git {
@@ -2714,6 +2721,7 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
     },
     commit: {
       kind: "object",
+      optional: true,
       fields: {
         hash: {
           kind: "string",
@@ -2726,10 +2734,10 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
         author: { kind: "skip" },
         committer: { kind: "skip" },
       },
-      optional: true,
     },
     fetch: {
       kind: "object",
+      optional: true,
       fields: {
         name: {
           kind: "string",
@@ -2749,6 +2757,7 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
         },
         branch: {
           kind: "object",
+          optional: true,
           fields: {
             name: {
               kind: "string",
@@ -2761,10 +2770,10 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
           },
         },
       },
-      optional: true,
     },
     push: {
       kind: "object",
+      optional: true,
       fields: {
         name: {
           kind: "string",
@@ -2783,6 +2792,7 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
         },
         branch: {
           kind: "object",
+          optional: true,
           fields: {
             name: {
               kind: "string",
@@ -2794,7 +2804,6 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
           },
         },
       },
-      optional: true,
     },
   },
 } satisfies FormatDescriptor<Branch>;
@@ -2806,6 +2815,7 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
     hash: { kind: "string", format: "%H" },
     short: { kind: "string", format: "%h" },
     parent: {
+      optional: true,
       kind: "object",
       fields: {
         hash: {
@@ -2819,7 +2829,6 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
           transform: (value) => value ? value : "\x00",
         },
       },
-      optional: true,
     },
     author: {
       kind: "object",
@@ -2838,8 +2847,8 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
     summary: { kind: "string", format: "%s" },
     body: {
       kind: "string",
-      format: "%b%H%(trailers)",
       optional: true,
+      format: "%b%H%(trailers)",
       transform(bodyAndTrailers: string, parent: Record<string, string>) {
         const hash = parent["hash"];
         assertExists(hash, "Cannot parse git output");
