@@ -590,6 +590,10 @@ export interface RefListOptions {
   noContains?: Commitish;
   /** Only refs that point to the given commit. */
   pointsAt?: Commitish;
+  /** Only refs whose tips are reachable from the commit. */
+  merged?: Commitish;
+  /** Only refs whose tips are not reachable from the commit. */
+  noMerged?: Commitish;
 }
 
 /**
@@ -2033,6 +2037,8 @@ export function git(options?: GitOptions): Git {
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
           flag("--points-at", commitArg(options?.pointsAt)),
+          flag("--merged", commitArg(options?.merged)),
+          flag("--no-merged", commitArg(options?.noMerged)),
           options?.name,
         );
         const branches = parseOutput(BRANCH_FORMAT, output);
@@ -2204,6 +2210,8 @@ export function git(options?: GitOptions): Git {
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
           flag("--points-at", commitArg(options?.pointsAt)),
+          flag("--merged", commitArg(options?.merged)),
+          flag("--no-merged", commitArg(options?.noMerged)),
           flag("--sort=-version:refname", options?.sort === "version"),
           options?.name,
         );
