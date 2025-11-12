@@ -49,7 +49,6 @@
  * @todo Add templates.
  * @todo Expose dates.
  * @todo Verify signatures.
- * @todo Add local branch pruning.
  *
  * @module git
  */
