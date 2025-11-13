@@ -35,4 +35,4 @@ Based on your task, assume one of these specialized roles:
 - Do not create packages without discussion.
 - Do not delete tests without discussion.
 - Prefer minimal, atomic changes.
-- Use conventional commits, e.g. "`fix(git): description`".
+- Use conventional commits, for example "`fix(git): description`".
