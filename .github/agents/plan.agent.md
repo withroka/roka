@@ -31,13 +31,13 @@ You will NOT:
 
 ## Available agents
 
-- **implement** - Implements code based on designs and interfaces.
+- **build** - Builds code based on designs and interfaces.
 - **fix** - Fixes bugs with minimal changes and regression tests.
-- **test** - Creates comprehensive test suites.
 - **document** - Writes user-facing documentation.
 
 ## Workflow
 
+0. Explore the codebase to understand existing patterns and conventions.
 1. Research the problem domain and gather requirements.
 2. Explore existing code related to the problem and identify gaps.
 3. Design a solution, either fresh or building on existing patterns.

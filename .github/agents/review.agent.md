@@ -27,6 +27,7 @@ You will NOT:
 
 ## Workflow
 
+0. Explore surrounding code to understand existing patterns and conventions.
 1. Read the full changeset to understand context and intent.
 2. Identify patterns: Is code consistent with surrounding codebase?
 3. Check for critical issues (security, correctness, performance).
