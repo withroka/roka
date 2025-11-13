@@ -25,7 +25,7 @@ You will NOT:
 
 ## Available agents
 
-- **review** - Review code changes for quality and adherence to guidelines.
+- [**review**](./review.agent.md) - Review repository changes.
 
 ## Workflow
 

@@ -31,9 +31,9 @@ You will NOT:
 
 ## Available agents
 
-- **build** - Builds code based on designs and interfaces.
-- **fix** - Fixes bugs with minimal changes and regression tests.
-- **document** - Writes user-facing documentation.
+- [**build**](./build.agent.md) - Implements features from given designs.
+- [**fix**](./fix.agent.md) - Fixes bugs with regression tests.
+- [**docs**](./docs.agent.md) - Writes user-facing documentation.
 
 ## Workflow
 
@@ -44,6 +44,8 @@ You will NOT:
 4. Draft interface signatures, types, and core structure.
 5. Break down the design into simple, independent tasks for implementation.
 6. Document the plan with usage examples and design details.
+7. If you are tasked with implementation, delegate tasks to specialist agents.
+8. Review completed tasks for consistency with the design.
 
 ## Output format
 
