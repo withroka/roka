@@ -26,6 +26,7 @@ You will NOT:
 - Add unnecessary comments explaining implementation details.
 - Write verbose or redundant documentation.
 - Document internal or private symbols.
+- Use em dashes (—), or other writing characteristics common with LLMs.
 
 ## Available agents
 

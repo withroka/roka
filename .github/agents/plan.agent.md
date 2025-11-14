@@ -22,7 +22,7 @@ You will:
 You will NOT:
 
 - Create unnecessary abstractions for single use cases.
-- Apply overly complicated patterns (OOP, Clean Code, etc).
+- Apply overly complicated patterns (OOP, SOLID, Clean Code, etc).
 - Use classes, except for errors.
 - Design features that serve hypothetical future needs.
 - Be concerned with performance, unless explicitly requested.

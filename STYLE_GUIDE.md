@@ -1,21 +1,22 @@
 # Style Guide
 
-## General rules
+## Principles
 
 ### Prefer surrounding style over this guide
 
-If the current style is different from this guide but still works well, feel
-free to keep writing in that way. It’s a bit jarring for readers when styles
-change within the same file. We can always update the style later in a separate,
-more thorough change.
+The codebase already has lint rules for strict requirements, and this guide
+helps us stay consistent beyond those. If the existing style is different from
+this guide but still works well, please keep writing in that way. It can be a
+bit confusing for readers when styles change within the same file.
 
 ### Design simple interfaces
 
-Public interfaces should be easy to use and understand. Optimize for the common
-case and make common tasks simple, even if it means repetitive code, or extra
-work when implementing.
+Interfaces are most useful when they're straightforward. Optimize for the common
+case and make common tasks easy, even if it means repetition or extra work in
+the implementation. Users of a library shouldn't have to think hard about how to
+use it.
 
-#### ✅ Write functions with simple interfaces
+#### ✅ Simple function interface
 
 ```ts
 /** usage: parse("feat: add new feature"); */
@@ -25,7 +26,7 @@ export function parse(message: string) {
 }
 ```
 
-#### ❌ Avoid abstractions that hinder usability
+#### ❌ Abstraction that hinders usability
 
 ```ts
 /** usage: parser().parse("feat: add new feature"); */
@@ -41,232 +42,444 @@ export function parser() {
 
 ### Write simple code
 
-Write code that's easy to understand and maintain. Obviously, don't write O(N²),
-code when O(N) is just one more line. But, don't sweat over CPU cycles when we
-can optimize later if needed, or switch to a native language.
+Write code that's easy to understand and maintain. Prefer simplicity over
+performance, but don't write O(N²) code when O(N) is just one more line. You can
+always micro-optimize later if needed, or provide a native implementation with
+bindings.
 
-## Modules and exports
+#### ✅ Simple and clear
+
+```ts
+export function parse(message: string) {
+  const lines = message.split("\n");
+  const subject = lines[0];
+  const body = lines.slice(1).join("\n").trim();
+  return { subject, body };
+}
+```
+
+#### ❌ Premature optimization
+
+```ts
+export function parse(message: string) {
+  const buffer = new Uint8Array(message.length);
+  let subjectEnd = 0;
+  for (let i = 0; i < message.length; i++) {
+    if (message.charCodeAt(i) === 10) {
+      subjectEnd = i;
+      break;
+    }
+    buffer[i] = message.charCodeAt(i);
+  }
+  const subject = new TextDecoder().decode(buffer.slice(0, subjectEnd));
+  const body = new TextDecoder().decode(
+    buffer.slice(subjectEnd + 1, message.length),
+  ).trim();
+  return { subject, body };
+}
+```
+
+## Code organization
 
 ### Group modules around a subject into a package
 
-Organize related modules into packages by their subject area or domain, for
+Organize related modules into packages by their subject area or domain. For
 example, any functionality around Git goes into `@roka/git` instead of its own
-package. Packages cannot be renamed, but modules can be be renamed between
-versions.
+package. You can rename modules between versions, but packages stick around
+forever.
+
+### Avoid generic packages or modules
+
+Packages and modules like `util` or `common` are too generic and don't tell you
+much about their purpose. It's better to create specific modules for what you
+need. If you have a utility that doesn't fit anywhere but is useful everywhere,
+it can be its own package. The `@roka/maybe` package is just that with a single
+`maybe()` function.
+
+### Prefer singular names over plural ones
+
+Use singular names for modules and packages, "tool" instead of "tools". This
+makes it easier to remember the right name and pushes you toward consistency.
+The only exception is when you're extending the standard library. For example,
+`@roka/streams` can supplement `@std/streams`.
 
 ### Use default modules for core functionality
 
-The default module of a package should export the primary functionality that the
-users need. This makes the API straightforward. Users can import directly from
-the package without needing to know about submodules. For example, the
-`@roka/git` packages exports the `git()` function directly.
+The default module of a package exports what users need most. This makes the API
+straightforward. Users can import directly from the package without needing to
+know about submodules. For example, the `@roka/git` package exports the `git()`
+function directly.
 
-Sometimes a package may not have a clear primary functionality. In those cases,
-the package will not export anything directly, and users will need to import
-from submodules. For example, the `@roka/testing` package does not export
-anything.
-
-The default module is written files named after the package. For example,
-`@roka/git` code lives in `git.ts`, and its tests in `git_test.ts`. Avoid using
-`mod.ts` as the main module file.
+Sometimes a package doesn't have a clear primary functionality. In those cases,
+you won't export anything directly, and users will import from submodules
+instead. The `@roka/testing` package works this way.
 
 ### Use submodules for secondary functionality
 
-Secondary or specialized features go in submodules, for example `conventional()`
-in `@roka/git/conventional`. This increases the usability of the main package,
-increases the findability of the secondary features, and keeps the number of
+Secondary or specialized features go in submodules. For example,
+`conventional()` lives in `@roka/git/conventional`. This keeps the main package
+focused, makes secondary features easier to find, and keeps the number of
 packages in check.
 
-The submodule is written under files named after the submodule. For example,
-`@roka/git/conventional` code lives in `conventional.ts`, and its tests in
-`conventional_test.ts`.
+### Avoid internal modules
+
+Avoid creating modules that are only used internally within a package. Modules
+can talk to each other through their public interfaces. If functionality needs
+to be shared between modules, make it high enough quality to export publicly. If
+that's not worth the effort, consider code duplication before creating internal
+modules.
+
+### Name files after their module
+
+The default module lives in a file named after the package. For example,
+`@roka/git` code goes in `git.ts`. The module tests will be under `git.test.ts`.
+Avoid using `mod.ts` as the main module file.
+
+Submodules follow the same pattern. For example, the code for
+`@roka/git/conventional` goes into `conventional.ts`, and its tests go into
+`conventional.test.ts`.
+
+## Public interface
 
 ### Export functionality as functions
 
 The core interface of a module is the function or functions it exports.
-Everything else, like types or errors, are complementary to the function
-interface. This enforces a simple overall design that is based around functions.
+Everything else, such as types, errors or constants, is complementary. This
+keeps the design simple and function-focused. It also helps findability by
+making the module names predictable.
 
-A module should preferably export a single function that has the same name as
-the module, for example `conventional()` in `@roka/git/conventional`. In cases
-where function overloading doesn't work, the module can provide multiple
-variants of the same functionality with different names. For example the
-`@roka/testing/fake` module does this by exporting `fakeConsole()`,
-`fakeCommand()` functions.
+A module preferably exports a single function with the same name as the module.
+For example, `conventional()` in `@roka/git/conventional`. When you have a group
+of functions with multiple variants or with intimately related functionality,
+you can export them from a shared module. For example, the `@roka/testing/fake`
+module provides fakes by exporting multiple functions like `fakeConsole()` and
+`fakeCommand()`.
 
-### Export types used in the function interface
+### Accept at most two required parameters
 
-All symbols used in the function interface must be exported. For example, a
-function `git()` that is accepting `GitOptions` and returning `Git` must export
-both types. This ensures the whole public interface is documented.
+Functions with many positional parameters are hard to use. Stick to two required
+parameters, and use an optional `options` object for everything else. This keeps
+the common case simple while giving you flexibility.
 
-### Do not export data directly
-
-Data that is part of functionality should exposed through functions. This makes
-the public interface more stable, for example when the data is no longer a
-constant.
-
-#### ✅ Export data through functions
+#### ✅ Simple function signature
 
 ```ts
-export function targets() {
-  return ["aarch64", "x86_64", "armv7"];
+export interface ParseOptions {
+  format?: string;
+  strict?: boolean;
+  encoding?: string;
+  maxLength?: number;
+}
+
+export function parse(input: string, options?: ParseOptions) {
+  // ...
 }
 ```
 
-#### ❌ Avoid exporting data directly
+#### ❌ Too many parameters
 
 ```ts
-export const TARGETS = ["aarch64", "x86_64", "armv7"];
+export function parse(
+  input: string,
+  format: string,
+  strict: boolean,
+  encoding?: string,
+  maxLength?: number,
+) {
+  // ...
+}
 ```
 
-### Avoid re-exports
+### Use distinguishable parameter types
 
-Symbols should be exported from the module where they are defined. This ensures
-symbols having a canonical and unambiguous import source, simplifying the public
-surface.
+Use parameter types that can be distinguished from plain objects at runtime.
+This allows the API to evolve in a backwards-compatible way even when parameter
+positions change. For example, use `string`, `number`, `Array`, or `Error`.
+Reserve plain objects only for the `options` parameter, unless they can be
+distinguished with a well-known symbol like `Symbol.iterator`.
 
-### Avoid internal modules.
+#### ✅ Distinguishable parameter types
 
-Internal modules makes it harder to work on the codebase, making tasks harder to
-be confined to a single source file. Modules should communicate with each other
-through their public interfaces, and functionality that is shared between
-modules can be made high quality enough to be shared publicly. If neither is
-possible, code duplication is acceptable.
+```ts
+export function parse(
+  lines: string | string[],
+  options?: { strict?: boolean },
+) {
+  const delimiter = options?.strict ? ": " : ":";
+  if (typeof lines === "string") lines = [lines];
+  return lines.map((x) => x.split(delimiter));
+}
+```
 
-### Avoid generic packages or modules
+#### ❌ Plain objects as required parameters
 
-Packages and modules like `util` or `common` are too generic and do not convey
-meaningful information about their purpose. It is better to create new modules
-for bespoke functionality in the public interface. A utility that does not fit
-in in any package, but that is useful for all contexts can be its own package.
-The `@roka/maybe` package is just that with a single `maybe()` function.
-
-### Do not export classes, except for errors
-
-Classes add unnecessary complexity to the codebase. Interfaces and functions can
-be used insteda of classes in a more idiomatic TypeScript. The only exceptionto
-this rule is for error types, where runtime type identification is often needed.
-
-## Functions
-
-### Accept at most two required arguments and an optional `options` object
-
-### Avoid parameter types that cannot be distinguished at runtime, except for
-
-`options`
+```ts
+export function parse(
+  input: { lines?: string[] },
+  config: { strict?: boolean },
+) {
+  const delimiter = config.strict ? ": " : ":";
+  return input.lines?.map((x) => x.split(delimiter));
+}
+const input = JSON.parse('{"lines":["key1:value1","key2:value2"]}');
+const config = JSON.parse(await Deno.readTextFile("config.json"));
+parse(input, config); // fine
+parse(config, input); // still fine
+```
 
 ### Prefer overloads for different input variants
 
-### Name the options type after the function (`GitOptions`).
+When a function can accept different input types that produce different types,
+use function overloads instead of returning union types. You will get better
+type safety and clearer documentation.
 
-## Types
+#### ✅ Function overloads
 
-### Use `interface` for both data and functionality
+```ts
+export function parse(input: string): string;
+export function parse(input: string[]): string[];
+export function parse(input: string | string[]): string | string[] {
+  const split = (str: string) => str.split(":")[0] ?? "default";
+  if (typeof input === "string") return split(input);
+  return input.map(split);
+}
+```
 
-### Use `type` for type utilities and aliases
+#### ❌ Union return types
 
-### Name the data types after their factory functions (`Git`)
+```ts
+export function parse(input: string | string[]): string | string[] {
+  const split = (str: string) => str.split(":")[0] ?? "default";
+  if (typeof input === "string") return split(input);
+  return input.map(split);
+}
+```
 
-### Use optional definition for fields (`x?: string`, not
+### Name options types after the function
 
-`x: string | undefined`).
+The options interface for a function gets named after the function with an
+`Options` suffix. This creates a clear connection between the function and its
+configuration.
 
-## Errors
+```ts
+export interface ParseOptions {
+  format?: string;
+  strict?: boolean;
+  encoding?: string;
+  maxLength?: number;
+}
 
-### Assert code assumptions (throw `AssertionError`)
+export function parse(input: string, options?: ParseOptions) {
+  // ...
+}
+```
 
-### Throw a specific type on runtime errors
+### Use `interface` for object shapes and `type` for utilities
 
-### Name error classes after their package or module (`GitError`)
+This is mainly for consistency, as these two language features largely overlap
+with each other. Readability is improved when the `type` keyword is reserved
+only for type manipulation.
 
-### Provide re-thrown errors as
+```ts
+export interface Parsed {
+  key: string;
+  value: string;
+  line: number;
+}
 
-[`cause`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause)
+export class ParseError extends Error {
+  constructor(message: string, cause?: Error) {
+    super(message, { cause });
+    this.name = "ParseError";
+  }
+}
 
-### Write clear, concise, and consistent error messages
+export type Parseable = string | string[] | URL;
+export type ParseResult = Parsed | ParseError;
+```
 
-### Sentence case error messages, but do not end with a dot
+### Don't export classes, except for errors
 
-## Testing
+Classes add unnecessary complexity to the codebase. Interfaces and functions can
+be used instead of classes in a more idiomatic TypeScript. The only exception is
+for error types, where runtime type identification is often needed.
 
-### Add tests for new features
+### Use optional syntax for optional fields
 
-### Add tests for fixed bugs
+Use the optional field syntax (`?`) instead of explicit union with `undefined`.
+It's more concise and conventional in TypeScript. With the
+`exactOptionalPropertyTypes` compiler setting, this prevents mixing two
+different states: an "unset" field and a field explicitly set to `undefined`.
+This helps catch subtle bugs early.
 
-### Add tests for `testing` modules
+#### ✅ Optional field syntax
 
-### Name tests explicitly (`"git().init() initializes a repository"`).
+```ts
+export interface ParseOptions {
+  format?: string;
+  strict?: boolean;
+}
+```
 
-## Documentation
+#### ❌ Explicit undefined syntax
 
-### Use [JSDoc](https://jsdoc.app) for documentation
+```ts
+export interface ParseOptions {
+  format: string | undefined;
+  strict: boolean | undefined;
+}
+```
 
-### Document every module with example usage and `@module`
+### Export all types used in function interfaces
 
-### Document every exported symbol
+Export all symbols used in your function interfaces. For example, if `parse()`
+accepts `ParseOptions` and returns `Parsed`, you need to export both types. This
+ensures your whole public interface is documented.
 
-### Document missing features or known bugs with `@todo`
+### Avoid re-exports
 
-### Do not document self-explanatory parameters, returns, or throws
+Export symbols from the module where they're defined. This ensures each symbol
+has one canonical import source, keeping the public surface simple.
 
-### End JSDoc sentences with a punctuation
-
-### Optimize for document generation (no dash in `@param`).
-
-## Naming
+## Implementation
 
 ### Write inclusive code
 
 Use gender-neutral and racially-neutral names. For example, use "blocklist"
-instead of "blacklist". Avoid loaded language, such as "master", when "main"
-works just fine. Everyone has a right to enjoy and contribute to the project.
-See the
+instead of "blacklist". Avoid loaded language like "master" when "main" works
+just fine. Everyone has a right to enjoy and contribute to the project. See the
 [Chromium style guide](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md)
-for detailed guidance.
+for more guidance.
 
 ### Prefer single words over multiple words
 
-Use shorter names when a single word conveys the meaning clearly. Reserve longer
-names for when they add clarity. Or even better, think of a scope or abstraction
-where single words makes sense. This keeps code concise and easier to read,
-while forcing us to think about the right scope and state.
+Use shorter names when a single word gets the meaning across. Save longer names
+for when they add real clarity. Or even better, think about your scope or
+abstraction so single words make sense. This keeps code concise and easier to
+read, while pushing you to think about the right scope and state.
 
-#### ✅ Use single words when clear
+#### ✅ Concise naming
 
 ```ts
-export async function save(cache: object, path: string) {
-  await Deno.writeTextFile(path, JSON.stringify(cache));
+export function parse(message?: string) {
+  const first = message?.split("\n")[0];
+  return first?.trim()?.replace(/^(fix|feat|chore):\s*/, "");
 }
 ```
 
-#### ❌ Avoid unnecessary compound names
+#### ❌ Long variable names
 
 ```ts
-export async function save(dataCache: object, filePath: string) {
-  await Deno.writeTextFile(filePath, JSON.stringify(dataCache));
+export function parse(commitMessage?: string) {
+  const firstLineOfCommitMessage = commitMessage?.split("\n")[0];
+  const trimmedFirstLineOfCommitMessage = firstLineOfCommitMessage?.trim();
+  const commitMessageWithoutPrefix = trimmedFirstLineOfCommitMessage?.replace(
+    /^(fix|feat|chore):\s*/,
+    "",
+  );
+  return commitMessageWithoutPrefix;
 }
 ```
 
 ### Prefer full words over abbreviations
 
-Spell out words in full to improve readability and reduce ambiguity.
-Abbreviations can be unclear to new readers or those unfamiliar with your
-codebase. However, widely-recognized abbreviations like "cwd" (current working
-directory) or "id" (identifier) are acceptable when they're standard in the
-industry or when they help keep names as single words.
+Spell out words when you can. It improves readability and reduces ambiguity.
+Abbreviations can be unclear to new readers or people unfamiliar with your
+codebase. That said, widely-recognized abbreviations like "cwd" (current working
+directory) or "id" (identifier) are fine when they're standard in the industry
+or help keep names as single words.
 
-### Prefer singular modules names over plural ones
+### Assert code assumptions
 
-Use singular names for modules and packages, for example use "tool" and not
-"tools". This makes it easier to remember which one was the right name, and
-forces consistency for the overall design. The only exception is when creating a
-package to extend the functionality of the standard library, for example
-`@roka/streams` can supplement `@std/streams`.
+Use assertions to validate internal assumptions and invariants in your code.
+Throw `AssertionError` for conditions that should never happen if the code is
+correct. These are programmer errors, not user errors.
 
-## Other examples
+```ts
+import { assertExists } from "@std/assert";
 
-### ❌ Avoid unnecessary variables and comments
+export function parse(input: string, delimiter = ":") {
+  if (!input) return undefined;
+  const parts = input.split(delimiter);
+  const key = parts[0];
+  assertExists(key); // inform the type checker
+  return key;
+}
+```
+
+### Throw specific error types for runtime errors
+
+Prefer specific error classes for different error conditions. This lets callers
+catch and handle errors precisely. A good approach is to have one custom error
+class per package. For example, `@roka/git` has `GitError`.
+
+```ts
+export class ParseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ParseError";
+  }
+}
+
+export function parse(input: string): Parsed {
+  if (!input.includes(":")) {
+    throw new ParseError("Input must contain delimiter");
+  }
+  // ...
+}
+```
+
+### Include original errors as `cause`
+
+When you catch and re-throw errors, include the original error as the `cause`.
+This preserves the error chain and helps with debugging.
+
+```ts
+export async function parse(path: string) {
+  try {
+    const content = await Deno.readTextFile(path);
+    return parseContent(content);
+  } catch (error) {
+    throw new ParseError("Failed to read file", { cause: error });
+  }
+}
+```
+
+### Write clear and actionable error messages
+
+Write specific, actionable, and consistent error messages. End without a
+punctuation. Include brief contextual data. Never include sensitive data like
+tokens or passwords.
+
+#### ✅ Clear and specific
+
+```ts
+throw new Error(`Failed to parse file at ${path}`);
+throw new Error("Input must contain delimiter");
+```
+
+#### ❌ Vague or redundant
+
+```ts
+throw new Error("Error"); // Too vague
+throw new Error("ParseError: failed"); // Redundant prefix
+```
+
+### Prefer minimal code with early returns
+
+Write code that's easy to scan and understand. Skip unnecessary variables and
+comments. Use early returns to cut down on nesting.
+
+#### ✅ Minimal and clear
+
+```ts
+export function validate(input?: string): string | undefined {
+  if (!input) return undefined;
+  return input.trim();
+}
+```
+
+#### ❌ Unnecessary complexity
 
 ```ts
 export function validate(input?: string): string | undefined {
@@ -286,16 +499,21 @@ export function validate(input?: string): string | undefined {
 }
 ```
 
-### ✅ Prefer minimal code with early returns
+### Use guard clauses instead of nested conditions
+
+Flatten your code by checking error conditions first and returning early. This
+makes the happy path more obvious.
+
+#### ✅ Guard clauses
 
 ```ts
-export function validate(input?: string): string | undefined {
-  if (!input) return undefined;
-  return input.trim();
+export function process(value?: string): string | undefined {
+  if (!value || value.length === 0) return undefined;
+  return value.toLowerCase();
 }
 ```
 
-### ❌ Avoid nested conditions
+#### ❌ Nested conditions
 
 ```ts
 export function process(value?: string): string | undefined {
@@ -311,38 +529,213 @@ export function process(value?: string): string | undefined {
 }
 ```
 
-### ✅ Prefer guard clauses
+## Testing
+
+### Add tests for new features
+
+Every new feature needs tests that verify it works as expected. Tests serve as
+documentation and prevent regressions.
 
 ```ts
-export function process(value?: string): string | undefined {
-  if (!value || value.length === 0) return undefined;
-  return value.toLowerCase();
+Deno.test("git().init() creates a new repository", async () => {
+  const dir = await Deno.makeTempDir();
+  const repo = git({ cwd: dir });
+  await repo.init();
+  assert(await exists(join(dir, ".git")));
+});
+```
+
+### Add tests for fixed bugs
+
+When you fix a bug, add a test that reproduces it first, then verify your fix
+works. This keeps the bug from coming back.
+
+```ts
+Deno.test("parse() handles empty commit messages", () => {
+  // This used to throw an error
+  const result = parse("");
+  assertEquals(result, undefined);
+});
+```
+
+### Add tests for testing modules
+
+Testing utilities need tests too. This ensures your testing infrastructure is
+reliable and behaves as expected.
+
+```ts
+Deno.test("fakeConsole() captures log output", () => {
+  using fake = fakeConsole();
+  console.log("test message");
+  assertEquals(fake.calls, [{ method: "log", args: ["test message"] }]);
+});
+```
+
+### Name tests explicitly
+
+Test names clearly describe what's being tested and what the expected behavior
+is. Use the format: `functionName() behavior`. Skip generic names like "test 1"
+or "works correctly".
+
+#### ✅ Explicit test names
+
+```ts
+Deno.test("git().init() initializes a repository", async () => {});
+Deno.test("parse() extracts commit type and summary", () => {});
+Deno.test("validate() returns undefined for empty input", () => {});
+```
+
+#### ❌ Vague test names
+
+```ts
+Deno.test("init test", async () => {});
+Deno.test("it works", () => {});
+Deno.test("test parse", () => {});
+```
+
+## Documentation
+
+### Use JSDoc for all public APIs
+
+Document all public APIs using JSDoc comments. This provides IDE hover
+information and generates documentation on JSR.
+
+````ts
+/**
+ * Creates a new Git repository interface.
+ *
+ * @param options Configuration options
+ * @returns A Git repository interface
+ *
+ * @example
+ * ```ts
+ * const repo = git({ cwd: "./my-project" });
+ * await repo.init();
+ * ```
+ */
+export function git(options?: GitOptions): Git {
+  // ...
+}
+````
+
+### Document every module with examples
+
+Each module has a module-level JSDoc comment with a description and usage
+example. This appears at the top of the generated documentation.
+
+````ts
+/**
+ * Git repository operations.
+ *
+ * This module provides functions for working with Git repositories.
+ *
+ * @example
+ * ```ts
+ * import { git } from "@roka/git";
+ *
+ * const repo = git({ cwd: "./my-project" });
+ * await repo.init();
+ * await repo.commit("Initial commit");
+ * ```
+ *
+ * @module
+ */
+````
+
+### Document every exported symbol
+
+All exported functions, types, interfaces, and constants need JSDoc comments.
+This ensures users understand what each part of your API does.
+
+```ts
+/**
+ * Options for creating a Git repository interface.
+ */
+export interface GitOptions {
+  /**
+   * Working directory of the repository.
+   * @default {Deno.cwd()}
+   */
+  cwd?: string;
 }
 ```
 
-### ❌ Avoid long variable names
+### Document missing features with `@todo`
+
+Use `@todo` tags to document planned features or known limitations. This helps
+track technical debt and informs users of current limitations.
 
 ```ts
-export function parse(commitMessage?: string): string | undefined {
-  const trimmedCommitMessage = commitMessage?.trim();
-  const firstLineOfCommitMessage = trimmedCommitMessage?.split("\n")[0];
-  const commitMessageWithoutPrefix = firstLineOfCommitMessage?.replace(
-    /^(fix|feat|chore):\s*/,
-    "",
-  );
-  return commitMessageWithoutPrefix;
+/**
+ * Pushes commits to a remote repository.
+ *
+ * @todo Add support for SSH authentication
+ * @todo Handle merge conflicts
+ */
+export async function push(): Promise<void> {
+  // ...
 }
 ```
 
-### ✅ Prefer concise names
+### Skip self-explanatory documentation
+
+Avoid redundant documentation that simply restates the code. Only document
+parameters, returns, and throws when they provide non-obvious information.
+
+#### ✅ Useful documentation
 
 ```ts
-export function parse(message?: string): string | undefined {
-  const trimmed = message?.trim();
-  const first = trimmed?.split("\n")[0];
-  return first?.replace(/^(fix|feat|chore):\s*/, "");
-}
+/**
+ * @param message Commit message in conventional commit format
+ * @throws {ConventionalError} If the message format is invalid
+ */
+export function parse(message: string): Commit {}
 ```
 
+#### ❌ Redundant documentation
+
+```ts
+/**
+ * @param message The message
+ * @returns A commit
+ */
+export function parse(message: string): Commit {}
 ```
+
+### End JSDoc sentences with punctuation
+
+All JSDoc sentences end with proper punctuation. Use periods, question marks, or
+exclamation points. This keeps documentation looking professional.
+
+```ts
+/**
+ * Creates a new Git repository.
+ *
+ * The repository is initialized with a default branch.
+ */
+export function init(): Promise<void> {}
+```
+
+### Format JSDoc for documentation generators
+
+Format JSDoc tags for optimal documentation generation. Don't use dashes between
+parameter names and descriptions, as they interfere with some documentation
+generators.
+
+#### ✅ Correct format
+
+```ts
+/**
+ * @param cwd Working directory
+ * @param author Author name
+ */
+```
+
+#### ❌ Incorrect format
+
+```ts
+/**
+ * @param cwd - Working directory
+ * @param author - Author name
+ */
 ```
