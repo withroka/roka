@@ -351,6 +351,54 @@ just fine. Everyone has a right to enjoy and contribute to the project. See the
 [Chromium style guide](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md)
 for more guidance.
 
+### Write flat code with early returns
+
+Write code that's easy to scan and understand. Check error conditions first and
+return early to keep the happy path clear and free of nesting. Skip unnecessary
+variables and comments when the code speaks for itself. Flat code reads linearly
+without indentation creep, making the main logic obvious at a glance.
+
+#### ✅ Flat and clear
+
+```ts
+export function parse(input?: string): string | undefined {
+  if (!input) return undefined;
+  const [type] = input.split(":");
+  return type?.trim();
+}
+```
+
+#### ❌ Nested and verbose
+
+```ts
+export function parse(input?: string): string | undefined {
+  // check if we have input
+  if (input !== undefined) {
+    // check if input has content
+    if (input.length > 0) {
+      // split on delimiter
+      const parts = input.split(":");
+      const type = parts[0];
+
+      // check if type exists
+      if (type) {
+        // trim and return
+        return type.trim();
+      } else {
+        // no type found
+        return undefined;
+      }
+    } else {
+      // empty input
+      return undefined;
+    }
+  }
+
+  // there was no input
+  return undefined;
+}
+```
+
 ### Prefer single words over multiple words
 
 Use shorter names when a single word gets the meaning across. Save longer names
@@ -447,112 +495,50 @@ export async function parse(path: string) {
 
 ### Write clear and actionable error messages
 
-Write specific, actionable, and consistent error messages. End without a
+Write specific, actionable, and consistent error messages. End without
 punctuation. Include brief contextual data. Never include sensitive data like
 tokens or passwords.
 
 #### ✅ Clear and specific
 
 ```ts
-throw new Error(`Failed to parse file at ${path}`);
+throw new Error("Unknown commit type");
 throw new Error("Input must contain delimiter");
+throw new Error(`Failed to parse file at ${path}`);
 ```
 
 #### ❌ Vague or redundant
 
 ```ts
-throw new Error("Error"); // Too vague
-throw new Error("ParseError: failed"); // Redundant prefix
-```
-
-### Prefer minimal code with early returns
-
-Write code that's easy to scan and understand. Skip unnecessary variables and
-comments. Use early returns to cut down on nesting.
-
-#### ✅ Minimal and clear
-
-```ts
-export function validate(input?: string): string | undefined {
-  if (!input) return undefined;
-  return input.trim();
-}
-```
-
-#### ❌ Unnecessary complexity
-
-```ts
-export function validate(input?: string): string | undefined {
-  // Check if input exists
-  const hasInput = input !== undefined;
-
-  // If no input, return undefined
-  if (!hasInput) {
-    return undefined;
-  }
-
-  // Trim the input
-  const trimmed = input.trim();
-
-  // Return the result
-  return trimmed;
-}
-```
-
-### Use guard clauses instead of nested conditions
-
-Flatten your code by checking error conditions first and returning early. This
-makes the happy path more obvious.
-
-#### ✅ Guard clauses
-
-```ts
-export function process(value?: string): string | undefined {
-  if (!value || value.length === 0) return undefined;
-  return value.toLowerCase();
-}
-```
-
-#### ❌ Nested conditions
-
-```ts
-export function process(value?: string): string | undefined {
-  if (value !== undefined) {
-    if (value.length > 0) {
-      return value.toLowerCase();
-    } else {
-      return undefined;
-    }
-  } else {
-    return undefined;
-  }
-}
+throw new Error("Error"); // too vague
+throw new Error("ParseError: unknown commit type"); // redundant prefix
 ```
 
 ## Testing
 
 ### Add tests for new features
 
-Every new feature needs tests that verify it works as expected. Tests serve as
-documentation and prevent regressions.
+Every new feature requires tests that cover the expected behavior, edge cases,
+and error conditions. Consider tests as a contract that the feature will
+continue to work as expected while the codebase continues to change. Complete
+coverage isn't necessary, but core functionality should be well-tested.
 
 ```ts
-Deno.test("git().init() creates a new repository", async () => {
-  const dir = await Deno.makeTempDir();
-  const repo = git({ cwd: dir });
-  await repo.init();
-  assert(await exists(join(dir, ".git")));
+Deno.test("parse() extracts type and summary from message", () => {
+  const result = parse("feat: add new feature");
+  assertEquals(result, { type: "feat", summary: "add new feature" });
 });
 ```
 
 ### Add tests for fixed bugs
 
-When you fix a bug, add a test that reproduces it first, then verify your fix
-works. This keeps the bug from coming back.
+Bug fixes should include tests that verify the fix and prevent regressions. If a
+bug surfaces once, it will likely resurface if not monitored and enough time
+passes. Regression tests make the feature contract include all the edge cases we
+encounter in the real-world.
 
 ```ts
 Deno.test("parse() handles empty commit messages", () => {
-  // This used to throw an error
   const result = parse("");
   assertEquals(result, undefined);
 });
@@ -560,105 +546,155 @@ Deno.test("parse() handles empty commit messages", () => {
 
 ### Add tests for testing modules
 
-Testing utilities need tests too. This ensures your testing infrastructure is
-reliable and behaves as expected.
+Testing utilities require tests as well. The test infrastructure must be
+reliable, or you can't trust any tests that depend on it. Broken testing tools
+can result in false positives, shipped bugs, and hours of debugging. The entire
+test suite is only as reliable as the testing utilities it depends on.
 
 ```ts
-Deno.test("fakeConsole() captures log output", () => {
-  using fake = fakeConsole();
-  console.log("test message");
-  assertEquals(fake.calls, [{ method: "log", args: ["test message"] }]);
+Deno.test("assertValidParse() validates parse results correctly", () => {
+  const valid = { type: "feat", summary: "add feature" };
+  assertValidParse(valid);
+  assertThrows(() => assertValidParse({ type: "invalid" }));
 });
 ```
 
 ### Name tests explicitly
 
-Test names clearly describe what's being tested and what the expected behavior
-is. Use the format: `functionName() behavior`. Skip generic names like "test 1"
-or "works correctly".
+Test names should clearly describe what's being tested and the expected
+behavior. Use the format `functionName() behavior` or
+`functionName({ option })
+behavior` to keep names consistent and scannable. When
+a test fails, the name should tell developers exactly what broke without reading
+the test code.
 
 #### ✅ Explicit test names
 
 ```ts
-Deno.test("git().init() initializes a repository", async () => {});
-Deno.test("parse() extracts commit type and summary", () => {});
-Deno.test("validate() returns undefined for empty input", () => {});
+Deno.test("parse() extracts commit type", () => {});
+Deno.test("parse() rejects empty input", () => {});
+Deno.test("parse({ strict }) rejects missing whitespace in delimiter", () => {});
 ```
 
 #### ❌ Vague test names
 
 ```ts
-Deno.test("init test", async () => {});
+Deno.test("parse test", () => {});
 Deno.test("it works", () => {});
-Deno.test("test parse", () => {});
+Deno.test("empty input", () => {});
+```
+
+### Order tests by complexity and configuration
+
+Order tests from simple to complex, starting with default functionality before
+moving to configured behavior. Within each configuration, test the happy path
+first, then edge cases, then error conditions. Organize options logically based
+on context, or alphabetically if no logic applies.
+
+```ts
+Deno.test("parse() extracts type and summary", () => {});
+Deno.test("parse() handles single-word messages", () => {});
+Deno.test("parse() rejects empty input", () => {});
+Deno.test("parse({ format }) uses custom format", () => {});
+Deno.test("parse({ format }) rejects invalid format", () => {});
+Deno.test("parse({ strict }) enforces whitespace", () => {});
+Deno.test("parse({ strict }) rejects missing space", () => {});
 ```
 
 ## Documentation
 
-### Use JSDoc for all public APIs
+### Document every public function with examples
 
-Document all public APIs using JSDoc comments. This provides IDE hover
-information and generates documentation on JSR.
+The documentation lives alongside the code, and deserves the same care. Good
+documentation should explain what the function does and provide working
+examples. However, skip the obvious and don't document self-explanatory
+parameters or return values.
+
+#### ✅ Clear and useful documentation
 
 ````ts
 /**
- * Creates a new Git repository interface.
+ * Parses a conventional commit message into its components.
  *
- * @param options Configuration options
- * @returns A Git repository interface
+ * @param message Commit message in conventional commit format
  *
  * @example
  * ```ts
- * const repo = git({ cwd: "./my-project" });
- * await repo.init();
+ * const result = parse("feat: add new feature");
+ * // Returns "feat"
  * ```
  */
-export function git(options?: GitOptions): Git {
-  // ...
-}
+export function parse(message: string): string {}
 ````
+
+#### ❌ Redundant documentation
+
+```ts
+/**
+ * Parses a message.
+ *
+ * @param message The message
+ * @returns A string
+ */
+export function parse(message: string): string {}
+```
 
 ### Document every module with examples
 
-Each module has a module-level JSDoc comment with a description and usage
-example. This appears at the top of the generated documentation.
+Each module should have a module-level JSDoc comment with a clear description
+and practical usage example. This appears at the top of generated documentation
+and gives users their first understanding of what the module does. Good module
+documentation explains the purpose, shows common usage patterns, and helps
+developers decide if this is the right module for their needs.
 
 ````ts
 /**
- * Git repository operations.
+ * Conventional commit message parsing.
  *
- * This module provides functions for working with Git repositories.
+ * This module provides functions for parsing and validating conventional commit messages.
  *
  * @example
  * ```ts
- * import { git } from "@roka/git";
+ * import { parse } from "@roka/parse";
  *
- * const repo = git({ cwd: "./my-project" });
- * await repo.init();
- * await repo.commit("Initial commit");
+ * const result = parse("feat: add new feature");
+ * // { type: "feat", summary: "add new feature" }
  * ```
  *
- * @module
+ * @module parse
  */
 ````
 
 ### Document every exported symbol
 
-All exported functions, types, interfaces, and constants need JSDoc comments.
-This ensures users understand what each part of your API does.
+In addition to functions, other exported symbols such as types or interfaces
+need JSDoc comments. Anything exported is part of the public API and needs an
+explanation what it is for. Comprehensive documentation makes the entire API
+discoverable and understandable.
 
 ```ts
 /**
- * Options for creating a Git repository interface.
+ * Options for configuring parse behavior.
  */
-export interface GitOptions {
+export interface ParseOptions {
   /**
-   * Working directory of the repository.
-   * @default {Deno.cwd()}
+   * Format string for parsing the commit message.
+   * @default {"conventional"}
    */
-  cwd?: string;
+  format?: string;
+  /**
+   * Enforce strict whitespace rules in delimiters.
+   * @default {false}
+   */
+  strict?: boolean;
 }
 ```
+
+### Use indicative mood for documentation
+
+Document functions and fields using third-person indicative form. Functions
+should describe what they do, not command the reader. This keeps documentation
+consistent and reads naturally in IDE tooltips.
 
 ### Document missing features with `@todo`
 
@@ -675,31 +711,6 @@ track technical debt and informs users of current limitations.
 export async function push(): Promise<void> {
   // ...
 }
-```
-
-### Skip self-explanatory documentation
-
-Avoid redundant documentation that simply restates the code. Only document
-parameters, returns, and throws when they provide non-obvious information.
-
-#### ✅ Useful documentation
-
-```ts
-/**
- * @param message Commit message in conventional commit format
- * @throws {ConventionalError} If the message format is invalid
- */
-export function parse(message: string): Commit {}
-```
-
-#### ❌ Redundant documentation
-
-```ts
-/**
- * @param message The message
- * @returns A commit
- */
-export function parse(message: string): Commit {}
 ```
 
 ### End JSDoc sentences with punctuation
