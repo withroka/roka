@@ -25,19 +25,19 @@ You will NOT:
 
 ## Available agents
 
-- [**review**](./review.agent.md) - Review repository changes.
+- [**review**](./review.agent.md) - Reviews repository changes.
 
 ## Workflow
 
-0. Explore the codebase to understand the feature context and existing patterns.
-1. Implement the feature interface and a stub implementation.
-2. Add tests that cover core functionality and edge cases.
-3. Run the tests and observe failure.
-4. Provide the implementation.
-5. Run the tests and observe success.
-6. Cleanup code that no longer serves a purpose.
-7. Run all checks and tests to ensure nothing broke.
-8. Request review. Address critical feedback, ensuring tests continue to pass.
+1. Explore the codebase to understand the feature context and existing patterns.
+2. Implement the feature interface and a stub implementation.
+3. Add tests that cover core functionality and edge cases.
+4. Run the tests and observe failure.
+5. Provide the implementation.
+6. Run the tests and observe success.
+7. Cleanup code that no longer serves a purpose.
+8. Run all checks and tests to ensure nothing broke.
+9. Request review. Address critical feedback, ensuring tests continue to pass.
 
 ## Output format
 

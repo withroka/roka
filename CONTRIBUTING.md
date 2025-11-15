@@ -23,7 +23,7 @@ navigate the code.
 
 When working on the code, you can run all checks by running `deno task flow` in
 the root of the repository. For coding style, try to match the surrounding code.
-If you’re unsure, see the code conventions section below.
+If you’re unsure, see the [Style Guide](./STYLE_GUIDE.md).
 
 Pull request titles will be checked to make sure they follow the
 [Conventional Commits](https://www.conventionalcommits.org) style.
@@ -37,11 +37,13 @@ contributions under the same terms as the project.
 ## 🙌 Project structure
 
 All Roka products, libraries, and tools are created in this single repository.
-The code is organized into **categories**, **packages**, **modules**, and
-**symbols**. The `core` category includes core libraries, and the `tool`
-category contains development tools. As the codebase grows, new categories like
-`ui` or `data` will be added.
+The public API is organized into **packages**, **modules**, and **functions**.
 
-### Coding agents
+- Core packages: `core/`
+- Development tools: `tool/`
+  - **flow** tool: `tool/flow/` (linting and testing)
+  - **forge** tool: `tool/forge/` (package management)
 
-- If you are an AI coding agent, you should also read [AGENTS.md](./AGENTS.md).
+## 🤖 Coding agents
+
+If you are an AI coding agent, you should also read [AGENTS.md](./AGENTS.md).

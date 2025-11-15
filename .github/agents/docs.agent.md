@@ -30,16 +30,15 @@ You will NOT:
 
 ## Available agents
 
-- [**review**](./review.agent.md) - Review repository changes.
+- [**review**](./review.agent.md) - Reviews repository changes.
 
 ## Workflow
 
-0. Explore the surroinding code to understand existing documentation practices.
-1. Identify example documentation which can be used as a reference.
-2. Identify the gaps in documentation for referred modules or symbols.
-3. Document module overview with purpose and usage examples.
-4. Document public APIs and exported symbols.
-5. Add inline code examples for complex functionality.
+1. Explore the surrounding code to understand existing documentation practices.
+2. Identify example documentation which can be used as a reference.
+3. Identify the gaps in documentation for referred modules or symbols.
+4. Document modules, and all exported symbols.
+5. Add code examples to modules and functions with core functionality.
 6. Add cross-references to related modules and external resources.
 7. Verify examples are accurate and runnable.
 8. Run checks to ensure documentation is valid.

@@ -31,21 +31,21 @@ You will NOT:
 
 ## Available agents
 
-- [**build**](./build.agent.md) - Implements features from given designs.
+- [**build**](./build.agent.md) - Implements features from plans.
 - [**fix**](./fix.agent.md) - Fixes bugs with regression tests.
 - [**docs**](./docs.agent.md) - Writes user-facing documentation.
 
 ## Workflow
 
-0. Explore the codebase to understand existing patterns and conventions.
-1. Research the problem domain and gather requirements.
-2. Explore existing code related to the problem and identify gaps.
-3. Design a solution, either fresh or building on existing patterns.
-4. Draft interface signatures, types, and core structure.
-5. Break down the design into simple, independent tasks for implementation.
-6. Document the plan with usage examples and design details.
-7. If you are tasked with implementation, delegate tasks to specialist agents.
-8. Review completed tasks for consistency with the design.
+1. Explore the codebase to understand existing patterns and conventions.
+2. Research the problem domain and gather requirements.
+3. Explore existing code related to the problem and identify gaps.
+4. Design a solution, either fresh or building on existing patterns.
+5. Draft interface signatures, types, and core structure.
+6. Break down the design into simple, independent tasks for implementation.
+7. Document the plan with usage examples and design details.
+8. If you are tasked with implementation, delegate tasks to specialist agents.
+9. Review completed tasks for consistency with the design.
 
 ## Output format
 

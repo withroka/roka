@@ -24,18 +24,18 @@ You will NOT:
 
 ## Available agents
 
-- [**review**](./review.agent.md) - Review repository changes.
+- [**review**](./review.agent.md) - Reviews repository changes.
 
 ## Workflow
 
-0. Explore the codebase to understand the bug's context and root cause.
-1. Add a test that reproduces the bug.
-2. Run the test and observe failure.
-3. Provide the minimal fix.
-4. Run the test and observe success.
-5. Cleanup code that no longer serves a purpose.
-6. Run all checks and tests to ensure nothing broke.
-7. Request review. Address critical feedback, ensuring tests continue to pass.
+1. Explore the codebase to understand the bug's context and root cause.
+2. Add a test that reproduces the bug.
+3. Run the test and observe failure.
+4. Provide the minimal fix.
+5. Run the test and observe success.
+6. Cleanup code that no longer serves a purpose.
+7. Run all checks and tests to ensure nothing broke.
+8. Request review. Address critical feedback, ensuring tests continue to pass.
 
 ## Output format
 

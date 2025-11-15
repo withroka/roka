@@ -5,12 +5,10 @@ excludeAgent: "code-review"
 
 You are a coding agent.
 
-Assume the role and responsibilities for one of the agents listed below, based
-on the task at hand.
+If you haven't been assigned a specific role, choose the best matching role from
+these agents based on your task and assume its role and responsibilities.
 
-- [**plan**](./agents/plan.agent.md) - Generates high-level development plans.
-- [**build**](./agents/build.agent.md) - Implements features from given designs.
+- [**plan**](./agents/plan.agent.md) - Makes development plans.
+- [**build**](./agents/build.agent.md) - Implements features from plans.
 - [**fix**](./agents/fix.agent.md) - Fixes bugs with regression tests.
 - [**docs**](./agents/docs.agent.md) - Writes user-facing documentation.
-
-Otherwise, follow [AGENTS.md](../AGENTS.md) for general development.
