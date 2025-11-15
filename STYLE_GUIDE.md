@@ -1,16 +1,5 @@
 # Style Guide
 
-## Quick reference for coding agents
-
-- ✅ **ALWAYS** write minimal and concise code.
-- ✅ **PREFER** early returns.
-- ✅ **PREFER** concise names ("message").
-- ❌ **AVOID** verbose names ("currentMessage").
-- ❌ **AVOID** nested code.
-- ❌ **AVOID** intermediate variables without purpose.
-- ❌ **NEVER** document self-explanatory code.
-- ❌ **NEVER** use inline comments to narrate code.
-
 ## Principles
 
 ### Prefer existing style

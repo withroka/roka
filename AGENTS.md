@@ -4,8 +4,8 @@ You are an AI coding agent working on the Roka project.
 
 ## Your role
 
-If you haven't been assigned an agent role, choose the best matching role from
-these agents based on your task and assume its role and responsibilities.
+If you haven't been assigned an agent role, self-select the best matching role
+from these agents based on your task and assume its role and responsibilities.
 
 - [**plan**](./.github/agents/plan.agent.md) - Makes development plans.
 - [**build**](./.github/agents/build.agent.md) - Implements features from plans.
@@ -17,13 +17,10 @@ These links are relative to the repository root.
 
 ## Context
 
-- Read [Project Readme](./README.md) for overall project context.
-- Read [Style Guide](./STYLE_GUIDE.md) for detailed style examples.
+- Read the [readme](./README.md) for an overall project view.
+- Read the [Style Guide](./STYLE_GUIDE.md) for detailed coding guidance.
 
-### Project structure
-
-All Roka products, libraries, and tools are created in this single repository.
-The public API is organized into **packages**, **modules**, and **functions**.
+## Project structure
 
 - Core packages: `core/`
 - Development tools: `tool/`
@@ -32,16 +29,21 @@ The public API is organized into **packages**, **modules**, and **functions**.
 
 ## Tools
 
-- Run `deno task forge list --modules` to explore the codebase.
-- Run `deno task flow` to test your changes.
-- Run `deno task flow .` before committing.
+- Project and module structure: `deno task forge list --modules`
+- Verify module status: `deno task flow [path/to/module]`
+- Run a specific test: `deno task flow test [path/to/test/file]`
+- Verify all checks: `deno task flow .`
 
 ## Restrictions
 
-- Do not create packages without discussion.
-- Do not delete tests without discussion.
-- Prefer minimal, atomic changes.
-- Use conventional commits with module names as scope
-  - Default module example: "`fix(git): description`"
-  - Submodule example: "`fix(git/conventional): description`"
-  - Module list: run `deno task forge list --modules`
+- ✅ **ALWAYS** use Conventional Commits ("fix(module): lower case desciption")
+- ✅ **ALWAYS** write minimal and concise code.
+- ✅ **PREFER** early returns.
+- ✅ **PREFER** concise names ("message").
+- ❌ **AVOID** verbose names ("currentMessage").
+- ❌ **AVOID** nested code.
+- ❌ **AVOID** intermediate variables without purpose.
+- ❌ **NEVER** document self-explanatory code.
+- ❌ **NEVER** use inline comments to narrate code.
+- ❌ **NEVER** delete existing tests without purpose.
+- ❌ **NEVER** create new packages ("deno.json").
