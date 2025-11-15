@@ -20,7 +20,7 @@ and functions.
 
 ```ts
 export function parse(message: string) {
-  const [type, summary] = message.split(": ");
+  const [type, summary] = message.split(": ", 2);
   return { type, summary };
 }
 ```
@@ -31,7 +31,7 @@ export function parse(message: string) {
 export function parser() {
   return {
     parse(message: string) {
-      const [type, summary] = message.split(": ");
+      const [type, summary] = message.split(": ", 2);
       return { type, summary };
     },
   };
@@ -41,18 +41,16 @@ export function parser() {
 ### Write simple code
 
 Simple code is easy to understand and maintain. Prefer simplicity over
-performance. You can always optimize later if needed, or provide a native
-implementation. However, be pragmatic. Don't write O(N²) code when O(N) is just
-one more line.
+performance unless profiling shows a real bottleneck. Don't optimize
+speculatively before measuring. Yet, be pragmatic. Don't write O(N²) code when
+O(N) is just one more line.
 
 #### ✅️ **Good**: Simple and clear code
 
 ```ts
 export function parse(message: string) {
-  const lines = message.split("\n");
-  const subject = lines[0];
-  const body = lines.slice(1).join("\n").trim();
-  return { subject, body };
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
 }
 ```
 
@@ -60,20 +58,13 @@ export function parse(message: string) {
 
 ```ts
 export function parse(message: string) {
-  const buffer = new Uint8Array(message.length);
-  let subjectEnd = 0;
-  for (let i = 0; i < message.length; i++) {
-    if (message.charCodeAt(i) === 10) {
-      subjectEnd = i;
-      break;
-    }
-    buffer[i] = message.charCodeAt(i);
+  const index = message.indexOf(": ");
+  if (index === -1) {
+    return { type: message, summary: undefined };
   }
-  const subject = new TextDecoder().decode(buffer.slice(0, subjectEnd));
-  const body = new TextDecoder().decode(
-    buffer.slice(subjectEnd + 1, message.length),
-  ).trim();
-  return { subject, body };
+  const type = message.substring(0, index);
+  const summary = message.substring(index + 2);
+  return { type, summary };
 }
 ```
 
@@ -180,14 +171,21 @@ the common case simple while giving you flexibility.
 
 ```ts
 export interface ParseOptions {
-  format?: string;
+  delimiter?: string;
   strict?: boolean;
-  encoding?: string;
-  maxLength?: number;
+  trim?: boolean;
 }
 
-export function parse(input: string, options?: ParseOptions) {
-  // ...
+export function parse(message: string, options?: ParseOptions) {
+  const { delimiter = ": ", strict = false, trim = false } = options ?? {};
+  const [type, summary] = message.split(delimiter, 2);
+  if (strict && (!type || !summary)) {
+    throw new Error("Invalid commit message format");
+  }
+  return {
+    type: trim ? type?.trim() : type,
+    summary: trim ? summary?.trim() : summary,
+  };
 }
 ```
 
@@ -195,13 +193,19 @@ export function parse(input: string, options?: ParseOptions) {
 
 ```ts
 export function parse(
-  input: string,
-  format: string,
+  message: string,
+  delimiter: string,
   strict: boolean,
-  encoding?: string,
-  maxLength?: number,
+  trim: boolean,
 ) {
-  // ...
+  const [type, summary] = message.split(delimiter, 2);
+  if (strict && (!type || !summary)) {
+    throw new Error("Invalid commit message format");
+  }
+  return {
+    type: trim ? type?.trim() : type,
+    summary: trim ? summary?.trim() : summary,
+  };
 }
 ```
 
@@ -218,11 +222,14 @@ parameter, unless they can be distinguished with a well-known symbol like
 ```ts
 export function parse(
   lines: string | string[],
-  options?: { strict?: boolean },
+  options?: { delimiter?: string },
 ) {
-  const delimiter = options?.strict ? ": " : ":";
-  if (typeof lines === "string") lines = [lines];
-  return lines.map((x) => x.split(delimiter));
+  const { delimiter = ": " } = options ?? {};
+  lines = typeof lines === "string" ? [lines] : lines;
+  return lines.map((message) => {
+    const [type, summary] = message.split(delimiter, 2);
+    return { type, summary };
+  });
 }
 ```
 
@@ -231,15 +238,17 @@ export function parse(
 ```ts
 export function parse(
   input: { lines?: string[] },
-  config: { strict?: boolean },
+  config: { delimiter?: string },
 ) {
-  const delimiter = config.strict ? ": " : ":";
-  return input.lines?.map((x) => x.split(delimiter));
+  return input.lines?.map((x) => {
+    const [type, summary] = x.split(config.delimiter ?? ": ", 2);
+    return { type, summary };
+  }) ?? [];
 }
-const input = JSON.parse('{"lines":["key1:value1","key2:value2"]}');
-const config = JSON.parse(await Deno.readTextFile("config.json"));
-parse(input, config); // fine
-parse(config, input); // still fine
+const input = JSON.parse('{"lines":["feat: add new feature"]}');
+const config = JSON.parse('{"delimiter":": "}');
+parse(input, config); // passes type checks
+parse(config, input); // also passes type checks
 ```
 
 ### Prefer function overloads
@@ -252,22 +261,40 @@ improve type-safety for callers.
 #### ✅️ **Good**: Function overloads
 
 ```ts
-export function parse(input: string): string;
-export function parse(input: string[]): string[];
-export function parse(input: string | string[]): string | string[] {
-  const split = (str: string) => str.split(":")[0] ?? "default";
-  if (typeof input === "string") return split(input);
-  return input.map(split);
+export interface ParsedCommit {
+  type: string;
+  summary: string;
+}
+
+export function parse(message: string): ParsedCommit;
+export function parse(messages: string[]): ParsedCommit[];
+
+// the implementation signature is always private
+export function parse(input: string | string[]) {
+  function inner(message: string) {
+    const [type, summary] = message.split(": ", 2);
+    if (!type || !summary) throw new Error("Invalid commit message format");
+    return { type, summary };
+  }
+  return (typeof input === "string") ? inner(input) : input.map(inner);
 }
 ```
 
 #### ❌ **Bad**: Union return types
 
 ```ts
-export function parse(input: string | string[]): string | string[] {
-  const split = (str: string) => str.split(":")[0] ?? "default";
-  if (typeof input === "string") return split(input);
-  return input.map(split);
+export interface ParsedCommit {
+  type: string;
+  summary: string;
+}
+
+export function parse(input: string | string[]): ParsedCommit | ParsedCommit[] {
+  function inner(message: string) {
+    const [type, summary] = message.split(": ", 2);
+    if (!type || !summary) throw new Error("Invalid commit message format");
+    return { type, summary };
+  }
+  return (typeof input === "string") ? inner(input) : input.map(inner);
 }
 ```
 
@@ -280,39 +307,39 @@ nesting. Skip unnecessary comments and intermediate variables.
 #### ✅️ **Good**: Flat and concise code
 
 ```ts
-export function parse(input?: string): string | undefined {
-  if (!input) return undefined;
-  const [type] = input.split(":");
-  return type?.trim();
+export function parse(message?: string) {
+  if (!message) return undefined;
+  const [type, summary] = message.split(": ", 2);
+  if (!summary) throw new Error("Missing summary");
+  return { type, summary };
 }
 ```
 
 #### ❌ **Bad**: Nested and verbose code
 
 ```ts
-export function parse(input?: string): string | undefined {
+export function parse(message?: string) {
   // check if we have input
-  if (input !== undefined) {
+  if (message !== undefined) {
     // check if input has content
-    if (input.length > 0) {
+    if (message.length > 0) {
       // split on delimiter
-      const parts = input.split(":");
+      const parts = message.split(": ", 2);
       const type = parts[0];
-
-      // check if type exists
-      if (type) {
-        // trim and return
-        return type.trim();
+      const summary = parts[1];
+      // check if we have a summary
+      if (summary !== undefined) {
+        // return the parsed result
+        return { type, summary };
       } else {
-        // no type found
-        return undefined;
+        // missing summary
+        throw new Error("Missing summary");
       }
     } else {
       // empty input
       return undefined;
     }
   }
-
   // there was no input
   return undefined;
 }
@@ -327,23 +354,18 @@ abstraction so single words make sense.
 #### ✅️ **Good**: Concise naming
 
 ```ts
-export function parse(message?: string) {
-  const first = message?.split("\n")[0];
-  return first?.trim()?.replace(/^(fix|feat|chore):\s*/, "");
+export function parse(message: string, delimiter: string = ": ") {
+  const [type, summary] = message.split(delimiter, 2);
+  return { type, summary };
 }
 ```
 
 #### ❌ **Bad**: Long variable names
 
 ```ts
-export function parse(commitMessage?: string) {
-  const firstLineOfCommitMessage = commitMessage?.split("\n")[0];
-  const trimmedFirstLineOfCommitMessage = firstLineOfCommitMessage?.trim();
-  const commitMessageWithoutPrefix = trimmedFirstLineOfCommitMessage?.replace(
-    /^(fix|feat|chore):\s*/,
-    "",
-  );
-  return commitMessageWithoutPrefix;
+export function parse(commitMessage: string, splitDelimiter: string = ": ") {
+  const commitTypeAndSummary = commitMessage.split(splitDelimiter, 2);
+  return { type: commitTypeAndSummary[0], summary: commitTypeAndSummary[1] };
 }
 ```
 
@@ -365,10 +387,9 @@ interfaces. Use the `type` keyword only for type manipulation.
 #### 💡 **Example**: Defining types
 
 ```ts
-export interface Parsed {
-  key: string;
-  value: string;
-  line: number;
+export interface ParsedCommit {
+  type: string;
+  summary: string;
 }
 
 export class ParseError extends Error {
@@ -378,8 +399,8 @@ export class ParseError extends Error {
   }
 }
 
-export type Parseable = string | string[] | URL;
-export type ParseResult = Parsed | ParseError;
+export type Parseable = string | string[];
+export type ParseResult = ParsedCommit | ParseError;
 ```
 
 ### Prefer optional fields over `undefined`
@@ -395,8 +416,9 @@ idiomatic and easier to use.
 
 ```ts
 export interface ParseOptions {
-  format?: string;
+  delimiter?: string;
   strict?: boolean;
+  trim?: boolean;
 }
 ```
 
@@ -404,8 +426,9 @@ export interface ParseOptions {
 
 ```ts
 export interface ParseOptions {
-  format: string | undefined;
+  delimiter: string | undefined;
   strict: boolean | undefined;
+  trim: boolean | undefined;
 }
 ```
 
@@ -430,12 +453,13 @@ checker and simplify lines following the assertion.
 ```ts
 import { assertExists } from "@std/assert";
 
-export function parse(input: string, delimiter = ":") {
-  if (!input) return undefined;
-  const parts = input.split(delimiter);
-  const key = parts[0];
-  assertExists(key); // inform the type checker
-  return key;
+export function parse(message: string, delimiter = ":") {
+  if (!message) return undefined;
+  const parts = message.split(delimiter, 2);
+  const type = parts[0];
+  assertExists(type);
+  const summary = parts[1];
+  return { type, summary };
 }
 ```
 
@@ -449,10 +473,16 @@ throwing an error is acceptable to keep the types simpler.
 #### 💡 **Example**: Optional return values
 
 ```ts
-export function parse(input?: string): string | undefined {
-  if (!input) return undefined;
-  const [type] = input.split(":");
-  return type?.trim();
+export interface ParsedCommit {
+  type: string;
+  summary: string;
+}
+
+export function parse(message?: string): ParsedCommit | undefined {
+  if (!message) return undefined;
+  const [type, summary] = message.split(": ", 2);
+  if (!type || !summary) throw new Error("Invalid commit message format");
+  return { type, summary };
 }
 ```
 
@@ -472,11 +502,10 @@ export class ParseError extends Error {
   }
 }
 
-export function parse(input: string): Parsed {
-  if (!input.includes(":")) {
-    throw new ParseError("Input must contain delimiter");
-  }
-  // ...
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  if (!type || !summary) throw new ParseError("Invalid commit message format");
+  return { type, summary };
 }
 ```
 
@@ -489,10 +518,18 @@ debugging. When you catch and re-throw errors, include the original error as the
 #### 💡 **Example**: Using error causes
 
 ```ts
+export class ParseError extends Error {
+  constructor(message: string, cause?: unknown) {
+    super(message, { cause });
+    this.name = "ParseError";
+  }
+}
+
 export async function parse(path: string) {
   try {
-    const content = await Deno.readTextFile(path);
-    return parseContent(content);
+    const message = await Deno.readTextFile(path);
+    const [type, summary] = message.split(": ", 2);
+    return { type, summary };
   } catch (error) {
     throw new ParseError("Failed to read file", { cause: error });
   }
@@ -509,19 +546,30 @@ include sensitive data like tokens or passwords.
 #### ✅️ **Good**: Clear messages
 
 ```ts
-throw new Error("Unknown commit type");
-throw new Error(`Failed to parse file at ${path}`);
-throw new Error([
-  "Input must contain delimiter",
-  "Accepted delimiters: ':', ' - '",
-].join("\n\n"));
+export function parse(message: string) {
+  if (!message) throw new Error("Input is empty");
+  const [type, summary] = message.split(": ", 2);
+  if (!type || !summary) {
+    throw new Error([
+      `Invalid commit message format: ${message}`,
+      "  Expected delimiter: ':'",
+    ].join("\n\n"));
+  }
+  return { type, summary };
+}
 ```
 
 #### ❌ **Bad**: Vague or redundant messages
 
 ```ts
-throw new Error("Error"); // too vague
-throw new Error("ParseError: unknown commit type"); // redundant prefix
+export function parse(message: string) {
+  if (!message) throw new Error("Error"); // too vague
+  const [type, summary] = message.split(": ", 2);
+  if (!type || !summary) {
+    throw new Error("Error: invalid commit message format"); // redundant prefix
+  }
+  return { type, summary };
+}
 ```
 
 ## Testing
@@ -533,12 +581,21 @@ and error conditions. Consider tests as a contract that the feature will
 continue to work as expected while the codebase continues to change. Complete
 coverage isn't necessary, but core functionality should be well-tested.
 
-#### 💡 **Example**: Testing a new feature
+#### 💡 **Example**: Testing a feature
 
 ```ts
+import { assertEquals } from "@std/assert";
+
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
+
 Deno.test("parse() extracts type and summary from message", () => {
-  const result = parse("feat: add new feature");
-  assertEquals(result, { type: "feat", summary: "add new feature" });
+  assertEquals(parse("feat: add new feature"), {
+    type: "feat",
+    summary: "add new feature",
+  });
 });
 ```
 
@@ -552,9 +609,16 @@ encounter in the real-world.
 #### 💡 **Example**: Testing a regression
 
 ```ts
-Deno.test("parse() handles empty commit messages", () => {
-  const result = parse("");
-  assertEquals(result, undefined);
+import { assertEquals } from "@std/assert";
+
+export function parse(message: string) {
+  if (!message) return undefined;
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
+
+Deno.test("parse() handles empty commit message", () => {
+  assertEquals(parse(""), undefined);
 });
 ```
 
@@ -568,10 +632,15 @@ test suite is only as reliable as the testing utilities it depends on.
 #### 💡 **Example**: Testing a test utility
 
 ```ts
-Deno.test("assertValidParse() validates parse results correctly", () => {
-  const valid = { type: "feat", summary: "add feature" };
-  assertValidParse(valid);
-  assertThrows(() => assertValidParse({ type: "invalid" }));
+import { assertEquals } from "@std/assert";
+
+export function testMessage(type: string) {
+  return `${type}: commit message`;
+}
+
+Deno.test("testMessage() returns commit message", () => {
+  assertEquals(testMessage("feat"), "feat: commit message");
+  assertEquals(testMessage("fix"), "fix: commit message");
 });
 ```
 
@@ -587,17 +656,18 @@ the test code.
 #### ✅️ **Good**: Explicit test names
 
 ```ts
-Deno.test("parse() extracts commit type", () => {});
-Deno.test("parse() rejects empty input", () => {});
-Deno.test("parse({ strict }) rejects missing whitespace in delimiter", () => {});
+Deno.test("parse() extracts type and summary from message", () => {});
+Deno.test("parse() handles empty commit message", () => {});
+Deno.test("parse() rejects invalid commit message format", () => {});
+Deno.test("parse({ delimiter }) splits by custom delimiter", () => {});
 ```
 
 #### ❌ **Bad**: Vague test names
 
 ```ts
 Deno.test("parse test", () => {});
-Deno.test("it works", () => {});
-Deno.test("empty input", () => {});
+Deno.test("parse error", () => {});
+Deno.test("parse_delimiter", () => {});
 ```
 
 ### Organize tests logically
@@ -610,13 +680,13 @@ conditions.
 #### 💡 **Example**: Ordering tests
 
 ```ts
-Deno.test("parse() extracts type and summary", () => {});
+Deno.test("parse() extracts type and summary from message", () => {});
 Deno.test("parse() handles single-word messages", () => {});
-Deno.test("parse() rejects empty input", () => {});
-Deno.test("parse({ format }) uses custom format", () => {});
-Deno.test("parse({ format }) rejects invalid format", () => {});
-Deno.test("parse({ strict }) enforces whitespace", () => {});
-Deno.test("parse({ strict }) rejects missing space", () => {});
+Deno.test("parse() rejects empty commit message", () => {});
+Deno.test("parse({ delimiter }) splits by custom delimiter", () => {});
+Deno.test("parse({ delimiter }) can split by regular expression", () => {});
+Deno.test("parse({ strict }) rejects invalid commit message format", () => {});
+Deno.test("parse({ trim }) trims type and summary", () => {});
 ```
 
 ## Documentation
@@ -631,16 +701,16 @@ right module for their needs. Examples should be valid code snippets.
 
 ````ts
 /**
- * Conventional commit message parsing.
- *
- * This module provides functions for parsing and validating conventional commit messages.
+ * This module provides the {@linkcode parse} function for parsing and
+ * validating conventional commit messages.
  *
  * @example
- * ```ts
+ * ```
  * import { parse } from "@roka/parse";
+ * import { assertEquals } from "@std/assert";
  *
  * const result = parse("feat: add new feature");
- * // { type: "feat", summary: "add new feature" }
+ * assertEquals(result, { type: "feat", summary: "add new feature" });
  * ```
  *
  * @module parse
@@ -660,13 +730,17 @@ Examples should be valid code snippets.
  * Parses a conventional commit message into its components.
  *
  * @example
- * ```ts
- * const result = parse("feat: add new feature");
- * // "feat"
  * ```
- * @param message Commit message in conventional commit format
+ * import { parse } from "@roka/parse";
+ * import { assertEquals } from "@std/assert";
+ *
+ * const result = parse("feat: add new feature");
+ * assertEquals(result, { type: "feat", summary: "add new feature" });
+ * ```
  */
-export function parse(message: string): string {}
+export function parse(message: string) {
+  // ...
+}
 ````
 
 ### Avoid redundant documentation
@@ -682,11 +756,14 @@ and descriptions.
 /**
  * Parses a conventional commit message into its components.
  *
- * @param message Commit summary string in "type: summary" form
- * @param options Configuration for parse behavior
- * @throws {ParseError} If the message format is invalid
+ * @param delimiter Delimiter string separating type and summary.
+ * @throws {Error} If the message format is invalid.
  */
-export function parse(message: string, options?: ParseOptions): Parsed {}
+export function parse(message: string, delimiter: string = ": ") {
+  const [type, summary] = message.split(delimiter, 2);
+  if (!type || !summary) throw new Error("Invalid commit message format");
+  return { type, summary };
+}
 ```
 
 #### ❌ **Bad**: Redundant documentation
@@ -695,11 +772,15 @@ export function parse(message: string, options?: ParseOptions): Parsed {}
 /**
  * Parses a message.
  *
- * @param {string} message - The message
- * @param options The options to the function
- * @returns The parsed string
+ * @param {string} message - The message.
+ * @param {string} delimiter - The delimiter.
+ * @returns The parsed string.
  */
-export function parse(message: string, options?: ParseOptions): Parsed {}
+export function parse(message: string, delimiter: string = ": ") {
+  const [type, summary] = message.split(delimiter, 2);
+  if (!type || !summary) throw new Error("Invalid commit message format");
+  return { type, summary };
+}
 ```
 
 ### Document all exported symbols
@@ -740,42 +821,30 @@ being with a verb.
 #### ✅️ **Good**: Indicative mood
 
 ```ts
-/**
- * Parses a conventional commit message into its components.
- *
- * @param message Commit message in conventional commit format
- */
-export function parse(message: string): Parsed {}
+/** Parses a conventional commit message into its components. */
+export function parse() {}
 
 /**
- * Options for configuring parse behavior.
+ * Options for the {@linkcode parse} function.
  */
 export interface ParseOptions {
-  /**
-   * Enables strict whitespace validation in delimiters.
-   */
-  strict?: boolean;
+  /** Splits the message using the given delimiter. */
+  delimiter?: string;
 }
 ```
 
 #### ❌ **Bad**: Imperative mood
 
 ```ts
-/**
- * Parse a conventional commit message into its components.
- *
- * @param message Commit message to parse
- */
-export function parse(message: string): Parsed {}
+/** Parse a conventional commit message into its components. */
+export function parse() {}
 
 /**
- * Options for configuring parse behavior.
+ * Options for the {@linkcode parse} function.
  */
 export interface ParseOptions {
-  /**
-   * Enable strict whitespace validation in delimiters.
-   */
-  strict?: boolean;
+  /** Split the message using the given delimiter. */
+  delimiter?: string;
 }
 ```
 
@@ -796,7 +865,8 @@ current state of the code, and not as a replacement for project management. Keep
  * @todo Validate commit type against allowed types.
  */
 export function parse(message: string) {
-  // ...
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
 }
 ```
 
@@ -808,12 +878,18 @@ All JSDoc sentences should end with proper punctuation.
 
 ```ts
 /** Parses a conventional commit message. */
-export function parse(message: string) {}
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
 ```
 
 #### ❌ **Bad**: Sentence without punctuation
 
 ```ts
 /** Parses a conventional commit message */
-export function parse(message: string) {}
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
 ```
