@@ -125,7 +125,7 @@ modules.
 
 Symbols should have a canonical import source. This keeps the public interface
 predictable and simple. Export symbols from the most specialized module. This is
-usually where they're defined. For example the `conventional()` function can
+usually where they're defined. For example, the `conventional()` function can
 only be imported from `@roka/git/conventional`, not from `@roka/git`.
 
 ### Prefer singular names
@@ -150,7 +150,7 @@ Submodules follow the same pattern. For example, the code for
 ### Export functionality with functions
 
 The core interface of a module is the function or functions it exports.
-Everything else, such as types, errors or constants, is complementary. This
+Everything else, such as types, errors, or constants, is complementary. This
 keeps the design simple and function-focused. It also helps findability by
 making the module names predictable.
 
@@ -164,7 +164,7 @@ module provides fakes by exporting multiple functions like `fakeConsole()` and
 ### Limit required parameters
 
 Functions with many positional parameters are hard to use. Stick to two required
-parameters, and use an optional `options` object for everything else. This keeps
+parameters and use an optional `options` object for everything else. This keeps
 the common case simple while giving you flexibility.
 
 #### ✅️ **Good**: A few parameters
@@ -255,8 +255,8 @@ parse(config, input); // also passes type checks
 
 A function can accept different input types that produce different types. Use
 function overloads to achieve this instead of returning union types in the
-public interface. This makes the function easier to use and understand, and
-improve type-safety for callers.
+public interface. This makes the function easier to use and understand and
+improves type-safety for callers.
 
 #### ✅️ **Good**: Function overloads
 
@@ -372,7 +372,7 @@ export function parse(commitMessage: string, splitDelimiter: string = ": ") {
 ### Avoid abbreviations
 
 Abbreviations can slow down reading for people unfamiliar with the codebase.
-Spell out when possible. That said, widely-recognized industry standard
+Spell out when possible. That said, widely recognized industry standard
 abbreviations like "cwd" (current working directory) or "id" (identifier) are
 fine. These also help keep names as single words.
 
@@ -407,7 +407,7 @@ export type ParseResult = ParsedCommit | ParseError;
 
 The optional field syntax with `?` is semantically different than explicit union
 with `undefined`. The former states that a value doesn't need to be set, while
-latter states that the value `undefined` is accepted. The
+the latter states that the value `undefined` is accepted. The
 `exactOptionalPropertyTypes` compiler setting prohibits mixing the two and helps
 catch subtle bugs early. Prefer the optional field syntax since it is more
 idiomatic and easier to use.
@@ -604,7 +604,7 @@ Deno.test("parse() extracts type and summary from message", () => {
 Bug fixes should include tests that verify the fix and prevent regressions. If a
 bug surfaces once, it will likely resurface if not monitored and enough time
 passes. Regression tests make the feature contract include all the edge cases we
-encounter in the real-world.
+encounter in the real world.
 
 #### 💡 **Example**: Testing a regression
 
@@ -672,9 +672,9 @@ Deno.test("parse_delimiter", () => {});
 
 ### Organize tests logically
 
-Group tests by their options usage, start with no options to a logical ordering
-of of options. If no logic arises, sort options alphabetically. Within each
-option group, test common functionality first, then edge cases, then error
+Group tests by their options usage, starting with no options to a logical
+ordering of options. If no logic arises, sort options alphabetically. Within
+each option group, test common functionality first, then edge cases, then error
 conditions.
 
 #### 💡 **Example**: Ordering tests
@@ -816,7 +816,7 @@ Function descriptions should begin with a verb phrase that describes what the
 function does. Write this description in the third person indicative mood: "[the
 function] does something". Don't write descriptions in an imperative sentence:
 "do something". The same applies to descriptions for parameters and fields that
-being with a verb.
+begin with a verb.
 
 #### ✅️ **Good**: Indicative mood
 
@@ -853,7 +853,7 @@ export interface ParseOptions {
 The `@todo` tags can document known limitations and missing features directly in
 the code. These are intended as an inline guidance for the next person on the
 current state of the code, and not as a replacement for project management. Keep
-`@todos`s brief, specific and actionable.
+`@todo`s brief, specific, and actionable.
 
 #### 💡 **Example**: Documenting limitations
 
