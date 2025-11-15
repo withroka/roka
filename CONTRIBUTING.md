@@ -46,4 +46,4 @@ The public API is organized into **packages**, **modules**, and **functions**.
 
 ## 🤖 Coding agents
 
-If you are an AI coding agent, you should also read [AGENTS.md](./AGENTS.md).
+If you are an AI coding agent, you should also read [Agent Guide](./AGENTS.md).
