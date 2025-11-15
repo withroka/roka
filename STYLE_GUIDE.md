@@ -1,20 +1,31 @@
 # Style Guide
 
+## Quick reference for coding agents
+
+- ✅ **ALWAYS** write minimal and concise code.
+- ✅ **PREFER** early returns.
+- ✅ **PREFER** concise names ("message").
+- ❌ **AVOID** verbose names ("currentMessage").
+- ❌ **AVOID** nested code.
+- ❌ **AVOID** intermediate variables without purpose.
+- ❌ **NEVER** document self-explanatory code.
+- ❌ **NEVER** use inline comments to narrate code.
+
 ## Principles
 
 ### Prefer existing style
 
 The codebase already has lint rules for strict requirements, and this guide
-helps stay consistent beyond those. If the existing style is different from this
-guide but still works well, please keep writing in that way. It can be a bit
-confusing for readers of the code when styles change within the same file.
+helps stay consistent beyond those. When this guide conflicts with existing
+code, please keep writing in the existing style. It can be confusing for readers
+when styles change within the same file.
 
 ### Design for usability
 
-Frameworks are most useful when they're straightforward. Optimize for the common
-case and make common tasks easy, even if it means repetition or extra work in
-the implementation. Users shouldn't have to think hard about how to use modules
-and functions.
+Frameworks are most useful when they're straightforward. Optimize for what 80%
+of users will do 80% of the time. Make common tasks easy, even if it means
+repetition or extra work in the implementation. Users shouldn't have to think
+hard about how to use modules and functions.
 
 #### ✅️ **Good**: Simple function signature
 
@@ -59,9 +70,7 @@ export function parse(message: string) {
 ```ts
 export function parse(message: string) {
   const index = message.indexOf(": ");
-  if (index === -1) {
-    return { type: message, summary: undefined };
-  }
+  if (index === -1) return { type: message, summary: undefined };
   const type = message.substring(0, index);
   const summary = message.substring(index + 2);
   return { type, summary };
@@ -70,11 +79,11 @@ export function parse(message: string) {
 
 ### Write inclusive code
 
-Neutral names should be preferred over those associated with gender or race. For
-instance, use "allow" and "deny" to express permissions instead of "whitelist"
-and "blacklist." Similarly, avoid loaded language like "master" when "main" is
-fine. Everyone has the right to participate and contribute to the project. See
-the
+Neutral names should be preferred over those associated with gender, race, or
+other personal characteristics. For instance, use "allow" and "deny" to express
+permissions instead of "whitelist" and "blacklist." Similarly, avoid loaded
+language like "master" when "main" is fine. Everyone has the right to
+participate and contribute to the project. See the
 [Chromium style guide](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md)
 for more guidance.
 
@@ -94,9 +103,9 @@ straightforward. Users can import directly from the package without needing to
 know about submodules. For example, the `@roka/git` package exports the `git()`
 function directly.
 
-Sometimes a package doesn't have a clear primary functionality. In those cases,
-you won't export anything directly, and users will import from submodules
-instead. The `@roka/testing` package works this way.
+When a package serves as a collection of related functionality where no single
+function dominates, nothing will be exported from the main module, and users
+will import from submodules instead. The `@roka/testing` package works this way.
 
 ### Use submodules for secondary features
 
@@ -133,7 +142,7 @@ only be imported from `@roka/git/conventional`, not from `@roka/git`.
 For module names, singular words, like "tool", should be preferred over plurals,
 like "tools". This makes the public surface more predictable. The only exception
 is when you're extending the standard library. For example, `@roka/streams` can
-supplement `@std/streams`.
+extend `@std/streams`.
 
 ### Name files after their module
 
@@ -214,8 +223,8 @@ export function parse(
 Parameters should only have types that can be distinguished from plain objects
 at runtime. This allows the API to evolve in a backwards-compatible way even
 when parameter positions change. Reserve plain objects only for the `options`
-parameter, unless they can be distinguished with a well-known symbol like
-`Symbol.iterator`.
+parameter, unless they can be discriminated with runtime checks, for example
+with `Symbol` properties.
 
 #### ✅️ **Good**: Distinguishable types
 
@@ -269,7 +278,7 @@ export interface ParsedCommit {
 export function parse(message: string): ParsedCommit;
 export function parse(messages: string[]): ParsedCommit[];
 
-// the implementation signature is always private
+// the implementation body is not visible to outside
 export function parse(input: string | string[]) {
   function inner(message: string) {
     const [type, summary] = message.split(": ", 2);
@@ -298,11 +307,11 @@ export function parse(input: string | string[]): ParsedCommit | ParsedCommit[] {
 }
 ```
 
-### Write flat and concise code
+### Write flat code
 
 Code that is long and deeply indented is hard to scan and understand. Check
 error conditions first and return early to keep the happy path clear and free of
-nesting. Skip unnecessary comments and intermediate variables.
+nesting. Skip unnecessary intermediate variables.
 
 #### ✅️ **Good**: Flat and concise code
 
@@ -315,33 +324,58 @@ export function parse(message?: string) {
 }
 ```
 
-#### ❌ **Bad**: Nested and verbose code
+#### ❌ **Bad**: Overly nested code
 
 ```ts
 export function parse(message?: string) {
-  // check if we have input
   if (message !== undefined) {
-    // check if input has content
     if (message.length > 0) {
-      // split on delimiter
       const parts = message.split(": ", 2);
       const type = parts[0];
       const summary = parts[1];
-      // check if we have a summary
       if (summary !== undefined) {
-        // return the parsed result
         return { type, summary };
       } else {
-        // missing summary
         throw new Error("Missing summary");
       }
     } else {
-      // empty input
       return undefined;
     }
   }
-  // there was no input
   return undefined;
+}
+```
+
+### Avoid inline comments
+
+Code should be self-explanatory with clear naming and structure. Inline comments
+indicate unclear code. If you need to explain what code does, refactor it
+instead. Inline comments should only be added for tricky logic that can't be
+expressed clearly otherwise.
+
+#### ✅️ **Good**: Clear code without comments
+
+```ts
+export function parse(message?: string) {
+  if (!message) return undefined;
+  const [type, summary] = message.split(": ", 2);
+  if (!summary) throw new Error("Missing summary");
+  return { type, summary };
+}
+```
+
+#### ❌ **Bad**: Comments explaining obvious code
+
+```ts
+export function parse(message?: string) {
+  // Check if message exists
+  if (!message) return undefined;
+  // Split the message into parts
+  const [type, summary] = message.split(": ", 2);
+  // Validate that we have a summary
+  if (!summary) throw new Error("Missing summary");
+  // Return the parsed result
+  return { type, summary };
 }
 ```
 
@@ -573,6 +607,59 @@ export function parse(message: string) {
 ```
 
 ## Testing
+
+### Write minimal and focused tests
+
+The primary aim of tests is to verify code, not to document it. Avoid
+explanatory tests describing behavior. Focus on asserting the contract, not
+demonstrating how the code functions.
+
+#### ✅️ **Good**: Focused testing
+
+```ts
+import { assertEquals } from "@std/assert";
+
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
+
+Deno.test("parse() returns commit type and summary", () => {
+  assertEquals(parse("feat: add new feature"), {
+    type: "feat",
+    summary: "add new feature",
+  });
+});
+```
+
+#### ❌ **Bad**: Explanatory testing
+
+```ts
+import { assertEquals } from "@std/assert";
+
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
+
+Deno.test("parse() returns commit type and summary", () => {
+  // Given a conventional commit message
+  const message = "feat: add new feature";
+  // When we parse the message
+  const result = parse(message);
+  // Then we expect the type to be "feat"
+  assertEquals(result.type, "feat");
+  // And we expect the summary to be "add new feature"
+  assertEquals(result.summary, "add new feature");
+  // Verify the result object is serializable
+  // This ensures no functions or complex types are returned
+  assertEquals(JSON.parse(JSON.stringify(result)), {
+    type: "feat",
+    summary: "add new feature",
+  });
+  // End of test
+});
+```
 
 ### Add tests for all new feature
 
