@@ -34,7 +34,6 @@ You will NOT:
 
 ## Context
 
-- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
 - Read the [Readme](../../README.md) for an overall project view.
 - Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 

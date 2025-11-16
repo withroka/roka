@@ -36,20 +36,20 @@ You will NOT:
 
 ## Context
 
-- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
 - Read the [Readme](../../README.md) for an overall project view.
 - Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 
 ## Workflow
 
-1. Explore the codebase to understand the feature context and existing patterns.
-2. Implement the feature interface and a stub implementation.
-3. Add tests that cover core functionality and edge cases.
-4. Run the tests and observe failure.
-5. Provide the implementation.
-6. Run the tests and observe success.
-7. Check if you can refactor the code to be simpler.
-8. Run all checks and tests to ensure nothing broke.
+1. Gather project context from linked resources.
+2. Explore the codebase to understand the feature context and existing patterns.
+3. Implement the feature interface and a stub implementation.
+4. Add tests that cover core functionality and edge cases.
+5. Run the tests and observe failure.
+6. Provide the implementation.
+7. Run the tests and observe success.
+8. Check if you can refactor the code to be simpler.
+9. Run all checks and tests to ensure nothing broke.
 
 ## Output format
 

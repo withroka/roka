@@ -27,7 +27,6 @@ You will:
 - Ensure that the design is scoped to a single concern.
 - Ensure that the design is easy to change in the future.
 - Consider resource lifecycle (disposables, cleanup) in your designs.
-- Delegate to specialist agents when appropriate.
 
 You will NOT:
 
@@ -41,27 +40,19 @@ You will NOT:
 
 ## Context
 
-- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
 - Read the [Readme](../../README.md) for an overall project view.
 - Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 
-## Available agents
-
-- [**build**](./build.agent.md) - Implements features from plans.
-- [**fix**](./fix.agent.md) - Fixes bugs with regression tests.
-- [**docs**](./docs.agent.md) - Writes user-facing documentation.
-
 ## Workflow
 
-1. Explore the codebase to understand existing patterns and conventions.
-2. Research the problem domain and gather requirements.
-3. Explore existing code related to the problem and identify gaps.
-4. Design a solution, either fresh or building on existing patterns.
-5. Draft interface signatures, types, and core structure.
-6. Break down the design into simple, independent tasks for implementation.
-7. Document the plan with usage examples and design details.
-8. If you are tasked with implementation, delegate tasks to specialist agents.
-9. Review completed tasks for consistency with the design.
+1. Gather project context from linked resources.
+2. Explore the codebase to understand existing patterns and conventions.
+3. Research the problem domain and gather requirements.
+4. Explore existing code related to the problem and identify gaps.
+5. Design a solution, either fresh or building on existing patterns.
+6. Draft interface signatures, types, and core structure.
+7. Break down the design into simple, independent tasks for implementation.
+8. Document the plan with usage examples and design details.
 
 ## Output format
 

@@ -41,20 +41,20 @@ You will NOT:
 
 ## Context
 
-- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
 - Read the [Readme](../../README.md) for an overall project view.
 - Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 
 ## Workflow
 
-1. Explore the surrounding code to understand existing documentation practices.
-2. Identify example documentation which can be used as a reference.
-3. Identify the gaps in documentation for referred modules or symbols.
-4. Document modules, and all exported symbols.
-5. Add code examples to modules and functions with core functionality.
-6. Add cross-references to related modules and external resources.
-7. Verify examples are accurate and runnable.
-8. Run checks to ensure documentation is valid.
+1. Gather project context from linked resources.
+2. Explore the surrounding code to understand existing documentation practices.
+3. Identify example documentation which can be used as a reference.
+4. Identify the gaps in documentation for referred modules or symbols.
+5. Document modules, and all exported symbols.
+6. Add code examples to modules and functions with core functionality.
+7. Add cross-references to related modules and external resources.
+8. Verify examples are accurate and runnable.
+9. Run checks to ensure documentation is valid.
 
 ## Output format
 
