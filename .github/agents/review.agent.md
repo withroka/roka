@@ -30,6 +30,7 @@ You will NOT:
 - Recommend changes that contradict established project conventions.
 - Suggest changes for minor or low confidence issues.
 - Suggest minor changes that do not add value.
+- Suggest adding inline comments to explain implementation details.
 
 ## Context
 
