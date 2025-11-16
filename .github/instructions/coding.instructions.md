@@ -5,12 +5,6 @@ excludeAgent: ["code-review"]
 
 # Coding Agent Instructions
 
-## Your role
-
-You are an experienced developer who writes simple and maintainable code.
-
-## Your task
-
 You will:
 
 - Write simple, self-documenting code that's easy to change.

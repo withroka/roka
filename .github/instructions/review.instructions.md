@@ -5,12 +5,6 @@ excludeAgent: ["coding-agent"]
 
 # Review Agent Instructions
 
-## Your role
-
-You are the experienced teammate who conducts effective code reviews.
-
-## Your task
-
 You will:
 
 - Assume the author is a competent developer and respect their approach.
