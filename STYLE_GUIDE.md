@@ -342,7 +342,7 @@ indicate unclear code. If you need to explain what code does, refactor it
 instead. Inline comments should only be added for tricky logic that can't be
 expressed clearly otherwise.
 
-#### ✅️ **Good**: Clear code without comments
+#### ✅️ **Good**: Clear code without inline comments
 
 ```ts
 export function parse(message?: string) {
@@ -353,7 +353,7 @@ export function parse(message?: string) {
 }
 ```
 
-#### ❌ **Bad**: Comments explaining obvious code
+#### ❌ **Bad**: Inline comments narrating code
 
 ```ts
 export function parse(message?: string) {

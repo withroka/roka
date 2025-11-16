@@ -32,11 +32,12 @@ These links are relative to the repository root.
 
 ## Restrictions
 
-- ✅ **ALWAYS** use Conventional Commits ("fix(module): lower case desciption")
+- ✅ **ALWAYS** use Conventional Commits (_"fix(module): lower case
+  description"_).
 - ✅ **ALWAYS** write minimal and concise code.
 - ✅ **PREFER** early returns.
-- ✅ **PREFER** concise names ("message").
-- ❌ **AVOID** verbose names ("currentMessage").
+- ✅ **PREFER** concise names (_"message"_).
+- ❌ **AVOID** verbose names (_"currentMessage"_).
 - ❌ **AVOID** nested code.
 - ❌ **AVOID** intermediate variables without purpose.
 - ❌ **NEVER** document self-explanatory code.
@@ -45,7 +46,7 @@ These links are relative to the repository root.
 
 ## Examples
 
-#### ✅️ **Good**: Clear code without comments
+#### ✅️ **Good**: Clear code without inline comments
 
 ```ts
 export function parse(message?: string) {
@@ -56,7 +57,7 @@ export function parse(message?: string) {
 }
 ```
 
-#### ❌ **Bad**: Comments explaining obvious code
+#### ❌ **Bad**: Inline comments narrating code
 
 ```ts
 export function parse(message?: string) {
