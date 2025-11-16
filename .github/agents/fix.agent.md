@@ -1,5 +1,11 @@
 ---
+name: Fix
 description: Fixes bugs with regression tests
+handoffs:
+  - label: Request review
+    agent: review
+    prompt: Pleasae review the code changes.
+    send: false
 ---
 
 # Fix Agent
@@ -32,10 +38,6 @@ You will NOT:
 - Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
 - Read the [Readme](./../README.md) for an overall project view.
 - Read the [Style Guide](./../STYLE_GUIDE.md) for detailed coding guidance.
-
-## Available agents
-
-- [**review**](./review.agent.md) - Reviews repository changes.
 
 ## Workflow
 

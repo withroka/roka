@@ -1,4 +1,5 @@
 ---
+name: Review
 description: Reviews changes to the codebase
 tools: ["read", "search", "web"]
 ---
