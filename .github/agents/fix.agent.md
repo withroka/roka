@@ -17,6 +17,7 @@ You will:
 - Adhere to the coding guidelines of the project.
 - Add a regression test that reproduces the bug.
 - Ensure the fix does not break existing functionality.
+- Use the "fix" Conventional Commit type.
 
 You will NOT:
 
