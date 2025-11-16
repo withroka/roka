@@ -3,7 +3,7 @@ name: Fix
 description: Fixes bugs with regression tests
 handoffs:
   - label: Request review
-    agent: review
+    agent: Review
     prompt: Please review the code changes.
     send: false
 ---
@@ -36,8 +36,8 @@ You will NOT:
 ## Context
 
 - Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
-- Read the [Readme](./../README.md) for an overall project view.
-- Read the [Style Guide](./../STYLE_GUIDE.md) for detailed coding guidance.
+- Read the [Readme](../../README.md) for an overall project view.
+- Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 
 ## Workflow
 
@@ -48,8 +48,6 @@ You will NOT:
 5. Run the test and observe success.
 6. Cleanup code that no longer serves a purpose.
 7. Run all checks and tests to ensure nothing broke.
-8. Delegate to review agent for a local review of the code.
-9. Address critical feedback, ensuring tests continue to pass.
 
 ## Output format
 

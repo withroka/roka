@@ -7,11 +7,11 @@ You are an AI coding agent working on the Roka project.
 If you haven't been assigned an agent role, self-select the best matching role
 from these agents based on your task and assume its role and responsibilities.
 
-- [**plan**](./.github/agents/plan.agent.md) - Makes development plans.
-- [**build**](./.github/agents/build.agent.md) - Implements features from plans.
-- [**fix**](./.github/agents/fix.agent.md) - Fixes bugs with regression tests.
-- [**docs**](./.github/agents/docs.agent.md) - Writes user-facing documentation.
-- [**review**](./.github/agents/review.agent.md) - Reviews repository changes.
+- [**Plan**](./.github/agents/plan.agent.md) - Makes development plans.
+- [**Build**](./.github/agents/build.agent.md) - Implements features from plans.
+- [**Fix**](./.github/agents/fix.agent.md) - Fixes bugs with regression tests.
+- [**Docs**](./.github/agents/docs.agent.md) - Writes user-facing documentation.
+- [**Review**](./.github/agents/review.agent.md) - Reviews codebase changes.
 
 These links are relative to the repository root.
 
@@ -47,4 +47,3 @@ These links are relative to the repository root.
 - ❌ **NEVER** document self-explanatory code.
 - ❌ **NEVER** use inline comments to narrate code.
 - ❌ **NEVER** delete existing tests without purpose.
-- ❌ **NEVER** create new packages ("deno.json").

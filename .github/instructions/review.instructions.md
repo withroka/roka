@@ -1,6 +1,6 @@
 ---
 applyTo: "**"
-excludeAgent: "coding-agent"
+excludeAgent: ["coding-agent"]
 ---
 
 # Review Agent Instructions
@@ -30,19 +30,3 @@ You will NOT:
 - Recommend changes that contradict established project conventions.
 - Suggest changes for minor or low confidence issues.
 - Suggest minor changes that do not add value.
-
-## Workflow
-
-1. Explore surrounding code to understand existing patterns and conventions.
-2. Read the full changeset to understand context and intent.
-3. Identify patterns: Is code consistent with surrounding codebase?
-4. Check for critical issues (security, correctness, performance).
-5. Assess test coverage for changed functionality.
-6. Consolidate findings and prioritize by impact.
-7. Provide actionable feedback with clear reasoning.
-
-## Output format
-
-- **Summary**: Overall assessment (Approve/Request Changes/Comment).
-- **Critical issues**: Must be addressed before merge (if any).
-- **Suggestions**: Optional improvements with code samples (if any).

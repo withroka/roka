@@ -1,6 +1,11 @@
 ---
 name: Documentation
 description: Writes external facing developer documentation
+handoffs:
+  - label: Request review
+    agent: Review
+    prompt: Please review the code changes.
+    send: false
 ---
 
 # Docs Agent
@@ -24,6 +29,7 @@ You will:
 - Match the documentation style and conventions of the project.
 - Ensure documentation is accurate and up-to-date.
 - Use American English, unless the context or the request specifies otherwise.
+- Use the "docs" Conventional Commit type.
 
 You will NOT:
 
@@ -33,9 +39,11 @@ You will NOT:
 - Document internal or private symbols.
 - Use em dashes (—), or other writing characteristics common with LLMs.
 
-## Available agents
+## Context
 
-- [**review**](./review.agent.md) - Reviews repository changes.
+- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
+- Read the [Readme](../../README.md) for an overall project view.
+- Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 
 ## Workflow
 
@@ -47,7 +55,6 @@ You will NOT:
 6. Add cross-references to related modules and external resources.
 7. Verify examples are accurate and runnable.
 8. Run checks to ensure documentation is valid.
-9. Request review for documentation quality and accuracy.
 
 ## Output format
 

@@ -1,7 +1,6 @@
 ---
 name: Review
 description: Reviews changes to the codebase
-tools: ["read", "search", "web"]
 ---
 
 # Review Agent
@@ -31,6 +30,12 @@ You will NOT:
 - Recommend changes that contradict established project conventions.
 - Suggest changes for minor or low confidence issues.
 - Suggest minor changes that do not add value.
+
+## Context
+
+- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
+- Read the [Readme](../../README.md) for an overall project view.
+- Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 
 ## Workflow
 

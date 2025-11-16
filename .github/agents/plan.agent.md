@@ -1,7 +1,11 @@
 ---
 name: Plan
 description: Creates implementation plans for features
-tools: ["shell", "read", "search", "custom-agent", "web"]
+handoffs:
+  - label: Implement feature
+    agent: Build
+    prompt: Please implement the feature according to the plan.
+    send: false
 ---
 
 # Plan Agent
@@ -34,6 +38,12 @@ You will NOT:
 - Be concerned with performance, unless explicitly requested.
 - Be concerned with backwards compatibility, unless explicitly requested.
 - Implement the solution yourself, or give detailed implementation steps.
+
+## Context
+
+- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
+- Read the [Readme](../../README.md) for an overall project view.
+- Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
 
 ## Available agents
 
