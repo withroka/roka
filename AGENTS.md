@@ -46,12 +46,12 @@ These links are relative to the repository root.
 
 ## Examples
 
-#### ✅️ **Good**: Clear code without inline comments
+#### ✅️ **Good**: Clear and concise code with early returns
 
 ```ts
-export function parse(message?: string) {
+export function parse(message: string, delimiter: string = ": ") {
   if (!message) return undefined;
-  const [type, summary] = message.split(": ", 2);
+  const [type, summary] = message.split(delimiter, 2);
   if (!summary) throw new Error("Missing summary");
   return { type, summary };
 }
@@ -60,11 +60,11 @@ export function parse(message?: string) {
 #### ❌ **Bad**: Inline comments narrating code
 
 ```ts
-export function parse(message?: string) {
+export function parse(message: string, delimiter: string = ": ") {
   // Check if message exists
   if (!message) return undefined;
   // Split the message into parts
-  const [type, summary] = message.split(": ", 2);
+  const [type, summary] = message.split(delimiter, 2);
   // Validate that we have a summary
   if (!summary) throw new Error("Missing summary");
   // Return the parsed result
@@ -72,25 +72,45 @@ export function parse(message?: string) {
 }
 ```
 
-#### ✅️ **Good**: Concise naming
-
-```ts
-export function parse(message: string, delimiter: string = ": ") {
-  const [type, summary] = message.split(delimiter, 2);
-  return { type, summary };
-}
-```
-
-#### ❌ **Bad**: Long variable names
+#### ❌ **Bad**: Intermediate variables and long names
 
 ```ts
 export function parse(commitMessage: string, splitDelimiter: string = ": ") {
   const commitTypeAndSummary = commitMessage.split(splitDelimiter, 2);
-  return { type: commitTypeAndSummary[0], summary: commitTypeAndSummary[1] };
+  const commitType = commitTypeAndSummary[0];
+  const commitSummary = commitTypeAndSummary[1];
+  if (!commitSummary) {
+    throw new Error("Missing summary");
+  }
+  return { type: commitType, summary: commitSummary };
 }
 ```
 
-#### ✅️ **Good**: Focused testing
+#### ❌ **Bad**: Using abbreviations (except for well-known terms)
+
+```ts
+export function parse(msg: string, delim: string = ": ") {
+  if (!msg) return undefined;
+  const [type, smry] = msg.split(delim, 2);
+  if (!smry) throw new Error("Missing summary");
+  return { type, smry };
+}
+```
+
+#### ❌ **Bad**: Whitespace to separate blocks
+
+```ts
+export function parse(message: string, delimiter: string = ": ") {
+  if (!message) return undefined;
+
+  const [type, summary] = message.split(delimiter, 2);
+  if (!summary) throw new Error("Missing summary");
+
+  return { type, summary };
+}
+```
+
+#### ✅️ **Good**: Focused and concise testing
 
 ```ts
 import { assertEquals } from "@std/assert";

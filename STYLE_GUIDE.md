@@ -345,7 +345,7 @@ expressed clearly otherwise.
 #### ✅️ **Good**: Clear code without inline comments
 
 ```ts
-export function parse(message?: string) {
+export function parse(message: string) {
   if (!message) return undefined;
   const [type, summary] = message.split(": ", 2);
   if (!summary) throw new Error("Missing summary");
@@ -356,7 +356,7 @@ export function parse(message?: string) {
 #### ❌ **Bad**: Inline comments narrating code
 
 ```ts
-export function parse(message?: string) {
+export function parse(message: string) {
   // Check if message exists
   if (!message) return undefined;
   // Split the message into parts
@@ -398,6 +398,24 @@ Abbreviations can slow down reading for people unfamiliar with the codebase.
 Spell out when possible. That said, widely recognized industry standard
 abbreviations like "cwd" (current working directory) or "id" (identifier) are
 fine. These also help keep names as single words.
+
+#### ✅️ **Good**: No abbreviations
+
+```ts
+export function parse(message: string, delimiter: string = ": ") {
+  const [type, summary] = message.split(delimiter, 2);
+  return { type, summary };
+}
+```
+
+#### ❌ **Bad**: Using abbreviations
+
+```ts
+export function parse(msg: string, delim: string = ": ") {
+  const [type, summary] = msg.split(delim, 2);
+  return { type, summary };
+}
+```
 
 ## Types
 
@@ -603,7 +621,7 @@ The primary aim of tests is to verify code, not to document it. Avoid
 explanatory tests describing behavior. Focus on asserting the contract, not
 demonstrating how the code functions.
 
-#### ✅️ **Good**: Focused testing
+#### ✅️ **Good**: Focused and concise testing
 
 ```ts
 import { assertEquals } from "@std/assert";
