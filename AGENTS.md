@@ -15,13 +15,6 @@ from these agents based on your task and assume its role and responsibilities.
 
 These links are relative to the repository root.
 
-## Context
-
-Before starting your task, make sure to:
-
-- Read the [Readme](./README.md) for an overall project view.
-- Read the [Style Guide](./STYLE_GUIDE.md) for detailed coding guidance.
-
 ## Project structure
 
 - Core packages: `core/`
@@ -49,3 +42,96 @@ Before starting your task, make sure to:
 - ❌ **NEVER** document self-explanatory code.
 - ❌ **NEVER** use inline comments to narrate code.
 - ❌ **NEVER** delete existing tests without purpose.
+
+## Examples
+
+#### ✅️ **Good**: Clear code without comments
+
+```ts
+export function parse(message?: string) {
+  if (!message) return undefined;
+  const [type, summary] = message.split(": ", 2);
+  if (!summary) throw new Error("Missing summary");
+  return { type, summary };
+}
+```
+
+#### ❌ **Bad**: Comments explaining obvious code
+
+```ts
+export function parse(message?: string) {
+  // Check if message exists
+  if (!message) return undefined;
+  // Split the message into parts
+  const [type, summary] = message.split(": ", 2);
+  // Validate that we have a summary
+  if (!summary) throw new Error("Missing summary");
+  // Return the parsed result
+  return { type, summary };
+}
+```
+
+#### ✅️ **Good**: Concise naming
+
+```ts
+export function parse(message: string, delimiter: string = ": ") {
+  const [type, summary] = message.split(delimiter, 2);
+  return { type, summary };
+}
+```
+
+#### ❌ **Bad**: Long variable names
+
+```ts
+export function parse(commitMessage: string, splitDelimiter: string = ": ") {
+  const commitTypeAndSummary = commitMessage.split(splitDelimiter, 2);
+  return { type: commitTypeAndSummary[0], summary: commitTypeAndSummary[1] };
+}
+```
+
+#### ✅️ **Good**: Focused testing
+
+```ts
+import { assertEquals } from "@std/assert";
+
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
+
+Deno.test("parse() returns commit type and summary", () => {
+  assertEquals(parse("feat: add new feature"), {
+    type: "feat",
+    summary: "add new feature",
+  });
+});
+```
+
+#### ❌ **Bad**: Explanatory testing
+
+```ts
+import { assertEquals } from "@std/assert";
+
+export function parse(message: string) {
+  const [type, summary] = message.split(": ", 2);
+  return { type, summary };
+}
+
+Deno.test("parse() returns commit type and summary", () => {
+  // Given a conventional commit message
+  const message = "feat: add new feature";
+  // When we parse the message
+  const result = parse(message);
+  // Then we expect the type to be "feat"
+  assertEquals(result.type, "feat");
+  // And we expect the summary to be "add new feature"
+  assertEquals(result.summary, "add new feature");
+  // Verify the result object is serializable
+  // This ensures no functions or complex types are returned
+  assertEquals(JSON.parse(JSON.stringify(result)), {
+    type: "feat",
+    summary: "add new feature",
+  });
+  // End of test
+});
+```
