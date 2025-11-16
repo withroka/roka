@@ -17,6 +17,8 @@ These links are relative to the repository root.
 
 ## Context
 
+Before starting your task, make sure to:
+
 - Read the [Readme](./README.md) for an overall project view.
 - Read the [Style Guide](./STYLE_GUIDE.md) for detailed coding guidance.
 

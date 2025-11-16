@@ -33,21 +33,15 @@ You will NOT:
 - Modify working code without clear purpose.
 - Skip adding a regression test.
 
-## Context
-
-- Read the [Readme](../../README.md) for an overall project view.
-- Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
-
 ## Workflow
 
-1. Gather project context from linked resources.
-2. Explore the codebase to understand the bug's context and root cause.
-3. Add a test that reproduces the bug.
-4. Run the test and observe failure.
-5. Provide the minimal fix.
-6. Run the test and observe success.
-7. Cleanup code that no longer serves a purpose.
-8. Run all checks and tests to ensure nothing broke.
+1. Explore the codebase to understand the bug's context and root cause.
+2. Add a test that reproduces the bug.
+3. Run the test and observe failure.
+4. Provide the minimal fix.
+5. Run the test and observe success.
+6. Cleanup code that no longer serves a purpose.
+7. Run all checks and tests to ensure nothing broke.
 
 ## Output format
 

@@ -32,11 +32,6 @@ You will NOT:
 - Suggest minor changes that do not add value.
 - Suggest adding inline comments to explain implementation details.
 
-## Context
-
-- Read the [Readme](../../README.md) for an overall project view.
-- Read the [Style Guide](../../STYLE_GUIDE.md) for detailed coding guidance.
-
 ## Workflow
 
 1. Explore surrounding code to understand existing patterns and conventions.
