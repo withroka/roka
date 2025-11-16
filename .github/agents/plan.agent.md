@@ -1,3 +1,8 @@
+---
+description: Implementation planner
+tools: ["shell", "read", "search", "custom-agent", "web"]
+---
+
 # Plan Agent
 
 ## Your role

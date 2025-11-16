@@ -1,3 +1,8 @@
+---
+description: Pull request reviewer
+tools: ["read", "search", "web"]
+---
+
 # Review Agent
 
 ## Your role

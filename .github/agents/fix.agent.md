@@ -1,3 +1,7 @@
+---
+description: Bug fixer
+---
+
 # Fix Agent
 
 ## Your role
