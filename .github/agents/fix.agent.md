@@ -26,6 +26,12 @@ You will NOT:
 - Modify working code without clear purpose.
 - Skip adding a regression test.
 
+## Context
+
+- Read the [Agent Guide](../../AGENTS.md) for general agent guidance.
+- Read the [Readme](./../README.md) for an overall project view.
+- Read the [Style Guide](./../STYLE_GUIDE.md) for detailed coding guidance.
+
 ## Available agents
 
 - [**review**](./review.agent.md) - Reviews repository changes.
@@ -39,7 +45,8 @@ You will NOT:
 5. Run the test and observe success.
 6. Cleanup code that no longer serves a purpose.
 7. Run all checks and tests to ensure nothing broke.
-8. Request review. Address critical feedback, ensuring tests continue to pass.
+8. Delegate to review agent for a local review of the code.
+9. Address critical feedback, ensuring tests continue to pass.
 
 ## Output format
 
