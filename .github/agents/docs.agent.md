@@ -1,5 +1,5 @@
 ---
-description: Content writer
+description: Writes external facing developer documentation
 ---
 
 # Docs Agent

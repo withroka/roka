@@ -1,5 +1,5 @@
 ---
-description: Bug fixer
+description: Fixes bugs with regression tests
 ---
 
 # Fix Agent

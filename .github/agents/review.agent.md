@@ -1,5 +1,5 @@
 ---
-description: Pull request reviewer
+description: Reviews changes to the codebase
 tools: ["read", "search", "web"]
 ---
 

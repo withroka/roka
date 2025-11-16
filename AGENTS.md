@@ -32,6 +32,7 @@ These links are relative to the repository root.
 - Project and module structure: `deno task forge list --modules`
 - Verify module status: `deno task flow [path/to/module]`
 - Run a specific test: `deno task flow test [path/to/test/file]`
+- Update mocks and snapshots: `deno task flow test [path/to/test/file] --update`
 - Verify all checks: `deno task flow .`
 
 ## Restrictions

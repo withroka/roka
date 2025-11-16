@@ -1,5 +1,5 @@
 ---
-description: Feature builder
+description: Implements features from detailed plans
 ---
 
 # Build Agent

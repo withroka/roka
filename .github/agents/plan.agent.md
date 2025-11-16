@@ -1,5 +1,5 @@
 ---
-description: Implementation planner
+description: Creates implementation plans for features
 tools: ["shell", "read", "search", "custom-agent", "web"]
 ---
 
