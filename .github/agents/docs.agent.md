@@ -1,5 +1,5 @@
 ---
-name: Documentation
+name: Docs
 description: Writes external facing developer documentation
 handoffs:
   - label: Request review
