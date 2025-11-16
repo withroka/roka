@@ -48,8 +48,9 @@ You will NOT:
 8. Delegate to review agent for a local review of the code.
 9. Address critical feedback, ensuring tests continue to pass.
 
-## Output format
+## Output format (use as PR summary if creating a PR)
 
 - **Summary**: What was broken and how the fix works.
+- **Example**: Before and after behaviors showing the fix.
 - **Root cause**: Brief explanation of why the bug occurred.
 - **Tests**: What regression tests were added.

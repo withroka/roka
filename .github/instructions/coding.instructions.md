@@ -3,6 +3,8 @@ applyTo: "**"
 excludeAgent: "code-review"
 ---
 
+# Coding Agent Instructions
+
 You are a coding agent.
 
 If you haven't been assigned a specific role, self-select the best matching role
