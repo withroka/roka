@@ -30,83 +30,99 @@ These links are relative to the repository root.
 - Update mocks and snapshots: `deno task flow test [path/to/test/file] --update`
 - Verify all checks: `deno task flow .`
 
-## Restrictions
+## Code style
 
-- ✅ **ALWAYS** use Conventional Commits (_"fix(module): lower case
-  description"_).
 - ✅ **ALWAYS** write minimal and concise code.
 - ✅ **PREFER** early returns.
 - ✅ **PREFER** concise names (_"message"_).
 - ❌ **AVOID** verbose names (_"currentMessage"_).
 - ❌ **AVOID** nested code.
 - ❌ **AVOID** intermediate variables without purpose.
+- ❌ **AVOID** abbreviated variable names.
 - ❌ **NEVER** document self-explanatory code.
 - ❌ **NEVER** use inline comments to narrate code.
+- ❌ **NEVER** add empty lines to separate code blocks.
 - ❌ **NEVER** delete existing tests without purpose.
 
-## Examples
+### Examples
 
 #### ✅️ **Good**: Clear and concise code with early returns
 
 ```ts
-export function parse(message: string, delimiter: string = ": ") {
-  if (!message) return undefined;
-  const [type, summary] = message.split(delimiter, 2);
-  if (!summary) throw new Error("Missing summary");
-  return { type, summary };
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  let previous = 0;
+  let current = 1;
+  for (let i = 2; i <= n; i++) {
+    [previous, current] = [current, previous + current];
+  }
+  return current;
 }
 ```
 
 #### ❌ **Bad**: Inline comments narrating code
 
 ```ts
-export function parse(message: string, delimiter: string = ": ") {
-  // Check if message exists
-  if (!message) return undefined;
-  // Split the message into parts
-  const [type, summary] = message.split(delimiter, 2);
-  // Validate that we have a summary
-  if (!summary) throw new Error("Missing summary");
-  // Return the parsed result
-  return { type, summary };
+export function fibonacci(n: number): number {
+  // Check if n is 0 or 1
+  if (n <= 1) return n;
+  // Initialize variables for tracking
+  let previous = 0;
+  let current = 1;
+  // Iterate from 2 to n, no need to use 1 as it's already handled
+  for (let i = 2; i <= n; i++) {
+    // Calculate next fibonacci number, and update previous and current
+    [previous, current] = [current, previous + current];
+  }
+  // Return the result
+  return current;
 }
 ```
 
 #### ❌ **Bad**: Intermediate variables and long names
 
 ```ts
-export function parse(commitMessage: string, splitDelimiter: string = ": ") {
-  const commitTypeAndSummary = commitMessage.split(splitDelimiter, 2);
-  const commitType = commitTypeAndSummary[0];
-  const commitSummary = commitTypeAndSummary[1];
-  if (!commitSummary) {
-    throw new Error("Missing summary");
+export function fibonacci(fibonacciNumber: number): number {
+  if (fibonacciNumber <= 1) return fibonacciNumber;
+  let previousFibonacciValue = 0;
+  let currentFibonacciValue = 1;
+  for (let i = 2; i <= fibonacciNumber; i++) {
+    const nextFibonacciValue = previousFibonacciValue + currentFibonacciValue;
+    previousFibonacciValue = currentFibonacciValue;
+    currentFibonacciValue = nextFibonacciValue;
   }
-  return { type: commitType, summary: commitSummary };
+  return currentFibonacciValue;
 }
 ```
 
-#### ❌ **Bad**: Using abbreviations (except for well-known terms)
+#### ❌ **Bad**: Abbreviations
 
 ```ts
-export function parse(msg: string, delim: string = ": ") {
-  if (!msg) return undefined;
-  const [type, smry] = msg.split(delim, 2);
-  if (!smry) throw new Error("Missing summary");
-  return { type, smry };
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  let prev = 0;
+  let curr = 1;
+  for (let i = 2; i <= n; i++) {
+    [prev, curr] = [curr, prev + curr];
+  }
+  return curr;
 }
 ```
 
-#### ❌ **Bad**: Whitespace to separate blocks
+#### ❌ **Bad**: Empty lines to separate blocks
 
 ```ts
-export function parse(message: string, delimiter: string = ": ") {
-  if (!message) return undefined;
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
 
-  const [type, summary] = message.split(delimiter, 2);
-  if (!summary) throw new Error("Missing summary");
+  let previous = 0;
+  let current = 1;
 
-  return { type, summary };
+  for (let i = 2; i <= n; i++) {
+    [previous, current] = [current, previous + current];
+  }
+
+  return current;
 }
 ```
 
@@ -115,16 +131,15 @@ export function parse(message: string, delimiter: string = ": ") {
 ```ts
 import { assertEquals } from "@std/assert";
 
-export function parse(message: string) {
-  const [type, summary] = message.split(": ", 2);
-  return { type, summary };
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-Deno.test("parse() returns commit type and summary", () => {
-  assertEquals(parse("feat: add new feature"), {
-    type: "feat",
-    summary: "add new feature",
-  });
+Deno.test("fibonacci() returns correct sequence", () => {
+  assertEquals(fibonacci(0), 0);
+  assertEquals(fibonacci(1), 1);
+  assertEquals(fibonacci(6), 8);
 });
 ```
 
@@ -133,26 +148,31 @@ Deno.test("parse() returns commit type and summary", () => {
 ```ts
 import { assertEquals } from "@std/assert";
 
-export function parse(message: string) {
-  const [type, summary] = message.split(": ", 2);
-  return { type, summary };
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-Deno.test("parse() returns commit type and summary", () => {
-  // Given a conventional commit message
-  const message = "feat: add new feature";
-  // When we parse the message
-  const result = parse(message);
-  // Then we expect the type to be "feat"
-  assertEquals(result.type, "feat");
-  // And we expect the summary to be "add new feature"
-  assertEquals(result.summary, "add new feature");
-  // Verify the result object is serializable
-  // This ensures no functions or complex types are returned
-  assertEquals(JSON.parse(JSON.stringify(result)), {
-    type: "feat",
-    summary: "add new feature",
-  });
+Deno.test("fibonacci() returns correct sequence", () => {
+  // Given the fibonacci sequence starts with 0, 1
+  const firstNumber = 0;
+  // When we calculate the 0th fibonacci number
+  const result0 = fibonacci(firstNumber);
+  // Then we expect it to be 0
+  assertEquals(result0, 0);
+  // Given we want the first fibonacci number
+  const secondNumber = 1;
+  // When we calculate it
+  const result1 = fibonacci(secondNumber);
+  // Then it should be 1
+  assertEquals(result1, 1);
+  // Given we want the 6th fibonacci number
+  // The sequence is: 0, 1, 1, 2, 3, 5, 8
+  const sixthIndex = 6;
+  // When we calculate it
+  const result6 = fibonacci(sixthIndex);
+  // Then it should be 8
+  assertEquals(result6, 8);
   // End of test
 });
 ```

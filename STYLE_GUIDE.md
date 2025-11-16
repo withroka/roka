@@ -408,7 +408,7 @@ export function parse(message: string, delimiter: string = ": ") {
 }
 ```
 
-#### ❌ **Bad**: Using abbreviations
+#### ❌ **Bad**: Abbreviations
 
 ```ts
 export function parse(msg: string, delim: string = ": ") {
