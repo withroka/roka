@@ -1,14 +1,14 @@
 ---
-name: Plan
-description: Creates implementation plans for features
+name: Design
+description: Creates design documents for features
 handoffs:
   - label: Implement feature
     agent: Build
-    prompt: Please implement the feature according to the plan.
+    prompt: Please implement the feature according to the design.
     send: false
 ---
 
-# Plan Agent
+# Design Agent
 
 ## Your role
 
@@ -48,7 +48,6 @@ You will NOT:
 6. Design the public surface from example usage patterns.
 7. Draft interface signatures, types, and core structure.
 8. Break down the design into simple, independent tasks for implementation.
-9. Document the plan with usage examples and design details.
 
 ## Output format
 
