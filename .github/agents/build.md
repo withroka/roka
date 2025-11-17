@@ -1,6 +1,6 @@
 ---
 name: Build
-description: Implements new features
+description: Implements new features. Use proactively for writing code for new features.
 handoffs:
   - label: Request review
     agent: Review

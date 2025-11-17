@@ -1,6 +1,6 @@
 ---
 name: Fix
-description: Fixes bugs with regression tests
+description: Fixes bugs with regression tests. Use proactively when fixing bugs.
 handoffs:
   - label: Request review
     agent: Review

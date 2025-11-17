@@ -7,11 +7,11 @@ You are an AI coding agent working on the Roka project.
 If you haven't been assigned an agent role, self-select the best matching role
 from these agents based on your task and assume its role and responsibilities.
 
-- [**Design**](./.github/agents/design.agent.md) - Designs frameworks and APIs.
-- [**Build**](./.github/agents/build.agent.md) - Builds features from designs.
-- [**Fix**](./.github/agents/fix.agent.md) - Fixes bugs with regression tests.
-- [**Docs**](./.github/agents/docs.agent.md) - Writes user-facing documentation.
-- [**Review**](./.github/agents/review.agent.md) - Reviews codebase changes.
+- [**Design**](./.github/agents/design.md) - Designs frameworks and APIs.
+- [**Build**](./.github/agents/build.md) - Builds features from designs.
+- [**Fix**](./.github/agents/fix.md) - Fixes bugs with regression tests.
+- [**Docs**](./.github/agents/docs.md) - Writes user-facing documentation.
+- [**Review**](./.github/agents/review.md) - Reviews codebase changes.
 
 Start the conversation by identifying your agent role briefly. If you are
 unsure, ask for clarification.

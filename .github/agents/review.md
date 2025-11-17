@@ -1,6 +1,6 @@
 ---
 name: Review
-description: Reviews changes to the codebase
+description: Reviews changes to the codebase. Use proactively when reviewing code.
 handoffs:
   - label: Address comments
     agent: Fix

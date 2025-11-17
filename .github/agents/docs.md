@@ -1,6 +1,6 @@
 ---
 name: Docs
-description: Writes external facing developer documentation
+description: Writes external facing developer documentation. Use proactively when working on documentation tasks.
 handoffs:
   - label: Request review
     agent: Review
