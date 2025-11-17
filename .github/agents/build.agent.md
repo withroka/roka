@@ -1,6 +1,6 @@
 ---
 name: Build
-description: Implements features from detailed plans
+description: Implements new features
 handoffs:
   - label: Request review
     agent: Review
