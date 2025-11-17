@@ -33,14 +33,15 @@ These links are relative to the repository root.
 ## Code style
 
 - ✅ **ALWAYS** write minimal and concise code.
-- ✅ **PREFER** early returns.
-- ✅ **PREFER** concise names (_"message"_).
-- ❌ **AVOID** verbose names (_"currentMessage"_).
-- ❌ **AVOID** nested code.
-- ❌ **AVOID** intermediate variables without purpose.
-- ❌ **AVOID** abbreviated variable names.
+- ✅ **ALWAYS** use early returns to avoid nesting.
+- ✅ **ALWAYS** use complete words for variable names: `message`, `delimiter`
+- ✅ **EXCEPTION**: industry-standard abbreviations are allowed: `url`, `cwd`
+- ❌ **NEVER** abbreviate common words: `message` not `msg`
+- ❌ **NEVER** add redundant context: `message` not `commitMessage`
+- ❌ **NEVER** use nested if/else blocks when early returns work.
+- ❌ **NEVER** create intermediate variables when oneliners suffice.
 - ❌ **NEVER** document self-explanatory code.
-- ❌ **NEVER** use inline comments to narrate code.
+- ❌ **NEVER** use inline comments to narrate what code does.
 - ❌ **NEVER** add empty lines within function bodies.
 - ❌ **NEVER** delete existing tests without purpose.
 
@@ -95,7 +96,7 @@ export function fibonacci(fibonacciNumber: number): number {
 }
 ```
 
-#### ❌ **Bad**: Abbreviations
+#### ❌ **Bad**: Abbreviated variable names
 
 ```ts
 export function fibonacci(n: number): number {
@@ -106,6 +107,26 @@ export function fibonacci(n: number): number {
     [prev, curr] = [curr, prev + curr];
   }
   return curr;
+}
+```
+
+#### ❌ **Bad**: Redundant context in names
+
+```ts
+export function parseCommit(commitMessage: string) {
+  const commitDelimiter = ": ";
+  const [commitType, commitSummary] = commitMessage.split(commitDelimiter, 2);
+  return { type: commitType, summary: commitSummary };
+}
+```
+
+#### ✅️ **Good**: Names without redundant context
+
+```ts
+export function parseCommit(message: string) {
+  const delimiter = ": ";
+  const [type, summary] = message.split(delimiter, 2);
+  return { type, summary };
 }
 ```
 

@@ -69,9 +69,9 @@ export function parse(message: string) {
 ### Write inclusive code
 
 Neutral names should be preferred over those associated with gender, race, or
-other personal characteristics. For instance, use "allow" and "deny" to express
-permissions instead of "whitelist" and "blacklist." Similarly, avoid loaded
-language like "master" when "main" is fine. Everyone has the right to
+other personal characteristics. For instance, use _"allow"_ and _"deny"_ to
+express permissions instead of _"whitelist"_ and _"blacklist."_ Similarly, avoid
+loaded language like _"master"_ when _"main"_ is fine. Everyone has the right to
 participate and contribute to the project. See the
 [Chromium style guide](https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/inclusive_code.md)
 for more guidance.
@@ -128,10 +128,10 @@ only be imported from `@roka/git/conventional`, not from `@roka/git`.
 
 ### Prefer singular names
 
-For module names, singular words, like "tool", should be preferred over plurals,
-like "tools". This makes the public surface more predictable. The only exception
-is when you're extending the standard library. For example, `@roka/streams` can
-extend `@std/streams`.
+For module names, singular words, like _"tool"_, should be preferred over
+plurals, like _"tools"_. This makes the public surface more predictable. The
+only exception is when you're extending the standard library. For example,
+`@roka/streams` can extend `@std/streams`.
 
 ### Name files after their module
 
@@ -300,7 +300,7 @@ export function parse(input: string | string[]): ParsedCommit | ParsedCommit[] {
 
 Code that is long and deeply indented is hard to scan and understand. Check
 error conditions first and return early to keep the happy path clear and free of
-nesting. Skip unnecessary intermediate variables.
+nesting.
 
 #### ✅️ **Good**: Flat and concise code
 
@@ -368,13 +368,14 @@ export function parse(message: string) {
 }
 ```
 
-### Prefer concise naming
+### Use concise and clear names
 
-Shorter names are easier to read than longer names. Prefer single words and save
-longer names for when they add real clarity. Or even better, design the scope or
-abstraction so single words make sense.
+Good names balance brevity with clarity. Prefer single words when they capture
+the meaning, but don't sacrifice understanding for shorter names. Avoid
+abbreviations unless they are widely recognized industry standards (like _"id"_,
+_"url"_, or _"cwd"_).
 
-#### ✅️ **Good**: Concise naming
+#### ✅️ **Good**: Clear and appropriately scoped
 
 ```ts
 export function parse(message: string, delimiter: string = ": ") {
@@ -383,7 +384,7 @@ export function parse(message: string, delimiter: string = ": ") {
 }
 ```
 
-#### ❌ **Bad**: Long variable names
+#### ❌ **Bad**: Unnecessarily verbose
 
 ```ts
 export function parse(commitMessage: string, splitDelimiter: string = ": ") {
@@ -392,23 +393,7 @@ export function parse(commitMessage: string, splitDelimiter: string = ": ") {
 }
 ```
 
-### Avoid abbreviations
-
-Abbreviations can slow down reading for people unfamiliar with the codebase.
-Spell out when possible. That said, widely recognized industry standard
-abbreviations like "cwd" (current working directory) or "id" (identifier) are
-fine. These also help keep names as single words.
-
-#### ✅️ **Good**: No abbreviations
-
-```ts
-export function parse(message: string, delimiter: string = ": ") {
-  const [type, summary] = message.split(delimiter, 2);
-  return { type, summary };
-}
-```
-
-#### ❌ **Bad**: Abbreviations
+#### ❌ **Bad**: Unclear abbreviations
 
 ```ts
 export function parse(msg: string, delim: string = ": ") {
@@ -907,10 +892,10 @@ export interface ParseOptions {
 ### Use indicative mood in descriptions
 
 Function descriptions should begin with a verb phrase that describes what the
-function does. Write this description in the third person indicative mood: "[the
-function] does something". Don't write descriptions in an imperative sentence:
-"do something". The same applies to descriptions for parameters and fields that
-begin with a verb.
+function does. Write this description in the third person indicative mood:
+_"[the function] does something"_. Don't write descriptions in an imperative
+sentence: _"do something"_. The same applies to descriptions for parameters and
+fields that begin with a verb.
 
 #### ✅️ **Good**: Indicative mood
 
