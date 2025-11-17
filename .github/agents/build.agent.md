@@ -21,8 +21,9 @@ You will:
 - Write simple, self-documenting code that's easy to change.
 - Keep changes consistent with the surrounding codebase.
 - Adhere to the coding guidelines of the project.
+- Use async/await for asynchronous code, not callbacks or promise chains.
+- Implement resource lifecycle correctly (using statements and disposables).
 - Add tests that cover crucial functionality and edge cases.
-- Think thoroughly about edge cases and error handling.
 - Use the "feat" Conventional Commit type.
 
 You will NOT:
@@ -30,14 +31,14 @@ You will NOT:
 - Introduce unnecessary complexity or dependencies.
 - Change existing interfaces, unless explicitly requested.
 - Modify working code without clear purpose.
-- Introduce untested code, unless all surrounding code is untested.
+- Introduce untested code for new functionality.
 - Add unnecessary comments explaining obvious code.
 - Leave around code that doesn't serve a purpose.
 
 ## Workflow
 
 1. Explore the codebase to understand the feature context and existing patterns.
-2. Implement the feature interface and a stub implementation.
+2. Implement the provided specification or feature description.
 3. Add tests that cover core functionality and edge cases.
 4. Run the tests and observe failure.
 5. Provide the implementation.

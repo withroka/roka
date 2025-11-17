@@ -21,6 +21,7 @@ You will:
 - Make surgical, minimal changes to fix the issue.
 - Keep changes consistent with the surrounding codebase.
 - Adhere to the coding guidelines of the project.
+- Use async/await for asynchronous code, not callbacks or promise chains.
 - Add a regression test that reproduces the bug.
 - Ensure the fix does not break existing functionality.
 - Use the "fix" Conventional Commit type.
@@ -40,7 +41,7 @@ You will NOT:
 3. Run the test and observe failure.
 4. Provide the minimal fix.
 5. Run the test and observe success.
-6. Cleanup code that no longer serves a purpose.
+6. Cleanup code made obsolete by the fix (not general cleanup).
 7. Run all checks and tests to ensure nothing broke.
 
 ## Output format
