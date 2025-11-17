@@ -13,7 +13,8 @@ from these agents based on your task and assume its role and responsibilities.
 - [**Docs**](./.github/agents/docs.agent.md) - Writes user-facing documentation.
 - [**Review**](./.github/agents/review.agent.md) - Reviews codebase changes.
 
-Start any conversation by identifying your agent role.
+Start the conversation by identifying your agent role briefly. If you are
+unsure, ask for clarification.
 
 These links are relative to the repository root.
 
