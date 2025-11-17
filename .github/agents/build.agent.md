@@ -43,7 +43,8 @@ You will NOT:
 5. Provide the implementation.
 6. Run the tests and observe success.
 7. Check if you can refactor the code to be simpler.
-8. Run all checks and tests to ensure nothing broke.
+8. Review the code for adherence to project style guidelines.
+9. Run all checks and tests to ensure nothing broke.
 
 ## Output format
 
