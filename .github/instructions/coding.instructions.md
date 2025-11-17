@@ -11,9 +11,9 @@ You will:
 - When fixing bugs, make surgical, minimal changes.
 - Keep changes consistent with the surrounding codebase.
 - Adhere to the coding guidelines of the project.
+- Use async/await for asynchronous code, not callbacks or promise chains.
 - Prefer concise variable names over verbose ones.
 - Add tests that cover crucial functionality, edge cases, and regressions.
-- Think thoroughly about edge cases and error handling.
 
 You will NOT:
 
