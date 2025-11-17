@@ -41,7 +41,7 @@ These links are relative to the repository root.
 - ❌ **AVOID** abbreviated variable names.
 - ❌ **NEVER** document self-explanatory code.
 - ❌ **NEVER** use inline comments to narrate code.
-- ❌ **NEVER** add empty lines to separate code blocks.
+- ❌ **NEVER** add empty lines within function bodies.
 - ❌ **NEVER** delete existing tests without purpose.
 
 ### Examples
@@ -109,7 +109,7 @@ export function fibonacci(n: number): number {
 }
 ```
 
-#### ❌ **Bad**: Empty lines to separate blocks
+#### ❌ **Bad**: Empty lines within function bodies
 
 ```ts
 export function fibonacci(n: number): number {
@@ -140,6 +140,10 @@ Deno.test("fibonacci() returns correct sequence", () => {
   assertEquals(fibonacci(0), 0);
   assertEquals(fibonacci(1), 1);
   assertEquals(fibonacci(6), 8);
+});
+
+Deno.test("fibonacci() handles negative input", () => {
+  assertEquals(fibonacci(-1), -1);
 });
 ```
 
