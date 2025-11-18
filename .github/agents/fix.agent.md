@@ -31,7 +31,7 @@ You will NOT:
 - Introduce unnecessary complexity or dependencies.
 - Make stylistic changes unless they improve readability or maintainability.
 - Fix unrelated issues.
-- Modify working code without clear purpose.
+- Modify working code without a clear purpose.
 - Skip adding a regression test.
 
 ## Workflow

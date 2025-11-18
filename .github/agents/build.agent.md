@@ -30,10 +30,10 @@ You will NOT:
 
 - Introduce unnecessary complexity or dependencies.
 - Change existing interfaces, unless explicitly requested.
-- Modify working code without clear purpose.
+- Modify working code without a clear purpose.
 - Introduce untested code for new functionality.
 - Add unnecessary comments explaining obvious code.
-- Leave around code that doesn't serve a purpose.
+- Leave code that doesn't serve a purpose.
 
 ## Workflow
 

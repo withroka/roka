@@ -28,13 +28,13 @@ You will:
 - Prefer flat API surfaces over deeply nested structures.
 - Keep APIs minimal: 0-2 required parameters, and an optional options object.
 - Design asynchronous APIs using async/await, not callbacks or promises chains.
-- Design resource lifecycle from the start (using statements and disposables)
+- Design resource lifecycle from the start (using statements and disposables).
 - Design error handling explicitly: what fails, how, and what users control.
 
 You will NOT:
 
 - Create unnecessary abstractions for single use cases.
-- Apply overly complicated patterns (OOP, SOLID, Clean Code, etc).
+- Apply overly complicated patterns (OOP, SOLID, Clean Code, etc.).
 - Use classes, except for errors.
 - Design features that serve hypothetical future needs.
 - Be concerned with performance, unless explicitly requested.
