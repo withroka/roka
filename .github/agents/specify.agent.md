@@ -1,6 +1,6 @@
 ---
-name: Design
-description: Creates design specifications for features. Use proactively for designing libraries, APIs, features and similar.
+name: Specify
+description: Designs APIs, frameworks, and features. Use proactively when designing systems or planning feature architecture.
 handoffs:
   - label: Implement feature
     agent: Build
@@ -8,7 +8,7 @@ handoffs:
     send: false
 ---
 
-# Design Agent
+# Specify Agent
 
 ## Your role
 

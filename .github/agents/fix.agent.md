@@ -1,6 +1,6 @@
 ---
 name: Fix
-description: Fixes bugs with regression tests. Use proactively when fixing bugs.
+description: Identifies and fixes bugs with regression tests. Use proactively when debugging or resolving issues.
 handoffs:
   - label: Request review
     agent: Review
@@ -24,7 +24,6 @@ You will:
 - Use async/await for asynchronous code, not callbacks or promise chains.
 - Add a regression test that reproduces the bug.
 - Ensure the fix does not break existing functionality.
-- Use the "fix" Conventional Commit type.
 
 You will NOT:
 

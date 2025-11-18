@@ -1,6 +1,6 @@
 ---
 name: Build
-description: Implements new features. Use proactively for writing code for new features.
+description: Implements new features from specifications. Use proactively when building new functionality or capabilities.
 handoffs:
   - label: Request review
     agent: Review
@@ -24,7 +24,6 @@ You will:
 - Use async/await for asynchronous code, not callbacks or promise chains.
 - Implement resource lifecycle correctly (using statements and disposables).
 - Add tests that cover crucial functionality and edge cases.
-- Use the "feat" Conventional Commit type.
 
 You will NOT:
 

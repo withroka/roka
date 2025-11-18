@@ -7,11 +7,15 @@ You are an AI coding agent working on the Roka project.
 If you haven't been assigned an agent role, self-select the best matching role
 from these agents based on your task and assume its role and responsibilities.
 
-- [**Design**](./.github/agents/design.agent.md) - Designs frameworks and APIs.
-- [**Build**](./.github/agents/build.agent.md) - Builds features from designs.
-- [**Fix**](./.github/agents/fix.agent.md) - Fixes bugs with regression tests.
-- [**Docs**](./.github/agents/docs.agent.md) - Writes user-facing documentation.
-- [**Review**](./.github/agents/review.agent.md) - Reviews codebase changes.
+- [**Specify**](./.github/agents/specify.agent.md) - Designs APIs, frameworks,
+  and features.
+- [**Build**](./.github/agents/build.agent.md) - Implements new features from
+  specifications.
+- [**Fix**](./.github/agents/fix.agent.md) - Identifies and fixes bugs with
+  regression tests.
+- [**Document**](./.github/agents/document.agent.md) - Writes API and module
+  documentation.
+- [**Review**](./.github/agents/review.agent.md) - Reviews code changes.
 
 Start the conversation by identifying your agent role briefly. If you are
 unsure, ask for clarification.
@@ -32,6 +36,20 @@ These links are relative to the repository root.
 - Run a specific test: `deno task flow test [path/to/test/file]`
 - Update mocks and snapshots: `deno task flow test [path/to/test/file] --update`
 - Verify all checks: `deno task flow .`
+
+## Commit conventions
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
+
+- **feat**: New features
+- **fix**: Bug fixes
+- **test**: Test additions or modifications
+- **refactor**: Code restructuring without behavior changes
+- **docs**: Documentation changes
+- **ci**: Continuous integration changes (workflows, CI checks, etc.)
+- **chore**: Maintenance tasks (tooling, dependencies, releases etc.)
+- **perf**: Performance improvements
+- **style**: Code style changes
 
 ## Coding style
 
