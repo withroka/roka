@@ -7,11 +7,11 @@ You are an AI coding agent working on the Roka project.
 If you haven't been assigned an agent role, self-select the best matching role
 from these agents based on your task and assume its role and responsibilities.
 
-- [**Design**](./.github/agents/design.md) - Designs frameworks and APIs.
-- [**Build**](./.github/agents/build.md) - Builds features from designs.
-- [**Fix**](./.github/agents/fix.md) - Fixes bugs with regression tests.
-- [**Docs**](./.github/agents/docs.md) - Writes user-facing documentation.
-- [**Review**](./.github/agents/review.md) - Reviews codebase changes.
+- [**Design**](./.github/agents/design.agent.md) - Designs frameworks and APIs.
+- [**Build**](./.github/agents/build.agent.md) - Builds features from designs.
+- [**Fix**](./.github/agents/fix.agent.md) - Fixes bugs with regression tests.
+- [**Docs**](./.github/agents/docs.agent.md) - Writes user-facing documentation.
+- [**Review**](./.github/agents/review.agent.md) - Reviews codebase changes.
 
 Start the conversation by identifying your agent role briefly. If you are
 unsure, ask for clarification.
@@ -33,7 +33,7 @@ These links are relative to the repository root.
 - Update mocks and snapshots: `deno task flow test [path/to/test/file] --update`
 - Verify all checks: `deno task flow .`
 
-## Code style
+## Coding style
 
 - ✅ **ALWAYS** write minimal and concise code.
 - ✅ **ALWAYS** use early returns to avoid nesting.
@@ -50,7 +50,7 @@ These links are relative to the repository root.
 
 ### Examples
 
-#### ✅️ **Good**: Clear and concise code with early returns
+✅️ **Good**: Clear and concise code with early returns
 
 ```ts
 export function fibonacci(n: number): number {
@@ -64,7 +64,7 @@ export function fibonacci(n: number): number {
 }
 ```
 
-#### ❌ **Bad**: Inline comments narrating code
+❌ **Bad**: Inline comments narrating code
 
 ```ts
 export function fibonacci(n: number): number {
@@ -75,7 +75,7 @@ export function fibonacci(n: number): number {
   let current = 1;
   // Iterate from 2 to n, no need to use 1 as it's already handled
   for (let i = 2; i <= n; i++) {
-    // Calculate next fibonacci number, and update previous and current
+    // Calculate the next Fibonacci number, and update previous and current
     [previous, current] = [current, previous + current];
   }
   // Return the result
@@ -83,7 +83,7 @@ export function fibonacci(n: number): number {
 }
 ```
 
-#### ❌ **Bad**: Intermediate variables and long names
+❌ **Bad**: Intermediate variables and long names
 
 ```ts
 export function fibonacci(fibonacciNumber: number): number {
@@ -99,7 +99,7 @@ export function fibonacci(fibonacciNumber: number): number {
 }
 ```
 
-#### ❌ **Bad**: Abbreviated variable names
+❌ **Bad**: Abbreviated variable names
 
 ```ts
 export function fibonacci(n: number): number {
@@ -113,7 +113,7 @@ export function fibonacci(n: number): number {
 }
 ```
 
-#### ❌ **Bad**: Redundant context in names
+❌ **Bad**: Redundant context in names
 
 ```ts
 export function parseCommit(commitMessage: string) {
@@ -123,7 +123,7 @@ export function parseCommit(commitMessage: string) {
 }
 ```
 
-#### ✅️ **Good**: Names without redundant context
+✅️ **Good**: Names without redundant context
 
 ```ts
 export function parseCommit(message: string) {
@@ -133,7 +133,7 @@ export function parseCommit(message: string) {
 }
 ```
 
-#### ❌ **Bad**: Empty lines within function bodies
+❌ **Bad**: Empty lines within function bodies
 
 ```ts
 export function fibonacci(n: number): number {
@@ -150,7 +150,7 @@ export function fibonacci(n: number): number {
 }
 ```
 
-#### ✅️ **Good**: Focused and concise testing
+✅️ **Good**: Focused and concise testing
 
 ```ts
 import { assertEquals } from "@std/assert";
@@ -171,7 +171,7 @@ Deno.test("fibonacci() handles negative input", () => {
 });
 ```
 
-#### ❌ **Bad**: Explanatory testing
+❌ **Bad**: Explanatory testing
 
 ```ts
 import { assertEquals } from "@std/assert";

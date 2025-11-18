@@ -16,7 +16,7 @@ of users will do 80% of the time. Make common tasks easy, even if it means
 repetition or extra work in the implementation. Users shouldn't have to think
 hard about how to use modules and functions.
 
-#### ✅️ **Good**: Simple function signature
+✅️ **Good**: Simple function signature
 
 ```ts
 export function parse(message: string) {
@@ -25,7 +25,7 @@ export function parse(message: string) {
 }
 ```
 
-#### ❌ **Bad**: Unnecessary abstraction
+❌ **Bad**: Unnecessary abstraction
 
 ```ts
 export function parser() {
@@ -45,7 +45,7 @@ performance unless profiling shows a real bottleneck. Don't optimize
 speculatively before measuring. Yet, be pragmatic. Don't write O(N²) code when
 O(N) is just one more line.
 
-#### ✅️ **Good**: Simple and clear code
+✅️ **Good**: Simple and clear code
 
 ```ts
 export function parse(message: string) {
@@ -54,7 +54,7 @@ export function parse(message: string) {
 }
 ```
 
-#### ❌ **Bad**: Premature optimization
+❌ **Bad**: Premature optimization
 
 ```ts
 export function parse(message: string) {
@@ -165,7 +165,7 @@ Functions with many positional parameters are hard to use. Stick to two required
 parameters and use an optional `options` object for everything else. This keeps
 the common case simple while giving you flexibility.
 
-#### ✅️ **Good**: A few parameters
+✅️ **Good**: A few parameters
 
 ```ts
 export interface ParseOptions {
@@ -187,7 +187,7 @@ export function parse(message: string, options?: ParseOptions) {
 }
 ```
 
-#### ❌ **Bad**: Too many parameters
+❌ **Bad**: Too many parameters
 
 ```ts
 export function parse(
@@ -215,7 +215,7 @@ when parameter positions change. Reserve plain objects only for the `options`
 parameter, unless they can be discriminated with runtime checks, for example
 with `Symbol` properties.
 
-#### ✅️ **Good**: Distinguishable types
+✅️ **Good**: Distinguishable types
 
 ```ts
 export function parse(
@@ -231,7 +231,7 @@ export function parse(
 }
 ```
 
-#### ❌ **Bad**: Ambiguous plain objects
+❌ **Bad**: Ambiguous plain objects
 
 ```ts
 export function parse(
@@ -256,7 +256,7 @@ function overloads to achieve this instead of returning union types in the
 public interface. This makes the function easier to use and understand and
 improves type-safety for callers.
 
-#### ✅️ **Good**: Function overloads
+✅️ **Good**: Function overloads
 
 ```ts
 export interface ParsedCommit {
@@ -278,7 +278,7 @@ export function parse(input: string | string[]) {
 }
 ```
 
-#### ❌ **Bad**: Union return types
+❌ **Bad**: Union return types
 
 ```ts
 export interface ParsedCommit {
@@ -302,7 +302,7 @@ Code that is long and deeply indented is hard to scan and understand. Check
 error conditions first and return early to keep the happy path clear and free of
 nesting.
 
-#### ✅️ **Good**: Flat and concise code
+✅️ **Good**: Flat and concise code
 
 ```ts
 export function parse(message?: string) {
@@ -313,7 +313,7 @@ export function parse(message?: string) {
 }
 ```
 
-#### ❌ **Bad**: Overly nested code
+❌ **Bad**: Overly nested code
 
 ```ts
 export function parse(message?: string) {
@@ -342,7 +342,7 @@ indicate unclear code. If you need to explain what code does, refactor it
 instead. Inline comments should only be added for tricky logic that can't be
 expressed clearly otherwise.
 
-#### ✅️ **Good**: Clear code without inline comments
+✅️ **Good**: Clear code without inline comments
 
 ```ts
 export function parse(message: string) {
@@ -353,7 +353,7 @@ export function parse(message: string) {
 }
 ```
 
-#### ❌ **Bad**: Inline comments narrating code
+❌ **Bad**: Inline comments narrating code
 
 ```ts
 export function parse(message: string) {
@@ -375,7 +375,7 @@ the meaning, but don't sacrifice understanding for shorter names. Avoid
 abbreviations unless they are widely recognized industry standards (like _"id"_,
 _"url"_, or _"cwd"_).
 
-#### ✅️ **Good**: Clear and appropriately scoped
+✅️ **Good**: Clear and appropriately scoped
 
 ```ts
 export function parse(message: string, delimiter: string = ": ") {
@@ -384,7 +384,7 @@ export function parse(message: string, delimiter: string = ": ") {
 }
 ```
 
-#### ❌ **Bad**: Unnecessarily verbose
+❌ **Bad**: Unnecessarily verbose
 
 ```ts
 export function parse(commitMessage: string, splitDelimiter: string = ": ") {
@@ -393,7 +393,7 @@ export function parse(commitMessage: string, splitDelimiter: string = ": ") {
 }
 ```
 
-#### ❌ **Bad**: Unclear abbreviations
+❌ **Bad**: Unclear abbreviations
 
 ```ts
 export function parse(msg: string, delim: string = ": ") {
@@ -410,7 +410,7 @@ The two features for defining types in TypeScript largely overlap with each
 other. For consistency, use `interface` for both data shapes and method
 interfaces. Use the `type` keyword only for type manipulation.
 
-#### 💡 **Example**: Defining types
+💡 **Example**: Defining types
 
 ```ts
 export interface ParsedCommit {
@@ -438,7 +438,7 @@ the latter states that the value `undefined` is accepted. The
 catch subtle bugs early. Prefer the optional field syntax since it is more
 idiomatic and easier to use.
 
-#### ✅️ **Good**: Optional fields
+✅️ **Good**: Optional fields
 
 ```ts
 export interface ParseOptions {
@@ -448,7 +448,7 @@ export interface ParseOptions {
 }
 ```
 
-#### ❌ **Bad**: Explicit `undefined`
+❌ **Bad**: Explicit `undefined`
 
 ```ts
 export interface ParseOptions {
@@ -474,7 +474,7 @@ are conditions that should always happen if the code is correct. They make the
 code robust against bugs and self-documenting. They can also steer the type
 checker and simplify lines following the assertion.
 
-#### 💡 **Example**: Using assertions
+💡 **Example**: Using assertions
 
 ```ts
 import { assertExists } from "@std/assert";
@@ -496,7 +496,7 @@ This forces the caller to handle missing cases using the type system. One
 exception is when it is unlikely that the value will be missing, in which case
 throwing an error is acceptable to keep the types simpler.
 
-#### 💡 **Example**: Optional return values
+💡 **Example**: Optional return values
 
 ```ts
 export interface ParsedCommit {
@@ -518,7 +518,7 @@ Failures that happen due to unsupported usage or external conditions should
 throw instances of specific error classes. A good approach is to have one custom
 error class per package. For example, `@roka/git` has `GitError`.
 
-#### 💡 **Example**: Using error classes
+💡 **Example**: Using error classes
 
 ```ts
 export class ParseError extends Error {
@@ -541,7 +541,7 @@ Errors can contain source information to preserve the error chain and help with
 debugging. When you catch and re-throw errors, include the original error as the
 `cause`.
 
-#### 💡 **Example**: Using error causes
+💡 **Example**: Using error causes
 
 ```ts
 export class ParseError extends Error {
@@ -569,7 +569,7 @@ should start with a brief sentence without punctuation. Optional context can be
 added in the same sentence or in a separate body after an empty line. Never
 include sensitive data like tokens or passwords.
 
-#### ✅️ **Good**: Clear messages
+✅️ **Good**: Clear messages
 
 ```ts
 export function parse(message: string) {
@@ -585,7 +585,7 @@ export function parse(message: string) {
 }
 ```
 
-#### ❌ **Bad**: Vague or redundant messages
+❌ **Bad**: Vague or redundant messages
 
 ```ts
 export function parse(message: string) {
@@ -606,7 +606,7 @@ The primary aim of tests is to verify code, not to document it. Avoid
 explanatory tests describing behavior. Focus on asserting the contract, not
 demonstrating how the code functions.
 
-#### ✅️ **Good**: Focused and concise testing
+✅️ **Good**: Focused and concise testing
 
 ```ts
 import { assertEquals } from "@std/assert";
@@ -624,7 +624,7 @@ Deno.test("parse() returns commit type and summary", () => {
 });
 ```
 
-#### ❌ **Bad**: Explanatory testing
+❌ **Bad**: Explanatory testing
 
 ```ts
 import { assertEquals } from "@std/assert";
@@ -653,14 +653,14 @@ Deno.test("parse() returns commit type and summary", () => {
 });
 ```
 
-### Add tests for all new feature
+### Add tests for all new features
 
 Every new feature requires tests that cover the expected behavior, edge cases,
 and error conditions. Consider tests as a contract that the feature will
 continue to work as expected while the codebase continues to change. Complete
 coverage isn't necessary, but core functionality should be well-tested.
 
-#### 💡 **Example**: Testing a feature
+💡 **Example**: Testing a feature
 
 ```ts
 import { assertEquals } from "@std/assert";
@@ -685,7 +685,7 @@ bug surfaces once, it will likely resurface if not monitored and enough time
 passes. Regression tests make the feature contract include all the edge cases we
 encounter in the real world.
 
-#### 💡 **Example**: Testing a regression
+💡 **Example**: Testing a regression
 
 ```ts
 import { assertEquals } from "@std/assert";
@@ -708,7 +708,7 @@ reliable, or you can't trust any tests that depend on it. Broken testing tools
 can result in false positives, shipped bugs, and hours of debugging. The entire
 test suite is only as reliable as the testing utilities it depends on.
 
-#### 💡 **Example**: Testing a test utility
+💡 **Example**: Testing a test utility
 
 ```ts
 import { assertEquals } from "@std/assert";
@@ -727,12 +727,11 @@ Deno.test("testMessage() returns commit message", () => {
 
 Test names should clearly describe what's being tested and the expected
 behavior. Use the format `functionName() behavior` or
-`functionName({ option })
-behavior` to keep names consistent and scannable. When
+`functionName({ option }) behavior` to keep names consistent and scannable. When
 a test fails, the name should tell developers exactly what broke without reading
 the test code.
 
-#### ✅️ **Good**: Explicit test names
+✅️ **Good**: Explicit test names
 
 ```ts
 Deno.test("parse() extracts type and summary from message", () => {});
@@ -741,7 +740,7 @@ Deno.test("parse() rejects invalid commit message format", () => {});
 Deno.test("parse({ delimiter }) splits by custom delimiter", () => {});
 ```
 
-#### ❌ **Bad**: Vague test names
+❌ **Bad**: Vague test names
 
 ```ts
 Deno.test("parse test", () => {});
@@ -756,7 +755,7 @@ ordering of options. If no logic arises, sort options alphabetically. Within
 each option group, test common functionality first, then edge cases, then error
 conditions.
 
-#### 💡 **Example**: Ordering tests
+💡 **Example**: Ordering tests
 
 ```ts
 Deno.test("parse() extracts type and summary from message", () => {});
@@ -770,13 +769,55 @@ Deno.test("parse({ trim }) trims type and summary", () => {});
 
 ## Documentation
 
+### Use JSDoc for documentation
+
+Documentation is automatically generated with [JSDoc](https://jsdoc.app) markup
+from the source code. Provide a brief description of the documented symbol, and
+include any additional context if it helps understanding. Self-explanatory
+parameters and return values should not be documented. Omit type annotations if
+they are already provided by the type system. Don't use dashes between parameter
+names and descriptions.
+
+✅️ **Good**: Valuable documentation
+
+```ts
+/**
+ * Parses a conventional commit message into its components.
+ *
+ * @param delimiter Delimiter string separating type and summary.
+ * @throws {Error} If the message format is invalid.
+ */
+export function parse(message: string, delimiter: string = ": ") {
+  const [type, summary] = message.split(delimiter, 2);
+  if (!type || !summary) throw new Error("Invalid commit message format");
+  return { type, summary };
+}
+```
+
+❌ **Bad**: Redundant documentation
+
+```ts
+/**
+ * Parses a message.
+ *
+ * @param {string} message - The message.
+ * @param {string} delimiter - The delimiter.
+ * @returns The parsed string.
+ */
+export function parse(message: string, delimiter: string = ": ") {
+  const [type, summary] = message.split(delimiter, 2);
+  if (!type || !summary) throw new Error("Invalid commit message format");
+  return { type, summary };
+}
+```
+
 ### Document all modules
 
 Each module needs a clear description. Good module documentation explains the
 purpose, shows common usage patterns, and helps developers decide if this is the
 right module for their needs. Examples should be valid code snippets.
 
-#### 💡 **Example**: Documenting a module
+💡 **Example**: Documenting a module
 
 ````ts
 /**
@@ -802,7 +843,7 @@ Each public function needs a clear description and practical examples. Good
 function documentation explains what the function does and how it is used.
 Examples should be valid code snippets.
 
-#### 💡 **Example**: Documenting a function
+💡 **Example**: Documenting a function
 
 ````ts
 /**
@@ -822,73 +863,6 @@ export function parse(message: string) {
 }
 ````
 
-### Avoid redundant documentation
-
-Self-explanatory parameters and return values should not be documented. Document
-only when additional context helps understanding. Omit type annotations if they
-are already provided in the signature. Don't use dashes between parameter names
-and descriptions.
-
-#### ✅️ **Good**: Valuable documentation
-
-```ts
-/**
- * Parses a conventional commit message into its components.
- *
- * @param delimiter Delimiter string separating type and summary.
- * @throws {Error} If the message format is invalid.
- */
-export function parse(message: string, delimiter: string = ": ") {
-  const [type, summary] = message.split(delimiter, 2);
-  if (!type || !summary) throw new Error("Invalid commit message format");
-  return { type, summary };
-}
-```
-
-#### ❌ **Bad**: Redundant documentation
-
-```ts
-/**
- * Parses a message.
- *
- * @param {string} message - The message.
- * @param {string} delimiter - The delimiter.
- * @returns The parsed string.
- */
-export function parse(message: string, delimiter: string = ": ") {
-  const [type, summary] = message.split(delimiter, 2);
-  if (!type || !summary) throw new Error("Invalid commit message format");
-  return { type, summary };
-}
-```
-
-### Document all exported symbols
-
-In addition to functions, other exported symbols such as types or interfaces
-need documentation. Anything exported is part of the public interface and needs
-an explanation what it is for. Comprehensive documentation makes the entire API
-discoverable and understandable.
-
-#### 💡 **Example**: Documenting an interface
-
-```ts
-/**
- * Options for configuring parse behavior.
- */
-export interface ParseOptions {
-  /**
-   * Format string for parsing the commit message.
-   * @default {"conventional"}
-   */
-  format?: string;
-  /**
-   * Enforce strict whitespace rules in delimiters.
-   * @default {false}
-   */
-  strict?: boolean;
-}
-```
-
 ### Use indicative mood in descriptions
 
 Function descriptions should begin with a verb phrase that describes what the
@@ -897,7 +871,7 @@ _"[the function] does something"_. Don't write descriptions in an imperative
 sentence: _"do something"_. The same applies to descriptions for parameters and
 fields that begin with a verb.
 
-#### ✅️ **Good**: Indicative mood
+✅️ **Good**: Indicative mood
 
 ```ts
 /** Parses a conventional commit message into its components. */
@@ -912,7 +886,7 @@ export interface ParseOptions {
 }
 ```
 
-#### ❌ **Bad**: Imperative mood
+❌ **Bad**: Imperative mood
 
 ```ts
 /** Parse a conventional commit message into its components. */
@@ -934,7 +908,7 @@ the code. These are intended as an inline guidance for the next person on the
 current state of the code, and not as a replacement for project management. Keep
 `@todo`s brief, specific, and actionable.
 
-#### 💡 **Example**: Documenting limitations
+💡 **Example**: Documenting limitations
 
 ```ts
 /**
@@ -953,7 +927,7 @@ export function parse(message: string) {
 
 All JSDoc sentences should end with proper punctuation.
 
-#### ✅️ **Good**: Sentence with punctuation
+✅️ **Good**: Sentence with punctuation
 
 ```ts
 /** Parses a conventional commit message. */
@@ -963,7 +937,7 @@ export function parse(message: string) {
 }
 ```
 
-#### ❌ **Bad**: Sentence without punctuation
+❌ **Bad**: Sentence without punctuation
 
 ```ts
 /** Parses a conventional commit message */
