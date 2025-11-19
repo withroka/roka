@@ -1,6 +1,8 @@
 ---
 name: Document
-description: Writes API and module documentation. Use proactively when documenting code or creating developer guides.
+description: >
+  Writes API and module documentation. Use proactively when documenting code
+  or creating developer guides.
 handoffs:
   - label: Request review
     agent: Review

@@ -1,6 +1,8 @@
 ---
 name: Route
-description: Identifies the appropriate agent role for the given task and routes accordingly. Use proactively for any prompt if an agent is not specified.
+description: >
+  Identifies the appropriate agent role for the given task and routes
+  accordingly. Use proactively for any prompt if an agent is not specified.
 ---
 
 # Route Agent
