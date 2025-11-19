@@ -47,25 +47,27 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 - **refactor**: Code restructuring without behavior changes
 - **docs**: Documentation changes
 - **ci**: Continuous integration changes (workflows, CI checks, etc.)
-- **chore**: Maintenance tasks (tooling, dependencies, releases etc.)
+- **chore**: Maintenance tasks (tooling, dependencies, releases, etc.)
 - **perf**: Performance improvements
 - **style**: Code style changes
 
 ## Coding style
 
+- ✅ **ALWAYS** name the files after the module: `name.ts` and `name.test.ts`.
 - ✅ **ALWAYS** write minimal and concise code.
 - ✅ **ALWAYS** use early returns to avoid nesting.
 - ✅ **ALWAYS** use complete words for variable names: `message`, `delimiter`
 - ✅ **EXCEPTION**: industry-standard abbreviations are allowed: `url`, `cwd`
+- ❌ **NEVER** create `mod.ts`.
+- ❌ **NEVER** create helper modules.
 - ❌ **NEVER** abbreviate common words: `message` not `msg`
 - ❌ **NEVER** add redundant context: `message` not `commitMessage`
 - ❌ **NEVER** use nested if/else blocks when early returns work.
-- ❌ **NEVER** create intermediate variables when oneliners suffice.
-- ❌ **NEVER** document self-explanatory code.
-- ❌ **NEVER** use inline comments to narrate what code does.
 - ❌ **NEVER** add empty lines within function bodies.
+- ❌ **NEVER** create intermediate variables when oneliners suffice.
+- ❌ **NEVER** use inline comments to narrate what code does.
 - ❌ **NEVER** delete existing tests without purpose.
-- ❌ **NEVER** create helper modules.
+- ❌ **NEVER** document self-explanatory code.
 
 ### Examples
 

@@ -145,7 +145,7 @@ Submodules follow the same pattern. For example, the code for
 
 ### Design around functions
 
-Functions are the primary interface. Everything else, including types, errors,
+Functions are the primary abstraction. Everything else, including types, errors,
 and constants, are complementary. Export a single function with the same name as
 the module. For instance, the `conventional()` function is exported in the
 `@roka/git/conventional` module. Alternatively, a group of functions with a
@@ -517,8 +517,8 @@ the `cause`.
 
 ```ts
 export class ParseError extends Error {
-  constructor(message: string, cause?: unknown) {
-    super(message, { cause });
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
     this.name = "ParseError";
   }
 }
