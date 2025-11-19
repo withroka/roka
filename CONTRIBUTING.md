@@ -67,8 +67,8 @@ experimental tool called **flow** with similar functionality.
 
 ### Releases
 
-Releases are automated using the **forge** tool and manually approved. Ask the
-maintainers if you need a new release.
+Releases are automated using the **forge** tool and manually approved. This is
+handled by the maintainers.
 
 ## Terms
 
