@@ -64,7 +64,7 @@ experimental tool called **flow** with similar functionality.
 
 - Run all checks for unmerged changes: `deno task flow`
 - Run all checks for a module: `deno task flow [path/to/module]`
-- Run all tests from a file: `deno task flow test [path/to/test/file]`.
+- Run all tests from a file: `deno task flow test [path/to/file]`.
 
 ### Releases
 
