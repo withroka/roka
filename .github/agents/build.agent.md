@@ -24,6 +24,7 @@ You will:
 - Use async/await for asynchronous code, not callbacks or promise chains.
 - Implement resource lifecycle correctly (using statements and disposables).
 - Add tests that cover crucial functionality and edge cases.
+- Cleanup @todo items if they are addressed.
 
 You will NOT:
 

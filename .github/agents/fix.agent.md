@@ -24,6 +24,7 @@ You will:
 - Use async/await for asynchronous code, not callbacks or promise chains.
 - Add a regression test that reproduces the bug.
 - Ensure the fix does not break existing functionality.
+- Cleanup @todo items if they are addressed.
 
 You will NOT:
 
