@@ -36,7 +36,6 @@
  *
  * @todo Add `git().config.get()`
  * @todo Extend `git().config.set()`
- * @todo Add `git().tag.get()`
  * @todo Add `git().worktree.*`
  * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
@@ -222,6 +221,8 @@ export interface BranchOperations {
 export interface TagOperations {
   /** Lists all tags in the repository. */
   list(options?: TagListOptions): Promise<Tag[]>;
+  /** Retrieves a tag. */
+  get(tag: string | Tag): Promise<Tag | undefined>;
   /** Creates a new tag in the repository. */
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
   /** Deletes a tag. */
@@ -2229,6 +2230,12 @@ export function git(options?: GitOptions): Git {
           assertExists(tag.commit, "Cannot find commit for tag");
           return { ...tag, name: tag.name, commit: tag.commit };
         }));
+      },
+      async get(tag: string | Tag) {
+        const [found] = await repo.tag.list({ name: nameArg(tag) });
+        if (!found) return undefined;
+        if (found.name !== nameArg(tag)) return undefined;
+        return found;
       },
       async create(name, options): Promise<Tag> {
         await run(
