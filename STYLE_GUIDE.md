@@ -82,8 +82,7 @@ for more guidance.
 
 Modules should be organized into packages by their subject area or domain. For
 example, any functionality around Git goes into `@roka/git` instead of its own
-package. You can rename modules between versions, but packages stick around
-forever.
+package. Modules can be renamed between versions, but packages are forever.
 
 ### Use default modules for core features
 
@@ -103,21 +102,20 @@ Secondary or specialized features should be in submodules. For example,
 focused, makes secondary features easier to find, and keeps the number of
 packages in check.
 
-### Avoid generic module names
+### Avoid generic utility modules
 
-Packages and modules like `util` or `common` are too generic and don't tell you
-much about their purpose. It's better to create specific modules for what you
-need. If you have a utility that doesn't fit anywhere but is useful everywhere,
-it can be its own package. The `@roka/maybe` package is just that with a single
-`maybe()` function.
+Large helper modules, such as `util` or `common`, gather many concerns into a
+single place and expose them to a significant portion of the codebase. It's
+better to create dedicated modules for specific needs. If a function doesn't fit
+in anywhere but is useful everywhere, it can be its own package. The
+`@roka/maybe` package does that with a single `maybe()` function.
 
 ### Avoid internal modules
 
-Code sharing with internal modules makes it hard to limit the scope of code
-changes. Modules can talk to each other through their public interfaces. If
-shared functionality is needed, make it high enough quality to be public. If
-that's not worth the effort, consider code duplication before creating internal
-modules.
+Code sharing can introduce intricate coupling, making code changes trickier.
+When shared functionality is needed, prefer code duplication over internal
+modules. If duplication feels wrong, this might be a sign of poor abstraction.
+Either merge the modules or extract the shared code into its own public module.
 
 ### Avoid re-exporting symbols
 
@@ -145,25 +143,21 @@ Submodules follow the same pattern. For example, the code for
 
 ## Functions
 
-### Export functionality with functions
+### Design around functions
 
-The core interface of a module is the function or functions it exports.
-Everything else, such as types, errors, or constants, is complementary. This
-keeps the design simple and function-focused. It also helps findability by
-making the module names predictable.
-
-A module preferably exports a single function with the same name as the module.
-For example, `conventional()` in `@roka/git/conventional`. When you have a group
-of functions with multiple variants or with intimately related functionality,
-you can export them from a shared module. For example, the `@roka/testing/fake`
-module provides fakes by exporting multiple functions like `fakeConsole()` and
-`fakeCommand()`.
+Functions are the primary interface. Everything else, including types, errors,
+and constants, are complementary. Export a single function with the same name as
+the module. For instance, the `conventional()` function is exported in the
+`@roka/git/conventional` module. Alternatively, a group of functions with a
+closely related purpose can be exported from a single module. For example, the
+`@roka/testing/fake` module provides fakes by exporting multiple functions such
+as `fakeConsole()` and `fakeCommand()`.
 
 ### Limit required parameters
 
 Functions with many positional parameters are hard to use. Stick to two required
 parameters and use an optional `options` object for everything else. This keeps
-the common case simple while giving you flexibility.
+the common case simple while providing flexibility.
 
 ✅️ **Good**: A few parameters
 
@@ -231,7 +225,7 @@ export function parse(
 }
 ```
 
-❌ **Bad**: Ambiguous plain objects
+❌ **Bad**: Ambiguity with plain objects
 
 ```ts
 export function parse(
@@ -338,9 +332,9 @@ export function parse(message?: string) {
 ### Avoid inline comments
 
 Code should be self-explanatory with clear naming and structure. Inline comments
-indicate unclear code. If you need to explain what code does, refactor it
-instead. Inline comments should only be added for tricky logic that can't be
-expressed clearly otherwise.
+indicate unclear code. If code needs to be explained, consider refactoring it so
+that it doesn't. Inline comments should only be added for tricky logic that
+can't be expressed clearly otherwise.
 
 ✅️ **Good**: Clear code without inline comments
 
@@ -458,37 +452,6 @@ export interface ParseOptions {
 }
 ```
 
-### Avoid classes except for errors
-
-Classes add unnecessary complexity to the codebase. Method interfaces and
-functions can be used instead of classes in a more idiomatic TypeScript. The
-only exception is for error types, where runtime type identification is often
-needed.
-
-## Errors
-
-### Assert assumptions
-
-Internal assumptions and invariants should be validated with assertions. These
-are conditions that should always happen if the code is correct. They make the
-code robust against bugs and self-documenting. They can also steer the type
-checker and simplify lines following the assertion.
-
-💡 **Example**: Using assertions
-
-```ts
-import { assertExists } from "@std/assert";
-
-export function parse(message: string, delimiter = ":") {
-  if (!message) return undefined;
-  const parts = message.split(delimiter, 2);
-  const type = parts[0];
-  assertExists(type);
-  const summary = parts[1];
-  return { type, summary };
-}
-```
-
 ### Return `undefined` for missing values
 
 Functions should produce optional results by returning a union with `undefined`.
@@ -512,11 +475,20 @@ export function parse(message?: string): ParsedCommit | undefined {
 }
 ```
 
+### Avoid classes except for errors
+
+Classes add unnecessary complexity to the codebase. Method interfaces and
+functions can be used instead of classes in a more idiomatic TypeScript. The
+only exception is for error types, where runtime type identification is often
+needed.
+
+## Errors
+
 ### Throw errors for external conditions
 
 Failures that happen due to unsupported usage or external conditions should
-throw instances of specific error classes. A good approach is to have one custom
-error class per package. For example, `@roka/git` has `GitError`.
+throw instances of specific error classes. A common approach is to have one
+custom error class per package. For example, `@roka/git` has `GitError`.
 
 💡 **Example**: Using error classes
 
@@ -538,8 +510,8 @@ export function parse(message: string) {
 ### Include original errors as `cause`
 
 Errors can contain source information to preserve the error chain and help with
-debugging. When you catch and re-throw errors, include the original error as the
-`cause`.
+debugging. When catching and re-throwing errors, include the original error as
+the `cause`.
 
 💡 **Example**: Using error causes
 
@@ -594,6 +566,29 @@ export function parse(message: string) {
   if (!type || !summary) {
     throw new Error("Error: invalid commit message format"); // redundant prefix
   }
+  return { type, summary };
+}
+```
+
+### Assert assumptions
+
+Internal assumptions and invariants should be validated with assertions. These
+are conditions that should always happen if the code is correct. They make the
+code robust against bugs while being self-documenting. Assertions also steer the
+type checker and simplify lines following the assertion. Use them liberally and
+treat their failures as bugs.
+
+💡 **Example**: Using assertions
+
+```ts
+import { assertExists } from "@std/assert";
+
+export function parse(message: string, delimiter = ":") {
+  if (!message) return undefined;
+  const parts = message.split(delimiter, 2);
+  const type = parts[0];
+  assertExists(type); // type narrowing
+  const summary = parts[1];
   return { type, summary };
 }
 ```
@@ -653,60 +648,54 @@ Deno.test("parse() returns commit type and summary", () => {
 });
 ```
 
-### Add tests for all new features
+### Use descriptive test names
 
-Every new feature requires tests that cover the expected behavior, edge cases,
-and error conditions. Consider tests as a contract that the feature will
-continue to work as expected while the codebase continues to change. Complete
-coverage isn't necessary, but core functionality should be well-tested.
+Test names should clearly describe what's being tested and the expected
+behavior. Use the format `functionName() behavior` or
+`functionName({ option }) behavior` to keep names consistent and scannable. When
+a test fails, the name should tell developers exactly what broke without reading
+the test code.
 
-💡 **Example**: Testing a feature
+✅️ **Good**: Explicit test names
 
 ```ts
-import { assertEquals } from "@std/assert";
-
-export function parse(message: string) {
-  const [type, summary] = message.split(": ", 2);
-  return { type, summary };
-}
-
-Deno.test("parse() extracts type and summary from message", () => {
-  assertEquals(parse("feat: add new feature"), {
-    type: "feat",
-    summary: "add new feature",
-  });
-});
+Deno.test("parse() extracts type and summary from message", () => {});
+Deno.test("parse() rejects empty commit message", () => {});
+Deno.test("parse({ delimiter }) splits by custom delimiter", () => {});
 ```
 
-### Add tests for all bug fixes
-
-Bug fixes should include tests that verify the fix and prevent regressions. If a
-bug surfaces once, it will likely resurface if not monitored and enough time
-passes. Regression tests make the feature contract include all the edge cases we
-encounter in the real world.
-
-💡 **Example**: Testing a regression
+❌ **Bad**: Vague test names
 
 ```ts
-import { assertEquals } from "@std/assert";
+Deno.test("parse test", () => {});
+Deno.test("parse() error on empty input", () => {});
+Deno.test("parse_delimiter", () => {});
+```
 
-export function parse(message: string) {
-  if (!message) return undefined;
-  const [type, summary] = message.split(": ", 2);
-  return { type, summary };
-}
+### Organize tests logically
 
-Deno.test("parse() handles empty commit message", () => {
-  assertEquals(parse(""), undefined);
-});
+Group tests by their options usage, starting with no options to a logical
+ordering of options. If no logic arises, sort options alphabetically. Within
+each option group, test common functionality first, then edge cases, then error
+conditions.
+
+💡 **Example**: Ordering tests
+
+```ts
+Deno.test("parse() extracts type and summary from message", () => {});
+Deno.test("parse() handles messages without type", () => {});
+Deno.test("parse() rejects empty commit message", () => {});
+Deno.test("parse({ delimiter }) splits by custom delimiter", () => {});
+Deno.test("parse({ delimiter }) can split by regular expression", () => {});
+Deno.test("parse({ strict }) rejects invalid commit message format", () => {});
+Deno.test("parse({ trim }) trims type and summary", () => {});
 ```
 
 ### Add tests for testing utilities
 
-Testing utilities require tests as well. The test infrastructure must be
-reliable, or you can't trust any tests that depend on it. Broken testing tools
-can result in false positives, shipped bugs, and hours of debugging. The entire
-test suite is only as reliable as the testing utilities it depends on.
+Testing modules require tests as well. The test infrastructure must be reliable,
+or the tests that depend on it can't be trusted. Broken testing tools result in
+false positives, shipped bugs, and hours of debugging.
 
 💡 **Example**: Testing a test utility
 
@@ -723,56 +712,12 @@ Deno.test("testMessage() returns commit message", () => {
 });
 ```
 
-### Use descriptive test names
-
-Test names should clearly describe what's being tested and the expected
-behavior. Use the format `functionName() behavior` or
-`functionName({ option }) behavior` to keep names consistent and scannable. When
-a test fails, the name should tell developers exactly what broke without reading
-the test code.
-
-✅️ **Good**: Explicit test names
-
-```ts
-Deno.test("parse() extracts type and summary from message", () => {});
-Deno.test("parse() handles empty commit message", () => {});
-Deno.test("parse() rejects invalid commit message format", () => {});
-Deno.test("parse({ delimiter }) splits by custom delimiter", () => {});
-```
-
-❌ **Bad**: Vague test names
-
-```ts
-Deno.test("parse test", () => {});
-Deno.test("parse error", () => {});
-Deno.test("parse_delimiter", () => {});
-```
-
-### Organize tests logically
-
-Group tests by their options usage, starting with no options to a logical
-ordering of options. If no logic arises, sort options alphabetically. Within
-each option group, test common functionality first, then edge cases, then error
-conditions.
-
-💡 **Example**: Ordering tests
-
-```ts
-Deno.test("parse() extracts type and summary from message", () => {});
-Deno.test("parse() handles single-word messages", () => {});
-Deno.test("parse() rejects empty commit message", () => {});
-Deno.test("parse({ delimiter }) splits by custom delimiter", () => {});
-Deno.test("parse({ delimiter }) can split by regular expression", () => {});
-Deno.test("parse({ strict }) rejects invalid commit message format", () => {});
-Deno.test("parse({ trim }) trims type and summary", () => {});
-```
-
 ## Documentation
 
 ### Use JSDoc for documentation
 
-Documentation is automatically generated with [JSDoc](https://jsdoc.app) markup
-from the source code. Provide a brief description of the documented symbol, and
+Documentation is automatically generated from [JSDoc](https://jsdoc.app) markup
+in the source code. Provide a brief description for each public symbol, and
 include any additional context if it helps understanding. Self-explanatory
 parameters and return values should not be documented. Omit type annotations if
 they are already provided by the type system. Don't use dashes between parameter
@@ -837,32 +782,6 @@ right module for their needs. Examples should be valid code snippets.
  */
 ````
 
-### Document public functions
-
-Each public function needs a clear description and practical examples. Good
-function documentation explains what the function does and how it is used.
-Examples should be valid code snippets.
-
-💡 **Example**: Documenting a function
-
-````ts
-/**
- * Parses a conventional commit message into its components.
- *
- * @example
- * ```
- * import { parse } from "@roka/parse";
- * import { assertEquals } from "@std/assert";
- *
- * const result = parse("feat: add new feature");
- * assertEquals(result, { type: "feat", summary: "add new feature" });
- * ```
- */
-export function parse(message: string) {
-  // ...
-}
-````
-
 ### Use indicative mood in descriptions
 
 Function descriptions should begin with a verb phrase that describes what the
@@ -905,7 +824,7 @@ export interface ParseOptions {
 
 The `@todo` tags can document known limitations and missing features directly in
 the code. These are intended as an inline guidance for the next person on the
-current state of the code, and not as a replacement for project management. Keep
+current state of the code, and not as a replacement for issue tracking. Keep
 `@todo`s brief, specific, and actionable.
 
 💡 **Example**: Documenting limitations

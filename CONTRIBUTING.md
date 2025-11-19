@@ -17,7 +17,8 @@ lines long.
 If you want to make small changes, you can fork and send a pull request. For
 more significant changes, start a discussion with a new issue first. The
 [documentation](https://jsr.io/@roka) can be a great resource to help you
-navigate the code.
+navigate the code. Every new feature or bug fix should include tests to verify
+the intended functionality.
 
 Pull request titles must follow the
 [Conventional Commits](https://www.conventionalcommits.org) style. Common types

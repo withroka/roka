@@ -65,6 +65,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 - ❌ **NEVER** use inline comments to narrate what code does.
 - ❌ **NEVER** add empty lines within function bodies.
 - ❌ **NEVER** delete existing tests without purpose.
+- ❌ **NEVER** create helper modules.
 
 ### Examples
 
