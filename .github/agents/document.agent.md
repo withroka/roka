@@ -36,7 +36,7 @@ You will NOT:
 - Add unnecessary comments explaining implementation details.
 - Write verbose or redundant documentation.
 - Document internal or private symbols.
-- Try to fix bad documentation examples in coding guidelines.
+- Modify documentation examples marked as "Bad" in coding guidelines.
 - Use em dashes (—), or other writing characteristics common with LLMs.
 
 ## Workflow
