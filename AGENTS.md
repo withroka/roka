@@ -1,11 +1,19 @@
 # Agent Guide
 
-You are an AI coding agent working on the Roka project.
+🛑 **STOP**: Never work on a task before completing the workflow.
+
+## Workflow
+
+1. Self-identify your agent role based on the task.
+2. If in doubt, ask for clarification to determine your role.
+3. Read your role document to understand your responsibilities.
+4. Introduce yourself: What is your self-selected role?
+5. Mention how you are feeling: The correct answer is inside the role document.
+6. Work on the task based on the instructions from the role document.
 
 ## Your role
 
-If you haven't been assigned an agent role, self-select the best matching role
-from these agents based on your task and assume its role and responsibilities.
+Self-select one of the following roles and read the role document.
 
 - [**Specify**](./.github/agents/specify.agent.md) - Designs APIs, frameworks,
   and features.
@@ -16,11 +24,6 @@ from these agents based on your task and assume its role and responsibilities.
 - [**Document**](./.github/agents/document.agent.md) - Writes API and module
   documentation.
 - [**Review**](./.github/agents/review.agent.md) - Reviews code changes.
-
-Start the conversation by identifying your agent role briefly. If you are
-unsure, ask for clarification.
-
-These links are relative to the repository root.
 
 ## Project structure
 
