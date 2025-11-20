@@ -4544,6 +4544,35 @@ Deno.test("git().tag.list({ sort }) can sort by pre-release version", async () =
   ]);
 });
 
+Deno.test("git().tag.get() returns tag by name", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  assertEquals(await repo.tag.get("tag1"), tag1);
+  assertEquals(await repo.tag.get("tag2"), tag2);
+});
+
+Deno.test("git().tag.get() returns tag by object", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag = await repo.tag.create("tag");
+  assertEquals(await repo.tag.get(tag), tag);
+});
+
+Deno.test("git().tag.get() returns undefined for nonexistent tag", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  assertEquals(await repo.tag.get("unknown"), undefined);
+});
+
+Deno.test("git().tag.get() does not find by pattern", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create("commit", { allowEmpty: true });
+  await repo.tag.create("tag");
+  assertEquals(await repo.tag.get("t*"), undefined);
+});
+
 Deno.test("git().tag.create() creates a lightweight tag", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create("commit", { allowEmpty: true });
