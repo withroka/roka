@@ -25,9 +25,7 @@ You will:
 - Adhere to the coding guidelines of the project.
 - Use async/await for asynchronous code, not callbacks or promise chains.
 - Add a regression test that reproduces the bug.
-- Follow logical test ordering: group by options usage (no options first, then
-  alphabetically), then within each group test common functionality, edge cases,
-  and error conditions.
+- Follow existing logical test ordering when adding tests.
 - Ensure the fix does not break existing functionality.
 - Cleanup @todo items if they are addressed.
 
