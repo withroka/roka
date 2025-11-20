@@ -2247,7 +2247,7 @@ export function git(options?: GitOptions): Git {
           flag("--force", options?.force),
           signFlag("tag", options?.sign),
           name,
-          commitArg(options?.target),
+          peeledCommitArg(options?.target),
         );
         const [tag] = await repo.tag.list({ name });
         assertExists(tag, "Cannot find created tag");
@@ -2583,6 +2583,17 @@ function commitArg(commit: Commitish | undefined): string | undefined {
     : "name" in commit
     ? commit.name
     : commit.hash;
+}
+
+function peeledCommitArg(commit: Commitish): string;
+function peeledCommitArg(commit: Commitish | undefined): string | undefined;
+function peeledCommitArg(commit: Commitish | undefined): string | undefined {
+  if (commit === undefined) return undefined;
+  const arg = commitArg(commit);
+  if (typeof commit === "object" && "name" in commit) {
+    return `${arg}^{}`;
+  }
+  return arg;
 }
 
 function rangeArg(range: RevisionRange): string;

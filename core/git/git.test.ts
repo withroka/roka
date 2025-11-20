@@ -4708,6 +4708,33 @@ Deno.test("git().tag.delete() rejects non-existent tag", async () => {
   );
 });
 
+Deno.test("git().tag.create({ target }) does not create nested tags", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1", { subject: "First tag" });
+  const tag2 = await repo.tag.create("tag2", { target: tag1 });
+  const tag3 = await repo.tag.create("tag3", {
+    subject: "Third tag",
+    target: tag1,
+  });
+  const command = new Deno.Command("git", {
+    args: ["-C", repo.path(), "rev-parse", "tag2"],
+    stdout: "piped",
+  });
+  const { stdout } = await command.output();
+  const tag2Points = new TextDecoder().decode(stdout).trim();
+  const command2 = new Deno.Command("git", {
+    args: ["-C", repo.path(), "cat-file", "-p", "tag3"],
+    stdout: "piped",
+  });
+  const { stdout: stdout2 } = await command2.output();
+  const tag3Content = new TextDecoder().decode(stdout2);
+  assertEquals(tag2Points, commit.hash);
+  assertEquals(tag3Content.includes("type tag"), false);
+  assertEquals(tag3Content.includes("type commit"), true);
+  assertEquals(tag3Content.includes(`object ${commit.hash}`), true);
+});
+
 Deno.test("git().remote.list() returns remotes", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository();
