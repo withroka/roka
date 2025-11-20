@@ -70,7 +70,7 @@ export interface ConventionalCommit extends Commit {
 export function conventional(commit: Commit): ConventionalCommit {
   const footers = extractFooters(commit);
   const footerBreaking = footers["BREAKING-CHANGE"];
-  const match = commit.summary?.match(
+  const match = commit.subject?.match(
     /^(?:\s*?(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\s*?\))?(?<exclamation>!?):\s*)?\s*?(?<description>[^\s].*)$/,
   );
   const { type, scopes, exclamation, description } = { ...match?.groups };

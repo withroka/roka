@@ -49,7 +49,7 @@ export interface ReleaseOptions {
   repo?: Repository;
   /** Create a draft release. */
   draft?: boolean;
-  /** Use emoji in commit summaries. */
+  /** Use emoji in commit subjects. */
   emoji?: boolean;
 }
 

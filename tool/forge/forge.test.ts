@@ -6,9 +6,9 @@ import { assertExists } from "@std/assert";
 import { common, join } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { forge } from "./forge.ts";
-import { tempWorkspace } from "./testing.ts";
+import { tempWorkspace, type TempWorkspaceOptions } from "./testing.ts";
 
-const WORKSPACE = {
+const WORKSPACE: TempWorkspaceOptions = {
   configs: [
     {
       name: "@scope/name1",
@@ -38,14 +38,14 @@ const WORKSPACE = {
     },
   ],
   commits: [
-    { summary: "initial", tags: ["name1@1.0.0-pre.1", "name4@4.0.0"] },
-    { summary: "feat(name2): name2", tags: ["name2@1.0.0"] },
-    { summary: "fix(name1): bug", tags: ["name2@2.0.0"] },
-    { summary: "refactor(name2): rewrite" },
-    { summary: "feat(name2): feature", tags: ["name3@2.0.0"] },
-    { summary: "docs(name3): fix typo" },
-    { summary: "refactor(name4)!: redesign api" },
-    { summary: "style(name5): tabs over spaces" },
+    { subject: "initial", tags: ["name1@1.0.0-pre.1", "name4@4.0.0"] },
+    { subject: "feat(name2): name2", tags: ["name2@1.0.0"] },
+    { subject: "fix(name1): bug", tags: ["name2@2.0.0"] },
+    { subject: "refactor(name2): rewrite" },
+    { subject: "feat(name2): feature", tags: ["name3@2.0.0"] },
+    { subject: "docs(name3): fix typo" },
+    { subject: "refactor(name4)!: redesign api" },
+    { subject: "style(name5): tabs over spaces" },
   ],
 };
 

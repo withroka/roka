@@ -127,20 +127,23 @@ export function fibonacci(n: number): number {
 ❌ **Bad**: Redundant context in names
 
 ```ts
-export function parseCommit(commitMessage: string) {
+export function parseCommit(commitSubject: string) {
   const commitDelimiter = ": ";
-  const [commitType, commitSummary] = commitMessage.split(commitDelimiter, 2);
-  return { type: commitType, summary: commitSummary };
+  const [commitType, commitDescription] = commitSubject.split(
+    commitDelimiter,
+    2,
+  );
+  return { type: commitType, description: commitDescription };
 }
 ```
 
 ✅️ **Good**: Names without redundant context
 
 ```ts
-export function parseCommit(message: string) {
+export function parseCommit(subject: string) {
   const delimiter = ": ";
-  const [type, summary] = message.split(delimiter, 2);
-  return { type, summary };
+  const [type, description] = subject.split(delimiter, 2);
+  return { type, description };
 }
 ```
 

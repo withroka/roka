@@ -6,8 +6,8 @@
  * import { tempRepository, testCommit } from "@roka/git/testing";
  *
  * await using repo = await tempRepository();
- * const commit = testCommit({ summary: "feat(cli): add command" });
- * await repo.commit.create(commit.summary, {
+ * const commit = testCommit({ subject: "feat(cli): add command" });
+ * await repo.commit.create(commit.subject, {
  *   author: commit.author,
  *   allowEmpty: true,
  * });
@@ -21,20 +21,20 @@ import { type Commit, type Config, type Git, git } from "./git.ts";
 /**
  * Creates a commit with fake data.
  *
- * @example Create a commit with a summary.
+ * @example Create a commit with a subject.
  * ```ts
  * import { testCommit } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
  *
- * const commit = testCommit({ summary: "feat(cli): add command" });
- * assertEquals(commit.summary, "feat(cli): add command");
+ * const commit = testCommit({ subject: "feat(cli): add command" });
+ * assertEquals(commit.subject, "feat(cli): add command");
  * ```
  */
 export function testCommit(data?: Partial<Commit>): Commit {
   return {
     hash: "hash",
     short: "short",
-    summary: "summary",
+    subject: "subject",
     body: "body",
     trailers: {},
     author: { name: "author-name", email: "author-email" },

@@ -1035,7 +1035,7 @@ Deno.test("git().index.add() adds files", async () => {
   ]);
 });
 
-Deno.test("git().index.add() rejects non-existent file", async () => {
+Deno.test("git().index.add() rejects unknown file", async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () => repo.index.add("file"),
@@ -1137,7 +1137,7 @@ Deno.test("git().index.move() rejects missing destination if moving multiple fil
   assertEquals((await repo.index.status()).staged, []);
 });
 
-Deno.test("git().index.move() rejects non-existent source file", async () => {
+Deno.test("git().index.move() rejects unknown source file", async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () => repo.index.move("old.file", "new.file"),
@@ -1334,7 +1334,7 @@ Deno.test("git().index.remove() removes files", async () => {
   ]);
 });
 
-Deno.test("git().index.remove() rejects non-existent file", async () => {
+Deno.test("git().index.remove() rejects unknown file", async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () => repo.index.remove("file"),
@@ -1502,7 +1502,7 @@ Deno.test("git().diff.status({ path }) filters by path", async () => {
     { path: "file1", status: "modified" },
     { path: "file2", status: "modified" },
   ]);
-  assertEquals(await repo.diff.status({ path: "nonexistent" }), []);
+  assertEquals(await repo.diff.status({ path: "unknown" }), []);
 });
 
 Deno.test("git().diff.status({ pickaxe }) finds added and deleted lines", async () => {
@@ -2496,7 +2496,7 @@ Deno.test("git().ignore.filter() handles empty array", async () => {
   assertEquals(await repo.ignore.filter([]), []);
 });
 
-Deno.test("git().ignore.filter() works with nonexistent files", async () => {
+Deno.test("git().ignore.filter() works with unknown files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   assertEquals(await repo.ignore.filter("ignored.log"), ["ignored.log"]);
@@ -2555,7 +2555,7 @@ Deno.test("git().ignore.omit() handles empty array", async () => {
   assertEquals(await repo.ignore.omit([]), []);
 });
 
-Deno.test("git().ignore.omit() works with nonexistent files", async () => {
+Deno.test("git().ignore.omit() works with unknown files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "*.log");
   assertEquals(await repo.ignore.omit("ignored.log"), []);
@@ -2596,11 +2596,11 @@ Deno.test("git().commit.log() returns multiple commits", async () => {
 Deno.test("git().commit.log() can parse message body", async () => {
   await using repo = await tempRepository();
   await repo.commit.create(
-    "summary\n\nbody\n\nkey1: value1\nkey2: value2\n",
+    "subject\n\nbody\n\nkey1: value1\nkey2: value2\n",
     { allowEmpty: true },
   );
   const [commit] = await repo.commit.log();
-  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, "body");
   assertEquals(commit?.trailers, { key1: "value1", key2: "value2" });
 });
@@ -2610,11 +2610,11 @@ Deno.test("git().commit.log() can work with custom trailer separator", async () 
     config: { trailer: { separators: "#" } },
   });
   await repo.commit.create(
-    "summary\n\nbody\n\nkey1 #value1\nkey2 #value2\n",
+    "subject\n\nbody\n\nkey1 #value1\nkey2 #value2\n",
     { allowEmpty: true },
   );
   const [commit] = await repo.commit.log();
-  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, "body");
   assertEquals(commit?.trailers, { key1: "value1", key2: "value2" });
 });
@@ -2924,7 +2924,7 @@ Deno.test("git().commit.get() returns a commit by relative reference", async () 
   assertEquals(await repo.commit.get("HEAD~1"), commit1);
 });
 
-Deno.test("git().commit.get() handles non-existent commit", async () => {
+Deno.test("git().commit.get() handles unknown commit", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.commit.get("unknown"), undefined);
 });
@@ -2933,13 +2933,13 @@ Deno.test("git().commit.create() creates a commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create("summary");
-  assertEquals(commit?.summary, "summary");
+  const commit = await repo.commit.create("subject");
+  assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, undefined);
   assertEquals(commit?.trailers, {});
 });
 
-Deno.test("git().commit.create() rejects empty summary", async () => {
+Deno.test("git().commit.create() rejects empty subject", async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () => repo.commit.create("", { allowEmpty: true }),
@@ -2991,8 +2991,8 @@ Deno.test("git().commit.create({ all }) can automatically remove files", async (
 
 Deno.test("git().commit.create({ allowEmpty }) allows empty commit", async () => {
   await using repo = await tempRepository();
-  const commit = await repo.commit.create("summary", { allowEmpty: true });
-  assertEquals(commit?.summary, "summary");
+  const commit = await repo.commit.create("subject", { allowEmpty: true });
+  assertEquals(commit?.subject, "subject");
 });
 
 Deno.test("git().commit.create({ author }) sets author", async () => {
@@ -3026,8 +3026,8 @@ Deno.test("git().commit.create({ body }) creates a commit with body", async () =
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create("summary", { body: "body" });
-  assertEquals(commit?.summary, "summary");
+  const commit = await repo.commit.create("subject", { body: "body" });
+  assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, "body");
   assertEquals(commit?.trailers, {});
 });
@@ -3036,8 +3036,8 @@ Deno.test("git().commit.create({ body }) ignores empty body", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create("summary", { body: "" });
-  assertEquals(commit?.summary, "summary");
+  const commit = await repo.commit.create("subject", { body: "" });
+  assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, undefined);
   assertEquals(commit?.trailers, {});
 });
@@ -3077,10 +3077,10 @@ Deno.test("git().commit.create({ trailers }) creates a commit with trailers", as
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create("summary", {
+  const commit = await repo.commit.create("subject", {
     trailers: { key1: "value1", key2: "value2\n  multi\n  line" },
   });
-  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, undefined);
   assertEquals(commit?.trailers, { key1: "value1", key2: "value2 multi line" });
 });
@@ -3089,11 +3089,11 @@ Deno.test("git().commit.create({ trailers }) can create a commit with body and t
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create("summary", {
+  const commit = await repo.commit.create("subject", {
     body: "body",
     trailers: { key: "value" },
   });
-  assertEquals(commit?.summary, "summary");
+  assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, "body");
   assertEquals(commit?.trailers, { key: "value" });
 });
@@ -3102,11 +3102,11 @@ Deno.test("git().commit.amend() amends last commit without changing message", as
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content");
   await repo.index.add("file1");
-  const original = await repo.commit.create("summary", { body: "body" });
+  const original = await repo.commit.create("subject", { body: "body" });
   await Deno.writeTextFile(repo.path("file2"), "content");
   await repo.index.add("file2");
   const amended = await repo.commit.amend();
-  assertEquals(amended.summary, "summary");
+  assertEquals(amended.subject, "subject");
   assertEquals(amended.body, "body");
   assertNotEquals(amended.hash, original.hash);
   assertEquals(await repo.commit.log(), [amended]);
@@ -3128,7 +3128,7 @@ Deno.test("git().commit.amend({ all }) automatically stages files", async () => 
   await repo.commit.create("commit");
   await Deno.writeTextFile(repo.path("file"), "modified content");
   const amended = await repo.commit.amend({ all: true });
-  assertEquals(amended.summary, "commit");
+  assertEquals(amended.subject, "commit");
   assertEquals(await repo.index.status(), {
     staged: [],
     unstaged: [],
@@ -3144,7 +3144,7 @@ Deno.test("git().commit.amend({ all }) can automatically remove files", async ()
   await repo.commit.create("commit");
   await Deno.remove(repo.path("file"));
   const amended = await repo.commit.amend({ all: true, allowEmpty: true });
-  assertEquals(amended.summary, "commit");
+  assertEquals(amended.subject, "commit");
   assertEquals(await repo.index.status(), {
     staged: [],
     unstaged: [],
@@ -3171,22 +3171,22 @@ Deno.test("git().commit.amend({ body }) changes the commit body", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commit.create("summary");
+  await repo.commit.create("subject");
   const amended = await repo.commit.amend({
-    summary: "new summary",
+    subject: "new subject",
     body: "new body",
   });
-  assertEquals(amended.summary, "new summary");
+  assertEquals(amended.subject, "new subject");
   assertEquals(amended.body, "new body");
 });
 
-Deno.test("git().commit.amend({ body }) does not update commit summary", async () => {
+Deno.test("git().commit.amend({ body }) does not update commit subject", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commit.create("summary");
+  await repo.commit.create("subject");
   const amended = await repo.commit.amend({ body: "new body" });
-  assertEquals(amended.summary, "summary");
+  assertEquals(amended.subject, "subject");
   assertEquals(amended.body, "new body");
 });
 
@@ -3194,9 +3194,9 @@ Deno.test("git().commit.amend({ body }) overrides commit trailers", async () => 
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commit.create("summary", { trailers: { key: "value" } });
+  await repo.commit.create("subject", { trailers: { key: "value" } });
   const amended = await repo.commit.amend({ body: "new body" });
-  assertEquals(amended.summary, "summary");
+  assertEquals(amended.subject, "subject");
   assertEquals(amended.body, "new body");
   assertEquals(amended.trailers, {});
 });
@@ -3236,34 +3236,34 @@ Deno.test("git().commit.amend({ sign }) cannot use wrong key", async () => {
   );
 });
 
-Deno.test("git().commit.amend({ summary }) changes the commit message", async () => {
+Deno.test("git().commit.amend({ subject }) changes the commit message", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create("summary");
-  const amended = await repo.commit.amend({ summary: "new summary" });
-  assertEquals(amended.summary, "new summary");
+  const commit = await repo.commit.create("subject");
+  const amended = await repo.commit.amend({ subject: "new subject" });
+  assertEquals(amended.subject, "new subject");
   assertNotEquals(amended.hash, commit.hash);
 });
 
-Deno.test("git().commit.amend({ summary }) overrides commit body", async () => {
+Deno.test("git().commit.amend({ subject }) overrides commit body", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const original = await repo.commit.create("summary", { body: "body" });
-  const amended = await repo.commit.amend({ summary: "new summary" });
-  assertEquals(amended.summary, "new summary");
+  const original = await repo.commit.create("subject", { body: "body" });
+  const amended = await repo.commit.amend({ subject: "new subject" });
+  assertEquals(amended.subject, "new subject");
   assertEquals(amended.body, undefined);
   assertNotEquals(amended.hash, original.hash);
 });
 
-Deno.test("git().commit.amend({ summary }) rejects empty summary", async () => {
+Deno.test("git().commit.amend({ subject }) rejects empty subject", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commit.create("summary");
+  await repo.commit.create("subject");
   await assertRejects(
-    () => repo.commit.amend({ summary: "" }),
+    () => repo.commit.amend({ subject: "" }),
     GitError,
     "empty commit message",
   );
@@ -3273,24 +3273,24 @@ Deno.test("git().commit.amend({ trailers }) adds trailers to commit", async () =
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commit.create("summary");
+  await repo.commit.create("subject");
   const amended = await repo.commit.amend({
-    summary: "summary",
+    subject: "subject",
     body: "body",
     trailers: { key: "value" },
   });
-  assertEquals(amended.summary, "summary");
+  assertEquals(amended.subject, "subject");
   assertEquals(amended.body, "body");
   assertEquals(amended.trailers, { key: "value" });
 });
 
-Deno.test("git().commit.amend({ trailers }) does not update commit summary or body", async () => {
+Deno.test("git().commit.amend({ trailers }) does not update commit subject or body", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commit.create("summary", { body: "body" });
+  await repo.commit.create("subject", { body: "body" });
   const amended = await repo.commit.amend({ trailers: { key: "value" } });
-  assertEquals(amended.summary, "summary");
+  assertEquals(amended.subject, "subject");
   assertEquals(amended.body, "body");
   assertEquals(amended.trailers, { key: "value" });
 });
@@ -4524,7 +4524,7 @@ Deno.test("git().tag.list({ sort }) can sort by pre-release version", async () =
   await using repo = await tempRepository({
     config: { versionsort: { suffix: ["-pre", "-beta", "-rc"] } },
   });
-  await repo.commit.create("summary", { allowEmpty: true });
+  await repo.commit.create("subject", { allowEmpty: true });
   const tag100 = await repo.tag.create("v1.0.0");
   const tag200 = await repo.tag.create("v2.0.0");
   const tag200beta = await repo.tag.create("v2.0.0-beta");
@@ -4561,7 +4561,7 @@ Deno.test("git().tag.get() returns tag by object", async () => {
   assertEquals(await repo.tag.get(tag), tag);
 });
 
-Deno.test("git().tag.get() returns undefined for nonexistent tag", async () => {
+Deno.test("git().tag.get() returns undefined for unknown tag", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
   assertEquals(await repo.tag.get("unknown"), undefined);
@@ -4721,7 +4721,7 @@ Deno.test("git().tag.delete() can delete tag by name", async () => {
   assertEquals(await repo.tag.list(), []);
 });
 
-Deno.test("git().tag.delete() rejects non-existent tag", async () => {
+Deno.test("git().tag.delete() rejects unknown tag", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
   await assertRejects(
