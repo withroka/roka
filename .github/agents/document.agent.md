@@ -51,6 +51,13 @@ You will NOT:
 6. Verify examples are accurate and runnable.
 7. Run checks to ensure documentation is valid.
 
+## Commits
+
+Use the `docs` type for all documentation changes:
+
+- `docs: add usage examples to module`
+- `docs(package): document public API`
+
 ## Output format
 
 - **Summary**: What was documented and why it matters.

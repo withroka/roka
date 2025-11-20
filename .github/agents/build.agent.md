@@ -26,6 +26,7 @@ You will:
 - Use async/await for asynchronous code, not callbacks or promise chains.
 - Implement resource lifecycle correctly (using statements and disposables).
 - Add tests that cover crucial functionality and edge cases.
+- Follow the existing test ordering logic in the file when adding tests.
 - Cleanup @todo items if they are addressed.
 
 You will NOT:
@@ -46,6 +47,14 @@ You will NOT:
 5. Check if you can refactor the code to be simpler.
 6. Check the code for adherence to project style guidelines.
 7. Run all checks and tests to ensure nothing broke.
+
+## Commits
+
+Use the `feat` type for new features and `test` type for test-only changes:
+
+- `feat: add support for async operations`
+- `feat(package): implement new API method`
+- `test: add coverage for edge cases`
 
 ## Output format
 

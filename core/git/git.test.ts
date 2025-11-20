@@ -4675,6 +4675,28 @@ Deno.test("git().tag.create({ target }) can create a tag with another tag", asyn
   ]);
 });
 
+Deno.test("git().tag.create({ target }) does not create nested tags", async () => {
+  await using repo = await tempRepository({
+    config: { tag: { gpgsign: false } },
+  });
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1", { subject: "subject" });
+  const tag2 = await repo.tag.create("tag2", { target: tag1 });
+  const tag3 = await repo.tag.create("tag3", { target: "tag1" });
+  assertNotEquals(tag2.subject, tag1.subject);
+  assertNotEquals(tag3.subject, tag1.subject);
+});
+
+Deno.test("git().tag.create({ target }) can create nested tags", async () => {
+  await using repo = await tempRepository({
+    config: { tag: { gpgsign: false } },
+  });
+  await repo.commit.create("commit", { allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1", { subject: "subject" });
+  const tag2 = await repo.tag.create("tag2", { target: "tag1^{tag}" });
+  assertEquals(tag2.subject, tag1.subject);
+});
+
 Deno.test("git().tag.delete() deletes a tag", async () => {
   await using repo = await tempRepository();
   await repo.commit.create("commit", { allowEmpty: true });
