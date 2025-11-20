@@ -2232,9 +2232,10 @@ export function git(options?: GitOptions): Git {
         }));
       },
       async get(tag: string | Tag) {
-        const [found] = await repo.tag.list({ name: nameArg(tag) });
+        const name = nameArg(tag);
+        const [found] = await repo.tag.list({ name });
         if (!found) return undefined;
-        if (found.name !== nameArg(tag)) return undefined;
+        if (found.name !== name) return undefined;
         return found;
       },
       async create(name, options): Promise<Tag> {
