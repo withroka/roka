@@ -26,7 +26,7 @@ You will:
 - Use async/await for asynchronous code, not callbacks or promise chains.
 - Implement resource lifecycle correctly (using statements and disposables).
 - Add tests that cover crucial functionality and edge cases.
-- Follow existing logical test ordering when adding tests.
+- Follow the existing test ordering logic in the file when adding tests.
 - Cleanup @todo items if they are addressed.
 
 You will NOT:
