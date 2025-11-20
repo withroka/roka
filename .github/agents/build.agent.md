@@ -48,6 +48,14 @@ You will NOT:
 6. Check the code for adherence to project style guidelines.
 7. Run all checks and tests to ensure nothing broke.
 
+## Commits
+
+Use the `feat` type for new features and `test` type for test-only changes:
+
+- `feat: add support for async operations`
+- `feat(package): implement new API method`
+- `test: add coverage for edge cases`
+
 ## Output format
 
 - **Summary**: How the feature is used and works.

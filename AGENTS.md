@@ -30,6 +30,17 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 - **perf**: Performance improvements
 - **style**: Code style changes
 
+Use scopes to specify the package or module:
+
+- `feat(git): add tag support`
+- `fix(http): handle timeout errors`
+- `docs(async): add usage examples`
+
+Omit scopes for changes across multiple packages or general changes:
+
+- `docs: update contributing guide`
+- `chore: update dependencies`
+
 ## Coding style
 
 - ✅ **ALWAYS** name the files after the module: `name.ts` and `name.test.ts`.
