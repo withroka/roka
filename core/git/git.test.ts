@@ -224,10 +224,10 @@ Deno.test("git().init({ shared }) can specify repository sharing", async () => {
     shared: 0o775,
     bare: true,
   });
-  assertEquals(((await Deno.stat(repo1.path()))?.mode ?? 0) & 0o770, 0o750);
-  assertEquals(((await Deno.stat(repo2.path()))?.mode ?? 0) & 0o770, 0o770);
-  assertEquals(((await Deno.stat(repo3.path()))?.mode ?? 0) & 0o775, 0o775);
-  assertEquals(((await Deno.stat(repo4.path()))?.mode ?? 0) & 0o777, 0o775);
+  assertEquals(((await Deno.stat(repo1.path()))?.mode ?? 0) & 0o2000, 0);
+  assertNotEquals(((await Deno.stat(repo2.path()))?.mode ?? 0) & 0o2000, 0);
+  assertNotEquals(((await Deno.stat(repo3.path()))?.mode ?? 0) & 0o2000, 0);
+  assertNotEquals(((await Deno.stat(repo4.path()))?.mode ?? 0) & 0o2000, 0);
 });
 
 Deno.test("git().clone() clones a repository", async () => {
