@@ -23,7 +23,7 @@
  *   }
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
- *   await repo.commit.create("Initial commit");
+ *   await repo.commit.create({ subject: "Initial commit" });
  *   await repo.tag.create("v1.0.0");
  * });
  * ```
@@ -167,9 +167,9 @@ export interface CommitOperations {
   /** Returns a specific commit by its reference. */
   get(ref: Commitish): Promise<Commit | undefined>;
   /** Creates a new commit in the repository. */
-  create(subject: string, options?: CommitCreateOptions): Promise<Commit>;
+  create(options?: CommitCreateOptions): Promise<Commit>;
   /** Amends the last commit in the repository. */
-  amend(options?: CommitAmendOptions): Promise<Commit>;
+  amend(options?: CommitCreateOptions): Promise<Commit>;
 }
 
 /** Branch operations from {@linkcode Git.branch}. */
@@ -492,16 +492,16 @@ export interface Commit {
   short: string;
   /** Parent commit, if any. */
   parent?: Pick<Commit, "hash" | "short">;
+  /** Author, who wrote the code. */
+  author: User;
+  /** Committer, who created the commit. */
+  committer: User;
   /** Commit subject, the first line of the commit message. */
   subject: string;
   /** Commit body, excluding the first line and trailers from the message. */
   body?: string;
   /** Trailer values at the end of the commit message. */
-  trailers: Record<string, string>;
-  /** Author, who wrote the code. */
-  author: User;
-  /** Committer, who created the commit. */
-  committer: User;
+  trailers?: Record<string, string>;
 }
 
 /** A tag in a git repository. */
@@ -510,10 +510,12 @@ export interface Tag {
   name: string;
   /** Commit that is recursively pointed to by the tag. */
   commit: Commit;
-  /** Tag subject from tag message. */
+  /** Tag subject, the first line of the tag message. */
   subject?: string;
-  /** Tag body from tag message. */
+  /** Tag body, excluding the first line and trailers from the message. */
   body?: string;
+  /** Trailer values at the end of the tag message. */
+  trailers?: Record<string, string>;
   /** Tagger, who created the tag. */
   tagger?: User;
 }
@@ -602,6 +604,32 @@ export interface RefListOptions {
   noMerged?: Commitish;
   /** Only refs that point to the given commit. */
   pointsAt?: Commitish;
+}
+
+/**
+ * Options common to {@linkcode CommitOperations.create} and
+ * {@linkcode TagOperations.create} for setting message bodies.
+ */
+export interface MessageOptions {
+  /**
+   * Message subject.
+   *
+   * When amending a commit with a subject, the
+   * {@linkcode MessageOptions.body body}, and
+   * {@linkcode MessageOptions.trailers trailers} of the commit are cleared,
+   * unless explicitly set during the amend call.
+   */
+  subject?: string;
+  /**
+   * Message body.
+   *
+   * When amending a commit with a body, the
+   * {@linkcode MessageOptions.trailers trailers} of the commit are cleared,
+   * unless explicitly set during the amend call.
+   */
+  body?: string;
+  /** Message trailers. */
+  trailers?: Record<string, string>;
 }
 
 /**
@@ -935,7 +963,7 @@ export interface CommitLogOptions {
 /**
  * Options for the {@linkcode CommitOperations.create} function.
  */
-export interface CommitCreateOptions extends SignOptions {
+export interface CommitCreateOptions extends MessageOptions, SignOptions {
   /**
    * Automatically stage modified or deleted files known to git.
    * @default {false}
@@ -946,37 +974,18 @@ export interface CommitCreateOptions extends SignOptions {
    * @default {false}
    */
   allowEmpty?: boolean;
+  /**
+   * Allow empty messages.
+   * @default {false}
+   */
+  allowEmptyMessage?: boolean;
   /** Author who wrote the code. */
   author?: User | undefined;
-  /**
-   * Commit body to append to the message.
-   *
-   * If a body is provided to the {@linkcode CommitAmendOptions.amend amend}
-   * function, the {@linkcode CommitAmendOptions.trailers trailers} of the
-   * commit are rewritten as well. They need to be provided again, if they are
-   * to be kept.
-   */
-  body?: string;
   /**
    * Commit the contents of the listed file or files instead of the staged
    * changes on index.
    */
   path?: string | string[];
-  /** Trailers to append to the commit message. */
-  trailers?: Record<string, string>;
-}
-
-/** Options for the {@linkcode CommitOperations.amend} function. */
-export interface CommitAmendOptions extends CommitCreateOptions {
-  /**
-   * Amended commit subject.
-   *
-   * If a subject is provided, the {@linkcode CommitAmendOptions.body body},
-   * and {@linkcode CommitAmendOptions.trailers trailers} of the commit are
-   * rewritten as well. These values are reset, if they are not provided to the
-   * {@linkcode CommitAmendOptions.amend amend} function.
-   */
-  subject?: string;
 }
 
 /** Options for the {@linkcode BranchOperations.list} function. */
@@ -1163,7 +1172,7 @@ export interface TagListOptions extends RefListOptions {
    *   config: { versionsort: { suffix: ["-pre", "-rc"] } },
    * });
    *
-   * await repo.commit.create("subject", { allowEmpty: true });
+   * await repo.commit.create({ subject: "subject", allowEmpty: true });
    * await repo.tag.create("v1.0.0");
    * await repo.tag.create("v2.0.0");
    * await repo.tag.create("v2.0.0-pre");
@@ -1182,7 +1191,7 @@ export interface TagListOptions extends RefListOptions {
 }
 
 /** Options for the {@linkcode TagOperations.create} function. */
-export interface TagCreateOptions extends SignOptions {
+export interface TagCreateOptions extends MessageOptions, SignOptions {
   /**
    * Target reference (commit, branch, or tag) to tag.
    *
@@ -1193,10 +1202,6 @@ export interface TagCreateOptions extends SignOptions {
    * @default {"HEAD"}
    */
   target?: Commitish;
-  /** Tag message subject. */
-  subject?: string;
-  /** Tag message body. */
-  body?: string;
   /** Replace existing tags instead of failing. */
   force?: boolean;
 }
@@ -1574,7 +1579,7 @@ export interface AdminBackfillOptions {
  *   const repo = await git().init({ directory: "/path/to/repo" });
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
  *   await repo.index.add("file.txt");
- *   const commit = await repo.commit.create("Initial commit");
+ *   const commit = await repo.commit.create({ subject: "Initial commit" });
  *   return { commit };
  * });
  * ```
@@ -1985,15 +1990,16 @@ export function git(options?: GitOptions): Git {
         });
         return commit;
       },
-      async create(subject, options) {
+      async create(options) {
         const output = await run(
           gitOptions,
           "commit",
-          flag("--message", subject, { equals: true }),
+          flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
           trailerFlag(options?.trailers),
           flag("--all", options?.all),
           flag("--allow-empty", options?.allowEmpty),
+          flag("--allow-empty-message", options?.allowEmptyMessage),
           flag("--author", userArg(options?.author)),
           signFlag("commit", options?.sign),
           "--",
@@ -2249,6 +2255,7 @@ export function git(options?: GitOptions): Git {
           "tag",
           flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
+          trailerFlag(options?.trailers),
           flag("--force", options?.force),
           signFlag("tag", options?.sign),
           name,
@@ -2712,7 +2719,7 @@ type FormatFieldDescriptor<T> =
       | {
         kind: "string";
         format: string;
-        transform(value: string, parent: Record<string, string>): T;
+        transform(value: string): T;
       }
       | (T extends string ? {
           kind: "string";
@@ -2748,11 +2755,11 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
           format: "%(if)%(object)%(then)%(object)%(else)%(objectname)%(end)",
         },
         short: { kind: "skip" },
+        author: { kind: "skip" },
+        committer: { kind: "skip" },
         subject: { kind: "skip" },
         body: { kind: "skip" },
         trailers: { kind: "skip" },
-        author: { kind: "skip" },
-        committer: { kind: "skip" },
       },
     },
     fetch: {
@@ -2868,28 +2875,14 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
     body: {
       kind: "string",
       optional: true,
-      format: "%b%H%(trailers)",
-      transform(bodyAndTrailers: string, parent: Record<string, string>) {
-        const hash = parent["hash"];
-        assertExists(hash, "Cannot parse git output");
-        let [body, trailers] = bodyAndTrailers.split(hash, 2);
-        if (trailers && body && body.endsWith(trailers)) {
-          body = body.slice(0, -trailers.length);
-        }
-        body = body?.trimEnd();
-        return body || undefined;
-      },
+      format: "%b%x00%(trailers)",
+      transform: parseBody,
     },
     trailers: {
       kind: "string",
+      optional: true,
       format: "%(trailers:only=true,unfold=true,key_value_separator=: )",
-      transform(trailers: string) {
-        return trailers.split("\n").reduce((trailers, line) => {
-          const [key, value] = line.split(": ", 2);
-          if (key) trailers[key.trim()] = value?.trim() || "";
-          return trailers;
-        }, {} as Record<string, string>);
-      },
+      transform: parseTrailers,
     },
   },
 } satisfies FormatDescriptor<Commit>;
@@ -2910,11 +2903,11 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
           format: "%(if)%(object)%(then)%(object)%(else)%(objectname)%(end)",
         },
         short: { kind: "skip" },
+        author: { kind: "skip" },
+        committer: { kind: "skip" },
         subject: { kind: "skip" },
         body: { kind: "skip" },
         trailers: { kind: "skip" },
-        author: { kind: "skip" },
-        committer: { kind: "skip" },
       },
     },
     tagger: {
@@ -2939,11 +2932,14 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
     body: {
       kind: "string",
       optional: true,
-      format: "%(if)%(object)%(then)%(body)%(else)%00%(end)",
-      transform(body: string) {
-        body = body.trimEnd();
-        return body || undefined;
-      },
+      format: "%(if)%(object)%(then)%(body)%00%(trailers)%(else)%00%(end)",
+      transform: parseBody,
+    },
+    trailers: {
+      kind: "string",
+      optional: true,
+      format: "%(if)%(trailers)%(then)%(trailers)%(else)%00%(end)",
+      transform: parseTrailers,
     },
   },
 } satisfies FormatDescriptor<Tag>;
@@ -2966,7 +2962,6 @@ function formatArg<T>(format: FormatDescriptor<T>): string {
 }
 
 function formattedObject<T>(
-  parent: Record<string, string>,
   format: FormatFieldDescriptor<T>,
   parts: string[],
 ): [Partial<T> | undefined, string | undefined, number] {
@@ -2975,7 +2970,7 @@ function formattedObject<T>(
     const parsed: Record<string, string> = {};
     const result: Record<string, unknown> = {};
     const length = Object.values(mapValues(format.fields, (field, key) => {
-      const [value, raw, length] = formattedObject(parsed, field, parts);
+      const [value, raw, length] = formattedObject(field, parts);
       if (value !== undefined) result[key] = value;
       if (raw !== undefined) parsed[key] = raw;
       return length;
@@ -2994,9 +2989,7 @@ function formattedObject<T>(
   const value = parts.shift();
   assertExists(value, "Cannot parse git output");
   if (value === "\x00") return [undefined, value, value.length];
-  const result = ("transform" in format)
-    ? format.transform(value, parent)
-    : value as T;
+  const result = ("transform" in format) ? format.transform(value) : value as T;
   return [result, value, value.length];
 }
 
@@ -3014,13 +3007,32 @@ function parseOutput<T>(
     const parts = output.split(delimiter, fields.length);
     assertEquals(parts.length, fields.length, "Cannot parse git output");
     assertFalse(parts.some((p) => p === undefined), "Cannot parse git output");
-    const [object, _, length] = formattedObject({}, format, parts);
+    const [object, _, length] = formattedObject(format, parts);
     assertExists(object, "Cannot parse git output");
     result.push(object);
     output = output.slice(length + (fields.length) * delimiter.length)
       .trimStart();
   }
   return result;
+}
+
+function parseBody(content: string) {
+  let [body, trailers] = content.split("\x00", 2);
+  if (body !== undefined) {
+    if (trailers) body = body.slice(0, -trailers.length);
+    body = body?.trimEnd();
+  }
+  if (!body) return undefined;
+  return body;
+}
+
+function parseTrailers(trailers: string) {
+  if (!trailers) return undefined;
+  return trailers.split("\n").reduce((trailers, line) => {
+    const [key, value] = line.split(": ", 2);
+    if (key) trailers[key.trim()] = value?.trim() || "";
+    return trailers;
+  }, {} as Record<string, string>);
 }
 
 async function hydrate<T, P extends keyof T, K extends keyof NonNullable<T[P]>>(

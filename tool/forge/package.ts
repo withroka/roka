@@ -500,12 +500,14 @@ function updateType(
 }
 
 function matchesScope(pkg: Package, commit: ConventionalCommit) {
+  if (!commit.scopes) return false;
   return commit.scopes.some((s) =>
     s === pkg.name || s.startsWith(`${pkg.name}/`)
   );
 }
 
 function isUnstable(pkg: Package, commit: ConventionalCommit) {
+  if (!commit.scopes) return false;
   const single = pkg.root === pkg.directory;
   const scopes = commit.scopes
     .filter((s) => single || s === pkg.name || s.startsWith(`${pkg.name}/`));

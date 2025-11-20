@@ -206,7 +206,7 @@ async function createPullRequest(
       ...packages.map((pkg) => join(pkg.directory, "deno.json")),
       ...options?.changelog ? [options?.changelog] : [],
     ]);
-    await repo.git.commit.create(title, { body: commitBody });
+    await repo.git.commit.create({ subject: title, body: commitBody });
     let [pr] = await repo.pulls.list({ base, head, closed: false });
     if (pr) {
       await repo.git.sync.push({ force: true, target: head });
