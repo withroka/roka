@@ -1,108 +1,206 @@
-# Coding Agents Guidelines
+# Agent Guide
 
-## Directories
+## Your role
 
-- Core libraries: `core/`
-- **flow** tool: `tool/flow/`
-- **forge** tool: `tool/forge/`
+If a role has not been specified for you, determine an agent role for yourself.
 
-## Workflow
+- Role selection workflow: `.github/agents/route.agent.md`
+- This should come before any other work requested by the user.
+- Keep silent when thinking about your role.
 
-- Run `deno task forge list --modules` to explore modules.
-- Make code changes.
-- Run `deno task flow` to test changed files.
-- Before commit: `deno task flow .` must pass.
+## Tools
 
-## Coding
+- Project and module structure: `deno task forge list --modules`
+- Verify module status: `deno task flow [path/to/module]`
+- Run a specific test: `deno task flow test [path/to/test/file]`
+- Update mocks and snapshots: `deno task flow test [path/to/test/file] --update`
+- Verify all checks: `deno task flow .`
 
-Match style from the surrounding code and adhere to
-[CONTRIBUTING.md](./CONTRIBUTING.md).
+## Commit conventions
 
-### ❌ Avoid unnecessary variables and comments
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
+
+- **feat**: New features
+- **fix**: Bug fixes
+- **test**: Test additions or modifications
+- **refactor**: Code restructuring without behavior changes
+- **docs**: Documentation changes
+- **ci**: Continuous integration changes (workflows, CI checks, etc.)
+- **chore**: Maintenance tasks (tooling, dependencies, releases, etc.)
+- **perf**: Performance improvements
+- **style**: Code style changes
+
+## Coding style
+
+- ✅ **ALWAYS** name the files after the module: `name.ts` and `name.test.ts`.
+- ✅ **ALWAYS** write minimal and concise code.
+- ✅ **ALWAYS** use early returns to avoid nesting.
+- ✅ **ALWAYS** use complete words for variable names: `message`, `delimiter`
+- ✅ **EXCEPTION**: industry-standard abbreviations are allowed: `url`, `cwd`
+- ❌ **NEVER** create `mod.ts`.
+- ❌ **NEVER** create helper modules.
+- ❌ **NEVER** abbreviate common words: `message` not `msg`
+- ❌ **NEVER** add redundant context: `message` not `commitMessage`
+- ❌ **NEVER** use nested if/else blocks when early returns work.
+- ❌ **NEVER** add empty lines within function bodies.
+- ❌ **NEVER** create intermediate variables when oneliners suffice.
+- ❌ **NEVER** use inline comments to narrate what code does.
+- ❌ **NEVER** delete existing tests without purpose.
+- ❌ **NEVER** document self-explanatory code.
+
+### Examples
+
+✅️ **Good**: Clear and concise code with early returns
 
 ```ts
-export function validate(input?: string): string | undefined {
-  // Check if input exists
-  const hasInput = input !== undefined;
-
-  // If no input, return undefined
-  if (!hasInput) {
-    return undefined;
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  let previous = 0;
+  let current = 1;
+  for (let i = 2; i <= n; i++) {
+    [previous, current] = [current, previous + current];
   }
+  return current;
+}
+```
 
-  // Trim the input
-  const trimmed = input.trim();
+❌ **Bad**: Inline comments narrating code
 
+```ts
+export function fibonacci(n: number): number {
+  // Check if n is 0 or 1
+  if (n <= 1) return n;
+  // Initialize variables for tracking
+  let previous = 0;
+  let current = 1;
+  // Iterate from 2 to n, no need to use 1 as it's already handled
+  for (let i = 2; i <= n; i++) {
+    // Calculate the next Fibonacci number, and update previous and current
+    [previous, current] = [current, previous + current];
+  }
   // Return the result
-  return trimmed;
+  return current;
 }
 ```
 
-### ✅ Prefer minimal code with early returns
+❌ **Bad**: Intermediate variables and long names
 
 ```ts
-export function validate(input?: string): string | undefined {
-  if (!input) return undefined;
-  return input.trim();
-}
-```
-
-### ❌ Avoid nested conditions
-
-```ts
-export function process(value?: string): string | undefined {
-  if (value !== undefined) {
-    if (value.length > 0) {
-      return value.toLowerCase();
-    } else {
-      return undefined;
-    }
-  } else {
-    return undefined;
+export function fibonacci(fibonacciNumber: number): number {
+  if (fibonacciNumber <= 1) return fibonacciNumber;
+  let previousFibonacciValue = 0;
+  let currentFibonacciValue = 1;
+  for (let i = 2; i <= fibonacciNumber; i++) {
+    const nextFibonacciValue = previousFibonacciValue + currentFibonacciValue;
+    previousFibonacciValue = currentFibonacciValue;
+    currentFibonacciValue = nextFibonacciValue;
   }
+  return currentFibonacciValue;
 }
 ```
 
-### ✅ Prefer guard clauses
+❌ **Bad**: Abbreviated variable names
 
 ```ts
-export function process(value?: string): string | undefined {
-  if (!value || value.length === 0) return undefined;
-  return value.toLowerCase();
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  let prev = 0;
+  let curr = 1;
+  for (let i = 2; i <= n; i++) {
+    [prev, curr] = [curr, prev + curr];
+  }
+  return curr;
 }
 ```
 
-### ❌ Avoid long variable names
+❌ **Bad**: Redundant context in names
 
 ```ts
-export function parse(commitMessage?: string): string | undefined {
-  const trimmedCommitMessage = commitMessage?.trim();
-  const firstLineOfCommitMessage = trimmedCommitMessage?.split("\n")[0];
-  const commitMessageWithoutPrefix = firstLineOfCommitMessage?.replace(
-    /^(fix|feat|chore):\s*/,
-    "",
-  );
-  return commitMessageWithoutPrefix;
+export function parseCommit(commitMessage: string) {
+  const commitDelimiter = ": ";
+  const [commitType, commitSummary] = commitMessage.split(commitDelimiter, 2);
+  return { type: commitType, summary: commitSummary };
 }
 ```
 
-### ✅ Prefer concise names
+✅️ **Good**: Names without redundant context
 
 ```ts
-export function parse(message?: string): string | undefined {
-  const trimmed = message?.trim();
-  const first = trimmed?.split("\n")[0];
-  return first?.replace(/^(fix|feat|chore):\s*/, "");
+export function parseCommit(message: string) {
+  const delimiter = ": ";
+  const [type, summary] = message.split(delimiter, 2);
+  return { type, summary };
 }
 ```
 
-## Restrictions
+❌ **Bad**: Empty lines within function bodies
 
-- Do not create new packages without discussion.
-- Do not delete tests without discussion.
-- Focus on code quality and tests passing locally.
+```ts
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
 
-## PRs
+  let previous = 0;
+  let current = 1;
 
-- Prefer minimal, atomic pull requests.
-- Use conventional commits (`fix(git): fix bug in git package`).
+  for (let i = 2; i <= n; i++) {
+    [previous, current] = [current, previous + current];
+  }
+
+  return current;
+}
+```
+
+✅️ **Good**: Focused and concise testing
+
+```ts
+import { assertEquals } from "@std/assert";
+
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+Deno.test("fibonacci() returns correct sequence", () => {
+  assertEquals(fibonacci(0), 0);
+  assertEquals(fibonacci(1), 1);
+  assertEquals(fibonacci(6), 8);
+});
+
+Deno.test("fibonacci() handles negative input", () => {
+  assertEquals(fibonacci(-1), -1);
+});
+```
+
+❌ **Bad**: Explanatory testing
+
+```ts
+import { assertEquals } from "@std/assert";
+
+export function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+Deno.test("fibonacci() returns correct sequence", () => {
+  // Given the fibonacci sequence starts with 0, 1
+  const firstNumber = 0;
+  // When we calculate the 0th fibonacci number
+  const result0 = fibonacci(firstNumber);
+  // Then we expect it to be 0
+  assertEquals(result0, 0);
+  // Given we want the first fibonacci number
+  const secondNumber = 1;
+  // When we calculate it
+  const result1 = fibonacci(secondNumber);
+  // Then it should be 1
+  assertEquals(result1, 1);
+  // Given we want the 6th fibonacci number
+  // The sequence is: 0, 1, 1, 2, 3, 5, 8
+  const sixthIndex = 6;
+  // When we calculate it
+  const result6 = fibonacci(sixthIndex);
+  // Then it should be 8
+  assertEquals(result6, 8);
+  // End of test
+});
+```

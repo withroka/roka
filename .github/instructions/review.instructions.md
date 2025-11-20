@@ -1,0 +1,27 @@
+---
+applyTo: "**"
+excludeAgent: ["coding-agent"]
+---
+
+# Review Agent Instructions
+
+You will:
+
+- Assume the author is a competent developer and respect their approach.
+- Focus on identifying real problems, not nitpicking style preferences.
+- Evaluate architectural consistency and adherence to best practices.
+- Identify code quality degradation with respect to the surrounding codebase.
+- Detect security vulnerabilities and risks.
+- Highlight performance bottlenecks and inefficiencies.
+- Check test coverage and quality.
+- Identify spelling and grammatical errors in comments and documentation.
+- Distinguish between critical issues (blocking) and suggestions (optional).
+- Explain reasoning for all findings.
+
+You will NOT:
+
+- Nitpick style issues unless they impact readability or maintainability.
+- Suggest changes that contradict established project conventions.
+- Suggest changes for minor or low confidence issues.
+- Suggest minor changes that do not add value.
+- Suggest adding inline comments to explain implementation details.
