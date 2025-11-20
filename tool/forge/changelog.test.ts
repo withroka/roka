@@ -4,10 +4,10 @@ import { changelog } from "./changelog.ts";
 
 Deno.test("changelog() generates Markdown changelog", () => {
   const commits = [
-    testCommit({ summary: "feat(name): introduce" }),
-    testCommit({ summary: "build(name)!: breaking" }),
-    testCommit({ summary: "fix: fix code" }),
-    testCommit({ summary: "no type" }),
+    testCommit({ subject: "feat(name): introduce" }),
+    testCommit({ subject: "build(name)!: breaking" }),
+    testCommit({ subject: "fix: fix code" }),
+    testCommit({ subject: "no type" }),
   ];
   assertEquals(
     changelog(commits),
@@ -23,8 +23,8 @@ Deno.test("changelog() generates Markdown changelog", () => {
 
 Deno.test("changelog() allows custom content", () => {
   const commits = [
-    testCommit({ summary: "feat: introduce" }),
-    testCommit({ summary: "fix: fix code" }),
+    testCommit({ subject: "feat: introduce" }),
+    testCommit({ subject: "fix: fix code" }),
   ];
   assertEquals(
     changelog(commits, {
@@ -50,8 +50,8 @@ Deno.test("changelog() allows custom content", () => {
 
 Deno.test("changelog() allows custom Markdown", () => {
   const commits = [
-    testCommit({ summary: "feat: introduce" }),
-    testCommit({ summary: "fix: fix code" }),
+    testCommit({ subject: "feat: introduce" }),
+    testCommit({ subject: "fix: fix code" }),
   ];
   assertEquals(
     changelog(commits, {
@@ -78,26 +78,26 @@ Deno.test("changelog() allows custom Markdown", () => {
 
 Deno.test("changelog() can sort commits by importance", () => {
   const commits = [
-    testCommit({ summary: "style!: breaking-style-1" }),
-    testCommit({ summary: "build: build" }),
-    testCommit({ summary: "build!: breaking-build" }),
-    testCommit({ summary: "chore: chore" }),
-    testCommit({ summary: "ci: ci" }),
-    testCommit({ summary: "docs: docs" }),
-    testCommit({ summary: "fix: fix" }),
-    testCommit({ summary: "fix!: breaking-fix" }),
-    testCommit({ summary: "perf: perf-1" }),
-    testCommit({ summary: "refactor: refactor" }),
-    testCommit({ summary: "revert: revert" }),
-    testCommit({ summary: "style: style" }),
-    testCommit({ summary: "style!: breaking-style-2" }),
-    testCommit({ summary: "test: test" }),
-    testCommit({ summary: "perf: perf-2" }),
-    testCommit({ summary: "unknown: unknown" }),
-    testCommit({ summary: "no type" }),
-    testCommit({ summary: "feat: feat-1" }),
-    testCommit({ summary: "feat: feat-2" }),
-    testCommit({ summary: "feat!: breaking-feat" }),
+    testCommit({ subject: "style!: breaking-style-1" }),
+    testCommit({ subject: "build: build" }),
+    testCommit({ subject: "build!: breaking-build" }),
+    testCommit({ subject: "chore: chore" }),
+    testCommit({ subject: "ci: ci" }),
+    testCommit({ subject: "docs: docs" }),
+    testCommit({ subject: "fix: fix" }),
+    testCommit({ subject: "fix!: breaking-fix" }),
+    testCommit({ subject: "perf: perf-1" }),
+    testCommit({ subject: "refactor: refactor" }),
+    testCommit({ subject: "revert: revert" }),
+    testCommit({ subject: "style: style" }),
+    testCommit({ subject: "style!: breaking-style-2" }),
+    testCommit({ subject: "test: test" }),
+    testCommit({ subject: "perf: perf-2" }),
+    testCommit({ subject: "unknown: unknown" }),
+    testCommit({ subject: "no type" }),
+    testCommit({ subject: "feat: feat-1" }),
+    testCommit({ subject: "feat: feat-2" }),
+    testCommit({ subject: "feat!: breaking-feat" }),
   ];
   assertEquals(
     changelog(commits, {
@@ -131,20 +131,20 @@ Deno.test("changelog() can sort commits by importance", () => {
 
 Deno.test("changelog() generates frivolous changelog with emojis", () => {
   const commits = [
-    testCommit({ summary: "build(name)!: breaking" }),
-    testCommit({ summary: "build: build" }),
-    testCommit({ summary: "chore(name): chore" }),
-    testCommit({ summary: "ci: ci" }),
-    testCommit({ summary: "docs(name): docs" }),
-    testCommit({ summary: "feat: feat" }),
-    testCommit({ summary: "fix(module/submodule): fix" }),
-    testCommit({ summary: "perf: perf" }),
-    testCommit({ summary: "refactor(name/unstable): refactor" }),
-    testCommit({ summary: "revert: revert" }),
-    testCommit({ summary: "style(name): style" }),
-    testCommit({ summary: "test: test" }),
-    testCommit({ summary: "unknown(name): unknown" }),
-    testCommit({ summary: "no type" }),
+    testCommit({ subject: "build(name)!: breaking" }),
+    testCommit({ subject: "build: build" }),
+    testCommit({ subject: "chore(name): chore" }),
+    testCommit({ subject: "ci: ci" }),
+    testCommit({ subject: "docs(name): docs" }),
+    testCommit({ subject: "feat: feat" }),
+    testCommit({ subject: "fix(module/submodule): fix" }),
+    testCommit({ subject: "perf: perf" }),
+    testCommit({ subject: "refactor(name/unstable): refactor" }),
+    testCommit({ subject: "revert: revert" }),
+    testCommit({ subject: "style(name): style" }),
+    testCommit({ subject: "test: test" }),
+    testCommit({ subject: "unknown(name): unknown" }),
+    testCommit({ subject: "no type" }),
   ];
   assertEquals(
     changelog(commits, {
@@ -173,9 +173,9 @@ Deno.test("changelog() generates frivolous changelog with emojis", () => {
 
 Deno.test("changelog() generates commit hashes", () => {
   const commits = [
-    testCommit({ summary: "fix code (#1)" }),
-    testCommit({ summary: "not a number (#this is not)", short: "short-1" }),
-    testCommit({ summary: "no number", short: "short-2" }),
+    testCommit({ subject: "fix code (#1)" }),
+    testCommit({ subject: "not a number (#this is not)", short: "short-1" }),
+    testCommit({ subject: "no number", short: "short-2" }),
   ];
   assertEquals(
     changelog(commits, { commit: { hash: true } }),
@@ -190,11 +190,11 @@ Deno.test("changelog() generates commit hashes", () => {
 
 Deno.test("changelog() generates pull request numbers", () => {
   const commits = [
-    testCommit({ summary: "feat(name): introduce (#3)" }),
-    testCommit({ summary: "build(name/submodule)!: breaking (#2)" }),
-    testCommit({ summary: "fix: fix code (#1)" }),
-    testCommit({ summary: "fix: not a number (#this is not)" }),
-    testCommit({ summary: "no number" }),
+    testCommit({ subject: "feat(name): introduce (#3)" }),
+    testCommit({ subject: "build(name/submodule)!: breaking (#2)" }),
+    testCommit({ subject: "fix: fix code (#1)" }),
+    testCommit({ subject: "fix: not a number (#this is not)" }),
+    testCommit({ subject: "no number" }),
   ];
   assertEquals(
     changelog(commits, { commit: { github: true } }),
@@ -211,11 +211,11 @@ Deno.test("changelog() generates pull request numbers", () => {
 
 Deno.test("changelog() generates pull request numbers with emojis", () => {
   const commits = [
-    testCommit({ summary: "feat(name): introduce (#3)" }),
-    testCommit({ summary: "build(name/submodule)!: breaking (#2)" }),
-    testCommit({ summary: "fix: fix code (#1)" }),
-    testCommit({ summary: "fix: not a number (#this is not)" }),
-    testCommit({ summary: "no number" }),
+    testCommit({ subject: "feat(name): introduce (#3)" }),
+    testCommit({ subject: "build(name/submodule)!: breaking (#2)" }),
+    testCommit({ subject: "fix: fix code (#1)" }),
+    testCommit({ subject: "fix: not a number (#this is not)" }),
+    testCommit({ subject: "no number" }),
   ];
   assertEquals(
     changelog(commits, { commit: { emoji: true, github: true } }),

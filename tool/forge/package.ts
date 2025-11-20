@@ -38,7 +38,7 @@
  * ```
  *
  * Commits are only attributed to a workspace member if they explicitly list
- * the package name. For example, a commit with a summary of "_feat: new_" will
+ * the package name. For example, a commit with a subject of "_feat: new_" will
  * not be in included in a workspace package changelog, but "_feat(pkg): new_"
  * will be. However, both will be attributed to a simple (non-workspace)
  * package.

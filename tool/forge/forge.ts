@@ -81,7 +81,7 @@
  * derived from the last commit that updated the package.
  *
  * If you’re working on just one package, you can skip the scopes altogether.
- * In this case, a commit summary like “_feat: feature_” will also trigger a
+ * In this case, a commit subject like “_feat: feature_” will also trigger a
  * version change. But if you’re in a workspace with multiple packages, the
  * scope is needed to figure out which packages will update.
  *
@@ -422,7 +422,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
     .option("--type=<type:string>", "Commit type.", { collect: true })
     .option("--breaking", "Only breaking changes.")
     .option("--no-breaking", "Skip breaking changes of filtered types.")
-    .option("--emoji", "Use emoji for commit summaries.", { default: false })
+    .option("--emoji", "Use emoji for commit subjects.", { default: false })
     .option("--markdown", "Generate Markdown.", { default: false })
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
@@ -555,7 +555,7 @@ function releaseCommand(context: ForgeOptions | undefined) {
     .example("forge release --draft", "Create draft releases for all updates.")
     .arguments("[packages...:file]")
     .option("--draft", "Create a draft release.", { default: false })
-    .option("--emoji", "Use emoji for commit summaries.", { default: false })
+    .option("--emoji", "Use emoji for commit subjects.", { default: false })
     .env(
       "GITHUB_TOKEN=<token:string>",
       "GitHub personal token for GitHub actions.",

@@ -10,7 +10,7 @@ import { tempPackage, unstableTestImports } from "./testing.ts";
 Deno.test("release() rejects package without version", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [{ summary: "feat: new feature" }],
+    commits: [{ subject: "feat: new feature" }],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -19,7 +19,7 @@ Deno.test("release() rejects package without version", async () => {
 Deno.test("release() rejects version downgrade", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ summary: "feat: new feature", tags: ["name@0.1.1"] }],
+    commits: [{ subject: "feat: new feature", tags: ["name@0.1.1"] }],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -28,7 +28,7 @@ Deno.test("release() rejects version downgrade", async () => {
 Deno.test("release() rejects no change", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ summary: "feat: new feature", tags: ["name@0.1.0"] }],
+    commits: [{ subject: "feat: new feature", tags: ["name@0.1.0"] }],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -37,7 +37,7 @@ Deno.test("release() rejects no change", async () => {
 Deno.test("release() rejects 0.0.0", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.0.0" },
-    commits: [{ summary: "feat: new feature" }],
+    commits: [{ subject: "feat: new feature" }],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -47,8 +47,8 @@ Deno.test("release() creates initial release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
     commits: [
-      { summary: "fix: bug fix (#2)" },
-      { summary: "feat: new feature (#1)" },
+      { subject: "fix: bug fix (#2)" },
+      { subject: "feat: new feature (#1)" },
     ],
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
@@ -78,8 +78,8 @@ Deno.test("release() creates update release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.3.0" },
     commits: [
-      { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature (#1)" },
+      { subject: "initial", tags: ["name@1.2.3"] },
+      { subject: "feat: new feature (#1)" },
     ],
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
@@ -106,8 +106,8 @@ Deno.test("release() can create a pre-release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.3.0-pre.1+fedcba9` },
     commits: [
-      { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
+      { subject: "initial", tags: ["name@1.2.3"] },
+      { subject: "feat: new feature" },
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
@@ -122,8 +122,8 @@ Deno.test("release() can update an existing release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.3.0` },
     commits: [
-      { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature (#1)" },
+      { subject: "initial", tags: ["name@1.2.3"] },
+      { subject: "feat: new feature (#1)" },
     ],
   });
   const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
@@ -187,8 +187,8 @@ Deno.test("release({ draft }) creates draft release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.3.0" },
     commits: [
-      { summary: "initial", tags: ["name@1.2.3"] },
-      { summary: "feat: new feature" },
+      { subject: "initial", tags: ["name@1.2.3"] },
+      { subject: "feat: new feature" },
     ],
   });
   const repo = fakeRepository({ git: git({ cwd: pkg.root }) });

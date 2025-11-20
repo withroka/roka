@@ -29,8 +29,8 @@ Deno.test("tempPackage() creates package in a repository", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     commits: [
-      { summary: "feat: feature", tags: ["name@1.2.3"] },
-      { summary: "fix: bug" },
+      { subject: "feat: feature", tags: ["name@1.2.3"] },
+      { subject: "fix: bug" },
     ],
   });
   const repo = git({ cwd: pkg.root });
@@ -82,9 +82,9 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
       { name: "@scope/name3" },
     ],
     commits: [
-      { summary: "fix(name1): bug" },
-      { summary: "feat(name2): feature" },
-      { summary: "feat(name3)!: breaking" },
+      { subject: "fix(name1): bug" },
+      { subject: "feat(name2): feature" },
+      { subject: "feat(name3)!: breaking" },
     ],
   });
   const [pkg1, pkg2, pkg3] = packages;

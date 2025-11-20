@@ -167,7 +167,7 @@ export interface CommitOperations {
   /** Returns a specific commit by its reference. */
   get(ref: Commitish): Promise<Commit | undefined>;
   /** Creates a new commit in the repository. */
-  create(summary: string, options?: CommitCreateOptions): Promise<Commit>;
+  create(subject: string, options?: CommitCreateOptions): Promise<Commit>;
   /** Amends the last commit in the repository. */
   amend(options?: CommitAmendOptions): Promise<Commit>;
 }
@@ -492,8 +492,8 @@ export interface Commit {
   short: string;
   /** Parent commit, if any. */
   parent?: Pick<Commit, "hash" | "short">;
-  /** Commit summary, the first line of the commit message. */
-  summary: string;
+  /** Commit subject, the first line of the commit message. */
+  subject: string;
   /** Commit body, excluding the first line and trailers from the message. */
   body?: string;
   /** Trailer values at the end of the commit message. */
@@ -969,14 +969,14 @@ export interface CommitCreateOptions extends SignOptions {
 /** Options for the {@linkcode CommitOperations.amend} function. */
 export interface CommitAmendOptions extends CommitCreateOptions {
   /**
-   * Amended commit summary.
+   * Amended commit subject.
    *
-   * If a summary is provided, the {@linkcode CommitAmendOptions.body body},
+   * If a subject is provided, the {@linkcode CommitAmendOptions.body body},
    * and {@linkcode CommitAmendOptions.trailers trailers} of the commit are
    * rewritten as well. These values are reset, if they are not provided to the
    * {@linkcode CommitAmendOptions.amend amend} function.
    */
-  summary?: string;
+  subject?: string;
 }
 
 /** Options for the {@linkcode BranchOperations.list} function. */
@@ -1163,7 +1163,7 @@ export interface TagListOptions extends RefListOptions {
    *   config: { versionsort: { suffix: ["-pre", "-rc"] } },
    * });
    *
-   * await repo.commit.create("summary", { allowEmpty: true });
+   * await repo.commit.create("subject", { allowEmpty: true });
    * await repo.tag.create("v1.0.0");
    * await repo.tag.create("v2.0.0");
    * await repo.tag.create("v2.0.0-pre");
@@ -1985,11 +1985,11 @@ export function git(options?: GitOptions): Git {
         });
         return commit;
       },
-      async create(summary, options) {
+      async create(subject, options) {
         const output = await run(
           gitOptions,
           "commit",
-          flag("--message", summary, { equals: true }),
+          flag("--message", subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
           trailerFlag(options?.trailers),
           flag("--all", options?.all),
@@ -2006,21 +2006,21 @@ export function git(options?: GitOptions): Git {
         return commit;
       },
       async amend(options) {
-        let { summary, body, trailers } = options ?? {};
-        const edited = summary !== undefined ||
+        let { subject, body, trailers } = options ?? {};
+        const edited = subject !== undefined ||
           body !== undefined ||
           (trailers !== undefined && Object.keys(trailers).length > 0);
-        if (edited && (summary === undefined || body === undefined)) {
+        if (edited && (subject === undefined || body === undefined)) {
           const commit = await repo.commit.get("HEAD");
-          if (commit && summary === undefined && body === undefined) {
+          if (commit && subject === undefined && body === undefined) {
             body = commit.body;
           }
-          if (commit && summary === undefined) summary = commit.summary;
+          if (commit && subject === undefined) subject = commit.subject;
         }
         const output = await run(
           gitOptions,
           ["commit", "--amend"],
-          flag("--message", summary, { equals: true }),
+          flag("--message", subject, { equals: true }),
           flag("--message", body, { equals: true }),
           trailerFlag(trailers),
           flag("--all", options?.all),
@@ -2748,7 +2748,7 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
           format: "%(if)%(object)%(then)%(object)%(else)%(objectname)%(end)",
         },
         short: { kind: "skip" },
-        summary: { kind: "skip" },
+        subject: { kind: "skip" },
         body: { kind: "skip" },
         trailers: { kind: "skip" },
         author: { kind: "skip" },
@@ -2864,7 +2864,7 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
         email: { kind: "string", format: "%ce" },
       },
     },
-    summary: { kind: "string", format: "%s" },
+    subject: { kind: "string", format: "%s" },
     body: {
       kind: "string",
       optional: true,
@@ -2910,7 +2910,7 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
           format: "%(if)%(object)%(then)%(object)%(else)%(objectname)%(end)",
         },
         short: { kind: "skip" },
-        summary: { kind: "skip" },
+        subject: { kind: "skip" },
         body: { kind: "skip" },
         trailers: { kind: "skip" },
         author: { kind: "skip" },

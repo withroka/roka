@@ -50,12 +50,12 @@ export interface ChangelogOptions {
      */
     sort?: "importance";
     /**
-     * Use emoji in commit summaries.
+     * Use emoji in commit subjects.
      * @default {false}
      */
     emoji?: boolean;
     /**
-     * Include short commit hash in commit summaries, when a pull request number
+     * Include short commit hash in commit subjects, when a pull request number
      * is not available.
      *
      * This is useful for generating links to commits that were not merged with a
@@ -65,7 +65,7 @@ export interface ChangelogOptions {
      */
     hash?: boolean;
     /**
-     * List only pull request numbers as commit summaries.
+     * List only pull request numbers as commit subjects.
      *
      * This provides a nicely formatted changelog for GitHub pull requests, and
      * avoids listing commit titles twice.
@@ -142,7 +142,7 @@ export function changelog(
   if (options?.commit?.sort === "importance") log = sorted(log, byImportance);
   const blocks = [
     ...title ? [`${markdown.heading}${title}`] : [],
-    log.map((c) => `${markdown.bullet}${summary(c, options)}`).join("\n") ?? [],
+    log.map((c) => `${markdown.bullet}${subject(c, options)}`).join("\n") ?? [],
     footer,
   ].flat();
   return `${blocks.join("\n\n")}\n`;
@@ -171,21 +171,21 @@ function byImportance(a: ConventionalCommit, b: ConventionalCommit) {
   return 0;
 }
 
-function summary(
+function subject(
   commit: ConventionalCommit,
   options: ChangelogOptions | undefined,
 ): string {
   const prPattern = /^.*\((#\d+)\)$/;
-  let summary = options?.commit?.emoji ? commit.description : commit.summary;
-  if (options?.commit?.hash && !summary.match(prPattern)) {
-    summary = `${summary} (${commit.short})`;
+  let subject = options?.commit?.emoji ? commit.description : commit.subject;
+  if (options?.commit?.hash && !subject.match(prPattern)) {
+    subject = `${subject} (${commit.short})`;
   }
-  if (options?.commit?.github) summary = summary.replace(prPattern, "$1");
-  if (options?.commit?.emoji) summary = emoji(commit, summary);
-  return summary;
+  if (options?.commit?.github) subject = subject.replace(prPattern, "$1");
+  if (options?.commit?.emoji) subject = emoji(commit, subject);
+  return subject;
 }
 
-function emoji(commit: ConventionalCommit, summary: string): string {
+function emoji(commit: ConventionalCommit, description: string): string {
   const emojis: Record<string, string> = {
     build: "🔧",
     chore: "🧹",
@@ -202,7 +202,7 @@ function emoji(commit: ConventionalCommit, summary: string): string {
   };
   return [
     emojis[commit.type ?? "unknown"] ?? emojis["unknown"],
-    summary,
+    description,
     ...commit.breaking ? ["💥"] : [],
   ].join(" ");
 }

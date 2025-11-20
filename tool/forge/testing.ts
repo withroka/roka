@@ -38,7 +38,7 @@ export interface TempPackageOptions {
   /** Options for the initialization of the git repository. */
   repo?: TempRepositoryOptions;
   /** Commits and tags to create in the repository. */
-  commits?: { summary: string; tags?: string[] }[];
+  commits?: { subject: string; tags?: string[] }[];
 }
 
 /** Options for the {@linkcode tempWorkspace} function. */
@@ -54,7 +54,7 @@ export interface TempWorkspaceOptions {
   /** Options for the initialization of the git repository. */
   repo?: TempRepositoryOptions;
   /** Commits and tags to create in the repository. */
-  commits?: { summary: string; tags?: string[] }[];
+  commits?: { subject: string; tags?: string[] }[];
 }
 
 /**
@@ -86,7 +86,7 @@ export interface TempWorkspaceOptions {
  * await using pkg = await tempPackage({
  *   config: { name: "@scope/name" },
  *   commits: [
- *     { summary: "release", tags: ["name@1.2.3"] },
+ *     { subject: "release", tags: ["name@1.2.3"] },
  *   ],
  * });
  *
@@ -142,8 +142,8 @@ export async function tempPackage(
  *     { name: "@scope/name2" },
  *   ],
  *   commits: [
- *     { summary: "fix(name1): bug", tags: ["name1@1.2.3"] },
- *     { summary: "fix(name2): bug", tags: ["name2@3.2.1"] },
+ *     { subject: "fix(name1): bug", tags: ["name1@1.2.3"] },
+ *     { subject: "fix(name2): bug", tags: ["name2@3.2.1"] },
  *   ],
  * });
  * const [pkg1, pkg2] = workspace;
@@ -216,9 +216,9 @@ async function createRepository(
   options: TempPackageOptions | TempWorkspaceOptions | undefined,
 ) {
   const repo = await tempRepository(options?.repo);
-  for (const { summary, tags } of options?.commits ?? []) {
+  for (const { subject, tags } of options?.commits ?? []) {
     // deno-lint-ignore no-await-in-loop
-    await repo.commit.create(summary, { allowEmpty: true });
+    await repo.commit.create(subject, { allowEmpty: true });
     for (const tag of tags ?? []) {
       // deno-lint-ignore no-await-in-loop
       await repo.tag.create(tag);

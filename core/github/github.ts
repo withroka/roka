@@ -348,7 +348,7 @@ function repository(
         const commit = !options?.title
           ? (await git.commit.log({ range: { from: base } })).pop()
           : undefined;
-        const title = options?.title ?? commit?.summary;
+        const title = options?.title ?? commit?.subject;
         const body = options?.body ?? commit?.body;
         const response = await api.rest.pulls.create({
           owner,

@@ -12,7 +12,7 @@ Deno.test("testCommit() creates a commit with default data", () => {
   const commit = testCommit();
   assertGreater(commit.hash.length, 0);
   assertGreater(commit.short.length, 0);
-  assertGreater(commit.summary.length, 0);
+  assertGreater(commit.subject.length, 0);
   assertGreater(commit.body?.length, 0);
   assertExists(commit.trailers);
   assertGreater(commit.author.name.length, 0);
@@ -23,14 +23,14 @@ Deno.test("testCommit() creates a commit with default data", () => {
 
 Deno.test("testCommit() creates a commit with custom data", () => {
   const commit = testCommit({
-    summary: "custom-summary",
+    subject: "custom-subject",
     body: "custom-body",
     author: {
       name: "custom-author-name",
       email: "custom-author-email",
     },
   });
-  assertEquals(commit.summary, "custom-summary");
+  assertEquals(commit.subject, "custom-subject");
   assertEquals(commit.body, "custom-body");
   assertEquals(commit.author.name, "custom-author-name");
   assertEquals(commit.author.email, "custom-author-email");

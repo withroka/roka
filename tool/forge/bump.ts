@@ -85,7 +85,7 @@ export interface BumpOptions {
    */
   draft?: boolean;
   /**
-   * Use emoji in commit summaries.
+   * Use emoji in commit subjects.
    * @default {false}
    */
   emoji?: boolean;
