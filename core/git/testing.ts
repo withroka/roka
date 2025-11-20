@@ -7,7 +7,8 @@
  *
  * await using repo = await tempRepository();
  * const commit = testCommit({ subject: "feat(cli): add command" });
- * await repo.commit.create(commit.subject, {
+ * await repo.commit.create({
+ *   subject: commit.subject,
  *   author: commit.author,
  *   allowEmpty: true,
  * });
@@ -34,11 +35,11 @@ export function testCommit(data?: Partial<Commit>): Commit {
   return {
     hash: "hash",
     short: "short",
-    subject: "subject",
-    body: "body",
-    trailers: {},
     author: { name: "author-name", email: "author-email" },
     committer: { name: "committer-name", email: "committer-email" },
+    subject: "subject",
+    body: "body",
+    trailers: { "co-authored-by:": "coauthor-name <coauthor-email>" },
     ...data,
   };
 }
@@ -85,7 +86,7 @@ export interface TempRepositoryOptions {
  * await using repo = await tempRepository({ clone: remote });
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
- * const commit = await repo.commit.create("feat: add feature");
+ * const commit = await repo.commit.create({ subject: "feat: add feature" });
  * await repo.sync.push();
  *
  * assertEquals(await remote.commit.head(), commit);

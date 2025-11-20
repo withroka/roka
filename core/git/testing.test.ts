@@ -12,13 +12,13 @@ Deno.test("testCommit() creates a commit with default data", () => {
   const commit = testCommit();
   assertGreater(commit.hash.length, 0);
   assertGreater(commit.short.length, 0);
-  assertGreater(commit.subject.length, 0);
-  assertGreater(commit.body?.length, 0);
-  assertExists(commit.trailers);
   assertGreater(commit.author.name.length, 0);
   assertGreater(commit.author.email.length, 0);
   assertGreater(commit.committer.name.length, 0);
   assertGreater(commit.committer.email.length, 0);
+  assertGreater(commit.subject.length, 0);
+  assertGreater(commit.body?.length, 0);
+  assertExists(commit.trailers);
 });
 
 Deno.test("testCommit() creates a commit with custom data", () => {
@@ -40,7 +40,10 @@ Deno.test("tempRepository() creates a disposable repo", async () => {
   let path: string;
   {
     await using repo = await tempRepository();
-    const commit = await repo.commit.create("initial", { allowEmpty: true });
+    const commit = await repo.commit.create({
+      subject: "commit",
+      allowEmpty: true,
+    });
     assertEquals(await repo.commit.head(), commit);
     path = repo.path();
   }
@@ -50,7 +53,10 @@ Deno.test("tempRepository() creates a disposable repo", async () => {
 Deno.test("tempRepository({ branch }) sets default branch name", async () => {
   await using repo = await tempRepository({ branch: "branch" });
   assertEquals(await repo.branch.current(), { name: "branch" });
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const commit = await repo.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+  });
   const branches = await repo.branch.list();
   assertEquals(branches, [{ name: "branch", commit }]);
 });
@@ -63,7 +69,10 @@ Deno.test("tempRepository({ clone }) clones a repo from another repo", async () 
     fetch: toFileUrl(remote.path()),
     push: [toFileUrl(remote.path())],
   });
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const commit = await repo.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+  });
   await repo.sync.push();
   assertEquals(await remote.commit.head(), commit);
 });
@@ -76,7 +85,10 @@ Deno.test("tempRepository({ clone }) can clone a repo from path", async () => {
     fetch: toFileUrl(remote.path()),
     push: [toFileUrl(remote.path())],
   });
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const commit = await repo.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+  });
   await repo.sync.push();
   assertEquals(await remote.commit.head(), commit);
 });
@@ -90,7 +102,10 @@ Deno.test("tempRepository({ clone }) can clone a repo from URL", async () => {
     fetch: url,
     push: [url],
   });
-  const commit = await repo.commit.create("commit", { allowEmpty: true });
+  const commit = await repo.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+  });
   await repo.sync.push();
   assertEquals(await remote.commit.head(), commit);
 });

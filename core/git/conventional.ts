@@ -9,7 +9,7 @@
  * import { assertEquals, assertFalse } from "@std/assert";
  * (async () => {
  *   const repo = git();
- *   await repo.commit.create("feat(cli): add new command");
+ *   await repo.commit.create({ subject: "feat(cli): add new command" });
  *   const commit = conventional(await repo.commit.head());
  *   assertEquals(commit.type, "feat");
  *   assertEquals(commit.scopes, ["cli"]);
@@ -31,16 +31,16 @@ import type { Commit } from "./git.ts";
  * by {@linkcode conventional}.
  */
 export interface ConventionalCommit extends Commit {
+  /** Whether the commit is a breaking change. */
+  breaking: boolean;
   /** Commit description. */
   description: string;
   /** Commit type. */
   type?: string;
   /** Scopes affected by the commit. */
-  scopes: string[];
-  /** Breaking change description. */
-  breaking?: string;
+  scopes?: string[];
   /** Footer lines. */
-  footers: Record<string, string>;
+  footers?: Record<string, string>;
 }
 
 /**
@@ -56,7 +56,7 @@ export interface ConventionalCommit extends Commit {
  * await using repo = await tempRepository();
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
- * await repo.commit.create("feat(cli): add new command");
+ * await repo.commit.create({ subject: "feat(cli): add new command" });
  * const commit = conventional(await repo.commit.head());
  *
  * assertEquals(commit.type, "feat");
@@ -69,27 +69,30 @@ export interface ConventionalCommit extends Commit {
  */
 export function conventional(commit: Commit): ConventionalCommit {
   const footers = extractFooters(commit);
-  const footerBreaking = footers["BREAKING-CHANGE"];
   const match = commit.subject?.match(
     /^(?:\s*?(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\s*?\))?(?<exclamation>!?):\s*)?\s*?(?<description>[^\s].*)$/,
   );
   const { type, scopes, exclamation, description } = { ...match?.groups };
   assertExists(description, "Commit must have description");
-  if (!type) return { ...commit, description, scopes: [], footers };
-  const breaking = footerBreaking || (exclamation ? description : undefined);
+  const breaking = !!exclamation || footers?.["BREAKING-CHANGE"] !== undefined;
+  if (!type) {
+    return { ...commit, breaking, description, ...footers && { footers } };
+  }
   return {
     ...commit,
+    breaking,
     description,
     type: type.toLowerCase(),
-    scopes: (scopes?.split(",") ?? [])
-      .map((scope) => scope.trim().toLowerCase())
-      .filter((scope) => scope),
-    ...breaking && { breaking },
-    footers,
+    ...scopes !== undefined && {
+      scopes: (scopes.split(","))
+        .map((scope) => scope.trim().toLowerCase())
+        .filter((scope) => scope),
+    },
+    ...footers && { footers },
   };
 }
 
-function extractFooters(commit: Commit): Record<string, string> {
+function extractFooters(commit: Commit): Record<string, string> | undefined {
   const bodyLastParagraph = commit.body?.split("\n\n").pop();
   const bodyFooters = bodyLastParagraph?.split("\n")?.map((line) => {
     const match = line.match(/^\s*(?<key>.*?)(?<sep>:| #)\s*(?<value>.*)\s*$/);

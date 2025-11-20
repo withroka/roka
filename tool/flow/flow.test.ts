@@ -13,7 +13,7 @@ interface Options {
 async function run(context: Deno.TestContext, options?: Options) {
   const { input } = options ?? {};
   await using remote = await tempRepository();
-  await remote.commit.create("initial", { allowEmpty: true });
+  await remote.commit.create({ subject: "initial", allowEmpty: true });
   await using repo = await tempRepository({ clone: remote, chdir: true });
   const dataDirectory = join(
     dirname(fromFileUrl(context.origin)),
@@ -26,7 +26,7 @@ async function run(context: Deno.TestContext, options?: Options) {
   );
   await Deno.mkdir(repo.path("empty-directory"));
   await repo.index.add(files.map((path) => basename(path)));
-  await repo.commit.create("commit");
+  await repo.commit.create({ subject: "commit" });
   using _args = fakeArgs(
     context.name
       .replaceAll("[valid-code]", "valid-code.ts")
