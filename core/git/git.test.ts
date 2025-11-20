@@ -11,7 +11,7 @@ import {
 } from "@std/assert";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
-import { git, GitError, type Patch } from "./git.ts";
+import { type Git, git, GitError, type Patch } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
@@ -221,13 +221,14 @@ Deno.test("git().init({ shared }) can specify repository sharing", async () => {
   });
   const repo4 = await git().init({
     directory: directory.path("repo4"),
-    shared: 0o775,
+    shared: 0o777,
     bare: true,
   });
-  assertEquals(((await Deno.stat(repo1.path()))?.mode ?? 0) & 0o770, 0o750);
-  assertEquals(((await Deno.stat(repo2.path()))?.mode ?? 0) & 0o770, 0o770);
-  assertEquals(((await Deno.stat(repo3.path()))?.mode ?? 0) & 0o775, 0o775);
-  assertEquals(((await Deno.stat(repo4.path()))?.mode ?? 0) & 0o777, 0o775);
+  const mode = async (repo: Git) => (await Deno.stat(repo.path()))?.mode ?? 0;
+  assertEquals(await mode(repo1) & 0o2000, 0o0000);
+  assertEquals(await mode(repo2) & 0o2070, 0o2070);
+  assertEquals(await mode(repo3) & 0o2775, 0o2775);
+  assertEquals(await mode(repo4) & 0o2777, 0o2777);
 });
 
 Deno.test("git().clone() clones a repository", async () => {
