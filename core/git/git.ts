@@ -614,18 +614,18 @@ export interface MessageOptions {
   /**
    * Message subject.
    *
-   * If a subject is provided, the {@linkcode CommitAmendOptions.body body},
-   * and {@linkcode CommitAmendOptions.trailers trailers} of the commit are
-   * rewritten as well. These values are reset, if they are not provided to the
-   * {@linkcode CommitAmendOptions.amend amend} function.
+   * When amending a commit with a subject, the
+   * {@linkcode MessageOptions.body body}, and
+   * {@linkcode MessageOptions.trailers trailers} of the commit are cleared,
+   * unless explicitly set during the amend call.
    */
   subject?: string;
-  /** Message body.
+  /**
+   * Message body.
    *
-   * If a body is provided to the {@linkcode CommitAmendOptions.amend amend}
-   * function, the {@linkcode CommitAmendOptions.trailers trailers} of the
-   * commit are rewritten as well. They need to be provided again, if they are
-   * to be kept.
+   * When amending a commit with a body, the
+   * {@linkcode MessageOptions.trailers trailers} of the commit are cleared,
+   * unless explicitly set during the amend call.
    */
   body?: string;
   /** Message trailers. */
