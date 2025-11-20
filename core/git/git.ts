@@ -508,7 +508,7 @@ export interface Commit {
 export interface Tag {
   /** Tag name. */
   name: string;
-  /** Commit that is pointed to by the tag. */
+  /** Commit that is recursively pointed to by the tag. */
   commit: Commit;
   /** Tag subject from tag message. */
   subject?: string;
@@ -1185,6 +1185,11 @@ export interface TagListOptions extends RefListOptions {
 export interface TagCreateOptions extends SignOptions {
   /**
    * Target reference (commit, branch, or tag) to tag.
+   *
+   * The target is peeled to result in a commit object to prevent creation of
+   * nested tags. This behavior can be overridden by requesting a tag target
+   * with the `name^{tag}` syntax.
+   *
    * @default {"HEAD"}
    */
   target?: Commitish;
@@ -2247,7 +2252,7 @@ export function git(options?: GitOptions): Git {
           flag("--force", options?.force),
           signFlag("tag", options?.sign),
           name,
-          commitArg(options?.target),
+          peeledArg(commitArg(options?.target)),
         );
         const [tag] = await repo.tag.list({ name });
         assertExists(tag, "Cannot find created tag");
@@ -2583,6 +2588,14 @@ function commitArg(commit: Commitish | undefined): string | undefined {
     : "name" in commit
     ? commit.name
     : commit.hash;
+}
+
+function peeledArg(ref: string): string;
+function peeledArg(ref: string | undefined): string | undefined;
+function peeledArg(ref: string | undefined): string | undefined {
+  if (ref === undefined) return undefined;
+  if (/\^{.*?}/.test(ref)) return ref;
+  return `${ref}^{}`;
 }
 
 function rangeArg(range: RevisionRange): string;
