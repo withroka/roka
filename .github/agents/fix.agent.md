@@ -46,6 +46,14 @@ You will NOT:
 6. Cleanup code made obsolete by the fix (not general cleanup).
 7. Run all checks and tests to ensure nothing broke.
 
+## Commits
+
+Use the `fix` type for bug fixes and `test` type for regression tests:
+
+- `fix: handle edge case in validation`
+- `fix(package): prevent null reference error`
+- `test: add regression test for bug`
+
 ## Output format
 
 - **Summary**: What was broken and how the fix works.
