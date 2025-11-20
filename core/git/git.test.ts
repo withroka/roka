@@ -4712,8 +4712,8 @@ Deno.test("git().tag.create({ target }) does not create nested tags", async () =
   await using repo = await tempRepository();
   const commit = await repo.commit.create("commit", { allowEmpty: true });
   const tag1 = await repo.tag.create("tag1", { subject: "First tag" });
-  const tag2 = await repo.tag.create("tag2", { target: tag1 });
-  const tag3 = await repo.tag.create("tag3", {
+  await repo.tag.create("tag2", { target: tag1 });
+  await repo.tag.create("tag3", {
     subject: "Third tag",
     target: tag1,
   });
