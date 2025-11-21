@@ -76,6 +76,7 @@ import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
 import { assertEquals, assertExists } from "@std/assert";
 import {
+  ERASE_LINE,
   moveCursorUp,
   RESTORE_CURSOR,
   SAVE_CURSOR,
@@ -234,17 +235,27 @@ function testCommand() {
   return new Command()
     .description("Run tests using Deno's built-in test runner.")
     .example("flow test", "Run tests for modified files.")
+    .example("flow test --filter temp", "Run tests with 'temp' in their name.")
     .example("flow test --update", "Run tests and update snapshots and mocks.")
     .example("flow test .", "Run all tests.")
     .example("flow test **/*.test.ts", "Run tests in TypeScript test files.")
     .example("flow test core/", "Run tests in the core directory.")
+    .option("--filter <filter:string>", "Run only tests with matching names.")
     .option("--update", "Update snapshots and mocks.", { default: false })
     .arguments("[paths...:file]")
-    .action(async ({ update }, ...paths) => {
+    .action(async ({ filter, update }, ...paths) => {
       const found = await files(paths);
       if (found.length === 0) return;
       await run(found, [
-        (deno, files) => deno.test(files, { update }),
+        (deno, files) =>
+          deno.test(files, {
+            ...filter
+              ? filter?.match(/^\/.*\/$/)
+                ? { filter: new RegExp(filter) }
+                : { filter }
+              : {},
+            update,
+          }),
       ], {
         test: true,
       });
@@ -307,6 +318,15 @@ function denoOptions(): DenoOptions {
       if (!reported) console.log();
       reported = true;
       (report.success ? console.log : console.warn)(testLine(report));
+      // console.log({ report });
+      if (report.output) {
+        console.log(
+          ERASE_LINE +
+            "------- output -------" + "\n" +
+            report.output +
+            "----- output end -----",
+        );
+      }
     },
   };
 }

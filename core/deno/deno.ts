@@ -20,7 +20,7 @@ import { pool } from "@roka/async/pool";
 import { type TempDirectory, tempDirectory } from "@roka/fs/temp";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { omit } from "@std/collections";
+import { omit, pick } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { extname, fromFileUrl, join, resolve } from "@std/path";
 import { mergeReadableStreams } from "@std/streams";
@@ -278,6 +278,13 @@ export interface LintOptions {
 
 /** Options for the {@linkcode Deno.test} function. */
 export interface TestOptions {
+  /**
+   * Run tests with this string or RegExp pattern in the test name.
+   *
+   * If a string is provided, it will not be regarded as a pattern even if it
+   * is enclosed in slashes.
+   */
+  filter?: string | RegExp;
   /**
    * Whether to update snapshots and mocks.
    * @default {false}
@@ -540,8 +547,8 @@ export function deno(options?: DenoOptions): DenoCommands {
       }).run(files);
     },
     async test(files, options) {
-      const { update = false, permitNoFiles = false } = options ?? {};
-      let lastFile: Partial<Info> = {};
+      const { filter, update = false, permitNoFiles = false } = options ?? {};
+      let last: Partial<Info> = {};
       const test: string[] = [];
       return await new Runner(directory, "test", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
@@ -549,24 +556,41 @@ export function deno(options?: DenoOptions): DenoCommands {
         commonArgs: [
           "--no-check",
           "--doc",
+          ...(filter
+            ? [
+              "--filter",
+              typeof filter === "string"
+                ? `/${RegExp.escape(filter)}/`
+                : filter.toString(),
+            ]
+            : []),
           update ? "--allow-all" : "--permission-set",
         ],
         codeArgs: [
-          "--coverage",
+          "--coverage-raw-data-only",
         ],
         scriptArgs: update ? ["--", "--update"] : [],
         parse: {
           stdout: "piped",
           delimiter: new RegExp(
-            /(?:(?:^|\n)[^ ]*Warning[^ ]* .+?\n)/.source +
+            /(?:(?:^|\n)[\S]*Warning[\S]* .+?\n)/.source +
               "|" +
-              /(?:\n+(?:[^ ]*(?: (?:ERRORS|FAILURES) |(?:FAILED|ok)[^ ]* \| \d+ passed .*?\| \d+ failed ).*)\n+)/
+              /(?:\n+(?:[\S]*(?: (?:ERRORS|FAILURES) |(?:FAILED|ok)[\S]* \| \d+ passed .*?\| \d+ failed ).*)\n+)/
                 .source +
               "|" +
-              /(?:(?:^|\n+)(?=.*running \d+ tests? from|.+? \.\.\.(?:$| [^ ]*?(?:FAILED|INCOMPLETE|ok|ignored)[^ ]*? .*\n)?|.*=> .*:\d+:\d+[^ ]+\n))/
+              /(?:^|\n+)(?=[\S]*running \d+ tests? from )/.source +
+              "|" +
+              /(?:^|\n+)(?=[\S]*------- [a-z- ]+ -------[\S]*\n[\s\S]*?----- [a-z- ]+ -----[\S]*(?:\n|$))/
                 .source +
-              /(?:\n------- output -------\n[\s\S]*?----- output end -----)?/
-                .source,
+              "|" +
+              /(?<! -----[\S]*)(?:^|\n+)(?=.*? \.\.\.(?:\n|$))/.source +
+              "|" +
+              /(?<= \.\.\.)(?:\n|$)/.source +
+              "|" +
+              /(?<! -----[\S]*)(?:^|\n+)(?=.+? \.\.\. [\S]*(?:FAILED|INCOMPLETE|ok|ignored)[\S]* .*(?:\n|$))/
+                .source +
+              "|" +
+              /(?:^|\n+)(?=.*=> .*:\d+:\d+[\S]*\n)/.source,
           ),
         },
         report: {
@@ -603,47 +627,66 @@ export function deno(options?: DenoOptions): DenoCommands {
             patterns: [
               /^running \d+ tests? from (?<file>.*)(?:\$(?<line>\d+)-\d+)?$/,
               new RegExp(
-                /^(?<step> *)(?<name>.*?) \.\.\./.source +
+                /^(?:------- (?<outputKind>[a-z- ]+) -------\n(?<output>[\s\S]*?)----- [a-z- ]+ -----\n)?/
+                  .source +
+                  /(?<step> *)(?<name>.*?) \.\.\./.source +
                   /(?: (?<status>FAILED|INCOMPLETE|ok|ignored)(?: \(due to .*?\))?(?: .*?\((?<time>[^()]*?)\))?)?/
-                    .source +
-                  /(?:\n------- output -------\n(?<output>[\s\S]*?)----- output end -----$)?/
                     .source,
               ),
             ],
-            transform(
-              { message, file, name, step, status, output, line, time },
-              done,
-            ) {
+            transform({
+              message,
+              file,
+              name,
+              step,
+              status,
+              output,
+              outputKind,
+              line,
+              time,
+            }, done) {
+              // console.log({
+              //   message,
+              //   file,
+              //   name,
+              //   step,
+              //   status,
+              //   output,
+              //   line,
+              //   time,
+              // });
+              console.log(outputKind);
               if (file !== undefined) {
-                lastFile = {
+                last = {
                   file,
                   ...!Number.isNaN(Number(line)) && { line: Number(line) + 1 },
                 };
                 return [];
               }
               if (output !== undefined) {
-                lastFile = {
-                  ...lastFile,
-                  output,
-                };
-              } else output = lastFile.output;
+                last = { ...last, output };
+                return [];
+              }
               assertExists(name);
               test.splice((step?.length ?? 0) / 2);
               test.push(name);
               assertExists(test[0]);
+              if (test.join(":") !== last.test?.join(":")) {
+                last = omit(last, ["output"]);
+              }
+              last.test = [test[0], ...test.slice(1)];
               if (done === (status === undefined)) return [];
               const info:
                 & Omit<Info, "status" | "success" | "time">
                 & Partial<Pick<Info, "status" | "success" | "time">> = {
                   kind: "test" as const,
                   message,
+                  file: "<unknown>",
+                  ...pick(last, ["file", "output", "line"]),
                   test: [test[0], ...test.slice(1)],
-                  file: lastFile.file ?? "<unknown>",
                   ...status &&
                     { success: status === "ok" || status === "ignored" },
                   ...status && { status },
-                  ...output !== undefined && { output },
-                  ...lastFile.line && { line: lastFile.line },
                   ...time && { time },
                 };
               if (!done) {
@@ -856,16 +899,25 @@ class Runner implements AsyncDisposable {
       stream = stream.pipeThrough(
         new TransformStream<string>({
           transform(chunk, controller) {
+            // console.log({ chunk: stripAnsiCode(chunk) });
             output += chunk;
             assertExists(parse.delimiter);
             const parts = output.split(parse.delimiter);
+            // console.log({ chunk, parts, delimiter: parse.delimiter });
+            // console.log({
+            //   // chunk: stripAnsiCode(chunk),
+            //   partsStripped: parts.map(stripAnsiCode),
+            //   parts,
+            // });
             output = parts.pop() ?? "";
             for (const part of parts) {
+              // console.log({ part: stripAnsiCode(part) });
               const trimmed = part.trimEnd().replace(/^\n+/, "");
               if (!trimmed) continue;
               if (generateReports(trimmed, true)) continue;
               controller.enqueue(trimmed);
             }
+            // console.log({ output: stripAnsiCode(output) });
             generateReports(output.trimEnd(), false);
           },
           flush(controller) {

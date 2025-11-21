@@ -969,6 +969,27 @@ snapshot[`flow test [missing-file] 1`] = `
 }
 `;
 
+snapshot[`flow test --filter [test-filter] [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+
+example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow test --filter /[test-filter]/ [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+✅ Found no tests in 1 file
+",
+}
+`;
+
 snapshot[`flow test --update [valid-code] 1`] = `
 {
   code: 0,
