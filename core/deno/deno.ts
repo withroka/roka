@@ -24,6 +24,7 @@ import { omit } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { extname, fromFileUrl, join, resolve } from "@std/path";
 import { mergeReadableStreams } from "@std/streams";
+import { TextLineStream } from "@std/streams/text-line-stream";
 
 /**
  * An error thrown by the `deno` command.
@@ -384,7 +385,7 @@ export function deno(options?: DenoOptions): DenoCommands {
   function debugTransform(data: ReportData, done: boolean): Report[] {
     const error = {
       message: data.message.trimEnd(),
-      file: data.file ? fromFileUrl(data.file) : "<unknown>",
+      file: data.file ?? "<unknown>",
       line: Number.isNaN(Number(data.line)) ? -1 : Number(data.line),
       column: Number.isNaN(Number(data.column)) ? -1 : Number(data.column),
       ...omit(data, ["message", "file", "line", "column"]),
@@ -403,34 +404,46 @@ export function deno(options?: DenoOptions): DenoCommands {
         permitNoFiles,
         doc: { only: ["md"] },
         commonArgs: ["--quiet"],
-        parse: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
-        report: {
-          error: {
-            patterns: [
-              /^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)\n.*\n.*\n *at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
-            ],
-            transform({ message, file, line, column, rule, reason }, done) {
-              const error = {
-                kind: "check" as const,
-                message,
-                file: file ?? "<unknown>",
-                line: Number.isNaN(Number(line)) ? -1 : Number(line),
-                column: Number.isNaN(Number(column)) ? -1 : Number(column),
-                rule: rule ?? "<unknown>",
-                reason: reason ?? "<unknown>",
-              };
-              (done ? onError : onPartialError)?.(error);
-              return [error];
-            },
+        parseOld: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
+        parser: [{
+          states: [null],
+          patterns: [/^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)$/],
+          next: "error",
+        }, {
+          states: ["error"],
+          patterns: [/^$/],
+          discard: true,
+          next: null,
+          error({ message, file, line, column, rule, reason }, done) {
+            const error = {
+              kind: "check" as const,
+              message,
+              file: file ?? "<unknown>",
+              line: Number.isNaN(Number(line)) ? -1 : Number(line),
+              column: Number.isNaN(Number(column)) ? -1 : Number(column),
+              rule: rule ?? "<unknown>",
+              reason: reason ?? "<unknown>",
+            };
+            (done ? onError : onPartialError)?.(error);
+            return [error];
           },
-          debug: {
-            patterns: [
-              /^Found \d+ errors.$/,
-              /^error: Type checking failed.$/,
-            ],
-            transform: debugTransform,
-          },
-        },
+        }, {
+          states: ["error"],
+          patterns: [
+            /\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
+            /^.*$/,
+          ],
+        }, {
+          states: [null],
+          patterns: [
+            /^Found \d+ errors.$/,
+            /^error: Type checking failed.$/,
+          ],
+          debug: debugTransform,
+        }, {
+          patterns: [/^$/],
+          discard: true,
+        }],
       }).run(files);
     },
     async fmt(files, options) {
@@ -440,8 +453,8 @@ export function deno(options?: DenoOptions): DenoCommands {
         permitNoFiles,
         doc: { skip: ["md"] },
         commonArgs: [...(check ? ["--check"] : ["--quiet"])],
-        parse: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
-        report: {
+        parseOld: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
+        reportOld: {
           error: {
             patterns: [/^from (?<file>.*):\n[\s\S]+$/],
             transform({ message, file }, done) {
@@ -474,11 +487,11 @@ export function deno(options?: DenoOptions): DenoCommands {
           ...json ? ["--json"] : [],
           ...lint ? ["--lint"] : [],
         ],
-        parse: {
+        parseOld: {
           stdout: lint ? "null" : "inherit",
           delimiter: /(?:^\n+)|(?:\n{3,})/,
         },
-        report: {
+        reportOld: {
           ...lint && {
             error: {
               patterns: [
@@ -516,8 +529,8 @@ export function deno(options?: DenoOptions): DenoCommands {
           "--quiet",
           ...(fix ? ["--fix"] : []),
         ],
-        parse: { delimiter: /(?:^\n+)|(?:\n{3,})/ },
-        report: {
+        parseOld: { delimiter: /(?:^\n+)|(?:\n{3,})/ },
+        reportOld: {
           error: {
             patterns: [
               /^error\[(?<rule>.+?)\]: (?<reason>.*?)\n *--> *(?<file>.*):(?<line>\d+):(?<column>\d+)\n[\s\S]+?$/,
@@ -555,7 +568,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           "--coverage",
         ],
         scriptArgs: update ? ["--", "--update"] : [],
-        parse: {
+        parseOld: {
           stdout: "piped",
           delimiter: new RegExp(
             /(?:(?:^|\n)[^ ]*Warning[^ ]* .+?\n)/.source +
@@ -569,7 +582,7 @@ export function deno(options?: DenoOptions): DenoCommands {
                 .source,
           ),
         },
-        report: {
+        reportOld: {
           fatal: {
             patterns: [
               /^error: (?!Test failed)[\s\S]+$/,
@@ -728,11 +741,12 @@ interface RunOptions {
   commonArgs?: string[];
   codeArgs?: string[];
   scriptArgs?: string[];
-  parse?: {
+  parseOld?: {
     stdout?: "piped" | "inherit" | "null";
     delimiter?: RegExp;
   };
-  report?: {
+  parser?: Reporter[];
+  reportOld?: {
     fatal?: {
       patterns: RegExp[];
       transform: (data: ReportData, done: boolean) => Report[];
@@ -757,6 +771,17 @@ interface RunOptions {
   };
 }
 
+interface Reporter {
+  states?: (string | null)[];
+  patterns: RegExp[];
+  discard?: boolean;
+  next?: string | null;
+  fatal?: (data: ReportData, done: boolean) => Report[];
+  error?: (data: ReportData, done: boolean) => Error[];
+  info?: (data: ReportData, done: boolean) => Info[];
+  debug?: (data: ReportData, done: boolean) => Report[];
+}
+
 interface ReportData {
   message: string;
   file?: string;
@@ -779,6 +804,9 @@ class Runner implements AsyncDisposable {
   private filesByPath?: Map<string, string>;
   private blocksDir?: TempDirectory & AsyncDisposable;
   private blocksByPath: Record<string, Block & { path: string }> = {};
+  private results: Map<string, FileResult> = new Map();
+  private state: string | null = null;
+  private report: ReportData | undefined = undefined;
 
   constructor(
     private readonly directory: string,
@@ -794,7 +822,8 @@ class Runner implements AsyncDisposable {
       codeArgs = [],
       scriptArgs = [],
       doc = false,
-      parse,
+      parser = [],
+      parseOld,
     } = this.options ?? {};
     const docOnly = typeof doc === "object" && doc.only ? doc.only : [];
     if (extensions !== undefined) {
@@ -804,9 +833,9 @@ class Runner implements AsyncDisposable {
     if (files.length === 0 && !permitNoFiles) {
       throw new DenoError("No target files found");
     }
-    const results = new Map<string, FileResult>(
-      files.map((file) => [file, { file, error: [], info: [] }]),
-    );
+    for (const file of files) {
+      this.results.set(file, { file, error: [], info: [] });
+    }
     this.filesByPath = new Map(files.map((file) => [resolve(file), file]));
     if (doc) this.blocksDir = await tempDirectory();
     this.blocksByPath = await this.blockFiles(files);
@@ -814,7 +843,7 @@ class Runner implements AsyncDisposable {
       !docOnly.includes(extname(x).slice(1).toLowerCase())
     );
     if (files.length === 0 && Object.keys(this.blocksByPath).length === 0) {
-      return results.values().toArray();
+      return this.results.values().toArray();
     }
     const cwd = this.directory;
     const args = [
@@ -841,42 +870,16 @@ class Runner implements AsyncDisposable {
         FORCE_COLOR: Deno.env.get("FORCE_COLOR") ?? "",
       },
       stdin: "null",
-      stdout: parse?.stdout ?? "null",
+      stdout: parseOld?.stdout ?? "null",
       stderr: "piped",
     }).spawn();
     const errors: string[] = [];
-    let stream =
-      (parse?.stdout === "piped"
-        ? mergeReadableStreams(process.stdout, process.stderr)
-        : process.stderr)
-        .pipeThrough(new TextDecoderStream());
-    if (parse?.delimiter) {
-      let output = "";
-      const generateReports = this.generateReports.bind(this, results);
-      stream = stream.pipeThrough(
-        new TransformStream<string>({
-          transform(chunk, controller) {
-            output += chunk;
-            assertExists(parse.delimiter);
-            const parts = output.split(parse.delimiter);
-            output = parts.pop() ?? "";
-            for (const part of parts) {
-              const trimmed = part.trimEnd().replace(/^\n+/, "");
-              if (!trimmed) continue;
-              if (generateReports(trimmed, true)) continue;
-              controller.enqueue(trimmed);
-            }
-            generateReports(output.trimEnd(), false);
-          },
-          flush(controller) {
-            const trimmed = output.trimEnd().replace(/^\n+/, "");
-            if (!trimmed) return;
-            if (generateReports(trimmed, true)) return;
-            controller.enqueue(trimmed);
-          },
-        }),
-      );
-    }
+    const stream = parser.length
+      ? (process.stderr
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(new TextLineStream())
+        .pipeThrough(new TransformStream(this)))
+      : this.oldStream(process, this.results);
     for await (const output of stream.values()) {
       errors.push(stripAnsiCode(output));
     }
@@ -888,7 +891,109 @@ class Runner implements AsyncDisposable {
       );
     }
     await this.updateBlocks();
-    return results.values().toArray();
+    return this.results.values().toArray();
+  }
+
+  transform(
+    line: string,
+    controller: TransformStreamDefaultController<string>,
+  ) {
+    const { parser = [] } = this.options ?? {};
+    const reporter = parser
+      .filter((reporter) =>
+        reporter.states === undefined || reporter.states.includes(this.state)
+      )
+      .find((reporter) =>
+        reporter.patterns.some((p) => {
+          const match = stripAnsiCode(line).match(p);
+          let message = this.report?.message ?? "";
+          if (match) {
+            if (!reporter.discard) message += (message ? "\n" : "") + line;
+            this.report = {
+              ...this.report,
+              ...match.groups,
+              message,
+            };
+          }
+          return match;
+        })
+      );
+    if (!reporter) {
+      controller.enqueue(line);
+      return;
+    }
+    assertExists(this.report);
+    if (reporter.next !== undefined) this.state = reporter.next;
+    if (this.state !== null) return;
+    const error = this.generateReports(reporter, this.report);
+    this.report = undefined;
+    if (error) controller.enqueue(error);
+  }
+
+  generateReports(reporter: Reporter, report: ReportData): string | undefined {
+    if (report.file !== undefined) {
+      if (report.file.startsWith("file://")) {
+        report.file = fromFileUrl(report.file);
+      }
+      const block = this.resolveBlock(report);
+      if (block === undefined) this.resolveLocation(report);
+      report.file = report.file.replace(/\$\d+-\d+(\.\w+)?$/, "");
+      this.resolveShifts(report, block);
+      if (this.filesByPath?.has(resolve(report.file))) {
+        report.file = this.filesByPath?.get(resolve(report.file)) ??
+          report.file;
+      }
+    }
+    reporter.fatal && reporter.fatal(report, true);
+    const errors = reporter.error && reporter.error(report, true);
+    const infos = reporter.info && reporter.info(report, true);
+    reporter.debug && reporter.debug(report, true);
+    if (!errors && !infos) return;
+    if (!report.file) return report.message;
+    if (!this.results.has(report.file)) {
+      this.results.set(report.file, { file: report.file, error: [], info: [] });
+    }
+    const fileResult = this.results.get(report.file);
+    assertExists(fileResult);
+    if (errors) fileResult.error.push(...errors);
+    if (infos) fileResult.info.push(...infos);
+  }
+
+  oldStream(process: Deno.ChildProcess, results: Map<string, FileResult>) {
+    const { parseOld } = this.options ?? {};
+    let stream =
+      (parseOld?.stdout === "piped"
+        ? mergeReadableStreams(process.stdout, process.stderr)
+        : process.stderr)
+        .pipeThrough(new TextDecoderStream());
+    if (parseOld?.delimiter) {
+      let output = "";
+      const generateReportsOld = this.generateReportsOld.bind(this, results);
+      stream = stream.pipeThrough(
+        new TransformStream<string>({
+          transform(chunk, controller) {
+            output += chunk;
+            assertExists(parseOld.delimiter);
+            const parts = output.split(parseOld.delimiter);
+            output = parts.pop() ?? "";
+            for (const part of parts) {
+              const trimmed = part.trimEnd().replace(/^\n+/, "");
+              if (!trimmed) continue;
+              if (generateReportsOld(trimmed, true)) continue;
+              controller.enqueue(trimmed);
+            }
+            generateReportsOld(output.trimEnd(), false);
+          },
+          flush(controller) {
+            const trimmed = output.trimEnd().replace(/^\n+/, "");
+            if (!trimmed) return;
+            if (generateReportsOld(trimmed, true)) return;
+            controller.enqueue(trimmed);
+          },
+        }),
+      );
+    }
+    return stream;
   }
 
   async blockFiles(
@@ -989,16 +1094,16 @@ class Runner implements AsyncDisposable {
     );
   }
 
-  generateReports(
+  generateReportsOld(
     results: Map<string, FileResult>,
     output: string,
     done: boolean,
   ): boolean {
-    const { report } = this.options ?? {};
+    const { reportOld } = this.options ?? {};
     if (!output) return false;
-    const fatalReports = this.matchReport(report?.fatal, output, done);
+    const fatalReports = this.matchReport(reportOld?.fatal, output, done);
     if (fatalReports !== undefined) return false;
-    const errorReports = this.matchReport(report?.error, output, done);
+    const errorReports = this.matchReport(reportOld?.error, output, done);
     if (done) {
       for (const report of errorReports ?? []) {
         const file = report.file;
@@ -1010,7 +1115,7 @@ class Runner implements AsyncDisposable {
       }
     }
     if (errorReports !== undefined) return true;
-    const infoReports = this.matchReport(report?.info, output, done);
+    const infoReports = this.matchReport(reportOld?.info, output, done);
     if (done) {
       for (const report of infoReports ?? []) {
         const file = report.file;
@@ -1022,7 +1127,7 @@ class Runner implements AsyncDisposable {
       }
     }
     if (infoReports !== undefined) return true;
-    const debugReports = this.matchReport(report?.debug, output, done);
+    const debugReports = this.matchReport(reportOld?.debug, output, done);
     if (debugReports !== undefined) return true;
     return false;
   }
@@ -1081,7 +1186,7 @@ class Runner implements AsyncDisposable {
 
   resolveLocation(data: ReportData): void {
     const { lineOffset = 0, columnOffset = 0 } =
-      this.options?.report?.location ?? {};
+      this.options?.reportOld?.location ?? {};
     const match = data.file?.match(
       /(?<file>\/.*?)\$(?<bline>\d+)-\d+(?:\.\w+)?/,
     );
@@ -1096,7 +1201,7 @@ class Runner implements AsyncDisposable {
 
   resolveShifts(data: ReportData, block: Block | undefined): void {
     const { lineOffset = 0, columnShiftOffset = 0 } =
-      this.options?.report?.location ?? {};
+      this.options?.reportOld?.location ?? {};
     const matches = data.message.matchAll(
       new RegExp(
         /(?<url>(?:file:\/\/)?(?<file>\/.*?))/.source +
