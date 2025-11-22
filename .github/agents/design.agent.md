@@ -1,5 +1,5 @@
 ---
-name: Specify
+name: Design
 description: >
   Designs APIs, frameworks, and features. Use proactively when designing
   systems or planning feature architecture.
@@ -10,7 +10,7 @@ handoffs:
     send: false
 ---
 
-# Specify Agent
+# Design Agent
 
 ## Your role
 
