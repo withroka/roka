@@ -20,7 +20,7 @@ import { pool } from "@roka/async/pool";
 import { type TempDirectory, tempDirectory } from "@roka/fs/temp";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { omit } from "@std/collections";
+import { firstNotNullishOf, omit } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { extname, fromFileUrl, join, resolve } from "@std/path";
 import { mergeReadableStreams } from "@std/streams";
@@ -382,7 +382,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     onPartialDebug,
   } = options ?? {};
   const directory = resolve(options?.cwd ?? Deno.cwd());
-  function debugTransform(data: ReportData, done: boolean): Report[] {
+  function debugReport(data: ReportData, done: boolean): Report[] {
     const error = {
       message: data.message.trimEnd(),
       file: data.file ?? "<unknown>",
@@ -404,16 +404,7 @@ export function deno(options?: DenoOptions): DenoCommands {
         permitNoFiles,
         doc: { only: ["md"] },
         commonArgs: ["--quiet"],
-        parseOld: { delimiter: /(?:^\n+)|(?:\n{2,})/ },
-        parser: [{
-          states: [null],
-          patterns: [/^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)$/],
-          next: "error",
-        }, {
-          states: ["error"],
-          patterns: [/^$/],
-          discard: true,
-          next: null,
+        reporter: {
           error({ message, file, line, column, rule, reason }, done) {
             const error = {
               kind: "check" as const,
@@ -427,22 +418,39 @@ export function deno(options?: DenoOptions): DenoCommands {
             (done ? onError : onPartialError)?.(error);
             return [error];
           },
+          debug: debugReport,
+        },
+        parser: [{
+          patterns: [/^TS2307 \[ERROR\]: Cannot find module '(?<file>.*)'.$/],
+          report: "fatal",
+        }, {
+          patterns: [/^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)$/],
+          report: "error",
+        }, {
+          states: ["error", "error-empty"],
+          patterns: [
+            /^\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
+            /^\s+./,
+          ],
+          next: "error",
         }, {
           states: ["error"],
-          patterns: [
-            /\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
-            /^.*$/,
-          ],
+          patterns: [/^./],
         }, {
-          states: [null],
-          patterns: [
-            /^Found \d+ errors.$/,
-            /^error: Type checking failed.$/,
-          ],
-          debug: debugTransform,
+          states: ["error"],
+          patterns: [/^$/],
+          next: "error-empty",
         }, {
           patterns: [/^$/],
-          discard: true,
+        }, {
+          report: "debug",
+          patterns: [/^Found \d+ errors.$/, /^error: Type checking failed.$/],
+        }, {
+          report: "fatal",
+          patterns: [/^error: /],
+        }, {
+          states: ["fatal"],
+          patterns: [/^\s+./],
         }],
       }).run(files);
     },
@@ -471,7 +479,7 @@ export function deno(options?: DenoOptions): DenoCommands {
               /^Checked \d+ files?/,
               /^error: Found \d+ not formatted files? in \d+ files?$/,
             ],
-            transform: debugTransform,
+            transform: debugReport,
           },
         },
       }).run(files);
@@ -514,7 +522,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           },
           debug: {
             patterns: [/^error: Found \d+ documentation lint errors?\.$/],
-            transform: debugTransform,
+            transform: debugReport,
           },
         },
       }).run(files);
@@ -589,7 +597,7 @@ export function deno(options?: DenoOptions): DenoCommands {
               /^error: Test failed because the "only" option was used$/,
               /^Error generating coverage report: [\s\S]+$/,
             ],
-            transform: debugTransform,
+            transform: debugReport,
           },
           error: {
             patterns: [
@@ -676,7 +684,7 @@ export function deno(options?: DenoOptions): DenoCommands {
             patterns: [
               /^[\s\S]*$/,
             ],
-            transform: debugTransform,
+            transform: debugReport,
           },
           location: {
             lineOffset: -1,
@@ -741,11 +749,23 @@ interface RunOptions {
   commonArgs?: string[];
   codeArgs?: string[];
   scriptArgs?: string[];
+  reporter?: {
+    fatal?: (data: ReportData, done: boolean) => Report[];
+    error?: (data: ReportData, done: boolean) => Error[];
+    info?: (data: ReportData, done: boolean) => Info[];
+    debug?: (data: ReportData, done: boolean) => Report[];
+  };
+  parser?: {
+    states?: string[];
+    report?: "fatal" | "error" | "info" | "debug";
+    next?: string;
+    patterns: RegExp[];
+  }[];
+
   parseOld?: {
     stdout?: "piped" | "inherit" | "null";
     delimiter?: RegExp;
   };
-  parser?: Reporter[];
   reportOld?: {
     fatal?: {
       patterns: RegExp[];
@@ -771,18 +791,8 @@ interface RunOptions {
   };
 }
 
-interface Reporter {
-  states?: (string | null)[];
-  patterns: RegExp[];
-  discard?: boolean;
-  next?: string | null;
-  fatal?: (data: ReportData, done: boolean) => Report[];
-  error?: (data: ReportData, done: boolean) => Error[];
-  info?: (data: ReportData, done: boolean) => Info[];
-  debug?: (data: ReportData, done: boolean) => Report[];
-}
-
 interface ReportData {
+  type: "fatal" | "error" | "info" | "debug";
   message: string;
   file?: string;
   line?: string;
@@ -805,7 +815,7 @@ class Runner implements AsyncDisposable {
   private blocksDir?: TempDirectory & AsyncDisposable;
   private blocksByPath: Record<string, Block & { path: string }> = {};
   private results: Map<string, FileResult> = new Map();
-  private state: string | null = null;
+  private state: string | undefined = undefined;
   private report: ReportData | undefined = undefined;
 
   constructor(
@@ -822,7 +832,7 @@ class Runner implements AsyncDisposable {
       codeArgs = [],
       scriptArgs = [],
       doc = false,
-      parser = [],
+      parser: parser = [],
       parseOld,
     } = this.options ?? {};
     const docOnly = typeof doc === "object" && doc.only ? doc.only : [];
@@ -880,13 +890,16 @@ class Runner implements AsyncDisposable {
         .pipeThrough(new TextLineStream())
         .pipeThrough(new TransformStream(this)))
       : this.oldStream(process, this.results);
-    for await (const output of stream.values()) {
-      errors.push(stripAnsiCode(output));
+    for await (const error of stream.values()) {
+      errors.push(stripAnsiCode(error));
     }
     const { code } = await process.status;
     if (errors.length > 0) {
       throw new DenoError(
-        `Error running deno command: ${this.command}\n\n${errors.join("\n\n")}`,
+        [
+          `Error running deno command: ${this.command}`,
+          ...errors.map(stripAnsiCode),
+        ].join("\n\n"),
         { cause: { command: "deno", cwd, args, code } },
       );
     }
@@ -899,38 +912,49 @@ class Runner implements AsyncDisposable {
     controller: TransformStreamDefaultController<string>,
   ) {
     const { parser = [] } = this.options ?? {};
-    const reporter = parser
-      .filter((reporter) =>
-        reporter.states === undefined || reporter.states.includes(this.state)
-      )
-      .find((reporter) =>
-        reporter.patterns.some((p) => {
-          const match = stripAnsiCode(line).match(p);
-          let message = this.report?.message ?? "";
-          if (match) {
-            if (!reporter.discard) message += (message ? "\n" : "") + line;
-            this.report = {
-              ...this.report,
-              ...match.groups,
-              message,
-            };
-          }
-          return match;
-        })
-      );
-    if (!reporter) {
+    const found = firstNotNullishOf(
+      parser.filter((state) => (state.states === undefined ||
+        (this.state !== undefined && state.states.includes(this.state)))
+      ),
+      (state) => {
+        const match = firstNotNullishOf(
+          state.patterns,
+          (pattern) => stripAnsiCode(line).match(pattern),
+        );
+        return match ? [state, match] as const : undefined;
+      },
+    );
+    if (!found) {
       controller.enqueue(line);
       return;
     }
-    assertExists(this.report);
-    if (reporter.next !== undefined) this.state = reporter.next;
-    if (this.state !== null) return;
-    const error = this.generateReports(reporter, this.report);
-    this.report = undefined;
-    if (error) controller.enqueue(error);
+    const [state, match] = found;
+    if (state.report) {
+      if (this.report) this.flush(controller);
+      this.report = {
+        ...match.groups,
+        type: state.report,
+        message: line,
+      };
+    } else if (this.report) {
+      this.report = {
+        ...this.report,
+        ...match.groups,
+        message: this.report.message + "\n" + line,
+      };
+    } else {
+      controller.enqueue(line);
+      return;
+    }
+    if (state.next) this.state = state.next;
+    else if (state.report) this.state = state.report;
   }
 
-  generateReports(reporter: Reporter, report: ReportData): string | undefined {
+  flush(controller: TransformStreamDefaultController<string>) {
+    const { report } = this;
+    const { reporter } = this.options ?? {};
+    if (!report) return;
+    report.message = report.message.trimEnd();
     if (report.file !== undefined) {
       if (report.file.startsWith("file://")) {
         report.file = fromFileUrl(report.file);
@@ -944,19 +968,29 @@ class Runner implements AsyncDisposable {
           report.file;
       }
     }
-    reporter.fatal && reporter.fatal(report, true);
-    const errors = reporter.error && reporter.error(report, true);
-    const infos = reporter.info && reporter.info(report, true);
-    reporter.debug && reporter.debug(report, true);
-    if (!errors && !infos) return;
-    if (!report.file) return report.message;
-    if (!this.results.has(report.file)) {
-      this.results.set(report.file, { file: report.file, error: [], info: [] });
+    const file = report.file ?? "<unknown>";
+    if (report.type === "info" || report.type === "error") {
+      if (!this.results.has(file)) {
+        this.results.set(file, { file, error: [], info: [] });
+      }
     }
-    const fileResult = this.results.get(report.file);
-    assertExists(fileResult);
-    if (errors) fileResult.error.push(...errors);
-    if (infos) fileResult.info.push(...infos);
+    if (report.type === "fatal") {
+      reporter?.fatal && reporter?.fatal(report, true);
+      controller.enqueue(report.message);
+      return;
+    }
+    if (report.type === "error") {
+      const errors = reporter?.error && reporter.error(report, true);
+      if (errors) this.results.get(file)?.error.push(...errors);
+    }
+    if (report.type === "info") {
+      const infos = reporter?.info && reporter.info(report, true);
+      if (infos) this.results.get(file)?.info.push(...infos);
+    }
+    if (report.type === "debug") {
+      assertExists(reporter?.debug);
+      reporter.debug(report, true);
+    }
   }
 
   oldStream(process: Deno.ChildProcess, results: Map<string, FileResult>) {
@@ -1145,7 +1179,11 @@ class Runner implements AsyncDisposable {
     for (const pattern of patterns ?? []) {
       const match = stripAnsiCode(output).match(pattern);
       if (!match) continue;
-      const data: ReportData = { message: output, ...match?.groups };
+      const data: ReportData = {
+        type: "debug",
+        message: output,
+        ...match?.groups,
+      };
       if (data.file !== undefined) {
         if (data.file.startsWith("file://")) data.file = fromFileUrl(data.file);
         const block = this.resolveBlock(data);
