@@ -251,7 +251,7 @@ function testCommand() {
       await run(found, [
         (deno, files) =>
           deno.test(files, {
-            ...filter ? { filter: regexFilter ?? filter } : {},
+            ...(filter && { filter: regexFilter ?? filter }),
             update,
           }),
       ], {
