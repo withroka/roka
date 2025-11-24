@@ -311,10 +311,17 @@ function denoOptions(): DenoOptions {
       );
     },
     onInfo(report) {
-      if (report.kind !== "test") return;
       if (!reported) console.log();
       reported = true;
+      if (report.kind === "output") {
+        console.log(report.message);
+        return;
+      }
       (report.success ? console.log : console.warn)(testLine(report));
+      if (report.output !== undefined) {
+        console.log("------- output -------");
+        console.log(`${report.output}----- output end -----`);
+      }
     },
   };
 }

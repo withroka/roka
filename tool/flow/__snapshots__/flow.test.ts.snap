@@ -894,6 +894,29 @@ file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 }
 `;
 
+snapshot[`flow test [test-output] 1`] = `
+{
+  code: 0,
+  output: "
+
+------- pre-test output -------
+pre-test output
+----- pre-test output end -----
+test1 ... ok (?ms)
+test2 ... ok (?ms)
+------- output -------
+test output
+----- output end -----
+test3 ... ok (?ms)
+------- post-test output -------
+post-test output
+----- post-test output end -----
+
+✅ Ran 3 tests from 1 file (3 passed, 0 failed)
+",
+}
+`;
+
 snapshot[`flow test [invalid-code] 1`] = `
 {
   code: 1,

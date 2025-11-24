@@ -31,6 +31,7 @@ async function run(context: Deno.TestContext, options?: Options) {
     context.name
       .replaceAll("[valid-code]", "valid-code.ts")
       .replaceAll("[valid-doc]", "valid-doc.md")
+      .replaceAll("[test-output]", "test-output.ts")
       .replaceAll("[invalid-code]", "invalid-code.ts")
       .replaceAll("[invalid-comment]", "invalid-comment.ts")
       .replaceAll("[invalid-doc]", "invalid-doc.md")
@@ -121,6 +122,7 @@ Deno.test("flow lint --fix [invalid-comment]", test);
 Deno.test("flow lint --fix [invalid-doc]", test);
 Deno.test("flow test [valid-code]", test);
 Deno.test("flow test [valid-doc]", test);
+Deno.test("flow test [test-output]", test);
 Deno.test("flow test [invalid-code]", test);
 Deno.test("flow test [invalid-comment]", test);
 Deno.test("flow test [invalid-doc]", test);
