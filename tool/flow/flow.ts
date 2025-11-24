@@ -67,14 +67,14 @@ import {
   type DenoCommands,
   type DenoOptions,
   type FileResult,
-  type Info,
+  type TestInfo,
 } from "@roka/deno";
 import { version } from "@roka/forge/version";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
 import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
-import { assertEquals, assertExists } from "@std/assert";
+import { assertExists } from "@std/assert";
 import {
   moveCursorUp,
   RESTORE_CURSOR,
@@ -264,8 +264,7 @@ type RunOptions = InputOptions & MessageOptions;
 
 function denoOptions(): DenoOptions {
   let reported = false;
-  function testLine(report: Partial<Info>) {
-    assertEquals(report.kind, "test");
+  function testLine(report: Partial<TestInfo>) {
     assertExists(report.test);
     const pad = "   ".repeat(report.test.length - 1);
     let line = `${pad}${report.test.at(-1)} ...`;
@@ -303,7 +302,7 @@ function denoOptions(): DenoOptions {
       );
     },
     onInfo(report) {
-      if (report.kind !== "test" || report.test === undefined) return;
+      if (report.kind !== "test") return;
       if (!reported) console.log();
       reported = true;
       (report.success ? console.log : console.warn)(testLine(report));

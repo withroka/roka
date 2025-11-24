@@ -834,6 +834,30 @@ Deno.test("deno().fmt() ignores code blocks with no language in Markdown", async
   assertEquals(await Deno.readTextFile("file.md"), content);
 });
 
+Deno.test("deno().fmt() rejects no files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await assertRejects(() => deno().fmt([]), DenoError, "No target files found");
+});
+
+Deno.test("deno().fmt() rejects missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await assertRejects(
+    () => deno().fmt(["file.ts"]),
+    DenoError,
+    "No target files found",
+  );
+});
+
+Deno.test("deno().fmt() rejects unsupported file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile("file.txt", "Just some text");
+  await assertRejects(
+    () => deno().fmt(["file.txt"]),
+    DenoError,
+    "No target files found",
+  );
+});
+
 Deno.test("deno().fmt({ check }) checks formatting", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
@@ -1022,30 +1046,6 @@ Deno.test("deno().fmt({ check }) reports formatting errors in Markdown code bloc
   assertEquals(await Deno.readTextFile("file.md"), content);
 });
 
-Deno.test("deno().fmt() rejects no files", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(() => deno().fmt([]), DenoError, "No target files found");
-});
-
-Deno.test("deno().fmt() rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().fmt(["file.ts"]),
-    DenoError,
-    "No target files found",
-  );
-});
-
-Deno.test("deno().fmt() rejects unsupported file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile("file.txt", "Just some text");
-  await assertRejects(
-    () => deno().fmt(["file.txt"]),
-    DenoError,
-    "No target files found",
-  );
-});
-
 Deno.test("deno().fmt({ permitNoFiles }) accepts no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   assertResults(await deno().fmt([], { permitNoFiles: true }), []);
@@ -1098,28 +1098,6 @@ Deno.test("deno().doc() rejects unsupported file", async () => {
     () => deno().doc(["file.txt"]),
     DenoError,
     "No target files found",
-  );
-});
-
-Deno.test("deno().doc({ permitNoFiles }) accepts no files", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  assertResults(await deno().doc([], { permitNoFiles: true }), []);
-});
-
-Deno.test("deno().doc({ permitNoFiles }) rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().doc(["file.ts"], { permitNoFiles: true }),
-    DenoError,
-  );
-});
-
-Deno.test("deno().doc({ permitNoFiles }) accepts unsupported file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile("file.txt", "Just some text");
-  assertResults(
-    await deno().doc(["file.txt"], { permitNoFiles: true }),
-    [],
   );
 });
 
@@ -1317,6 +1295,28 @@ Deno.test("deno().doc({ lint }) rejects syntax errors", async () => {
     () => deno().doc(["file.ts"]),
     DenoError,
     "Unexpected token",
+  );
+});
+
+Deno.test("deno().doc({ permitNoFiles }) accepts no files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  assertResults(await deno().doc([], { permitNoFiles: true }), []);
+});
+
+Deno.test("deno().doc({ permitNoFiles }) rejects missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await assertRejects(
+    () => deno().doc(["file.ts"], { permitNoFiles: true }),
+    DenoError,
+  );
+});
+
+Deno.test("deno().doc({ permitNoFiles }) accepts unsupported file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile("file.txt", "Just some text");
+  assertResults(
+    await deno().doc(["file.txt"], { permitNoFiles: true }),
+    [],
   );
 });
 
@@ -1781,6 +1781,34 @@ Deno.test("deno().lint() does not fix errors", async () => {
   assertEquals(await Deno.readTextFile("file.ts"), "window.location;");
 });
 
+Deno.test("deno().lint() rejects no files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await assertRejects(
+    () => deno().lint([]),
+    DenoError,
+    "No target files found",
+  );
+});
+
+Deno.test("deno().lint() rejects missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await assertRejects(
+    () => deno().lint(["file.ts"]),
+    DenoError,
+    "No target files found",
+  );
+});
+
+Deno.test("deno().lint() rejects unsupported file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile("file.txt", "Just some text");
+  await assertRejects(
+    () => deno().lint(["file.txt"]),
+    DenoError,
+    "No target files found",
+  );
+});
+
 Deno.test("deno().lint({ fix }) fixes errors", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await Deno.writeTextFile("file.ts", "window.location;");
@@ -1852,34 +1880,6 @@ Deno.test("deno().lint({ fix }) fixes errors in code blocks in Markdown", async 
       "End of file",
       "",
     ].join("\n"),
-  );
-});
-
-Deno.test("deno().lint() rejects no files", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().lint([]),
-    DenoError,
-    "No target files found",
-  );
-});
-
-Deno.test("deno().lint() rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().lint(["file.ts"]),
-    DenoError,
-    "No target files found",
-  );
-});
-
-Deno.test("deno().lint() rejects unsupported file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile("file.txt", "Just some text");
-  await assertRejects(
-    () => deno().lint(["file.txt"]),
-    DenoError,
-    "No target files found",
   );
 });
 
@@ -1990,7 +1990,6 @@ Deno.test("deno().test() rejects runtime failure", async () => {
             "It most likely originated from a dangling promise, event/timeout handler or top-level code.",
           ].join("\n"),
         },
-        { file: "file.ts", message: "./file.ts (uncaught error)" },
       ],
       info: [],
     },
@@ -2148,8 +2147,8 @@ Deno.test("deno().test() reports test failures", async () => {
       kind: "test" as const,
       test: ["test1"],
       file: "file.ts",
-      line: 3,
-      column: 6,
+      line: 4,
+      column: 38,
       message: [
         "test1 => ./file.ts:3:6",
         "error: AssertionError: Values are not equal.",
@@ -2173,8 +2172,8 @@ Deno.test("deno().test() reports test failures", async () => {
       kind: "test" as const,
       test: ["test2"],
       file: "file.ts",
-      line: 7,
-      column: 6,
+      line: 8,
+      column: 9,
       message: [
         "test2 => ./file.ts:7:6",
         "error: Error: fail2",
@@ -2225,8 +2224,8 @@ Deno.test("deno().test() reports permission errors", async () => {
       kind: "test" as const,
       test: ["test"],
       file: "file.ts",
-      line: 1,
-      column: 6,
+      line: 2,
+      column: 8,
       message: [
         "test => ./file.ts:1:6",
         'error: NotCapable: Requires read access to "file.txt", ' +
@@ -2396,8 +2395,8 @@ Deno.test("deno().test() reports test failures in code blocks in JSDoc", async (
       kind: "test" as const,
       test: ["test3"],
       file: "file.ts",
-      line: 16,
-      column: 6,
+      line: 17,
+      column: 9,
       message: [
         "test3 => ./file.ts:16:6",
         "error: Error: fail3",
@@ -2409,8 +2408,8 @@ Deno.test("deno().test() reports test failures in code blocks in JSDoc", async (
       kind: "test" as const,
       test: ["test2"],
       file: "file.ts",
-      line: 10,
-      column: 4,
+      line: 11,
+      column: 10,
       message: [
         "test2 => ./file.ts:10:2",
         "error: Error: fail2",
@@ -2422,8 +2421,8 @@ Deno.test("deno().test() reports test failures in code blocks in JSDoc", async (
       kind: "test" as const,
       test: [`file://${Deno.cwd()}/file.ts$4-7.ts`],
       file: "file.ts",
-      line: 4,
-      column: 4,
+      line: 5,
+      column: 10,
       message: [
         `${`file://${Deno.cwd()}/file.ts$4-7.ts`} => ./file.ts:4:2`,
         "error: Error: fail1",
@@ -2491,8 +2490,8 @@ Deno.test("deno().test() reports test failures in code blocks in Markdown", asyn
       kind: "test" as const,
       test: [`file://${Deno.cwd()}/file.md$5-8.ts`],
       file: "file.md",
-      line: 5,
-      column: 1,
+      line: 6,
+      column: 7,
       message: [
         `file://${Deno.cwd()}/file.md$5-8.ts => ./file.md:5:2`,
         "error: Error: fail1",
@@ -2504,8 +2503,8 @@ Deno.test("deno().test() reports test failures in code blocks in Markdown", asyn
       kind: "test" as const,
       test: ["test2"],
       file: "file.md",
-      line: 9,
-      column: 1,
+      line: 10,
+      column: 7,
       message: [
         "test2 => ./file.md:9:2",
         "error: Error: fail2",
@@ -2596,7 +2595,7 @@ Deno.test("deno().test() reports errors from multiple files", async () => {
       test: ["test1"],
       file: "file1.ts",
       line: 1,
-      column: 6,
+      column: 34,
       message: [
         "test1 => ./file1.ts:1:6",
         "error: Error: fail1",
@@ -2621,7 +2620,7 @@ Deno.test("deno().test() reports errors from multiple files", async () => {
       test: ["test2"],
       file: "file2.ts",
       line: 1,
-      column: 6,
+      column: 34,
       message: [
         "test2 => ./file2.ts:1:6",
         "error: Error: fail2",
@@ -2671,10 +2670,12 @@ Deno.test("deno().test() reports ignored tests", {
 Deno.test("deno().test() handles test output with passing tests", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
-    "Deno.test('test', () => {",
-    "  console.log('test log output');",
-    "  console.error('test error output');",
+    "Deno.test('test1', () => {",
+    "  console.log('log output');",
+    "  console.error('error output');",
     "});",
+    "",
+    "Deno.test('test2', () => {});",
     "",
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
@@ -2684,13 +2685,27 @@ Deno.test("deno().test() handles test output with passing tests", async () => {
     error: [],
     info: [{
       kind: "test" as const,
-      test: ["test"],
+      test: ["test1"],
       file: "file.ts",
       success: true,
       status: "ok",
-      output: "test log output\ntest error output\n",
+      output: "log output\nerror output\n",
       time: "?ms",
-      message: "test ... ok (?ms)",
+      message: [
+        "------- output -------",
+        "log output",
+        "error output",
+        "----- output end -----",
+        "test1 ... ok (?ms)",
+      ].join("\n"),
+    }, {
+      kind: "test" as const,
+      test: ["test2"],
+      file: "file.ts",
+      success: true,
+      status: "ok",
+      time: "?ms",
+      message: "test2 ... ok (?ms)",
     }],
   }], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(await Deno.readTextFile("file.ts"), content);
@@ -2701,11 +2716,13 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
   const content = [
     'import { assertEquals } from "jsr:@std/assert";',
     "",
-    "Deno.test('test', () => {",
-    "  console.log('test log output');",
-    "  console.error('test error output');",
+    "Deno.test('test1', () => {",
+    "  console.log('log output');",
+    "  console.error('error output');",
     "  assertEquals(1, 2);",
     "});",
+    "",
+    "Deno.test('test2', () => {});",
     "",
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
@@ -2714,12 +2731,12 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
     file: "file.ts",
     error: [{
       kind: "test" as const,
-      test: ["test"],
+      test: ["test1"],
       file: "file.ts",
-      line: 3,
-      column: 6,
+      line: 6,
+      column: 3,
       message: [
-        "test => ./file.ts:3:6",
+        "test1 => ./file.ts:3:6",
         "error: AssertionError: Values are not equal.",
         "",
         "",
@@ -2737,13 +2754,27 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
     }],
     info: [{
       kind: "test" as const,
-      test: ["test"],
+      test: ["test1"],
       file: "file.ts",
       success: false,
       status: "FAILED",
-      output: "test log output\ntest error output\n",
+      output: "log output\nerror output\n",
       time: "?ms",
-      message: "test ... FAILED (?ms)",
+      message: [
+        "------- output -------",
+        "log output",
+        "error output",
+        "----- output end -----",
+        "test1 ... FAILED (?ms)",
+      ].join("\n"),
+    }, {
+      kind: "test" as const,
+      test: ["test2"],
+      file: "file.ts",
+      success: true,
+      status: "ok",
+      time: "?ms",
+      message: "test2 ... ok (?ms)",
     }],
   }], {
     replace: [
@@ -2752,6 +2783,127 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
     ],
   });
   assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().test() handles test output without a newline at the end", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "Deno.test('test', () => {",
+    "  Deno.stdout.writeSync(new TextEncoder().encode('log output'));",
+    "});",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const results = await deno().test(["file.ts"]);
+  assertResults(results, [{
+    file: "file.ts",
+    error: [],
+    info: [{
+      kind: "test" as const,
+      test: ["test"],
+      file: "file.ts",
+      success: true,
+      status: "ok",
+      output: "log output",
+      time: "?ms",
+      message: [
+        "------- output -------",
+        "log output----- output end -----",
+        "test ... ok (?ms)",
+      ].join("\n"),
+    }],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().test() handles pre and post test output", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "console.log('pre-test output');",
+    "addEventListener('unload', () => {",
+    "  console.log('post-test output');",
+    "});",
+    "Deno.test('test', () => {});",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const captured: FileResult = {
+    file: "captured",
+    error: [],
+    info: [],
+  };
+  const results = await deno({
+    onInfo: (info) => {
+      captured.info.push(info);
+    },
+  }).test(["file.ts"]);
+  assertResults(results, [{
+    file: "file.ts",
+    error: [],
+    info: [{
+      kind: "test" as const,
+      test: ["test"],
+      file: "file.ts",
+      success: true,
+      status: "ok",
+      time: "?ms",
+      message: "test ... ok (?ms)",
+    }],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
+  assertResults([captured], [{
+    file: "captured",
+    error: [],
+    info: [{
+      kind: "output" as const,
+      output: "pre-test output\n",
+      message: [
+        "------- pre-test output -------",
+        "pre-test output",
+        "----- pre-test output end -----",
+      ].join("\n"),
+    }, {
+      kind: "test" as const,
+      test: ["test"],
+      file: "file.ts",
+      success: true,
+      status: "ok",
+      time: "?ms",
+      message: "test ... ok (?ms)",
+    }, {
+      kind: "output" as const,
+      output: "post-test output\n",
+      message: [
+        "------- post-test output -------",
+        "post-test output",
+        "----- post-test output end -----",
+      ].join("\n"),
+    }],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().test() rejects no files", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await assertRejects(
+    () => deno().test([]),
+    DenoError,
+    "No target files found",
+  );
+});
+
+Deno.test("deno().test() reports missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await assertRejects(() => deno().test(["file.ts"]), DenoError);
+});
+
+Deno.test("deno().test() rejects unsupported file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile("file.txt", "Just some text");
+  await assertRejects(
+    () => deno().test(["file.txt"]),
+    DenoError,
+    "No target files found",
+  );
 });
 
 Deno.test("deno().test({ update }) updates snapshots", async () => {
@@ -2773,13 +2925,7 @@ Deno.test("deno().test({ update }) updates snapshots", async () => {
       info: [
         {
           kind: "test",
-          message: [
-            "snapshotTest ... ok (?ms)",
-            "------- post-test output -------",
-            "",
-            " > 1 snapshot updated.",
-            "----- post-test output end -----",
-          ].join("\n"),
+          message: "snapshotTest ... ok (?ms)",
           test: ["snapshotTest"],
           file: "file.ts",
           success: true,
@@ -2823,14 +2969,7 @@ Deno.test("deno().test({ update }) updates mocks", async () => {
       info: [
         {
           kind: "test",
-          message: [
-            "snapshotTest ... ok (?ms)",
-            "------- post-test output -------",
-            "",
-            " > 1 mock updated.",
-            "   • snapshotTest > func 1",
-            "----- post-test output end -----",
-          ].join("\n"),
+          message: "snapshotTest ... ok (?ms)",
           test: ["snapshotTest"],
           file: "file.ts",
           success: true,
@@ -2856,30 +2995,6 @@ Deno.test("deno().test({ update }) updates mocks", async () => {
       "];",
       "",
     ].join("\n"),
-  );
-});
-
-Deno.test("deno().test() rejects no files", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().test([]),
-    DenoError,
-    "No target files found",
-  );
-});
-
-Deno.test("deno().test() reports missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(() => deno().test(["file.ts"]), DenoError);
-});
-
-Deno.test("deno().test() rejects unsupported file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await Deno.writeTextFile("file.txt", "Just some text");
-  await assertRejects(
-    () => deno().test(["file.txt"]),
-    DenoError,
-    "No target files found",
   );
 });
 
