@@ -281,6 +281,13 @@ export interface LintOptions {
 /** Options for the {@linkcode Deno.test} function. */
 export interface TestOptions {
   /**
+   * Run tests with this string or RegExp pattern in the test name.
+   *
+   * If a string is provided, it will not be regarded as a pattern even if it
+   * is enclosed in slashes.
+   */
+  filter?: string | RegExp;
+  /**
    * Whether to update snapshots and mocks.
    * @default {false}
    */
@@ -609,7 +616,8 @@ export function deno(options?: DenoOptions): DenoCommands {
       }).run(files);
     },
     async test(files, options) {
-      const { update = false, permitNoFiles = false } = options ?? {};
+      const { filter = false, update = false, permitNoFiles = false } =
+        options ?? {};
       let last: Partial<TestInfo> = {};
       const test: string[] = [];
       const testPattern = new RegExp(
@@ -623,6 +631,14 @@ export function deno(options?: DenoOptions): DenoCommands {
         commonArgs: [
           "--no-check",
           "--doc",
+          ...(filter
+            ? [
+              "--filter",
+              typeof filter === "string"
+                ? `/${RegExp.escape(filter)}/`
+                : filter.toString(),
+            ]
+            : []),
           update ? "--allow-all" : "--permission-set",
         ],
         codeArgs: [

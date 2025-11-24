@@ -121,6 +121,7 @@ export async function flow(): Promise<number> {
     .example("flow fmt", "Format code.")
     .example("flow lint", "Lint code.")
     .example("flow test", "Run tests.")
+    .example("flow test --filter name", "Only run tests with 'name'.")
     .usage("<command> [options]")
     .arguments("[paths...:file]")
     .option("--check", "Check for problems only.", { default: false })
@@ -234,17 +235,25 @@ function testCommand() {
   return new Command()
     .description("Run tests using Deno's built-in test runner.")
     .example("flow test", "Run tests for modified files.")
-    .example("flow test --update", "Run tests and update snapshots and mocks.")
     .example("flow test .", "Run all tests.")
     .example("flow test **/*.test.ts", "Run tests in TypeScript test files.")
     .example("flow test core/", "Run tests in the core directory.")
+    .example("flow test --filter name", "Only run tests with 'name'.")
+    .example("flow test --update", "Run tests and update snapshots and mocks.")
+    .option("--filter <filter:string>", "Run only tests with matching names.")
     .option("--update", "Update snapshots and mocks.", { default: false })
     .arguments("[paths...:file]")
-    .action(async ({ update }, ...paths) => {
+    .action(async ({ filter, update }, ...paths) => {
       const found = await files(paths);
+      const regexMatch = filter?.match(/^\/(.*)(?<!\\)\/$/);
+      const regexFilter = regexMatch?.[1] && new RegExp(regexMatch[1]);
       if (found.length === 0) return;
       await run(found, [
-        (deno, files) => deno.test(files, { update }),
+        (deno, files) =>
+          deno.test(files, {
+            ...(filter && { filter: regexFilter ?? filter }),
+            update,
+          }),
       ], {
         test: true,
       });

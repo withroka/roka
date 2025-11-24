@@ -2906,6 +2906,83 @@ Deno.test("deno().test() rejects unsupported file", async () => {
   );
 });
 
+Deno.test("deno().test({ filter }) runs specific tests", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "Deno.test('test1', () => {});",
+    "Deno.test('test2', () => {});",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const results = await deno().test(["file.ts"], { filter: "test2" });
+  assertResults(results, [
+    {
+      file: "file.ts",
+      error: [],
+      info: [
+        {
+          kind: "test",
+          message: "test2 ... ok (?ms)",
+          test: ["test2"],
+          file: "file.ts",
+          success: true,
+          status: "ok",
+          time: "?ms",
+        },
+      ],
+    },
+  ], { replace: [[/\d+ms/g, "?ms"]] });
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().test({ filter }) escapes regular expression syntax", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "Deno.test('test1', () => {});",
+    "Deno.test('test2', () => {});",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const results = await deno().test(["file.ts"], { filter: "/test2/" });
+  assertResults(results, [
+    {
+      file: "file.ts",
+      error: [],
+      info: [],
+    },
+  ], { replace: [[/\d+ms/g, "?ms"]] });
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
+Deno.test("deno().test({ filter }) can match tests with regular expression", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = [
+    "Deno.test('test1', () => {});",
+    "Deno.test('test2', () => {});",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.ts", content);
+  const results = await deno().test(["file.ts"], { filter: /.*2/ });
+  assertResults(results, [
+    {
+      file: "file.ts",
+      error: [],
+      info: [
+        {
+          kind: "test",
+          message: "test2 ... ok (?ms)",
+          test: ["test2"],
+          file: "file.ts",
+          success: true,
+          status: "ok",
+          time: "?ms",
+        },
+      ],
+    },
+  ], { replace: [[/\d+ms/g, "?ms"]] });
+  assertEquals(await Deno.readTextFile("file.ts"), content);
+});
+
 Deno.test("deno().test({ update }) updates snapshots", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [

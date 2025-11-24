@@ -36,6 +36,7 @@ async function run(context: Deno.TestContext, options?: Options) {
       .replaceAll("[invalid-doc]", "invalid-doc.md")
       .replaceAll("[empty-directory]", "empty-directory")
       .replaceAll("[missing-file]", "missing-file.ts")
+      .replaceAll("[test-filter]", "example")
       .split(" ").slice(1),
   );
   using console = fakeConsole();
@@ -125,5 +126,7 @@ Deno.test("flow test [invalid-comment]", test);
 Deno.test("flow test [invalid-doc]", test);
 Deno.test("flow test [empty-directory]", test);
 Deno.test("flow test [missing-file]", test);
+Deno.test("flow test --filter [test-filter] [valid-code]", test);
+Deno.test("flow test --filter /[test-filter]/ [valid-code]", test);
 Deno.test("flow test --update [valid-code]", test);
 Deno.test("flow test --update [valid-doc]", test);
