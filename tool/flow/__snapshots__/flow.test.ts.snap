@@ -35,14 +35,15 @@ Commands:
 
 Examples:
 
-  flow         Format code and run all checks for modified files.
-  flow --check Check for problems without making changes.
-  flow .       Format code and run all checks for all files.
-  flow core/   Format and check files in the core directory.
-  flow check   Type-check code.
-  flow fmt     Format code.
-  flow lint    Lint code.
-  flow test    Run tests.
+  flow                    Format code and run all checks for modified files.
+  flow --check            Check for problems without making changes.
+  flow .                  Format code and run all checks for all files.
+  flow core/              Format and check files in the core directory.
+  flow check              Type-check code.
+  flow fmt                Format code.
+  flow lint               Lint code.
+  flow test               Run tests.
+  flow test --filter name Only run tests with 'name'.
 
 ❌ Test case attempted to exit with exit code: 0
 ",
@@ -964,6 +965,30 @@ snapshot[`flow test [missing-file] 1`] = `
   code: 1,
   output: "
 ❌ No files found: missing-file.ts
+",
+}
+`;
+
+snapshot[`flow test --filter [test-filter] [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+
+example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
+",
+}
+`;
+
+snapshot[`flow test --filter /[test-filter]/ [valid-code] 1`] = `
+{
+  code: 0,
+  output: "
+
+example test ... ok (?ms)
+
+✅ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;

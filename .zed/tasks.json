@@ -1,8 +1,10 @@
 [
   {
     "label": "Test",
-    "command": "deno test --no-check --permission-set --filter '$ZED_CUSTOM_DENO_TEST_NAME' '$ZED_RELATIVE_FILE'",
+    "command": "deno task --quiet flow test '$ZED_RELATIVE_FILE' --filter '$ZED_CUSTOM_DENO_TEST_NAME'",
     "cwd": "$ZED_WORKTREE_ROOT",
+    "show_summary": false,
+    "show_command": false,
     "tags": ["js-test"]
   }
 ]
