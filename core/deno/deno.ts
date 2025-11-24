@@ -730,18 +730,6 @@ export function deno(options?: DenoOptions): DenoCommands {
           ],
           report: "error",
         }, {
-          states: ["error", "error-empty"],
-          patterns: [/^$/],
-          next: "error-empty",
-        }, {
-          states: ["error-empty"],
-          patterns: [/^\S/],
-          next: "debug",
-        }, {
-          states: ["error-empty"],
-          patterns: [/^s+/],
-          next: "error",
-        }, {
           states: ["error-end"],
           patterns: [/^\S+/],
         }, {
