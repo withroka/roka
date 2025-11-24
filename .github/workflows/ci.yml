@@ -18,6 +18,8 @@ jobs:
 
       - name: Setup
         uses: denoland/setup-deno@v2
+        with:
+          deno-version: canary # todo: remove after deno 3.0 release
 
       - name: Test
         run: deno task -q flow --check --doc ${{ matrix.component }}
