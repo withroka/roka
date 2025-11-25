@@ -9,7 +9,7 @@
  * (async () => {
  *   const results = await deno().check(["file1.ts", "file2.md"]);
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.error).forEach(console.error);
+ *   results.flatMap((r) => r.problem).forEach(console.error);
  * });
  * ```
  *
@@ -19,7 +19,7 @@
 import { pool } from "@roka/async/pool";
 import { type TempDirectory, tempDirectory } from "@roka/fs/temp";
 import { maybe } from "@roka/maybe";
-import { assertExists } from "@std/assert";
+import { assert, assertExists } from "@std/assert";
 import { firstNotNullishOf, omit, pick } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { extname, fromFileUrl, join, resolve } from "@std/path";
@@ -122,32 +122,65 @@ export interface FileResult {
   /** The file the results belong to. */
   file: string;
   /** Errors messages from the file. */
-  error: Error[];
+  problem: Problem[];
   /** Informational messages from the file. */
   info: Info[];
 }
 
 /** An error report generated from `deno` */
-export type Error = Report | CheckLintError | TestError;
+export type Problem =
+  | DenoProblem
+  | CheckProblem
+  | LintProblem
+  | DiffProblem
+  | TestProblem;
 
 /** An info report generated from `deno` */
 export type Info = TestInfo | OutputInfo;
 
 /** A generic report from `deno`. */
 export interface Report {
+  /** Report kind. */
+  kind: string;
   /** The user facing message of the report. */
   message: string;
   /** The file the report belongs to. */
   file?: string;
+  /** The line number the report occurs at. */
+  line?: number;
+  /** The column number the report occurs at. */
+  column?: number;
 }
 
-/** A check or lint error reported from `deno`. */
-export interface CheckLintError extends Report {
+/** A generic error from `deno`. */
+export interface DenoProblem extends Report {
   /** Error kind. */
-  kind: "check" | "lint";
+  kind: "error";
+  /** The reason for the error. */
+  reason?: string;
+}
+
+/** A check error reported from `deno`. */
+export interface CheckProblem extends Report {
+  /** Check problem kind. */
+  kind: "check";
   /** The line number the error occurs at. */
   line: number;
   /** The column number the error occurs at. */
+  column: number;
+  /** The type-check rule that generated the error. */
+  rule: string;
+  /** The reason for the problem. */
+  reason: string;
+}
+
+/** A lint problem reported from `deno`. */
+export interface LintProblem extends Report {
+  /** Lint problem kind. */
+  kind: "lint";
+  /** The line number the lint problem occurs at. */
+  line: number;
+  /** The column number the lint problem occurs at. */
   column: number;
   /** The lint rule that generated the problem. */
   rule: string;
@@ -155,19 +188,25 @@ export interface CheckLintError extends Report {
   reason: string;
 }
 
-/** A test error reported from `deno`. */
-export interface TestError extends Report {
-  /** Test error kind. */
-  kind: "test";
+/** A diff problem reported from `deno fmt --check`. */
+export interface DiffProblem extends Report {
+  /** Diff problem kind. */
+  kind: "diff";
+}
+
+/** A test problem reported from `deno`. */
+export interface TestProblem extends Report {
+  /** Test problem kind. */
+  kind: "failure";
   /** The name of the test or step. */
   test: [string, ...string[]];
-  /** The line number the error occurs at. */
+  /** The line number the problem occurs at. */
   line: number;
-  /** The column number the error occurs at. */
+  /** The column number the problem occurs at. */
   column: number;
 }
 
-/** A test report from `deno`. */
+/** A test information reported from `deno`. */
 export interface TestInfo extends Report {
   /** Test info kind. */
   kind: "test";
@@ -179,8 +218,6 @@ export interface TestInfo extends Report {
   status: string;
   /** The output of the test, if generated. */
   output?: string;
-  /** The line number of a documentation test in its file. */
-  line?: number;
   /** The time taken to run the test. */
   time?: string;
 }
@@ -200,14 +237,14 @@ export interface DenoOptions {
    * @default {"."}
    */
   cwd?: string;
-  /** A function that is called for each error message. */
-  onError?: (error: Error) => unknown;
+  /** A function that is called for each problem message. */
+  onProblem?: (problem: Problem) => unknown;
   /** A function that is called for each informational message. */
   onInfo?: (info: Info) => unknown;
   /** A function that is called for each debug message. */
   onDebug?: (debug: Report) => unknown;
-  /** A function that is called for each partial error message. */
-  onPartialError?: (info: Partial<Error>) => unknown;
+  /** A function that is called for each partial problem message. */
+  onPartialProblem?: (info: Partial<Problem>) => unknown;
   /** A function that is called for each partial informational message. */
   onPartialInfo?: (info: Partial<Info>) => unknown;
   /** A function that is called for each partial debug message. */
@@ -332,7 +369,7 @@ export interface CompileOptions {
  * (async () => {
  *   const results = await deno().check(["file1.ts", "file2.md"]);
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.error).forEach(console.error);
+ *   results.flatMap((r) => r.problem).forEach(console.error);
  * });
  * ```
  *
@@ -342,7 +379,7 @@ export interface CompileOptions {
  * (async () => {
  *   const results = await deno().fmt(["file1.ts", "file2.md"], { check: true });
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.error).forEach(console.error);
+ *   results.flatMap((r) => r.problem).forEach(console.error);
  * });
  * ```
  *
@@ -352,7 +389,7 @@ export interface CompileOptions {
  * (async () => {
  *   const results = await deno().lint(["file1.ts", "file2.md"]);
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.error).forEach(console.error);
+ *   results.flatMap((r) => r.problem).forEach(console.error);
  * });
  * ```
  *
@@ -362,7 +399,7 @@ export interface CompileOptions {
  * (async () => {
  *   const results = await deno().test(["file1.ts", "file2.md"]);
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.error).forEach(console.error);
+ *   results.flatMap((r) => r.problem).forEach(console.error);
  * });
  * ```
  *
@@ -376,51 +413,66 @@ export interface CompileOptions {
  *     output: "my-tool",
  *   });
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.error).forEach(console.error);
+ *   results.flatMap((r) => r.problem).forEach(console.error);
  * });
  * ```
  */
 export function deno(options?: DenoOptions): DenoCommands {
   const {
-    onError,
-    onPartialError,
+    onProblem,
+    onPartialProblem,
     onInfo,
     onPartialInfo,
     onDebug,
     onPartialDebug,
   } = options ?? {};
   const directory = resolve(options?.cwd ?? Deno.cwd());
-  function debugReport(data: ReportData, done: boolean): Report[] {
-    const error = {
-      message: data.message.trimEnd(),
-      file: data.file ?? "<unknown>",
-      line: Number.isNaN(Number(data.line)) ? -1 : Number(data.line),
-      column: Number.isNaN(Number(data.column)) ? -1 : Number(data.column),
-      ...omit(data, ["message", "file", "line", "column"]),
-    };
-    (done ? onDebug : onPartialDebug)?.(error);
-    return [error];
-  }
-  function errorReport(
-    kind: CheckLintError["kind"],
+  function reportFrom<Kind extends string>(
+    kind: Kind,
     data: ReportData,
-    done: boolean,
-  ) {
-    let { message, file, line, column, rule, reason } = data;
-    const located = !Number.isNaN(Number(line)) &&
-      !Number.isNaN(Number(column));
-    if (located && rule === undefined) rule = "<unknown>";
-    if (located && reason === undefined) reason = "<unknown>";
-    const error = {
-      message,
-      file: file ?? "<unknown>",
-      ...located && { kind, line: Number(line), column: Number(column) },
-      ...rule && { rule },
-      ...reason && { reason },
+  ): Report & { kind: Kind } {
+    assert(kind === data.kind, kind);
+    const { message, file, line, column } = data;
+    return {
+      kind,
+      message: message.trimEnd(),
+      ...file && { file },
+      ...!Number.isNaN(Number(line)) && { line: Number(line) },
+      ...!Number.isNaN(Number(column)) && { column: Number(column) },
+      ...data.reason !== undefined && { reason: data.reason },
     };
-    (done ? onError : onPartialError)?.(error);
+  }
+  function debugReport(data: ReportData, done: boolean): Report[] {
+    const debug = reportFrom("debug", data);
+    (done ? onDebug : onPartialDebug)?.(debug);
+    return [debug];
+  }
+  function errorReport(data: ReportData, done: boolean): DenoProblem[] {
+    const { reason } = data;
+    const report = reportFrom("error", data);
+    const error: DenoProblem = {
+      ...report,
+      ...reason !== undefined && { reason },
+    };
+    (done ? onProblem : onPartialProblem)?.(error);
     return [error];
   }
+  function checkReport(data: ReportData, done: boolean) {
+    const { kind } = data;
+    assert(kind === "check" || kind === "lint", kind);
+    const report = reportFrom(kind, data);
+    const error = {
+      ...report,
+      line: report.line ?? -1,
+      column: report.column ?? -1,
+      rule: data.rule ?? "<unknown>",
+      reason: data.reason ?? "<unknown>",
+    };
+    (done ? onProblem : onPartialProblem)?.(error);
+    return [error];
+  }
+  const parseErrorPattern =
+    /\s+(?<reason>.*) at (?<file>file:\/\/.*):(?<line>\d+):(?<column>\d+)$/;
   return {
     path(...parts: string[]) {
       return join(directory, ...parts);
@@ -433,38 +485,47 @@ export function deno(options?: DenoOptions): DenoCommands {
         doc: { only: ["md"] },
         commonArgs: ["--quiet"],
         reporter: {
-          error: (data, done) => errorReport("check", data, done),
+          problem(data, done) {
+            if (data.kind === "error") return errorReport(data, done);
+            return checkReport(data, done);
+          },
           debug: debugReport,
         },
         parser: [{
-          patterns: [/^error: Type checking failed.$/],
+          patterns: [
+            /^error: Type checking failed.$/,
+            /^Found \d+ errors.$/,
+          ],
           report: "debug",
+        }, {
+          patterns: [
+            /^(?<rule>TS\d+) \[.+?\]: (?<reason>Cannot find module) '(?<file>.*)'\.$/,
+            new RegExp(
+              /^error: The module's source code could not be parsed:/.source +
+                parseErrorPattern.source,
+            ),
+          ],
+          report: "error",
+        }, {
+          patterns: [/^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)$/],
+          report: "check",
+        }, {
+          states: ["check"],
+          patterns: [
+            /^\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
+          ],
+          next: "check-end",
+        }, {
+          states: ["error", "check"],
+          patterns: [/^.?/],
+        }, {
+          patterns: [/^$/],
         }, {
           patterns: [/^error: /],
           report: "fatal",
         }, {
           states: ["fatal"],
           patterns: [/^\s/],
-        }, {
-          patterns: [
-            /^(?<rule>TS\d+) \[.+?\]: (?<reason>Cannot find module) '(?<file>.*)'\.$/,
-            /^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)$/,
-          ],
-          report: "error",
-        }, {
-          states: ["error"],
-          patterns: [
-            /^\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
-          ],
-          next: "error-end",
-        }, {
-          states: ["error"],
-          patterns: [/^.?/],
-        }, {
-          patterns: [/^Found \d+ errors.$/],
-          report: "debug",
-        }, {
-          patterns: [/^$/],
         }],
       }).run(files);
     },
@@ -476,10 +537,11 @@ export function deno(options?: DenoOptions): DenoCommands {
         doc: { skip: ["md"] },
         commonArgs: [...(check ? ["--check"] : ["--quiet"])],
         reporter: {
-          error({ message, file }, done) {
-            const error = { message, file: file ?? "<unknown>" };
-            (done ? onError : onPartialError)?.(error);
-            return [error];
+          problem(data, done) {
+            if (data.kind === "error") return errorReport(data, done);
+            const problem = reportFrom("diff", data);
+            (done ? onProblem : onPartialProblem)?.(problem);
+            return [problem];
           },
           debug: debugReport,
         },
@@ -491,21 +553,26 @@ export function deno(options?: DenoOptions): DenoCommands {
           ],
           report: "debug",
         }, {
+          patterns: [/^Error (?:formatting|checking): (?<file>.*)$/],
+          report: "error",
+        }, {
+          states: ["error"],
           patterns: [
-            /^Error (?:formatting|checking): (?<file>.*)$/,
-            /^error: /,
+            parseErrorPattern,
+            /^\s/,
           ],
+        }, {
+          patterns: [/^from (?<file>.*):$/],
+          report: "diff",
+        }, {
+          states: ["diff"],
+          patterns: [/^\s*\d+\s+\|/],
+        }, {
+          patterns: [/^error: /],
           report: "fatal",
         }, {
           states: ["fatal"],
           patterns: [/^\s/],
-        }, {
-          patterns: [/^from (?<file>.*):$/],
-          report: "error",
-          next: "diff",
-        }, {
-          states: ["diff"],
-          patterns: [/^\s*\d+\s+/],
         }, {
           patterns: [/^$/],
         }],
@@ -523,7 +590,10 @@ export function deno(options?: DenoOptions): DenoCommands {
           ...lint ? ["--lint"] : [],
         ],
         reporter: {
-          error: (data, done) => errorReport("lint", data, done),
+          problem(data, done) {
+            if (data.kind === "error") return errorReport(data, done);
+            return checkReport(data, done);
+          },
           debug: debugReport,
         },
         parser: [{
@@ -532,16 +602,24 @@ export function deno(options?: DenoOptions): DenoCommands {
         }, {
           patterns: [
             /^error: (?<reason>Module not found) "(?<file>.*)"\.$/,
-            /^error\[(?<rule>.+?)\]: (?<reason>.*?)$/,
+            new RegExp(
+              /^error: The module's source code could not be parsed:/.source +
+                parseErrorPattern.source,
+            ),
           ],
           report: "error",
         }, {
           states: ["error"],
+          patterns: [/^\s/],
+        }, {
+          patterns: [/^error\[(?<rule>.+?)\]: (?<reason>.*?)$/],
+          report: "lint",
+        }, {
+          states: ["lint"],
           patterns: [
             /^\s+--> (?<file>.*):(?<line>\d+):(?<column>\d+)$/,
             /^\s*(?:\d+)?\s+\|/,
-            /^\s+= hint:/,
-            /^\s+(?:docs|info):/,
+            /^\s+/,
           ],
         }, {
           patterns: [/^error: /],
@@ -565,29 +643,38 @@ export function deno(options?: DenoOptions): DenoCommands {
           ...(fix ? ["--fix"] : []),
         ],
         reporter: {
-          error: (data, done) => errorReport("lint", data, done),
+          problem(data, done) {
+            if (data.kind === "error") return errorReport(data, done);
+            return checkReport(data, done);
+          },
           debug: debugReport,
         },
         parser: [{
-          patterns: [
-            /^Error linting: (?<file>.*)$/,
-            /^error: /,
-          ],
-          report: "fatal",
-        }, {
-          states: ["fatal"],
-          patterns: [/^\s/],
-        }, {
-          patterns: [/^error\[(?<rule>.+?)\]: (?<reason>.*?)$/],
+          patterns: [/^Error linting: (?<file>.*)$/],
           report: "error",
         }, {
           states: ["error"],
+          patterns: [
+            parseErrorPattern,
+            /^\s/,
+          ],
+        }, {
+          patterns: [/^error\[(?<rule>.+?)\]: (?<reason>.*?)$/],
+          report: "lint",
+        }, {
+          states: ["lint"],
           patterns: [
             /^\s+--> (?<file>.*):(?<line>\d+):(?<column>\d+)$/,
             /^\s*(?:\d+)?\s+\|/,
             /^\d+\s+\|/,
             /^\s/,
           ],
+        }, {
+          patterns: [/^error: /],
+          report: "fatal",
+        }, {
+          states: ["fatal"],
+          patterns: [/^\s/],
         }, {
           patterns: [
             /^Found \d+ problems?$/,
@@ -630,37 +717,37 @@ export function deno(options?: DenoOptions): DenoCommands {
         ],
         scriptArgs: update ? ["--update"] : [],
         reporter: {
-          error({ message, name, file, line, column }, done) {
-            const test = name?.split(" ... ");
-            const error: Error = test && test[0] !== undefined
-              ? {
-                kind: "test" as const,
-                message,
-                test: [test[0], ...test.slice(1)],
-                file: file ?? "<unknown>",
-                line: Number.isNaN(Number(line)) ? -1 : Number(line),
-                column: Number.isNaN(Number(column)) ? -1 : Number(column),
-              }
-              : { file: file ?? "<unknown>", message };
-            (done ? onError : onPartialError)?.(error);
-            return [error];
+          problem(data, done) {
+            if (data.kind === "error") return errorReport(data, done);
+            const report = reportFrom("failure", data);
+            const test = data.name?.split(" ... ");
+            assertExists(test?.[0]);
+            const failure: TestProblem = {
+              ...report,
+              line: report.line ?? -1,
+              column: report.column ?? -1,
+              test: [test[0], ...test.slice(1)],
+            };
+            (done ? onProblem : onPartialProblem)?.(failure);
+            return [failure];
           },
-          info(
-            { message, file, name, step, status, output, line, time },
-            done,
-          ) {
-            if (name === undefined && output !== undefined) {
-              const info: OutputInfo = { kind: "output", message, output };
-              (done ? onInfo : onPartialInfo)?.(info);
-              return [info];
-            }
-            if (file !== undefined) {
-              last = {
-                file,
-                ...!Number.isNaN(Number(line)) && { line: Number(line) + 1 },
+          info(data, done) {
+            if (data.kind === "output") {
+              if (done) assertExists(data.output);
+              const output = {
+                ...reportFrom("output", data),
+                output: data.output ?? "",
               };
+              (done ? onInfo : onPartialInfo)?.(output);
               return [];
             }
+            const report = reportFrom("test", data);
+            if (data.file !== undefined) {
+              last = report;
+              return [];
+            }
+            const { step, name, status, time, output = last.output } = data;
+            if (output !== undefined) last.output = output;
             if (done) assertExists(name);
             else if (!name) return [];
             test.splice((step?.length ?? 0) / 2);
@@ -670,28 +757,24 @@ export function deno(options?: DenoOptions): DenoCommands {
               assertExists(test[0]);
               last.test = [test[0], ...test.slice(1)];
             }
-            if (output !== undefined) last.output = output;
-            else output = last.output;
             assertExists(test[0]);
-            if (done === (status === undefined)) return [];
             const info:
               & Omit<TestInfo, "status" | "success" | "time">
               & Partial<Pick<TestInfo, "status" | "success" | "time">> = {
-                kind: "test" as const,
-                message,
+                ...report,
+                file: report.file ?? last.file ?? "<unknown>",
                 test: [test[0], ...test.slice(1)],
-                file: last.file ?? "<unknown>",
                 ...status &&
                   { success: status === "ok" || status === "ignored" },
-                ...status && { status },
+                ...status !== undefined && { status },
+                ...time !== undefined && { time },
                 ...output !== undefined && { output },
-                ...last.line && { line: last.line },
-                ...time && { time },
               };
             if (!done) {
               onPartialInfo?.(info);
               return [];
             }
+            if (done === (status === undefined)) return []; // test with steps
             const full: Info = {
               ...info,
               success: info.success ?? false,
@@ -703,13 +786,12 @@ export function deno(options?: DenoOptions): DenoCommands {
           debug: debugReport,
         },
         location: {
+          kind: ["test", "failure"],
           lineOffset: -1,
           columnOffset: -4,
         },
         parser: [{
-          patterns: [
-            /^error: Test failed$/,
-          ],
+          patterns: [/^error: Test failed$/],
           ignore: true,
         }, {
           patterns: [/^\s+FAILURES\s*$/],
@@ -726,15 +808,17 @@ export function deno(options?: DenoOptions): DenoCommands {
         }, {
           patterns: [
             /^error: Import '(?<file>.*)' failed, not found\.$/,
-            /^(?<name>.*?) => (?<file>.*?):(?<line>\d+):(?<column>\d+)/,
             /^(?<file>.*?) \(uncaught error\)$/,
+            new RegExp(/^error:/.source + parseErrorPattern.source),
           ],
           report: "error",
         }, {
-          states: ["error-end"],
-          patterns: [/^\S+/],
+          patterns: [
+            /^(?<name>.*?) => (?<file>.*?):(?<line>\d+):(?<column>\d+)/,
+          ],
+          report: "failure",
         }, {
-          states: ["error", "error-body", "error-end"],
+          states: ["failure", "error", "error-body"],
           patterns: [
             /^\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
             /^./,
@@ -750,41 +834,36 @@ export function deno(options?: DenoOptions): DenoCommands {
           states: ["fatal"],
           patterns: [/^\s/],
         }, {
-          patterns: [/^------- output -------$/],
-          report: "info",
-          next: "output",
+          patterns: [/^------- (?:pre|post)-test output -------$/],
+          report: "output",
         }, {
           states: ["output"],
-          patterns: [/^(?<output>.*)----- output end -----$/],
+          patterns: [/^(?<output>.*)----- (?:pre|post)-test output end -----$/],
           aggregate: ["output"],
           next: "output-end",
         }, {
-          states: ["output"],
+          patterns: [/^------- output -------$/],
+          report: "test",
+          next: "test-output",
+        }, {
+          states: ["test-output"],
+          patterns: [/^(?<output>.*)----- output end -----$/],
+          aggregate: ["output"],
+          next: "test-output-end",
+        }, {
+          states: ["output", "test-output"],
           patterns: [/^(?<output>.*$)/],
           aggregate: ["output"],
         }, {
-          states: ["output-end"],
+          states: ["test-output-end"],
           patterns: [testPattern],
-          next: "info",
-        }, {
-          patterns: [/^------- (?:pre|post)-test output -------$/],
-          report: "info",
-          next: "post-test-output",
-        }, {
-          states: ["post-test-output"],
-          patterns: [/^(?<output>.*)----- (?:pre|post)-test output end -----$/],
-          aggregate: ["output"],
-          next: "info",
-        }, {
-          states: ["post-test-output"],
-          patterns: [/^(?<output>.*$)/],
-          aggregate: ["output"],
+          next: "test",
         }, {
           patterns: [
             /^running \d+ tests? from (?<file>.*)(?:\$(?<line>\d+)-\d+)?$/,
             testPattern,
           ],
-          report: "info",
+          report: "test",
         }, {
           patterns: [
             /^Warning /,
@@ -793,12 +872,12 @@ export function deno(options?: DenoOptions): DenoCommands {
           ],
           report: "debug",
         }, {
-          states: ["coverage"],
-          patterns: [/^\| [^|]+ \| [^|]+ \| [^|]+ \|$/],
-        }, {
           patterns: [/^\| [^|]+ \| [^|]+ \| [^|]+ \|$/],
           report: "debug",
           next: "coverage",
+        }, {
+          states: ["coverage"],
+          patterns: [/^\| [^|]+ \| [^|]+ \| [^|]+ \|$/],
         }, {
           patterns: [/^$/],
         }],
@@ -856,6 +935,18 @@ const FORMAT_EXTENSIONS = [
   ],
 ];
 
+const REPORT_TYPES = {
+  fatal: "fatal",
+  error: "problem",
+  debug: "debug",
+  check: "problem",
+  lint: "problem",
+  diff: "problem",
+  failure: "problem",
+  test: "info",
+  output: "info",
+} satisfies Record<ReportData["type"], "fatal" | "problem" | "info" | "debug">;
+
 interface RunOptions {
   cwd?: string;
   extensions?: string[];
@@ -869,11 +960,12 @@ interface RunOptions {
   scriptArgs?: string[];
   reporter?: {
     fatal?: (data: ReportData, done: boolean) => Report[];
-    error?: (data: ReportData, done: boolean) => Error[];
+    problem?: (data: ReportData, done: boolean) => Problem[];
     info?: (data: ReportData, done: boolean) => Info[];
     debug?: (data: ReportData, done: boolean) => Report[];
   };
   location?: {
+    kind?: string[];
     lineOffset?: number;
     columnOffset?: number;
   };
@@ -881,7 +973,7 @@ interface RunOptions {
     states?: string[];
     patterns: RegExp[];
     aggregate?: string[];
-    report?: "fatal" | "error" | "info" | "debug";
+    report?: keyof typeof REPORT_TYPES;
     next?: string;
     ignore?: boolean;
   }[];
@@ -894,7 +986,7 @@ interface LineData {
 }
 
 interface ReportData {
-  type: "fatal" | "error" | "info" | "debug";
+  readonly kind: Problem["kind"] | Info["kind"] | "fatal" | "debug";
   message: string;
   file?: string;
   line?: string;
@@ -917,8 +1009,11 @@ class Runner implements AsyncDisposable {
   private blocksDir?: TempDirectory & AsyncDisposable;
   private blocksByPath: Record<string, Block & { path: string }> = {};
   private results: Map<string, FileResult> = new Map();
-  private state: string | undefined = undefined;
-  private report: ReportData | undefined = undefined;
+  private report: {
+    state: string | undefined;
+    data: ReportData | undefined;
+    done: boolean;
+  } = { state: undefined, data: undefined, done: false };
 
   constructor(
     private readonly directory: string,
@@ -944,7 +1039,7 @@ class Runner implements AsyncDisposable {
       throw new DenoError("No target files found");
     }
     for (const file of files) {
-      this.results.set(file, { file, error: [], info: [] });
+      this.results.set(file, { file, problem: [], info: [] });
     }
     this.filesByPath = new Map(files.map((file) => [resolve(file), file]));
     if (doc) this.blocksDir = await tempDirectory();
@@ -1037,7 +1132,8 @@ class Runner implements AsyncDisposable {
     const { parser = [] } = this.options ?? {};
     const found = firstNotNullishOf(
       parser.filter((state) => (state.states === undefined ||
-        (this.state !== undefined && state.states.includes(this.state)))
+        (this.report.state !== undefined &&
+          state.states.includes(this.report.state)))
       ),
       (state) => {
         const match = firstNotNullishOf(
@@ -1060,27 +1156,27 @@ class Runner implements AsyncDisposable {
     const [state, match] = found;
     if (state.ignore) return;
     if (state.report) {
-      if (this.report) this.flush(controller);
+      this.flush(controller, this.report.done);
       this.report = {
-        ...match.groups,
-        type: state.report,
-        message: line,
+        state: state.next ?? state.report,
+        data: { ...match.groups, kind: state.report, message: line },
+        done,
       };
-    } else if (this.report) {
+    } else if (this.report.data) {
       const aggregate = state.aggregate ?? [];
-      this.report = {
-        ...this.report,
+      this.report.data = {
+        ...this.report.data,
         ...omit(match.groups ?? {}, aggregate),
-        ...done && { message: this.report.message + "\n" + line },
+        ...done && { message: this.report.data.message + "\n" + line },
       };
       if (done) {
         const aggregate = pick(match.groups ?? {}, state.aggregate ?? []);
         for (const [key, value] of Object.entries(aggregate)) {
-          if (this.report[key]) this.report[key] += "\n" + value;
-          else this.report[key] = value;
+          if (this.report.data[key]) this.report.data[key] += "\n" + value;
+          else this.report.data[key] = value;
         }
       }
-    } else if (this.state) {
+    } else if (this.report.state) {
       if (done && source === "stderr") {
         controller.enqueue(line);
         // deno-lint-ignore no-console
@@ -1092,8 +1188,7 @@ class Runner implements AsyncDisposable {
     }
     this.flush(controller, false);
     if (done) {
-      if (state.next) this.state = state.next;
-      else if (state.report) this.state = state.report;
+      this.report.state = state.next ?? state.report ?? this.report.state;
     }
   }
 
@@ -1101,53 +1196,54 @@ class Runner implements AsyncDisposable {
     controller: TransformStreamDefaultController<string>,
     done: boolean = true,
   ) {
-    const result = (report: Info | Error) => {
+    const result = (report: Info | Problem) => {
       const { file } = report;
       if (!file) return;
       let result = this.results.get(file);
       if (!result) {
-        result = { file, error: [], info: [] };
+        result = { file, problem: [], info: [] };
         this.results.set(file, result);
       }
       return result;
     };
     const { reporter } = this.options ?? {};
-    if (!this.report) return;
-    const report = {
-      ...this.report,
-      message: this.report?.message.replace(/\n+$/, ""),
+    if (!this.report.data) return;
+    const data = {
+      ...this.report.data,
+      message: this.report.data.message.replace(/\n+$/, ""),
     };
-    if (report.file !== undefined) {
-      if (report.file.startsWith("file://")) {
-        report.file = fromFileUrl(report.file);
+    if (data.file !== undefined) {
+      if (data.file.startsWith("file://")) {
+        data.file = fromFileUrl(data.file);
       }
-      const block = this.resolveBlock(report);
-      if (block === undefined) this.resolveLocation(report);
-      report.file = report.file.replace(/\$\d+-\d+(\.\w+)?$/, "");
-      this.resolveShifts(report, block);
-      if (this.filesByPath?.has(resolve(report.file))) {
-        report.file = this.filesByPath?.get(resolve(report.file)) ??
-          report.file;
+      const block = this.resolveBlock(data);
+      if (block === undefined) this.resolveLocation(data);
+      data.file = data.file.replace(/\$\d+-\d+(\.\w+)?$/, "");
+      this.resolveShifts(data, block);
+      if (this.filesByPath?.has(resolve(data.file))) {
+        data.file = this.filesByPath?.get(resolve(data.file)) ??
+          data.file;
       }
     }
-    if (report.type === "fatal") {
-      if (reporter?.fatal) reporter?.fatal(report, done);
-      if (done) controller.enqueue(report.message);
+    const type = REPORT_TYPES[data.kind];
+    if (type === "fatal") {
+      if (reporter?.fatal) reporter?.fatal(data, done);
+      if (done) controller.enqueue(data.message);
     }
-    if (report.type === "error" && reporter?.error) {
-      const errors = reporter.error(report, done);
+    if (type === "problem" && reporter?.problem) {
+      const errors = reporter.problem(data, done);
       if (done) {
-        for (const error of errors) result(error)?.error.push(error);
+        for (const error of errors) result(error)?.problem.push(error);
       }
     }
-    if (report.type === "info" && reporter?.info) {
-      const infos = reporter.info(report, done);
+    if (type === "info" && reporter?.info) {
+      const infos = reporter.info(data, done);
       if (done) {
         for (const info of infos) result(info)?.info.push(info);
       }
     }
-    if (report.type === "debug" && reporter?.debug) {
-      reporter?.debug(report, done);
+    if (type === "debug" && reporter?.debug) {
+      reporter?.debug(data, done);
     }
   }
 
@@ -1272,7 +1368,9 @@ class Runner implements AsyncDisposable {
   }
 
   resolveLocation(data: ReportData): void {
-    const { lineOffset = 0, columnOffset = 0 } = this.options?.location ?? {};
+    const { location } = this.options ?? {};
+    const { lineOffset = 0, columnOffset = 0 } =
+      location?.kind?.includes(data.kind) ? location : {};
     const match = data.file?.match(
       /(?<file>\/.*?)\$(?<bline>\d+)-\d+(?:\.\w+)?/,
     );
@@ -1286,8 +1384,9 @@ class Runner implements AsyncDisposable {
   }
 
   resolveShifts(data: ReportData, block: Block | undefined): void {
-    const { lineOffset = 0, columnOffset = 0 } = this.options?.location ??
-      {};
+    const { location } = this.options ?? {};
+    const { lineOffset = 0, columnOffset = 0 } =
+      location?.kind?.includes(data.kind) ? location : {};
     const matches = data.message.matchAll(
       new RegExp(
         /(?<url>(?:file:\/\/)?(?<file>\/.*?))/.source +

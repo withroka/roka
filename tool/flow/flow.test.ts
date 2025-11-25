@@ -59,7 +59,8 @@ async function run(context: Deno.TestContext, options?: Options) {
         .output({ stripAnsi: true, stripCss: true, trimEnd: true, wrap: "\n" })
         .replace(/(?<=\n)((?:.*?):\s*)\d+(\.\d+)+(?:.*)?/g, "$1<version>")
         .replace(/\(\d+ms\)/g, "(?ms)")
-        .replaceAll(Deno.cwd(), "<directory>"),
+        .replaceAll(Deno.cwd(), "<directory>")
+        .replaceAll(/\/.*\/stdin\./g, "stdin."),
     };
   } finally {
     if (stdin) Object.defineProperty(Deno.stdin, "readable", stdin);

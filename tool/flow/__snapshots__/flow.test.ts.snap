@@ -371,13 +371,14 @@ snapshot[`flow fmt --stdin=invalid.json 1`] = `
 {
   code: 1,
   output: "
-❌ Error running deno fmt
 
-Error formatting:
+Error formatting: stdin.invalid.json
    Line 1, column 4: Unexpected close brace
 
   {a:}
      ~
+
+❌ Formatted 1 file, found 1 problem
 ",
 }
 `;

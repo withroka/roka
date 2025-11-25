@@ -279,18 +279,18 @@ function denoOptions(): DenoOptions {
     let line = `${pad}${report.test.at(-1)} ...`;
     if (report.success !== undefined) {
       assertExists(report.status);
-      assertExists(report.time);
       const color = report.status === "ok"
         ? green
         : report.success
         ? yellow
         : red;
-      line += ` ${color(report.status)} ${dim(`(${report.time})`)}`;
+      line += ` ${color(report.status)}`;
+      if (report.time !== undefined) line += ` ${dim(`(${report.time})`)}`;
     }
     return line;
   }
   return {
-    onError({ message }) {
+    onProblem({ message }) {
       console.error();
       console.error(message);
       console.error();
@@ -430,11 +430,11 @@ function message(
       ? `Ran ${count(tests.length, "test")} from`
       : "Found no tests in";
   }
-  const errorCount = sumOf(results, (r) => r.error.length);
-  let message = errorCount === 0
+  const problemCount = sumOf(results, (r) => r.problem.length);
+  let message = problemCount === 0
     ? `${prefix} ${count(results.length, "file")}`
     : `${prefix} ${count(results.length, "file")}, found ${
-      count(errorCount, "problem")
+      count(problemCount, "problem")
     }`;
   if (tests.length > 0) {
     console.log();
@@ -444,7 +444,7 @@ function message(
       dim(`(${passingTests} passed, ` + `${failingTests} failed)`)
     }`;
   }
-  if (errorCount === 0) return message;
+  if (problemCount === 0) return message;
   throw new Error(message);
 }
 
