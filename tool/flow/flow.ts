@@ -268,6 +268,7 @@ interface MessageOptions {
 type RunOptions = InputOptions & MessageOptions;
 
 function denoOptions(): DenoOptions {
+  const encoder = new TextEncoder();
   let reported = false;
   function testLine(report: Partial<TestInfo>) {
     assertExists(report.test);
@@ -303,18 +304,14 @@ function denoOptions(): DenoOptions {
       if (!reported) console.log();
       reported = true;
       Deno.stdout.writeSync(
-        new TextEncoder().encode(
-          RESTORE_CURSOR + SAVE_CURSOR + testLine(report),
-        ),
+        encoder.encode(RESTORE_CURSOR + SAVE_CURSOR + testLine(report)),
       );
     },
     onInfo(report) {
       if (!reported) console.log();
       reported = true;
       if (Deno.stdout.isTerminal()) {
-        Deno.stdout.writeSync(
-          new TextEncoder().encode(RESTORE_CURSOR + SAVE_CURSOR),
-        );
+        Deno.stdout.writeSync(encoder.encode(RESTORE_CURSOR + SAVE_CURSOR));
       }
       if (report.kind === "output") {
         console.log(report.message);
