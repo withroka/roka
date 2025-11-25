@@ -75,11 +75,7 @@ import { tempDirectory } from "@roka/fs/temp";
 import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import {
-  moveCursorUp,
-  RESTORE_CURSOR,
-  SAVE_CURSOR,
-} from "@std/cli/unstable-ansi";
+import { RESTORE_CURSOR, SAVE_CURSOR } from "@std/cli/unstable-ansi";
 import {
   associateBy,
   deepMerge,
@@ -272,6 +268,7 @@ interface MessageOptions {
 type RunOptions = InputOptions & MessageOptions;
 
 function denoOptions(): DenoOptions {
+  const encoder = new TextEncoder();
   let reported = false;
   function testLine(report: Partial<TestInfo>) {
     assertExists(report.test);
@@ -306,18 +303,21 @@ function denoOptions(): DenoOptions {
       if (report.kind !== "test" || report.test === undefined) return;
       if (!reported) console.log();
       reported = true;
-      console.log(
-        SAVE_CURSOR + testLine(report) + RESTORE_CURSOR + moveCursorUp(),
+      Deno.stdout.writeSync(
+        encoder.encode(RESTORE_CURSOR + SAVE_CURSOR + testLine(report)),
       );
     },
     onInfo(report) {
       if (!reported) console.log();
       reported = true;
+      if (Deno.stdout.isTerminal()) {
+        Deno.stdout.writeSync(encoder.encode(RESTORE_CURSOR + SAVE_CURSOR));
+      }
       if (report.kind === "output") {
         console.log(report.message);
         return;
       }
-      (report.success ? console.log : console.warn)(testLine(report));
+      console.log(testLine(report));
       if (report.output !== undefined) {
         console.log("------- output -------");
         console.log(`${report.output}----- output end -----`);
