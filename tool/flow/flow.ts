@@ -288,15 +288,17 @@ function denoOptions(): DenoOptions {
   }
   return {
     onProblem({ message }) {
+      reported = true;
       console.error();
       console.error(message);
       console.error();
     },
     onDebug({ message }) {
       if (!verbose) return;
-      if (!reported) console.log();
       reported = true;
-      console.debug(message.split("\n").map((l) => `   ${dim(l)}`).join("\n"));
+      console.debug();
+      console.debug(message);
+      console.debug();
     },
     onPartialInfo(report) {
       if (!Deno.stdout.isTerminal()) return;
