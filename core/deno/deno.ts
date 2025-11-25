@@ -700,9 +700,7 @@ export function deno(options?: DenoOptions): DenoCommands {
             : []),
           update ? "--allow-all" : "--permission-set",
         ],
-        codeArgs: [
-          "--coverage",
-        ],
+        codeArgs: ["--coverage"],
         scriptArgs: update ? ["--update"] : [],
         reporter: {
           problem(data, done) {
@@ -721,12 +719,12 @@ export function deno(options?: DenoOptions): DenoCommands {
           },
           info(data, done) {
             if (data.kind === "output") {
-              if (done) assertExists(data.output);
-              const output = {
+              const { output } = data;
+              if (output === undefined) return [];
+              (done ? onInfo : onPartialInfo)?.({
                 ...reportFrom("output", data),
-                output: data.output ?? "",
-              };
-              (done ? onInfo : onPartialInfo)?.(output);
+                output,
+              });
               return [];
             }
             const report = reportFrom("test", data);
@@ -856,16 +854,18 @@ export function deno(options?: DenoOptions): DenoCommands {
           patterns: [
             /^Warning /,
             /^Download /,
-            /^.* coverage report has been generated at /,
           ],
           report: "debug",
+        }, {
+          states: ["coverage"],
+          patterns: [
+            /^\| [^|]+ \| [^|]+ \| [^|]+ \|$/,
+            /^.* coverage report has been generated at /,
+          ],
         }, {
           patterns: [/^\| [^|]+ \| [^|]+ \| [^|]+ \|$/],
           report: "debug",
           next: "coverage",
-        }, {
-          states: ["coverage"],
-          patterns: [/^\| [^|]+ \| [^|]+ \| [^|]+ \|$/],
         }, {
           patterns: [/^$/],
         }],
