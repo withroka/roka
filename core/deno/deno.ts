@@ -415,8 +415,8 @@ export function deno(options?: DenoOptions): DenoCommands {
       message,
       file: file ?? "<unknown>",
       ...located && { kind, line: Number(line), column: Number(column) },
-      ...data.rule && { rule },
-      ...data.reason && { reason },
+      ...rule && { rule },
+      ...reason && { reason },
     };
     (done ? onError : onPartialError)?.(error);
     return [error];
