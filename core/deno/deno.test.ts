@@ -523,6 +523,25 @@ Deno.test("deno().check() reports errors from multiple files", async () => {
   }]);
 });
 
+Deno.test("deno().check() reports missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const results = await deno().check(["file.ts"]);
+  assertResults(results, [{
+    file: "file.ts",
+    error: [
+      {
+        file: "file.ts",
+        rule: "TS2307",
+        reason: "Cannot find module",
+        message:
+          `TS2307 [ERROR]: Cannot find module 'file://${Deno.cwd()}/file.ts'.`,
+      },
+    ],
+    info: [],
+  }]);
+  await assertRejects(() => Deno.stat("file.ts"));
+});
+
 Deno.test("deno().check() rejects no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await assertRejects(
@@ -530,11 +549,6 @@ Deno.test("deno().check() rejects no files", async () => {
     DenoError,
     "No target files found",
   );
-});
-
-Deno.test("deno().check() rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(() => deno().check(["file.ts"]), DenoError);
 });
 
 Deno.test("deno().check() rejects unsupported file", async () => {
@@ -550,14 +564,6 @@ Deno.test("deno().check() rejects unsupported file", async () => {
 Deno.test("deno().check({ permitNoFiles }) accepts no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   assertResults(await deno().check([], { permitNoFiles: true }), []);
-});
-
-Deno.test("deno().check({ permitNoFiles }) rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().check(["file.ts"], { permitNoFiles: true }),
-    DenoError,
-  );
 });
 
 Deno.test("deno().check({ permitNoFiles }) accepts unsupported file", async () => {
@@ -834,18 +840,27 @@ Deno.test("deno().fmt() ignores code blocks with no language in Markdown", async
   assertEquals(await Deno.readTextFile("file.md"), content);
 });
 
+Deno.test("deno().fmt() ignores missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = "const x = 1;\n";
+  await Deno.writeTextFile("file1.ts", content);
+  const results = deno().fmt(["file1.ts", "file2.ts"]);
+  assertResults(await results, [{
+    file: "file1.ts",
+    error: [],
+    info: [],
+  }, {
+    file: "file2.ts",
+    error: [],
+    info: [],
+  }]);
+  assertEquals(await Deno.readTextFile("file1.ts"), content);
+  await assertRejects(() => Deno.stat("file2.ts"));
+});
+
 Deno.test("deno().fmt() rejects no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await assertRejects(() => deno().fmt([]), DenoError, "No target files found");
-});
-
-Deno.test("deno().fmt() rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().fmt(["file.ts"]),
-    DenoError,
-    "No target files found",
-  );
 });
 
 Deno.test("deno().fmt() rejects unsupported file", async () => {
@@ -1051,15 +1066,6 @@ Deno.test("deno().fmt({ permitNoFiles }) accepts no files", async () => {
   assertResults(await deno().fmt([], { permitNoFiles: true }), []);
 });
 
-Deno.test("deno().fmt({ permitNoFiles }) rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().fmt(["file.ts"], { permitNoFiles: true }),
-    DenoError,
-    "No target files found",
-  );
-});
-
 Deno.test("deno().fmt({ permitNoFiles }) accepts unsupported file", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await Deno.writeTextFile("file.txt", "Just some text");
@@ -1081,14 +1087,26 @@ Deno.test("deno().doc() rejects syntax errors", async () => {
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
+Deno.test("deno().doc() reports missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const results = await deno().doc(["file.ts"]);
+  assertResults(results, [{
+    file: "file.ts",
+    error: [
+      {
+        file: "file.ts",
+        reason: "Module not found",
+        message: `error: Module not found "file://${Deno.cwd()}/file.ts".`,
+      },
+    ],
+    info: [],
+  }]);
+  await assertRejects(() => Deno.stat("file.ts"));
+});
+
 Deno.test("deno().doc() rejects no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await assertRejects(() => deno().doc([]), DenoError, "No target files found");
-});
-
-Deno.test("deno().doc() rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(() => deno().doc(["file.ts"]), DenoError);
 });
 
 Deno.test("deno().doc() rejects unsupported file", async () => {
@@ -1301,14 +1319,6 @@ Deno.test("deno().doc({ lint }) rejects syntax errors", async () => {
 Deno.test("deno().doc({ permitNoFiles }) accepts no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   assertResults(await deno().doc([], { permitNoFiles: true }), []);
-});
-
-Deno.test("deno().doc({ permitNoFiles }) rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().doc(["file.ts"], { permitNoFiles: true }),
-    DenoError,
-  );
 });
 
 Deno.test("deno().doc({ permitNoFiles }) accepts unsupported file", async () => {
@@ -1781,19 +1791,28 @@ Deno.test("deno().lint() does not fix errors", async () => {
   assertEquals(await Deno.readTextFile("file.ts"), "window.location;");
 });
 
+Deno.test("deno().lint() ignores missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const content = "export const x = 1;\n";
+  await Deno.writeTextFile("file1.ts", content);
+  const results = deno().lint(["file1.ts", "file2.ts"]);
+  assertResults(await results, [{
+    file: "file1.ts",
+    error: [],
+    info: [],
+  }, {
+    file: "file2.ts",
+    error: [],
+    info: [],
+  }]);
+  assertEquals(await Deno.readTextFile("file1.ts"), content);
+  await assertRejects(() => Deno.stat("file2.ts"));
+});
+
 Deno.test("deno().lint() rejects no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await assertRejects(
     () => deno().lint([]),
-    DenoError,
-    "No target files found",
-  );
-});
-
-Deno.test("deno().lint() rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().lint(["file.ts"]),
     DenoError,
     "No target files found",
   );
@@ -1888,14 +1907,6 @@ Deno.test("deno().lint({ permitNoFiles }) accepts no files", async () => {
   assertResults(
     await deno().lint([], { permitNoFiles: true }),
     [],
-  );
-});
-
-Deno.test("deno().lint({ permitNoFiles }) rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().lint(["file.ts"], { permitNoFiles: true }),
-    DenoError,
   );
 });
 
@@ -2882,6 +2893,23 @@ Deno.test("deno().test() handles pre and post test output", async () => {
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
+Deno.test("deno().test() reports missing file", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const results = await deno().test(["file.ts"]);
+  assertResults(results, [{
+    file: "file.ts",
+    error: [
+      {
+        file: "file.ts",
+        message:
+          `error: Import 'file://${Deno.cwd()}/file.ts' failed, not found.`,
+      },
+    ],
+    info: [],
+  }]);
+  await assertRejects(() => Deno.stat("file.ts"));
+});
+
 Deno.test("deno().test() rejects no files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await assertRejects(
@@ -2889,11 +2917,6 @@ Deno.test("deno().test() rejects no files", async () => {
     DenoError,
     "No target files found",
   );
-});
-
-Deno.test("deno().test() reports missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(() => deno().test(["file.ts"]), DenoError);
 });
 
 Deno.test("deno().test() rejects unsupported file", async () => {
@@ -3079,14 +3102,6 @@ Deno.test("deno().test({ permitNoFiles }) allows no file", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const results = await deno().test([], { permitNoFiles: true });
   assertResults(results, []);
-});
-
-Deno.test("deno().test({ permitNoFiles }) rejects missing file", async () => {
-  await using _ = await tempDirectory({ chdir: true });
-  await assertRejects(
-    () => deno().test(["file.ts"], { permitNoFiles: true }),
-    DenoError,
-  );
 });
 
 Deno.test("deno().test({ permitNoFiles }) accepts unsupported file", async () => {

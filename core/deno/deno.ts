@@ -401,6 +401,26 @@ export function deno(options?: DenoOptions): DenoCommands {
     (done ? onDebug : onPartialDebug)?.(error);
     return [error];
   }
+  function errorReport(
+    kind: CheckLintError["kind"],
+    data: ReportData,
+    done: boolean,
+  ) {
+    let { message, file, line, column, rule, reason } = data;
+    const located = !Number.isNaN(Number(line)) &&
+      !Number.isNaN(Number(column));
+    if (located && rule === undefined) rule = "<unknown>";
+    if (located && reason === undefined) reason = "<unknown>";
+    const error = {
+      message,
+      file: file ?? "<unknown>",
+      ...located && { kind, line: Number(line), column: Number(column) },
+      ...data.rule && { rule },
+      ...data.reason && { reason },
+    };
+    (done ? onError : onPartialError)?.(error);
+    return [error];
+  }
   return {
     path(...parts: string[]) {
       return join(directory, ...parts);
@@ -413,35 +433,23 @@ export function deno(options?: DenoOptions): DenoCommands {
         doc: { only: ["md"] },
         commonArgs: ["--quiet"],
         reporter: {
-          error({ message, file, line, column, rule, reason }, done) {
-            const error = {
-              kind: "check" as const,
-              message,
-              file: file ?? "<unknown>",
-              line: Number.isNaN(Number(line)) ? -1 : Number(line),
-              column: Number.isNaN(Number(column)) ? -1 : Number(column),
-              rule: rule ?? "<unknown>",
-              reason: reason ?? "<unknown>",
-            };
-            (done ? onError : onPartialError)?.(error);
-            return [error];
-          },
+          error: (data, done) => errorReport("check", data, done),
           debug: debugReport,
         },
         parser: [{
           patterns: [/^error: Type checking failed.$/],
           report: "debug",
         }, {
-          patterns: [
-            /^TS\d+ \[ERROR\]: Cannot find module '(?<file>.*)'.$/,
-            /^error: /,
-          ],
+          patterns: [/^error: /],
           report: "fatal",
         }, {
           states: ["fatal"],
           patterns: [/^\s/],
         }, {
-          patterns: [/^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)$/],
+          patterns: [
+            /^(?<rule>TS\d+) \[.+?\]: (?<reason>Cannot find module) '(?<file>.*)'\.$/,
+            /^(?<rule>TS\d+) \[.+?\]: (?<reason>.*)$/,
+          ],
           report: "error",
         }, {
           states: ["error"],
@@ -469,10 +477,7 @@ export function deno(options?: DenoOptions): DenoCommands {
         commonArgs: [...(check ? ["--check"] : ["--quiet"])],
         reporter: {
           error({ message, file }, done) {
-            const error = {
-              message,
-              file: file ?? "<unknown>",
-            };
+            const error = { message, file: file ?? "<unknown>" };
             (done ? onError : onPartialError)?.(error);
             return [error];
           },
@@ -518,32 +523,17 @@ export function deno(options?: DenoOptions): DenoCommands {
           ...lint ? ["--lint"] : [],
         ],
         reporter: {
-          error({ message, file, line, column, rule, reason }, done) {
-            const error = {
-              kind: "lint" as const,
-              message,
-              file: file ?? "<unknown>",
-              line: Number.isNaN(Number(line)) ? -1 : Number(line),
-              column: Number.isNaN(Number(column)) ? -1 : Number(column),
-              rule: rule ?? "<unknown>",
-              reason: reason ?? "<unknown>",
-            };
-            (done ? onError : onPartialError)?.(error);
-            return [error];
-          },
+          error: (data, done) => errorReport("lint", data, done),
           debug: debugReport,
         },
         parser: [{
           patterns: [/^error: Found \d documentation lint errors?\.$/],
           report: "debug",
         }, {
-          patterns: [/^error: /],
-          report: "fatal",
-        }, {
-          states: ["fatal"],
-          patterns: [/^\s/],
-        }, {
-          patterns: [/^error\[(?<rule>.+?)\]: (?<reason>.*?)$/],
+          patterns: [
+            /^error: (?<reason>Module not found) "(?<file>.*)"\.$/,
+            /^error\[(?<rule>.+?)\]: (?<reason>.*?)$/,
+          ],
           report: "error",
         }, {
           states: ["error"],
@@ -553,6 +543,12 @@ export function deno(options?: DenoOptions): DenoCommands {
             /^\s+= hint:/,
             /^\s+(?:docs|info):/,
           ],
+        }, {
+          patterns: [/^error: /],
+          report: "fatal",
+        }, {
+          states: ["fatal"],
+          patterns: [/^\s/],
         }, {
           patterns: [/^$/],
         }],
@@ -569,19 +565,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           ...(fix ? ["--fix"] : []),
         ],
         reporter: {
-          error({ message, file, line, column, rule, reason }, done) {
-            const error = {
-              kind: "lint" as const,
-              message,
-              file: file ?? "<unknown>",
-              line: Number.isNaN(Number(line)) ? -1 : Number(line),
-              column: Number.isNaN(Number(column)) ? -1 : Number(column),
-              rule: rule ?? "<unknown>",
-              reason: reason ?? "<unknown>",
-            };
-            (done ? onError : onPartialError)?.(error);
-            return [error];
-          },
+          error: (data, done) => errorReport("lint", data, done),
           debug: debugReport,
         },
         parser: [{
@@ -741,6 +725,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           next: "failures",
         }, {
           patterns: [
+            /^error: Import '(?<file>.*)' failed, not found\.$/,
             /^(?<name>.*?) => (?<file>.*?):(?<line>\d+):(?<column>\d+)/,
             /^(?<file>.*?) \(uncaught error\)$/,
           ],
