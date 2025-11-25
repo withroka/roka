@@ -164,10 +164,6 @@ export interface DenoProblem extends Report {
 export interface CheckProblem extends Report {
   /** Check problem kind. */
   kind: "check";
-  /** The line number the error occurs at. */
-  line: number;
-  /** The column number the error occurs at. */
-  column: number;
   /** The type-check rule that generated the error. */
   rule: string;
   /** The reason for the problem. */
@@ -178,10 +174,6 @@ export interface CheckProblem extends Report {
 export interface LintProblem extends Report {
   /** Lint problem kind. */
   kind: "lint";
-  /** The line number the lint problem occurs at. */
-  line: number;
-  /** The column number the lint problem occurs at. */
-  column: number;
   /** The lint rule that generated the problem. */
   rule: string;
   /** The reason for the problem. */
@@ -200,10 +192,6 @@ export interface TestProblem extends Report {
   kind: "failure";
   /** The name of the test or step. */
   test: [string, ...string[]];
-  /** The line number the problem occurs at. */
-  line: number;
-  /** The column number the problem occurs at. */
-  column: number;
 }
 
 /** A test information reported from `deno`. */
@@ -226,8 +214,8 @@ export interface TestInfo extends Report {
 export interface OutputInfo extends Report {
   /** Output info kind. */
   kind: "output";
-  /** The output of the run, if generated. */
-  output?: string;
+  /** Output from the run. */
+  output: string;
 }
 
 /** Callback options for `deno` commands. */
@@ -432,13 +420,15 @@ export function deno(options?: DenoOptions): DenoCommands {
     data: ReportData,
   ): Report & { kind: Kind } {
     assert(kind === data.kind, kind);
-    const { message, file, line, column } = data;
+    const { message, file } = data;
+    const line = Number(data.line);
+    const column = Number(data.column);
     return {
       kind,
       message: message.trimEnd(),
       ...file && { file },
-      ...!Number.isNaN(Number(line)) && { line: Number(line) },
-      ...!Number.isNaN(Number(column)) && { column: Number(column) },
+      ...Number.isFinite(line) && { line },
+      ...Number.isFinite(column) && { column },
       ...data.reason !== undefined && { reason: data.reason },
     };
   }
@@ -463,8 +453,6 @@ export function deno(options?: DenoOptions): DenoCommands {
     const report = reportFrom(kind, data);
     const error = {
       ...report,
-      line: report.line ?? -1,
-      column: report.column ?? -1,
       rule: data.rule ?? "<unknown>",
       reason: data.reason ?? "<unknown>",
     };
@@ -746,7 +734,7 @@ export function deno(options?: DenoOptions): DenoCommands {
               last = report;
               return [];
             }
-            const { step, name, status, time, output = last.output } = data;
+            const { step, name, status, output = last.output, time } = data;
             if (output !== undefined) last.output = output;
             if (done) assertExists(name);
             else if (!name) return [];
@@ -767,8 +755,8 @@ export function deno(options?: DenoOptions): DenoCommands {
                 ...status &&
                   { success: status === "ok" || status === "ignored" },
                 ...status !== undefined && { status },
-                ...time !== undefined && { time },
                 ...output !== undefined && { output },
+                ...time !== undefined && { time },
               };
             if (!done) {
               onPartialInfo?.(info);
