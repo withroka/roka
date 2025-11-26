@@ -75,7 +75,11 @@ import { tempDirectory } from "@roka/fs/temp";
 import { git } from "@roka/git";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { RESTORE_CURSOR, SAVE_CURSOR } from "@std/cli/unstable-ansi";
+import {
+  ERASE_LINE_AFTER_CURSOR,
+  RESTORE_CURSOR,
+  SAVE_CURSOR,
+} from "@std/cli/unstable-ansi";
 import {
   associateBy,
   deepMerge,
@@ -306,7 +310,10 @@ function denoOptions(): DenoOptions {
       if (!reported) console.log();
       reported = true;
       Deno.stdout.writeSync(
-        encoder.encode(RESTORE_CURSOR + SAVE_CURSOR + testLine(report)),
+        encoder.encode(
+          RESTORE_CURSOR + SAVE_CURSOR + ERASE_LINE_AFTER_CURSOR +
+            testLine(report),
+        ),
       );
     },
     onInfo(report) {
@@ -315,14 +322,20 @@ function denoOptions(): DenoOptions {
       if (Deno.stdout.isTerminal()) {
         Deno.stdout.writeSync(encoder.encode(RESTORE_CURSOR + SAVE_CURSOR));
       }
-      if (report.kind === "output") {
-        console.log(report.message);
-        return;
-      }
-      console.log(testLine(report));
+      if (report.kind === "test") console.log(testLine(report));
       if (report.output !== undefined) {
-        console.log("------- output -------");
-        console.log(`${report.output}----- output end -----`);
+        console.log(
+          report.kind === "test"
+            ? yellow("------- test output -------")
+            : yellow("------- non-test output -------"),
+        );
+        console.log(
+          `${report.output}${
+            report.kind === "test"
+              ? yellow("----- test output end -----")
+              : yellow("----- non-test output end -----")
+          }`,
+        );
       }
     },
   };
