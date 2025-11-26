@@ -522,7 +522,7 @@ export function deno(options?: DenoOptions): DenoCommands {
       return await new Runner(directory, "fmt", {
         extensions: FORMAT_EXTENSIONS,
         permitNoFiles,
-        doc: { skip: ["md"] },
+        doc: { update: true, skip: ["md"] },
         commonArgs: [...(check ? ["--check"] : ["--quiet"])],
         reporter: {
           problem(data, done) {
@@ -626,7 +626,7 @@ export function deno(options?: DenoOptions): DenoCommands {
       return await new Runner(directory, "lint", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
         permitNoFiles,
-        doc: { only: ["md"] },
+        doc: { update: fix, only: ["md"] },
         commonArgs: [
           "--quiet",
           ...(fix ? ["--fix"] : []),
@@ -943,10 +943,7 @@ interface RunOptions {
   cwd?: string;
   extensions?: string[];
   permitNoFiles?: boolean;
-  doc?: boolean | {
-    skip?: string[];
-    only?: string[];
-  };
+  doc?: { update?: boolean; skip?: string[]; only?: string[] };
   commonArgs?: string[];
   codeArgs?: string[];
   scriptArgs?: string[];
@@ -1018,12 +1015,11 @@ class Runner implements AsyncDisposable {
     const {
       extensions,
       permitNoFiles,
+      doc,
       commonArgs = [],
       codeArgs = [],
       scriptArgs = [],
-      doc = false,
     } = this.options ?? {};
-    const docOnly = typeof doc === "object" && doc.only ? doc.only : [];
     if (extensions !== undefined) {
       files = files
         .filter((x) => extensions.includes(extname(x).slice(1).toLowerCase()));
@@ -1038,7 +1034,7 @@ class Runner implements AsyncDisposable {
     if (doc) this.blocksDir = await tempDirectory();
     this.blocksByPath = await this.blockFiles(files);
     files = files.filter((x) =>
-      !docOnly.includes(extname(x).slice(1).toLowerCase())
+      !doc?.only?.includes(extname(x).slice(1).toLowerCase())
     );
     if (files.length === 0 && Object.keys(this.blocksByPath).length === 0) {
       return this.results.values().toArray();
@@ -1113,7 +1109,7 @@ class Runner implements AsyncDisposable {
         { cause: { command: "deno", cwd, args, code } },
       );
     }
-    await this.updateBlocks();
+    if (doc?.update) await this.updateBlocks();
     return this.results.values().toArray();
   }
 
@@ -1266,13 +1262,12 @@ class Runner implements AsyncDisposable {
   }
 
   async blocks(files: string[]): Promise<Block[]> {
-    const skipDoc = typeof this.options?.doc === "object" &&
-        this.options?.doc.skip
-      ? this.options.doc.skip
-      : [];
+    const { doc } = this.options ?? {};
     assertExists(this.blocksDir);
     const blocks = await pool(
-      files.filter((x) => !skipDoc.includes(extname(x).slice(1).toLowerCase())),
+      files.filter((x) =>
+        !doc?.skip?.includes(extname(x).slice(1).toLowerCase())
+      ),
       async (file) => {
         const { value: fileContent, error } = await maybe(() =>
           Deno.readTextFile(file)
