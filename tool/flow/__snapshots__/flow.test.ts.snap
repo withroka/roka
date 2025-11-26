@@ -900,18 +900,18 @@ snapshot[`flow test [test-output] 1`] = `
   code: 0,
   output: "
 
-------- pre-test output -------
+------- non-test output -------
 pre-test output
------ pre-test output end -----
+----- non-test output end -----
 test1 ... ok (?ms)
 test2 ... ok (?ms)
-------- output -------
+------- test output -------
 test output
------ output end -----
+----- test output end -----
 test3 ... ok (?ms)
-------- post-test output -------
+------- non-test output -------
 post-test output
------ post-test output end -----
+----- non-test output end -----
 
 ✅ Ran 3 tests from 1 file (3 passed, 0 failed)
 ",
