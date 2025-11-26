@@ -467,7 +467,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     },
     async check(files, options) {
       const { permitNoFiles = false } = options ?? {};
-      return await new Runner(directory, "check", {
+      await using runner = new Runner(directory, "check", {
         extensions: [...TYPESCRIPT_EXTENSIONS, "md"],
         permitNoFiles,
         doc: { only: ["md"] },
@@ -515,11 +515,12 @@ export function deno(options?: DenoOptions): DenoCommands {
           states: ["fatal"],
           patterns: [/^\s/],
         }],
-      }).run(files);
+      });
+      return await runner.run(files);
     },
     async fmt(files, options) {
       const { check = false, permitNoFiles = false } = options ?? {};
-      return await new Runner(directory, "fmt", {
+      await using runner = new Runner(directory, "fmt", {
         extensions: FORMAT_EXTENSIONS,
         permitNoFiles,
         doc: { update: true, skip: ["md"] },
@@ -565,12 +566,13 @@ export function deno(options?: DenoOptions): DenoCommands {
         }, {
           patterns: [/^$/],
         }],
-      }).run(files);
+      });
+      return await runner.run(files);
     },
     async doc(files, options) {
       const { json = false, lint = false, permitNoFiles = false } = options ??
         {};
-      return await new Runner(directory, "doc", {
+      await using runner = new Runner(directory, "doc", {
         extensions: SCRIPT_EXTENSIONS,
         permitNoFiles,
         commonArgs: [
@@ -619,11 +621,12 @@ export function deno(options?: DenoOptions): DenoCommands {
         }, {
           patterns: [/^$/],
         }],
-      }).run(files);
+      });
+      return await runner.run(files);
     },
     async lint(files, options) {
       const { fix = false, permitNoFiles = false } = options ?? {};
-      return await new Runner(directory, "lint", {
+      await using runner = new Runner(directory, "lint", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
         permitNoFiles,
         doc: { update: fix, only: ["md"] },
@@ -673,7 +676,8 @@ export function deno(options?: DenoOptions): DenoCommands {
         }, {
           patterns: [/^$/],
         }],
-      }).run(files);
+      });
+      return await runner.run(files);
     },
     async test(files, options) {
       const { filter = false, update = false, permitNoFiles = false } =
@@ -685,7 +689,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           /(?<status>FAILED|INCOMPLETE|ok|ignored)/.source +
           /(?: \(due to .*?\))?(?: .*?\((?<time>[^()]*?)\))?/.source + ")?",
       );
-      return await new Runner(directory, "test", {
+      await using runner = new Runner(directory, "test", {
         extensions: [...SCRIPT_EXTENSIONS, "md"],
         permitNoFiles,
         commonArgs: [
@@ -873,11 +877,12 @@ export function deno(options?: DenoOptions): DenoCommands {
         }, {
           patterns: [/^$/],
         }],
-      }).run(files);
+      });
+      return await runner.run(files);
     },
     async compile(script, options) {
       const { args = [], target, include, output } = options ?? {};
-      return await new Runner(directory, "compile", {
+      await using runner = new Runner(directory, "compile", {
         commonArgs: [
           "--quiet",
           "--no-check",
@@ -894,7 +899,8 @@ export function deno(options?: DenoOptions): DenoCommands {
           states: ["fatal"],
           patterns: [/.?/],
         }],
-      }).run([script]);
+      });
+      return await runner.run([script]);
     },
   };
 }
