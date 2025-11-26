@@ -666,7 +666,8 @@ Deno.test("git().clone({ tags }) can skip tags", async () => {
 
 Deno.test("git().config.set() configures single values", async () => {
   await using repo = await tempRepository();
-  await repo.config.set({ user: { name: "name", email: "email" } });
+  await repo.config.set("user.name", "name");
+  await repo.config.set("user.email", "email");
   const commit = await repo.commit.create({
     subject: "commit",
     sign: false,
@@ -682,9 +683,7 @@ Deno.test("git().config.set() configures multi values", async () => {
   await repo.tag.create("1.2.3-alpha");
   await repo.tag.create("1.2.3-beta");
   await repo.tag.create("1.2.3-rc");
-  await repo.config.set({
-    versionsort: { suffix: ["-alpha", "-beta", "-rc"] },
-  });
+  await repo.config.set("versionsort.suffix", ["-alpha", "-beta", "-rc"]);
   assertEquals(
     (await repo.tag.list({ sort: "version" })).map((tag) => tag.name),
     ["1.2.3", "1.2.3-rc", "1.2.3-beta", "1.2.3-alpha"],
@@ -2689,17 +2688,15 @@ Deno.test("git().commit.log({ committer }) filters by committer", {
   ignore: codespaces,
 }, async () => {
   await using repo = await tempRepository();
-  await repo.config.set({
-    user: { name: "name1", email: "email1@example.com" },
-  });
+  await repo.config.set("user.name", "name1");
+  await repo.config.set("user.email", "email1@example.com");
   const commit1 = await repo.commit.create({
     subject: "commit1",
     author: { name: "upstream", email: "upstream@example.com" },
     allowEmpty: true,
   });
-  await repo.config.set({
-    user: { name: "name2", email: "email2@example.com" },
-  });
+  await repo.config.set("user.name", "name2");
+  await repo.config.set("user.email", "email2@example.com");
   const commit2 = await repo.commit.create({
     subject: "commit2",
     author: { name: "upstream", email: "upstream@example.com" },

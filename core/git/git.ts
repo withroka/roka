@@ -35,7 +35,6 @@
  *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
  * @todo Add `git().config.get()`
- * @todo Extend `git().config.set()`
  * @todo Add `git().worktree.*`
  * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
@@ -108,8 +107,32 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
-  /** Configures repository options. */
-  set(config: Config): Promise<void>;
+  /**
+   * Sets a git configuration value.
+   *
+   * @example Set user name and email
+   * ```ts
+   * import { git } from "@roka/git";
+   * const repo = git();
+   * await repo.config.set("user.name", "Alice");
+   * await repo.config.set("user.email", "alice@example.com");
+   * ```
+   *
+   * @example Set boolean configuration
+   * ```ts
+   * import { git } from "@roka/git";
+   * const repo = git();
+   * await repo.config.set("commit.gpgsign", false);
+   * ```
+   *
+   * @example Set array configuration
+   * ```ts
+   * import { git } from "@roka/git";
+   * const repo = git();
+   * await repo.config.set("versionsort.suffix", ["-alpha", "-beta", "-rc"]);
+   * ```
+   */
+  set<K extends ConfigKey>(key: K, value: ConfigValue<K>): Promise<void>;
 }
 
 /** Index operations from {@linkcode Git.index}. */
@@ -344,6 +367,68 @@ export interface Config {
     suffix: string[];
   };
 }
+
+/**
+ * Runtime schema for known git configuration keys.
+ *
+ * This schema serves as the single source of truth for both TypeScript types
+ * and value parsing. Each value in the schema defines how git string values
+ * should be parsed into JavaScript types.
+ */
+const CONFIG_SCHEMA = {
+  "branch.autoSetupMerge": ["boolean", "always", "inherit", "simple"],
+  "clone.defaultRemoteName": "string",
+  "commit.gpgsign": "boolean",
+  "diff.renames": ["boolean", "copies"],
+  "init.defaultBranch": "string",
+  "pull.rebase": ["boolean", "merges", "interactive"],
+  "status.renames": ["boolean", "copies"],
+  "tag.gpgsign": "boolean",
+  "trailer.separators": "string",
+  "user.email": "string",
+  "user.name": "string",
+  "user.signingkey": "string",
+  "versionsort.suffix": "string[]",
+} as const;
+
+/** A value type in the config schema. */
+type SchemaValue =
+  | "string"
+  | "boolean"
+  | "number"
+  | "string[]"
+  | readonly (string | "boolean" | "number" | "string")[];
+
+/** Extract the TypeScript type from a schema value. */
+type SchemaValueType<T extends SchemaValue> = T extends "string" ? string
+  : T extends "boolean" ? boolean
+  : T extends "number" ? number
+  : T extends "string[]" ? string[]
+  : T extends readonly (infer U)[] ? (
+      U extends "string" ? string
+        : U extends "boolean" ? boolean
+        : U extends "number" ? number
+        : U extends string ? U
+        : never
+    )
+  : never;
+
+/** Configuration type derived from the schema. */
+type ConfigType = {
+  [K in keyof typeof CONFIG_SCHEMA]: SchemaValueType<
+    (typeof CONFIG_SCHEMA)[K]
+  >;
+};
+
+/** All known configuration keys. */
+export type ConfigKey =
+  | keyof ConfigType
+  | (string & Record<PropertyKey, never>);
+
+/** The value type for a given configuration key. */
+export type ConfigValue<K extends string> = K extends keyof ConfigType
+  ? ConfigType[K]
+  : unknown;
 
 /** An author or committer on a git repository. */
 export interface User {
@@ -1631,7 +1716,12 @@ export function git(options?: GitOptions): Git {
       const repo = git({
         cwd: resolve(directory, options?.directory ?? directory),
       });
-      if (options?.config) await repo.config.set(options.config);
+      if (options?.config) {
+        for (const [key, value] of configEntries(options.config)) {
+          // deno-lint-ignore no-await-in-loop
+          await repo.config.set(key as ConfigKey, value);
+        }
+      }
       return repo;
     },
     async clone(remote, options) {
@@ -1685,10 +1775,20 @@ export function git(options?: GitOptions): Git {
       return git({ ...gitOptions, cwd });
     },
     config: {
-      async set(config) {
-        for (const cfg of configFlags(config)) {
-          // deno-lint-ignore no-await-in-loop
-          await run(gitOptions, "config", cfg);
+      async set(key, value) {
+        if (Array.isArray(value)) {
+          await run(gitOptions, "config", "--replace-all", key, value[0]);
+          for (let i = 1; i < value.length; i++) {
+            // deno-lint-ignore no-await-in-loop
+            await run(gitOptions, "config", "--add", key, value[i]);
+          }
+        } else {
+          const stringValue = typeof value === "boolean"
+            ? value.toString()
+            : typeof value === "number"
+            ? value.toString()
+            : value as string;
+          await run(gitOptions, "config", key, stringValue);
         }
       },
     },
@@ -2660,6 +2760,26 @@ function configFlags(config: Config | undefined, flag?: string): string[][] {
   return args(config).map(({ key, value, opt }) => {
     return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
   });
+}
+
+function configEntries(
+  config: Config,
+): [string, string | boolean | number | string[]][] {
+  const entries: [string, string | boolean | number | string[]][] = [];
+  function walk(obj: Config, prefix = "") {
+    for (const [key, value] of Object.entries(obj)) {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      if (Array.isArray(value)) {
+        entries.push([fullKey, value]);
+      } else if (typeof value === "object" && value !== null) {
+        walk(value, fullKey);
+      } else if (value !== undefined) {
+        entries.push([fullKey, value]);
+      }
+    }
+  }
+  walk(config);
+  return entries;
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
