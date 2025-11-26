@@ -748,6 +748,60 @@ Deno.test("deno().fmt() formats code blocks in Markdown", async () => {
   );
 });
 
+Deno.test("deno().fmt() formats code blocks under nesting in Markdown", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  await Deno.writeTextFile(
+    "file.md",
+    [
+      "# Title",
+      "",
+      "Some text",
+      "",
+      "````ts",
+      "/**",
+      " * Example function.",
+      " *",
+      " * @example",
+      " * ```ts",
+      " * console.log(f());",
+      " * ```",
+      " */",
+      "function f(){return 42}",
+      "````",
+      "",
+      "End of file",
+      "",
+    ].join("\n"),
+  );
+  const results = await deno().fmt(["file.md"]);
+  assertResults(results, [{ file: "file.md", problem: [], info: [] }]);
+  assertEquals(
+    await Deno.readTextFile("file.md"),
+    [
+      "# Title",
+      "",
+      "Some text",
+      "",
+      "````ts",
+      "/**",
+      " * Example function.",
+      " *",
+      " * @example",
+      " * ```ts",
+      " * console.log(f());",
+      " * ```",
+      " */",
+      "function f() {",
+      "  return 42;",
+      "}",
+      "````",
+      "",
+      "End of file",
+      "",
+    ].join("\n"),
+  );
+});
+
 Deno.test("deno().fmt() leaves already formatted JSDoc code block unchanged", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
@@ -1766,6 +1820,55 @@ Deno.test("deno().lint() reports lint errors in code blocks in Markdown", async 
     info: [],
   }]);
   assertEquals(await Deno.readTextFile("file.md"), content);
+});
+
+Deno.test("deno().lint() reports lint errors in code blocks under nesting in Markdown", async () => {
+  await using _ = await tempDirectory({ chdir: true });
+  const contents = [
+    "# Title",
+    "",
+    "Some text",
+    "",
+    "````ts",
+    "/**",
+    " * Example function.",
+    " *",
+    " * @example",
+    " * ```ts",
+    " * console.log(f());",
+    " * ```",
+    " */",
+    "function f() {}",
+    "````",
+    "",
+    "End of file",
+    "",
+  ].join("\n");
+  await Deno.writeTextFile("file.md", contents);
+  const results = await deno().lint(["file.md"]);
+  assertResults(results, [{
+    file: "file.md",
+    problem: [{
+      kind: "lint",
+      file: "file.md",
+      line: 14,
+      column: 10,
+      rule: "no-unused-vars",
+      reason: "`f` is never used",
+      message: [
+        "error[no-unused-vars]: `f` is never used",
+        ` --> ${Deno.cwd()}/file.md:14:10`,
+        "  | ",
+        "9 | function f() {}",
+        "  |          ^",
+        "  = hint: If this is intentional, prefix it with an underscore like `_f`",
+        "",
+        "  docs: https://docs.deno.com/lint/rules/no-unused-vars",
+      ].join("\n"),
+    }],
+    info: [],
+  }]);
+  assertEquals(await Deno.readTextFile("file.md"), contents);
 });
 
 Deno.test("deno().lint() reports syntax errors", async () => {
