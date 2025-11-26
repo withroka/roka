@@ -996,6 +996,7 @@ Deno.test("deno().fmt({ check }) reports formatting diffs", async () => {
     problem: [{
       kind: "diff",
       file: "file.ts",
+      line: 1,
       message: [
         `from ${Deno.cwd()}/file.ts:`,
         "1 | -export   const y= 1",
@@ -1026,6 +1027,7 @@ Deno.test("deno().fmt({ check }) reports formatting diffs from multiple files", 
     problem: [{
       kind: "diff",
       file: "file1.ts",
+      line: 1,
       message: [
         `from ${Deno.cwd()}/file1.ts:`,
         "1 | -export   const y= 1",
@@ -1043,6 +1045,7 @@ Deno.test("deno().fmt({ check }) reports formatting diffs from multiple files", 
     problem: [{
       kind: "diff",
       file: "file2.ts",
+      line: 1,
       message: [
         `from ${Deno.cwd()}/file2.ts:`,
         "1 | -export   const y= 1",
@@ -1079,6 +1082,7 @@ Deno.test("deno().fmt({ check }) reports formatting diffs in JSDoc code blocks",
     problem: [{
       kind: "diff",
       file: "file.ts",
+      line: 4,
       message: [
         `from ${Deno.cwd()}/file.ts:3:4:`,
         "1 | -export   const y= 1",
@@ -1117,6 +1121,7 @@ Deno.test("deno().fmt({ check }) reports formatting diffs in Markdown code block
     problem: [{
       kind: "diff",
       file: "file.md",
+      line: 6,
       message: [
         `from ${Deno.cwd()}/file.md:`,
         " 6 | -export   const y= 1",
