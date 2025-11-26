@@ -2157,7 +2157,7 @@ Deno.test("deno().test() rejects runtime failure", async () => {
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
-Deno.test("deno().test() rejects passing tests with the `only` option", async () => {
+Deno.test("deno().test() rejects passing tests with the only option", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
     "Deno.test.only('test', () => {});",
