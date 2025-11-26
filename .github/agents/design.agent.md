@@ -60,6 +60,9 @@ You will NOT:
 - **Decisions**: Alternatives, key tradeoffs and rationale for chosen approach.
 - **Design**: Interface signatures, types, and usage examples.
 - **Tasks**: Numbered list of implementation tasks ready for delegation.
-  - Each task should be independent and completable by a specialist agent.
+  - Each task must be shippable in the journey from current to desired state.
+  - Avoid tasks that add scaffolding, unused code, or incomplete features.
+  - Think vertically (complete features) not horizontally (layers/components).
+  - Each task can be a PR that merges into main.
   - Specify what to build and which agent should handle it.
   - Note any dependencies between tasks.
