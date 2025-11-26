@@ -554,7 +554,8 @@ export function deno(options?: DenoOptions): DenoCommands {
           report: "diff",
         }, {
           states: ["diff"],
-          patterns: [/^\s*\d+\s+\|/],
+          patterns: [/^\s*(?<line>\d+)\s+\|/],
+          first: ["line"],
         }, {
           patterns: [/^error: /],
           report: "fatal",
@@ -963,6 +964,7 @@ interface RunOptions {
   parser?: {
     states?: string[];
     patterns: RegExp[];
+    first?: string[];
     aggregate?: string[];
     report?: keyof typeof REPORT_TYPES;
     next?: string;
@@ -1154,15 +1156,19 @@ class Runner implements AsyncDisposable {
         done,
       };
     } else if (this.report.data) {
-      const aggregate = state.aggregate ?? [];
+      const { first = [], aggregate = [] } = state;
       this.report.data = {
         ...this.report.data,
-        ...omit(match.groups ?? {}, aggregate),
+        ...omit(match.groups ?? {}, aggregate.concat(first)),
         ...done && { message: this.report.data.message + "\n" + line },
       };
+      const firstAdd = pick(match.groups ?? {}, first ?? []);
+      for (const [key, value] of Object.entries(firstAdd)) {
+        if (this.report.data[key] === undefined) this.report.data[key] = value;
+      }
       if (done) {
-        const aggregate = pick(match.groups ?? {}, state.aggregate ?? []);
-        for (const [key, value] of Object.entries(aggregate)) {
+        const aggregateAdd = pick(match.groups ?? {}, aggregate ?? []);
+        for (const [key, value] of Object.entries(aggregateAdd)) {
           if (this.report.data[key]) this.report.data[key] += "\n" + value;
           else this.report.data[key] = value;
         }
@@ -1346,13 +1352,17 @@ class Runner implements AsyncDisposable {
         data.file,
         `${block.file}$${block.line}-${block.count}`,
       );
-      data.column = `${Number(data.column) + block.column - 1}`;
-      data.line = `${Number(data.line) + block.line}`;
     } else {
       data.message = data.message.replaceAll(
         data.file,
         `${block.file}:${block.line}:${block.column}`,
       );
+    }
+    if (data.line) {
+      data.line = `${Number(data.line) + block.line}`;
+    }
+    if (data.column) {
+      data.column = `${Number(data.column) + block.column - 1}`;
     }
     data.file = block.file;
     return block;
