@@ -863,7 +863,10 @@ export function deno(options?: DenoOptions): DenoCommands {
             /^.* coverage report has been generated at /,
           ],
         }, {
-          patterns: [/^\| [^|]+ \| [^|]+ \| [^|]+ \|$/],
+          patterns: [
+            /^\| [^|]+ \| [^|]+ \| [^|]+ \|$/,
+            /^.* coverage report has been generated at /,
+          ],
           report: "debug",
           next: "coverage",
         }, {
