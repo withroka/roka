@@ -1162,12 +1162,12 @@ class Runner implements AsyncDisposable {
         ...omit(match.groups ?? {}, aggregate.concat(first)),
         ...done && { message: this.report.data.message + "\n" + line },
       };
-      const firstAdd = pick(match.groups ?? {}, first ?? []);
+      const firstAdd = pick(match.groups ?? {}, first);
       for (const [key, value] of Object.entries(firstAdd)) {
         if (this.report.data[key] === undefined) this.report.data[key] = value;
       }
       if (done) {
-        const aggregateAdd = pick(match.groups ?? {}, aggregate ?? []);
+        const aggregateAdd = pick(match.groups ?? {}, aggregate);
         for (const [key, value] of Object.entries(aggregateAdd)) {
           if (this.report.data[key]) this.report.data[key] += "\n" + value;
           else this.report.data[key] = value;
