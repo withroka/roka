@@ -1281,7 +1281,7 @@ class Runner implements AsyncDisposable {
         if (error) throw error;
         return Array.from(
           fileContent.matchAll(
-            /(?<=^|\n)(?<indent>(?<begin>.*?) *)```(?<lang>\w+)? *\n(?<content>(?:\k<begin>.*\n)*?)\k<indent>``` *\n/g,
+            /(?<=^|\n)(?<indent>(?<begin>.*?) *)(?<block>```+)(?<lang>\w+)? *\n(?<content>(?:\k<begin>.*\n)*?)\k<indent>\k<block> *\n/g,
           ).map((m) => {
             if (!m[0] || !m.groups) return undefined;
             const { indent, lang, content } = m.groups;
