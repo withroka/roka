@@ -676,7 +676,7 @@ Deno.test("git().config.list() returns all configuration values", async () => {
       "user.email": "email",
       "commit.gpgsign": true,
       "tag.gpgsign": true,
-      "imap.port": 1234,
+      "fetch.parallel": 1234,
       "versionsort.suffix": ["-alpha", "-beta", "-rc"],
       "custom.key": "value",
     },
@@ -686,13 +686,24 @@ Deno.test("git().config.list() returns all configuration values", async () => {
     "user.email": "email",
     "commit.gpgsign": true,
     "tag.gpgsign": true,
-    "imap.port": 1234,
+    "fetch.parallel": 1234,
     "versionsort.suffix": ["-alpha", "-beta", "-rc"],
     "custom.key": "value",
   });
 });
 
-Deno.test("git().config.get() handles whitespace in values", async () => {
+Deno.test("git().config.list() handles custom configuration", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "pager.config": true,
+    },
+  });
+  assertObjectMatch(await repo.config.list(), {
+    "pager.config": "true",
+  });
+});
+
+Deno.test("git().config.list() handles whitespace in values", async () => {
   const config: Record<string, unknown> = {
     "user.name": "  name  ",
     "user.email": "",
@@ -770,27 +781,27 @@ Deno.test("git().config.get() rejects invalid boolean values", async () => {
 Deno.test("git().config.get() retrieves numeric variables", async () => {
   assertType<
     IsExact<
-      Awaited<ReturnType<typeof repo.config.get<"imap.port">>>,
+      Awaited<ReturnType<typeof repo.config.get<"fetch.parallel">>>,
       number | undefined
     >
   >(true);
   await using repo = await tempRepository({
-    config: { "imap.port": 1234 },
+    config: { "fetch.parallel": 1234 },
   });
-  assertEquals(await repo.config.get("imap.port"), 1234);
+  assertEquals(await repo.config.get("fetch.parallel"), 1234);
 });
 
 Deno.test("git().config.get() converts integer scale suffixes", async () => {
-  const config: Record<string, string> = { "imap.port": "1M" };
+  const config: Record<string, string> = { "fetch.parallel": "1M" };
   await using repo = await tempRepository({ config: { ...config } });
-  assertEquals(await repo.config.get("imap.port"), 1024 * 1024);
+  assertEquals(await repo.config.get("fetch.parallel"), 1024 * 1024);
 });
 
 Deno.test("git().config.get() rejects invalid numeric values", async () => {
-  const config: Record<string, unknown> = { "imap.port": "not-a-number" };
+  const config: Record<string, unknown> = { "fetch.parallel": "not-a-number" };
   await using repo = await tempRepository({ config: { ...config } });
   await assertRejects(
-    () => repo.config.get("imap.port"),
+    () => repo.config.get("fetch.parallel"),
     GitError,
     "bad numeric config value",
   );
@@ -869,7 +880,7 @@ Deno.test("git().config.get() retrieves single values as array for array variabl
 Deno.test("git().config.get() returns undefined for missing values", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.config.get("init.defaultbranch"), undefined);
-  assertEquals(await repo.config.get("imap.port"), undefined);
+  assertEquals(await repo.config.get("fetch.parallel"), undefined);
   assertEquals(await repo.config.get("user.signingkey"), undefined);
   assertEquals(await repo.config.get("versionsort.suffix"), undefined);
   assertEquals(await repo.config.get("pull.rebase"), undefined);
@@ -956,11 +967,11 @@ Deno.test("git().config.set() configures boolean variables", async () => {
 
 Deno.test("git().config.set() configures numeric variables", async () => {
   assertType<
-    IsExact<Parameters<typeof repo.config.set<"imap.port">>[1], number>
+    IsExact<Parameters<typeof repo.config.set<"fetch.parallel">>[1], number>
   >(true);
   await using repo = await tempRepository();
-  await repo.config.set("imap.port", 1234);
-  assertEquals(await repo.config.get("imap.port"), 1234);
+  await repo.config.set("fetch.parallel", 1234);
+  assertEquals(await repo.config.get("fetch.parallel"), 1234);
 });
 
 Deno.test("git().config.set() configures string variables", async () => {
@@ -1068,15 +1079,15 @@ Deno.test("git().config.set() resets all existing values", async () => {
   const config: Record<string, unknown> = {
     "versionsort.suffix": ["-old"],
     "commit.gpgsign": ["true", "false"],
-    "imap.port": "1234",
+    "fetch.parallel": "1234",
   };
   await using repo = await tempRepository({ config: { ...config } });
   await repo.config.set("versionsort.suffix", ["-new1", "-new2"]);
   await repo.config.set("commit.gpgSign", true);
-  await repo.config.set("imap.port", 1234);
+  await repo.config.set("fetch.parallel", 1234);
   assertEquals(await repo.config.get("versionsort.suffix"), ["-new1", "-new2"]);
   assertEquals(await repo.config.get("commit.gpgsign"), true);
-  assertEquals(await repo.config.get("imap.port"), 1234);
+  assertEquals(await repo.config.get("fetch.parallel"), 1234);
 });
 
 Deno.test("git().config.unset() removes a configuration value", async () => {
@@ -3033,7 +3044,7 @@ Deno.test("git().ignore.omit({ index }) considers index", async () => {
   assertEquals(await repo.ignore.omit("file.log", { index: false }), []);
 });
 
-Deno.test("git().commit.log() return empty on empty repository", async () => {
+Deno.test("git().commit.log() returns empty on empty repository", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.commit.log(), []);
 });
@@ -3086,6 +3097,40 @@ Deno.test("git().commit.log() can work with custom trailer separator", async () 
   assertEquals(commit?.subject, "subject");
   assertEquals(commit?.body, "body");
   assertEquals(commit?.trailers, { key1: "value1", key2: "value2" });
+});
+
+Deno.test("git().commit.log() handles custom configuration", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "author.name": "author-name",
+      "author.email": "author-email",
+      "committer.name": "committer-name",
+      "committer.email": "committer-email",
+      "format.pretty": "raw",
+      "i18n.logoutputencoding": "ascii",
+      "log.abbrevcommit": true,
+      "log.decorate": "short",
+      "log.follow": true,
+      "log.showroot": true,
+      "log.showsignature": true,
+      "log.mailmap": false,
+    },
+  });
+  const commit = await repo.commit.create({
+    subject: "subject with Unicode character: ∑",
+    body: "body",
+    trailers: { key: "value" },
+    allowEmpty: true,
+  });
+  assertEquals(await repo.commit.log(), [{
+    hash: commit.hash,
+    short: commit.short,
+    author: { name: "author-name", email: "author-email" },
+    committer: { name: "committer-name", email: "committer-email" },
+    subject: "subject with Unicode character: ∑",
+    body: "body",
+    trailers: { key: "value" },
+  }]);
 });
 
 Deno.test("git().commit.log({ author }) filters by author", async () => {
@@ -3520,6 +3565,35 @@ Deno.test("git().commit.create() rejects empty commit", async () => {
     GitError,
     "nothing to commit",
   );
+});
+
+Deno.test("git().commit.create() handles custom configuration", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "author.name": "author-name",
+      "author.email": "author-email",
+      "committer.name": "committer-name",
+      "committer.email": "committer-email",
+      "i18n.commitEncoding": "ascii",
+      "commit.status": false,
+      "commit.verbose": true,
+    },
+  });
+  const commit = await repo.commit.create({
+    subject: "subject with Unicode character: ∑",
+    body: "body",
+    trailers: { key: "value" },
+    allowEmpty: true,
+  });
+  assertEquals(commit, {
+    hash: commit.hash,
+    short: commit.short,
+    author: { name: "author-name", email: "author-email" },
+    committer: { name: "committer-name", email: "committer-email" },
+    subject: "subject with Unicode character: ∑",
+    body: "body",
+    trailers: { key: "value" },
+  });
 });
 
 Deno.test("git().commit.create({ all }) automatically stages files", async () => {
@@ -3965,6 +4039,24 @@ Deno.test("git().branch.list() detects deleted upstream branches", async () => {
       fetch: { name: "branch", remote },
       push: { name: "branch", remote },
     },
+  ]);
+});
+
+Deno.test("git().branch.list() handles custom configuration", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: {
+      "pager.branch": true,
+    },
+  });
+  const commit = await repo.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+  });
+  await repo.branch.create("branch");
+  assertEquals(await repo.branch.list(), [
+    { name: "branch", commit },
+    { name: "main", commit },
   ]);
 });
 
