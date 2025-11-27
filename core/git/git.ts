@@ -110,19 +110,7 @@ export interface ConfigOperations {
   get<K extends ConfigKey>(key: K): Promise<ConfigValue<K> | undefined>;
   /** Sets a git configuration value. */
   set<K extends ConfigKey>(key: K, value: ConfigValue<K>): Promise<void>;
-  /**
-   * Removes a git configuration value.
-   *
-   * Removes all values for the given key. Does nothing if the key doesn't exist.
-   *
-   * @example Remove a configuration value
-   * ```ts
-   * import { git } from "@roka/git";
-   * const repo = git();
-   * await repo.config.set("user.name", "Alice");
-   * await repo.config.unset("user.name");
-   * ```
-   */
+  /** Removes a git configuration value. */
   unset(key: ConfigKey): Promise<void>;
 }
 
@@ -1710,10 +1698,7 @@ export function git(options?: GitOptions): Git {
       async unset(key) {
         await run(
           { ...gitOptions, allowCode: [5] },
-          "config",
-          "unset",
-          "--all",
-          key,
+          ["config", "unset", "--all", key],
         );
       },
     },

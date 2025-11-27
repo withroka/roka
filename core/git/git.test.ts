@@ -1026,8 +1026,8 @@ Deno.test("git().config.set() resets all existing values", async () => {
 
 Deno.test("git().config.unset() removes a configuration value", async () => {
   await using repo = await tempRepository();
-  await repo.config.set("user.name", "Alice");
-  assertEquals(await repo.config.get("user.name"), "Alice");
+  await repo.config.set("user.name", "name");
+  assertEquals(await repo.config.get("user.name"), "name");
   await repo.config.unset("user.name");
   assertEquals(await repo.config.get("user.name"), undefined);
 });
