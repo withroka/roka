@@ -106,22 +106,8 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
-  /**
-   * Lists all git configuration values.
-   *
-   * Returns a record of all configuration keys and their values.
-   *
-   * @example List all configuration
-   * ```ts
-   * import { git } from "@roka/git";
-   * const repo = git();
-   * await repo.config.set("user.name", "Alice");
-   * await repo.config.set("user.email", "alice@example.com");
-   * await repo.config.list();
-   * // { "user.name": "Alice", "user.email": "alice@example.com", ... }
-   * ```
-   */
-  list(): Promise<Record<string, string | string[]>>;
+  /** Lists all git configuration values. */
+  list(): Promise<Config>;
   /** Gets a git configuration value. */
   get<K extends ConfigKey>(key: K): Promise<ConfigValue<K> | undefined>;
   /** Sets a git configuration value. */
@@ -1683,31 +1669,17 @@ export function git(options?: GitOptions): Git {
     },
     config: {
       async list() {
-        const output = await run(
-          gitOptions,
-          "config",
-          "list",
-          "--local",
-        );
-        if (!output) return {};
+        const output = await run(gitOptions, "config", "list", "--local");
         const lines = output.split("\n").filter((x) => x);
-        const config: Record<string, string | string[]> = {};
-        for (const line of lines) {
-          const equalIndex = line.indexOf("=");
-          if (equalIndex === -1) continue;
-          const key = line.slice(0, equalIndex);
-          const value = line.slice(equalIndex + 1);
-          if (config[key] !== undefined) {
-            if (Array.isArray(config[key])) {
-              (config[key] as string[]).push(value);
-            } else {
-              config[key] = [config[key] as string, value];
-            }
-          } else {
-            config[key] = value;
-          }
-        }
-        return config;
+        const config: Record<string, string[]> = {};
+        lines.reduce((config, line) => {
+          let [key = "", value = ""] = line.split("=", 2);
+          key = key.trim().toLowerCase();
+          if (config[key] === undefined) config[key] = [];
+          config[key]?.push(value);
+          return config;
+        }, config);
+        return mapValues(config, (value, key) => configValue(key, value));
       },
       async get<K extends ConfigKey>(key: K) {
         const schema: readonly string[] | undefined =
@@ -1721,7 +1693,7 @@ export function git(options?: GitOptions): Git {
           key,
         );
         if (!output) return undefined;
-        const lines = output.split("\n").filter((x) => x);
+        const lines = output.replace(/\n$/, "").split("\n");
         return configValue(key, lines) as ConfigValue<K>;
       },
       async set(key, value) {
@@ -2149,10 +2121,11 @@ export function git(options?: GitOptions): Git {
         );
       },
       async current() {
-        const name = await run(
+        const output = await run(
           gitOptions,
           ["branch", "--no-color", "--show-current"],
         );
+        const name = output.trim();
         if (!name) throw new GitError("Cannot determine HEAD branch");
         const [branch] = await repo.branch.list({ name });
         return branch ?? { name }; // unborn branch
@@ -2576,8 +2549,7 @@ async function run(
         { cause: { command: "git", args: fullArgs, code } },
       );
     }
-    return new TextDecoder().decode(options?.stderr ? stderr : stdout)
-      .trimEnd();
+    return new TextDecoder().decode(options?.stderr ? stderr : stdout);
   } catch (e: unknown) {
     if (e instanceof Deno.errors.NotCapable) {
       throw new GitError("Permission error (use `--allow-run=git`)", {
