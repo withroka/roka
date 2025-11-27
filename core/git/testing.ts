@@ -98,7 +98,7 @@ export async function tempRepository(
   const { clone, bare = false, branch = "main", remote = "origin" } = options ??
     {};
   const directory = await Deno.makeTempDir();
-  const config = {
+  const config: Config = {
     "user.name": "A U Thor",
     "user.email": "author@example.com",
     "commit.gpgsign": false,

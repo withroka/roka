@@ -373,7 +373,7 @@ export async function releases(
 ): Promise<Release[]> {
   const versions = (await git({
     cwd: pkg.directory,
-    config: { versionsort: { suffix: ["-pre"] } },
+    config: { "versionsort.suffix": ["-pre"] },
   }).tag
     .list({ name: `${pkg.name}@*`, sort: "version" }))
     .filter(parseTag)

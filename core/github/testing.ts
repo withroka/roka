@@ -104,7 +104,6 @@ export function fakeRepository(data?: Partial<Repository>): Repository {
  * assertEquals(pull.title, "new title");
  * ```
  */
-
 export function fakePullRequest(data?: Partial<PullRequest>): PullRequest {
   const repo = data?.repo ?? fakeRepository();
   const number = data?.number ?? 1;

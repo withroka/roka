@@ -34,7 +34,6 @@
  *     {@link https://www.conventionalcommits.org Conventional Commits}.
  *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
- * @todo Add `git().config.get()`
  * @todo Add `git().worktree.*`
  * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
@@ -107,31 +106,9 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
-  /**
-   * Sets a git configuration value.
-   *
-   * @example Set user name and email
-   * ```ts
-   * import { git } from "@roka/git";
-   * const repo = git();
-   * await repo.config.set("user.name", "Alice");
-   * await repo.config.set("user.email", "alice@example.com");
-   * ```
-   *
-   * @example Set boolean configuration
-   * ```ts
-   * import { git } from "@roka/git";
-   * const repo = git();
-   * await repo.config.set("commit.gpgsign", false);
-   * ```
-   *
-   * @example Set array configuration
-   * ```ts
-   * import { git } from "@roka/git";
-   * const repo = git();
-   * await repo.config.set("versionsort.suffix", ["-alpha", "-beta", "-rc"]);
-   * ```
-   */
+  /** Gets a git configuration value. */
+  get<K extends ConfigKey>(key: K): Promise<ConfigValue<K> | undefined>;
+  /** Sets a git configuration value. */
   set<K extends ConfigKey>(key: K, value: ConfigValue<K>): Promise<void>;
 }
 
@@ -299,87 +276,48 @@ export interface AdminOperations {
   backfill(options?: AdminBackfillOptions): Promise<void>;
 }
 
-/**
- * Runtime schema for known git configuration keys.
- *
- * This schema serves as the single source of truth for both TypeScript types
- * and value parsing. Each value in the schema defines how git string values
- * should be parsed into JavaScript types.
- */
-const CONFIG_SCHEMA = {
-  "branch.autoSetupMerge": ["boolean", "always", "inherit", "simple"],
-  "clone.defaultRemoteName": "string",
-  "commit.gpgsign": "boolean",
-  "diff.renames": ["boolean", "copies"],
-  "init.defaultBranch": "string",
+/** Runtime schema for known git configuration. */
+export const CONFIG_SCHEMA = {
+  "branch.autosetupmerge": ["boolean", "always", "inherit", "simple"],
+  "clone.defaultremotename": ["string"],
+  "commit.gpgsign": ["boolean"],
+  "diff.renames": ["boolean", "copies", "copy"],
+  "imap.port": ["number"],
+  "init.defaultbranch": ["string"],
   "pull.rebase": ["boolean", "merges", "interactive"],
   "status.renames": ["boolean", "copies"],
-  "tag.gpgsign": "boolean",
-  "trailer.separators": "string",
-  "user.email": "string",
-  "user.name": "string",
-  "user.signingkey": "string",
-  "versionsort.suffix": "string[]",
+  "tag.gpgsign": ["boolean"],
+  "trailer.separators": ["string"],
+  "user.email": ["string"],
+  "user.name": ["string"],
+  "user.signingkey": ["string"],
+  "versionsort.suffix": ["array"],
 } as const;
 
-/** A value type in the config schema. */
-type SchemaValue =
-  | "string"
-  | "boolean"
-  | "number"
-  | "string[]"
-  | readonly (string | "boolean" | "number" | "string")[];
+/** Configuration for a git repository. */
+export type Config = {
+  [K in ConfigKey]?: ConfigValue<K>;
+};
 
-/** Extract the TypeScript type from a schema value. */
-type SchemaValueType<T extends SchemaValue> = T extends "string" ? string
-  : T extends "boolean" ? boolean
-  : T extends "number" ? number
-  : T extends "string[]" ? string[]
-  : T extends readonly (infer U)[] ? (
-      U extends "string" ? string
-        : U extends "boolean" ? boolean
+/** A known configuration key or string. */
+export type ConfigKey =
+  | keyof typeof CONFIG_SCHEMA
+  // deno-lint-ignore ban-types
+  | (string & {});
+
+/** The value type for a given configuration key. */
+export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
+  keyof typeof CONFIG_SCHEMA
+  ? ((typeof CONFIG_SCHEMA)[Lowercase<K>] extends readonly (infer U)[] ? (
+      U extends "array" ? string[]
+        : U extends "string" ? string
         : U extends "number" ? number
+        : U extends "boolean" ? boolean
         : U extends string ? U
         : never
     )
-  : never;
-
-/** Configuration type derived from the schema. */
-type ConfigType = {
-  [K in keyof typeof CONFIG_SCHEMA]: SchemaValueType<
-    (typeof CONFIG_SCHEMA)[K]
-  >;
-};
-
-/** All known configuration keys. */
-export type ConfigKey =
-  | keyof ConfigType
-  | (string & Record<PropertyKey, never>);
-
-/** The value type for a given configuration key. */
-export type ConfigValue<K extends string> = K extends keyof ConfigType
-  ? ConfigType[K]
+    : never)
   : unknown;
-
-/**
- * Configuration for a git repository.
- *
- * Uses flat string keys like `"user.name"` instead of nested objects.
- *
- * @example Set git configuration
- * ```ts
- * import { git } from "@roka/git";
- *
- * git({
- *   config: {
- *     "user.name": "Alice",
- *     "user.email": "alice@example.com",
- *     "commit.gpgsign": false,
- *   },
- * });
- * ```
- */
-export type Config = Partial<ConfigType> & Record<string, ConfigValue<string>>;
 
 /** An author or committer on a git repository. */
 export interface User {
@@ -1670,7 +1608,7 @@ export function git(options?: GitOptions): Git {
       if (options?.config) {
         for (const [key, value] of Object.entries(options.config)) {
           // deno-lint-ignore no-await-in-loop
-          await repo.config.set(key as ConfigKey, value);
+          await repo.config.set(key, value);
         }
       }
       return repo;
@@ -1690,7 +1628,7 @@ export function git(options?: GitOptions): Git {
           stderr: true,
         },
         "clone",
-        configFlags(options?.config, "--config").flat(),
+        configFlags(options?.config, "--config"),
         flag("--bare", options?.bare),
         flag("--branch", options?.branch ?? undefined),
         flag("--no-checkout", options?.branch === null),
@@ -1726,20 +1664,33 @@ export function git(options?: GitOptions): Git {
       return git({ ...gitOptions, cwd });
     },
     config: {
+      async get<K extends ConfigKey>(key: K) {
+        const schema: readonly string[] | undefined =
+          CONFIG_SCHEMA[key.toLowerCase() as keyof typeof CONFIG_SCHEMA];
+        const [type] = schema?.length === 1 ? schema : [];
+        const output = await run(
+          { ...gitOptions, allowCode: [1] },
+          ["config", "get", "--all", "--local"],
+          ...type === "boolean" ? ["--bool"] : [],
+          ...type === "number" ? ["--int"] : [],
+          key,
+        );
+        if (!output) return undefined;
+        const lines = output.split("\n").filter((x) => x);
+        return configValue(key, lines) as ConfigValue<K>;
+      },
       async set(key, value) {
-        if (Array.isArray(value)) {
-          await run(gitOptions, "config", "--replace-all", key, value[0]);
-          for (let i = 1; i < value.length; i++) {
-            // deno-lint-ignore no-await-in-loop
-            await run(gitOptions, "config", "--add", key, value[i]);
-          }
+        if (!Array.isArray(value)) {
+          await run(gitOptions, "config", "set", "--all", key, `${value}`);
         } else {
-          const stringValue = typeof value === "boolean"
-            ? value.toString()
-            : typeof value === "number"
-            ? value.toString()
-            : value as string;
-          await run(gitOptions, "config", key, stringValue);
+          await run(
+            { ...gitOptions, allowCode: [5] },
+            ["config", "unset", "--all", key],
+          );
+          for (const element of value) {
+            // deno-lint-ignore no-await-in-loop
+            await run(gitOptions, "config", "--add", key, `${element}`);
+          }
         }
       },
     },
@@ -2555,7 +2506,7 @@ async function run(
   const runArgs = commandArgs.flat().filter((x) => x !== undefined);
   const fullArgs = [
     ...options.cwd !== undefined ? ["-C", normalize(options.cwd)] : [],
-    ...configFlags(options.config, "-c").flat(),
+    ...configFlags(options.config, "-c"),
     "--no-pager",
     ...runArgs,
   ];
@@ -2686,28 +2637,20 @@ function flag(
   return [];
 }
 
-function configFlags(config: Config | undefined, flag?: string): string[][] {
-  if (config === undefined) return [];
-  return Object.entries(config).flatMap(([key, value]) => {
-    if (Array.isArray(value)) {
-      return value.map((v) => {
-        return flag ? [flag, `${key}=${v}`] : [key, v];
-      });
-    }
-    const stringValue = typeof value === "boolean"
-      ? value.toString()
-      : typeof value === "number"
-      ? value.toString()
-      : value as string;
-    return [flag ? [flag, `${key}=${stringValue}`] : [key, stringValue]];
-  });
+function configFlags(config: Config | undefined, flag?: string): string[] {
+  if (!config) return [];
+  return Object.entries(config).flatMap(([key, value]) =>
+    (Array.isArray(value) ? value : [value]).map((value) =>
+      flag ? [flag, `${key}=${value}`] : [key, `${value}`]
+    )
+  ).flat();
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
   if (trailers === undefined) return [];
-  return Object.entries(trailers)
-    .map(([token, value]) => flag("--trailer", `${token}: ${value}`))
-    .flat();
+  return Object.entries(trailers).flatMap(([token, value]) =>
+    flag("--trailer", `${token}: ${value}`)
+  );
 }
 
 function signFlag(
@@ -2732,6 +2675,36 @@ function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
     `${pickaxe.updated ? "-G" : "-S"}${pickaxe.pattern}`,
     ...pickaxe.updated ? [] : ["--pickaxe-regex"],
   ];
+}
+
+function configValue(
+  key: string,
+  lines: string[],
+): ConfigValue<string> | undefined {
+  if (lines.length > 1) return lines;
+  const [value] = lines;
+  if (value === undefined) return value;
+  const schema: readonly string[] | undefined =
+    CONFIG_SCHEMA[key.toLowerCase() as keyof typeof CONFIG_SCHEMA];
+  if (schema === undefined) return value;
+  if (
+    schema.includes(value) &&
+    !["array", "string", "number", "boolean"].includes(value)
+  ) {
+    return value;
+  }
+  if (schema.includes("boolean")) {
+    const lower = value.toLowerCase();
+    if (["true", "yes", "on", "1"].includes(lower)) return true;
+    if (["false", "no", "off", "0"].includes(lower)) return false;
+  }
+  if (schema.includes("number")) {
+    const number = Number(value);
+    if (!isNaN(number)) return number;
+  }
+  if (schema.includes("string")) return value;
+  if (schema.includes("array")) return [value];
+  return value;
 }
 
 function statusKind(code: string): Patch["status"] {
