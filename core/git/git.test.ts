@@ -7,9 +7,9 @@ import {
   assertExists,
   assertGreater,
   assertNotEquals,
+  assertObjectMatch,
   assertRejects,
 } from "@std/assert";
-import { assertObjectMatch } from "@std/assert/object-match";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
 import { assertType, type IsExact, type IsUnknown } from "@std/testing/types";
