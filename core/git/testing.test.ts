@@ -154,6 +154,18 @@ Deno.test("tempRepository({ chdir }) works recursively", async () => {
   assertEquals(Deno.cwd(), cwd);
 });
 
+Deno.test("tempRepository({ config }) sets repository config", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "name", "user.email": "email" },
+  });
+  const commit = await repo.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+  });
+  assertEquals(commit.author.name, "name");
+  assertEquals(commit.author.email, "email");
+});
+
 Deno.test("tempRepository({ remote }) sets remote name", async () => {
   await using remote = await tempRepository({ bare: true });
   const url = toFileUrl(remote.path());

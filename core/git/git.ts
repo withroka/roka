@@ -34,8 +34,6 @@
  *     {@link https://www.conventionalcommits.org Conventional Commits}.
  *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
- * @todo Add `git().config.get()`
- * @todo Extend `git().config.set()`
  * @todo Add `git().worktree.*`
  * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
@@ -108,8 +106,14 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
-  /** Configures repository options. */
-  set(config: Config): Promise<void>;
+  /** Lists all git configuration values. */
+  list(): Promise<Config>;
+  /** Gets a git configuration value. */
+  get<K extends ConfigKey>(key: K): Promise<ConfigValue<K> | undefined>;
+  /** Sets a git configuration value. */
+  set<K extends ConfigKey>(key: K, value: ConfigValue<K>): Promise<void>;
+  /** Removes a git configuration value. */
+  unset(key: ConfigKey): Promise<void>;
 }
 
 /** Index operations from {@linkcode Git.index}. */
@@ -276,74 +280,48 @@ export interface AdminOperations {
   backfill(options?: AdminBackfillOptions): Promise<void>;
 }
 
+/** Runtime schema for known git configuration. */
+export const CONFIG_SCHEMA = {
+  "branch.autosetupmerge": ["boolean", "always", "inherit", "simple"],
+  "clone.defaultremotename": ["string"],
+  "commit.gpgsign": ["boolean"],
+  "diff.renames": ["boolean", "copies", "copy"],
+  "imap.port": ["number"],
+  "init.defaultbranch": ["string"],
+  "pull.rebase": ["boolean", "merges", "interactive"],
+  "status.renames": ["boolean", "copies"],
+  "tag.gpgsign": ["boolean"],
+  "trailer.separators": ["string"],
+  "user.email": ["string"],
+  "user.name": ["string"],
+  "user.signingkey": ["string"],
+  "versionsort.suffix": ["array"],
+} as const;
+
 /** Configuration for a git repository. */
-export interface Config {
-  /** Branch configuration. */
-  branch?: {
-    /** How to setup tracking for new branches. */
-    autoSetupMerge?: boolean | "always" | "inherit" | "simple";
-  };
-  /** Clone configuration. */
-  clone?: {
-    /** Default remote name. */
-    defaultRemoteName?: string;
-  };
-  /** Commit configuration. */
-  commit?: {
-    /** Whether to sign commits. */
-    gpgsign?: boolean;
-  };
-  /** Diff configuration. */
-  diff?: {
-    /** Whether to detect renames and copies. */
-    renames?: boolean | "copies";
-  };
-  /** Init configuration. */
-  init?: {
-    /** Default branch name. */
-    defaultBranch?: string;
-  };
-  /** Pull configuration. */
-  pull?: {
-    /** Merge strategy for pulling. */
-    rebase?: boolean | "merges" | "interactive";
-  };
-  /** Status configuration. */
-  status?: {
-    /** Whether to detect renames and copies. */
-    renames?: boolean | "copies";
-  };
-  /** Tag configuration. */
-  tag?: {
-    /** Whether to sign tags. */
-    gpgsign?: boolean;
-  };
-  /** Trailer configuration. */
-  trailer?: {
-    /** Separator between key and value in trailers. */
-    separators?: string;
-  };
-  /** User configuration. */
-  user?: Partial<User> & {
-    /** GPG key for signing commits. */
-    signingkey?: string;
-  };
-  /** Configuration for 'version' sort for tags. */
-  versionsort?: {
-    /**
-     * Pre-release suffixes.
-     *
-     * If a suffix defined here is found in a tag, it is considered a
-     * pre-release version. For example, if `["-pre"]` is defined, `v1.0.0-pre`
-     * is considered a pre-release version.
-     *
-     * For multiple suffixes, the order defined here defines the tag order.
-     * For example `["-pre", "-rc"]` will cause the `v1.0.0-pre` release to be
-     * earlier than `v1.0.0-rc`.
-     */
-    suffix: string[];
-  };
-}
+export type Config = {
+  [K in ConfigKey]?: ConfigValue<K>;
+};
+
+/** A known configuration key or string. */
+export type ConfigKey =
+  | keyof typeof CONFIG_SCHEMA
+  // deno-lint-ignore ban-types
+  | (string & {});
+
+/** The value type for a given configuration key. */
+export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
+  keyof typeof CONFIG_SCHEMA
+  ? ((typeof CONFIG_SCHEMA)[Lowercase<K>] extends readonly (infer U)[] ? (
+      U extends "array" ? string[]
+        : U extends "string" ? string
+        : U extends "number" ? number
+        : U extends "boolean" ? boolean
+        : U extends string ? U
+        : never
+    )
+    : never)
+  : unknown;
 
 /** An author or committer on a git repository. */
 export interface User {
@@ -1169,7 +1147,7 @@ export interface TagListOptions extends RefListOptions {
    * const directory = await tempRepository();
    * const repo = git({
    *   cwd: directory.path(),
-   *   config: { versionsort: { suffix: ["-pre", "-rc"] } },
+   *   config: { "versionsort.suffix": ["-pre", "-rc"] },
    * });
    *
    * await repo.commit.create({ subject: "subject", allowEmpty: true });
@@ -1631,7 +1609,12 @@ export function git(options?: GitOptions): Git {
       const repo = git({
         cwd: resolve(directory, options?.directory ?? directory),
       });
-      if (options?.config) await repo.config.set(options.config);
+      if (options?.config) {
+        for (const [key, value] of Object.entries(options.config)) {
+          // deno-lint-ignore no-await-in-loop
+          await repo.config.set(key, value);
+        }
+      }
       return repo;
     },
     async clone(remote, options) {
@@ -1649,7 +1632,7 @@ export function git(options?: GitOptions): Git {
           stderr: true,
         },
         "clone",
-        configFlags(options?.config, "--config").flat(),
+        configFlags(options?.config, "--config"),
         flag("--bare", options?.bare),
         flag("--branch", options?.branch ?? undefined),
         flag("--no-checkout", options?.branch === null),
@@ -1685,11 +1668,53 @@ export function git(options?: GitOptions): Git {
       return git({ ...gitOptions, cwd });
     },
     config: {
-      async set(config) {
-        for (const cfg of configFlags(config)) {
-          // deno-lint-ignore no-await-in-loop
-          await run(gitOptions, "config", cfg);
+      async list() {
+        const output = await run(gitOptions, "config", "list", "--local");
+        const lines = output.split("\n").filter((x) => x);
+        const config: Record<string, string[]> = {};
+        lines.reduce((config, line) => {
+          let [key = "", value = ""] = line.split("=", 2);
+          key = key.trim().toLowerCase();
+          if (config[key] === undefined) config[key] = [];
+          config[key]?.push(value);
+          return config;
+        }, config);
+        return mapValues(config, (value, key) => configValue(key, value));
+      },
+      async get<K extends ConfigKey>(key: K) {
+        const schema: readonly string[] | undefined =
+          CONFIG_SCHEMA[key.toLowerCase() as keyof typeof CONFIG_SCHEMA];
+        const [type] = schema?.length === 1 ? schema : [];
+        const output = await run(
+          { ...gitOptions, allowCode: [1] },
+          ["config", "get", "--all", "--local"],
+          ...type === "boolean" ? ["--bool"] : [],
+          ...type === "number" ? ["--int"] : [],
+          key,
+        );
+        if (!output) return undefined;
+        const lines = output.replace(/\n$/, "").split("\n");
+        return configValue(key, lines) as ConfigValue<K>;
+      },
+      async set(key, value) {
+        if (!Array.isArray(value)) {
+          await run(gitOptions, "config", "set", "--all", key, `${value}`);
+        } else {
+          await run(
+            { ...gitOptions, allowCode: [5] },
+            ["config", "unset", "--all", key],
+          );
+          for (const element of value) {
+            // deno-lint-ignore no-await-in-loop
+            await run(gitOptions, "config", "--add", key, `${element}`);
+          }
         }
+      },
+      async unset(key) {
+        await run(
+          { ...gitOptions, allowCode: [5] },
+          ["config", "unset", "--all", key],
+        );
       },
     },
     index: {
@@ -2096,10 +2121,11 @@ export function git(options?: GitOptions): Git {
         );
       },
       async current() {
-        const name = await run(
+        const output = await run(
           gitOptions,
           ["branch", "--no-color", "--show-current"],
         );
+        const name = output.trim();
         if (!name) throw new GitError("Cannot determine HEAD branch");
         const [branch] = await repo.branch.list({ name });
         return branch ?? { name }; // unborn branch
@@ -2504,7 +2530,7 @@ async function run(
   const runArgs = commandArgs.flat().filter((x) => x !== undefined);
   const fullArgs = [
     ...options.cwd !== undefined ? ["-C", normalize(options.cwd)] : [],
-    ...configFlags(options.config, "-c").flat(),
+    ...configFlags(options.config, "-c"),
     "--no-pager",
     ...runArgs,
   ];
@@ -2523,8 +2549,7 @@ async function run(
         { cause: { command: "git", args: fullArgs, code } },
       );
     }
-    return new TextDecoder().decode(options?.stderr ? stderr : stdout)
-      .trimEnd();
+    return new TextDecoder().decode(options?.stderr ? stderr : stdout);
   } catch (e: unknown) {
     if (e instanceof Deno.errors.NotCapable) {
       throw new GitError("Permission error (use `--allow-run=git`)", {
@@ -2635,38 +2660,20 @@ function flag(
   return [];
 }
 
-function configFlags(config: Config | undefined, flag?: string): string[][] {
-  if (config === undefined) return [];
-  function args(
-    config: Config,
-  ): { key: string; value: string; opt: string | undefined }[] {
-    return Object.entries(config).map(([key, value]) => {
-      if (Array.isArray(value)) {
-        return value.map((value, index) => ({
-          key,
-          value,
-          opt: index > 0 ? "--add" : undefined,
-        }));
-      }
-      if (typeof value === "object") {
-        const parent = key;
-        return args(value).map(({ key, value, opt }) => (
-          { key: `${parent}.${key}`, value, opt }
-        ));
-      }
-      return [{ key, value: `${value}`, opt: undefined }];
-    }).flat();
-  }
-  return args(config).map(({ key, value, opt }) => {
-    return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
-  });
+function configFlags(config: Config | undefined, flag?: string): string[] {
+  if (!config) return [];
+  return Object.entries(config).flatMap(([key, value]) =>
+    (Array.isArray(value) ? value : [value]).map((value) =>
+      flag ? [flag, `${key}=${value}`] : [key, `${value}`]
+    )
+  ).flat();
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
   if (trailers === undefined) return [];
-  return Object.entries(trailers)
-    .map(([token, value]) => flag("--trailer", `${token}: ${value}`))
-    .flat();
+  return Object.entries(trailers).flatMap(([token, value]) =>
+    flag("--trailer", `${token}: ${value}`)
+  );
 }
 
 function signFlag(
@@ -2691,6 +2698,36 @@ function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
     `${pickaxe.updated ? "-G" : "-S"}${pickaxe.pattern}`,
     ...pickaxe.updated ? [] : ["--pickaxe-regex"],
   ];
+}
+
+function configValue(
+  key: string,
+  lines: string[],
+): ConfigValue<string> | undefined {
+  if (lines.length > 1) return lines;
+  const [value] = lines;
+  if (value === undefined) return value;
+  const schema: readonly string[] | undefined =
+    CONFIG_SCHEMA[key.toLowerCase() as keyof typeof CONFIG_SCHEMA];
+  if (schema === undefined) return value;
+  if (
+    schema.includes(value) &&
+    !["array", "string", "number", "boolean"].includes(value)
+  ) {
+    return value;
+  }
+  if (schema.includes("boolean")) {
+    const lower = value.toLowerCase();
+    if (["true", "yes", "on", "1"].includes(lower)) return true;
+    if (["false", "no", "off", "0"].includes(lower)) return false;
+  }
+  if (schema.includes("number")) {
+    const number = Number(value);
+    if (!isNaN(number)) return number;
+  }
+  if (schema.includes("string")) return value;
+  if (schema.includes("array")) return [value];
+  return value;
 }
 
 function statusKind(code: string): Patch["status"] {

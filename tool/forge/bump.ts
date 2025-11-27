@@ -34,7 +34,6 @@ import { deno } from "@roka/deno";
 import { github, type PullRequest, type Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { pick } from "@std/collections";
 import { common, dirname, join } from "@std/path";
 import { format, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
@@ -201,7 +200,8 @@ async function createPullRequest(
   ).join("\n");
   try {
     await repo.git.branch.switch(head, { create: true });
-    await repo.git.config.set({ user: pick(options ?? {}, ["name", "email"]) });
+    if (options?.name) await repo.git.config.set("user.name", options.name);
+    if (options?.email) await repo.git.config.set("user.email", options.email);
     await repo.git.index.add([
       ...packages.map((pkg) => join(pkg.directory, "deno.json")),
       ...options?.changelog ? [options?.changelog] : [],
