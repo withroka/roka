@@ -32,6 +32,8 @@ You will:
 You will NOT:
 
 - Introduce unnecessary complexity or dependencies.
+- Be concerned with performance, unless explicitly requested.
+- Be concerned with backwards compatibility, unless explicitly requested.
 - Change existing interfaces, unless explicitly requested.
 - Modify working code without a clear purpose.
 - Introduce untested code for new functionality.
