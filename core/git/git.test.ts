@@ -5195,6 +5195,22 @@ Deno.test("git().branch.delete({ force }) can delete unmerged branch", async () 
   assertEquals(await repo.branch.list(), [main]);
 });
 
+Deno.test("git().branch.delete({ type }) can delete remote branch", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit = await upstream.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+  });
+  await upstream.branch.create("branch");
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(
+    await repo.branch.get("origin/branch"),
+    { name: "origin/branch", commit },
+  );
+  await repo.branch.delete("origin/branch", { type: "remote" });
+  assertEquals(await repo.branch.get("origin/branch"), undefined);
+});
+
 Deno.test("git().tag.list() returns empty list on empty repository", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.tag.list(), []);
@@ -6788,11 +6804,7 @@ Deno.test("git().sync.push({ prune }) removes deleted remote branches", async ()
     await repo.branch.get("origin/branch"),
     { name: "origin/branch", commit },
   );
-  // await repo.branch.delete("origin/branch", { remote: true });
-  await new Deno.Command("git", {
-    cwd: repo.path(),
-    args: ["branch", "-rd", "origin/branch"],
-  }).output();
+  await repo.branch.delete("origin/branch", { type: "remote" });
   await repo.sync.push({ prune: true });
   assertEquals(await repo.branch.get("origin/branch"), undefined);
 });

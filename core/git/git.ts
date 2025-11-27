@@ -1124,6 +1124,11 @@ export interface BranchDeleteOptions {
    * @default {false}
    */
   force?: boolean;
+  /**
+   * Type of branch to delete.
+   * @default {"local"}
+   */
+  type?: "local" | "remote";
 }
 
 /** Options for the {@linkcode TagOperations.list} function. */
@@ -2241,6 +2246,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["branch", "--no-color", "--delete"],
           flag("--force", options?.force),
+          flag("--remotes", options?.type === "remote"),
           nameArg(branch),
         );
       },
