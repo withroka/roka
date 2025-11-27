@@ -299,75 +299,6 @@ export interface AdminOperations {
   backfill(options?: AdminBackfillOptions): Promise<void>;
 }
 
-/** Configuration for a git repository. */
-export interface Config {
-  /** Branch configuration. */
-  branch?: {
-    /** How to setup tracking for new branches. */
-    autoSetupMerge?: boolean | "always" | "inherit" | "simple";
-  };
-  /** Clone configuration. */
-  clone?: {
-    /** Default remote name. */
-    defaultRemoteName?: string;
-  };
-  /** Commit configuration. */
-  commit?: {
-    /** Whether to sign commits. */
-    gpgsign?: boolean;
-  };
-  /** Diff configuration. */
-  diff?: {
-    /** Whether to detect renames and copies. */
-    renames?: boolean | "copies";
-  };
-  /** Init configuration. */
-  init?: {
-    /** Default branch name. */
-    defaultBranch?: string;
-  };
-  /** Pull configuration. */
-  pull?: {
-    /** Merge strategy for pulling. */
-    rebase?: boolean | "merges" | "interactive";
-  };
-  /** Status configuration. */
-  status?: {
-    /** Whether to detect renames and copies. */
-    renames?: boolean | "copies";
-  };
-  /** Tag configuration. */
-  tag?: {
-    /** Whether to sign tags. */
-    gpgsign?: boolean;
-  };
-  /** Trailer configuration. */
-  trailer?: {
-    /** Separator between key and value in trailers. */
-    separators?: string;
-  };
-  /** User configuration. */
-  user?: Partial<User> & {
-    /** GPG key for signing commits. */
-    signingkey?: string;
-  };
-  /** Configuration for 'version' sort for tags. */
-  versionsort?: {
-    /**
-     * Pre-release suffixes.
-     *
-     * If a suffix defined here is found in a tag, it is considered a
-     * pre-release version. For example, if `["-pre"]` is defined, `v1.0.0-pre`
-     * is considered a pre-release version.
-     *
-     * For multiple suffixes, the order defined here defines the tag order.
-     * For example `["-pre", "-rc"]` will cause the `v1.0.0-pre` release to be
-     * earlier than `v1.0.0-rc`.
-     */
-    suffix: string[];
-  };
-}
-
 /**
  * Runtime schema for known git configuration keys.
  *
@@ -429,6 +360,26 @@ export type ConfigKey =
 export type ConfigValue<K extends string> = K extends keyof ConfigType
   ? ConfigType[K]
   : unknown;
+
+/**
+ * Configuration for a git repository.
+ *
+ * Uses flat string keys like `"user.name"` instead of nested objects.
+ *
+ * @example Set git configuration
+ * ```ts
+ * import { git } from "@roka/git";
+ *
+ * git({
+ *   config: {
+ *     "user.name": "Alice",
+ *     "user.email": "alice@example.com",
+ *     "commit.gpgsign": false,
+ *   },
+ * });
+ * ```
+ */
+export type Config = Partial<ConfigType> & Record<string, ConfigValue<string>>;
 
 /** An author or committer on a git repository. */
 export interface User {
@@ -1254,7 +1205,7 @@ export interface TagListOptions extends RefListOptions {
    * const directory = await tempRepository();
    * const repo = git({
    *   cwd: directory.path(),
-   *   config: { versionsort: { suffix: ["-pre", "-rc"] } },
+   *   config: { "versionsort.suffix": ["-pre", "-rc"] },
    * });
    *
    * await repo.commit.create({ subject: "subject", allowEmpty: true });
@@ -1717,7 +1668,7 @@ export function git(options?: GitOptions): Git {
         cwd: resolve(directory, options?.directory ?? directory),
       });
       if (options?.config) {
-        for (const [key, value] of configEntries(options.config)) {
+        for (const [key, value] of Object.entries(options.config)) {
           // deno-lint-ignore no-await-in-loop
           await repo.config.set(key as ConfigKey, value);
         }
@@ -2737,49 +2688,19 @@ function flag(
 
 function configFlags(config: Config | undefined, flag?: string): string[][] {
   if (config === undefined) return [];
-  function args(
-    config: Config,
-  ): { key: string; value: string; opt: string | undefined }[] {
-    return Object.entries(config).map(([key, value]) => {
-      if (Array.isArray(value)) {
-        return value.map((value, index) => ({
-          key,
-          value,
-          opt: index > 0 ? "--add" : undefined,
-        }));
-      }
-      if (typeof value === "object") {
-        const parent = key;
-        return args(value).map(({ key, value, opt }) => (
-          { key: `${parent}.${key}`, value, opt }
-        ));
-      }
-      return [{ key, value: `${value}`, opt: undefined }];
-    }).flat();
-  }
-  return args(config).map(({ key, value, opt }) => {
-    return flag ? [flag, `${key}=${value}`] : [key, value, ...opt ? [opt] : []];
-  });
-}
-
-function configEntries(
-  config: Config,
-): [string, string | boolean | number | string[]][] {
-  const entries: [string, string | boolean | number | string[]][] = [];
-  function walk(obj: Config, prefix = "") {
-    for (const [key, value] of Object.entries(obj)) {
-      const fullKey = prefix ? `${prefix}.${key}` : key;
-      if (Array.isArray(value)) {
-        entries.push([fullKey, value]);
-      } else if (typeof value === "object" && value !== null) {
-        walk(value, fullKey);
-      } else if (value !== undefined) {
-        entries.push([fullKey, value]);
-      }
+  return Object.entries(config).flatMap(([key, value]) => {
+    if (Array.isArray(value)) {
+      return value.map((v) => {
+        return flag ? [flag, `${key}=${v}`] : [key, v];
+      });
     }
-  }
-  walk(config);
-  return entries;
+    const stringValue = typeof value === "boolean"
+      ? value.toString()
+      : typeof value === "number"
+      ? value.toString()
+      : value as string;
+    return [flag ? [flag, `${key}=${stringValue}`] : [key, stringValue]];
+  });
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {

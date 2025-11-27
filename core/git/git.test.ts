@@ -42,10 +42,11 @@ Deno.test("git() configures for each command", async () => {
   const repo = git({
     cwd: directory.path(),
     config: {
-      user: { name: "name", email: "email" },
-      commit: { gpgsign: false },
-      tag: { gpgsign: false },
-      versionsort: { suffix: ["-alpha", "-beta", "-rc"] },
+      "user.name": "name",
+      "user.email": "email",
+      "commit.gpgsign": false,
+      "tag.gpgsign": false,
+      "versionsort.suffix": ["-alpha", "-beta", "-rc"],
     },
   });
   await repo.init();
@@ -114,7 +115,7 @@ Deno.test("git().init({ config }) applies to initialization", async () => {
   const repo = await git().init({
     directory: directory.path(),
     config: {
-      init: { defaultBranch: "branch" },
+      "init.defaultBranch": "branch",
     },
   });
   assertEquals(await repo.branch.current(), { name: "branch" });
@@ -125,9 +126,10 @@ Deno.test("git().init({ config }) persists configuration", async () => {
   const repo = await git().init({
     directory: directory.path(),
     config: {
-      user: { name: "name", email: "email" },
-      commit: { gpgsign: false },
-      tag: { gpgsign: false },
+      "user.name": "name",
+      "user.email": "email",
+      "commit.gpgsign": false,
+      "tag.gpgsign": false,
     },
   });
   const commit = await repo.commit.create({
@@ -348,7 +350,7 @@ Deno.test("git().clone({ config }) applies to initialization", async () => {
   const url = toFileUrl(upstream.path());
   const repo = await git().clone(url, {
     directory: directory.path(),
-    config: { clone: { defaultRemoteName: "remote" } },
+    config: { "clone.defaultRemoteName": "remote" },
   });
   assertEquals(await repo.remote.get("remote"), {
     name: "remote",
@@ -364,8 +366,9 @@ Deno.test("git().clone({ config }) persists configuration", async () => {
   const repo = await git().clone(upstream.path(), {
     directory: directory.path(),
     config: {
-      user: { name: "name", email: "email" },
-      commit: { gpgsign: false },
+      "user.name": "name",
+      "user.email": "email",
+      "commit.gpgsign": false,
     },
   });
   const commit = await repo.commit.create({
@@ -778,7 +781,7 @@ Deno.test("git().index.status() lists staged renamed file", async () => {
 
 Deno.test("git().index.status() lists staged copied file", async () => {
   await using repo = await tempRepository({
-    config: { status: { renames: "copies" } },
+    config: { "status.renames": "copies" },
   });
   await Deno.writeTextFile(repo.path("source.file"), "content1");
   await repo.index.add("source.file");
@@ -2646,7 +2649,7 @@ Deno.test("git().commit.log() can parse message body", async () => {
 
 Deno.test("git().commit.log() can work with custom trailer separator", async () => {
   await using repo = await tempRepository({
-    config: { trailer: { separators: "#" } },
+    config: { "trailer.separators": "#" },
   });
   await repo.commit.create({
     subject: "subject\n\nbody\n\nkey1 #value1\nkey2 #value2\n",
@@ -3158,7 +3161,7 @@ Deno.test("git().commit.create({ author }) sets committer", {
   ignore: codespaces,
 }, async () => {
   await using repo = await tempRepository({
-    config: { user: { name: "name", email: "email@example.com" } },
+    config: { "user.name": "name", "user.email": "email@example.com" },
   });
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
@@ -4016,7 +4019,7 @@ Deno.test("git().branch.create({ track }) can inherit source upstream", async ()
   await upstream.branch.create("branch");
   await using repo = await tempRepository({
     clone: upstream,
-    config: { branch: { autoSetupMerge: "always" } },
+    config: { "branch.autoSetupMerge": "always" },
   });
   const remote = await repo.remote.current();
   assertExists(remote);
@@ -4274,7 +4277,7 @@ Deno.test("git().branch.switch({ track }) can disable tracking", async () => {
   await upstream.branch.create("branch");
   await using repo = await tempRepository({
     clone: upstream,
-    config: { branch: { autoSetupMerge: "always" } },
+    config: { "branch.autoSetupMerge": "always" },
   });
   const remote = await repo.remote.current();
   assertExists(remote);
@@ -4296,7 +4299,7 @@ Deno.test("git().branch.switch({ track }) can inherit source upstream", async ()
   await upstream.branch.create("branch");
   await using repo = await tempRepository({
     clone: upstream,
-    config: { branch: { autoSetupMerge: "always" } },
+    config: { "branch.autoSetupMerge": "always" },
   });
   const remote = await repo.remote.current();
   assertExists(remote);
@@ -4898,7 +4901,7 @@ Deno.test("git().tag.list({ sort }) can sort by version", async () => {
 
 Deno.test("git().tag.list({ sort }) can sort by pre-release version", async () => {
   await using repo = await tempRepository({
-    config: { versionsort: { suffix: ["-pre", "-beta", "-rc"] } },
+    config: { "versionsort.suffix": ["-pre", "-beta", "-rc"] },
   });
   await repo.commit.create({ subject: "subject", allowEmpty: true });
   const tag100 = await repo.tag.create("v1.0.0");
@@ -4964,7 +4967,7 @@ Deno.test("git().tag.create() can create an annotated tag", {
   ignore: codespaces,
 }, async () => {
   await using repo = await tempRepository({
-    config: { user: { name: "tagger", email: "tagger@example.com" } },
+    config: { "user.name": "tagger", "user.email": "tagger@example.com" },
   });
   const commit = await repo.commit.create({
     subject: "commit",
@@ -4987,7 +4990,7 @@ Deno.test("git().tag.create() ignores empty body", {
   ignore: codespaces,
 }, async () => {
   await using repo = await tempRepository({
-    config: { user: { name: "tagger", email: "tagger@example.com" } },
+    config: { "user.name": "tagger", "user.email": "tagger@example.com" },
   });
   const commit = await repo.commit.create({
     subject: "commit",
@@ -5068,7 +5071,7 @@ Deno.test("git().tag.create({ target }) can create a tag with another tag", asyn
 
 Deno.test("git().tag.create({ target }) does not create nested tags", async () => {
   await using repo = await tempRepository({
-    config: { tag: { gpgsign: false } },
+    config: { "tag.gpgsign": false },
   });
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   const tag1 = await repo.tag.create("tag1", { subject: "subject" });
@@ -5080,7 +5083,7 @@ Deno.test("git().tag.create({ target }) does not create nested tags", async () =
 
 Deno.test("git().tag.create({ target }) can create nested tags", async () => {
   await using repo = await tempRepository({
-    config: { tag: { gpgsign: false } },
+    config: { "tag.gpgsign": false },
   });
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   const tag1 = await repo.tag.create("tag1", { subject: "subject" });
@@ -5093,7 +5096,7 @@ Deno.test(
   { ignore: codespaces },
   async () => {
     await using repo = await tempRepository({
-      config: { user: { name: "tagger", email: "tagger@example.com" } },
+      config: { "user.name": "tagger", "user.email": "tagger@example.com" },
     });
     const commit = await repo.commit.create({
       subject: "commit",
@@ -6048,7 +6051,7 @@ Deno.test("git().sync.pull({ sign }) cannot use wrong key", async () => {
   await upstream.commit.create({ subject: "commit1", allowEmpty: true });
   await using repo = await tempRepository({
     clone: upstream,
-    config: { pull: { rebase: false } },
+    config: { "pull.rebase": false },
   });
   await Deno.writeTextFile(upstream.path("file1.txt"), "content1");
   await upstream.index.add("file1.txt");
