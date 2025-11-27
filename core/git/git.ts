@@ -966,14 +966,20 @@ export interface CommitCreateOptions extends MessageOptions, SignOptions {
   path?: string | string[];
 }
 
-/** Options for the {@linkcode BranchOperations.list} function. */
-export interface BranchListOptions extends RefListOptions {
+/**
+ * Options common to the {@linkcode BranchOperations.list} and
+ * {@linkcode BranchOperations.delete} functions for branch type filtering.
+ */
+export interface BranchTypeOptions {
   /**
-   * Type of branches to list.
+   * Type of branches to operate on.
    * @default {"local"}
    */
   type?: "local" | "remote" | "all";
 }
+
+/** Options for the {@linkcode BranchOperations.list} function. */
+export interface BranchListOptions extends RefListOptions, BranchTypeOptions {}
 
 /** Options for the {@linkcode BranchOperations.get} function. */
 export interface BranchGetOptions {
@@ -1118,7 +1124,7 @@ export interface BranchCopyOptions {
 }
 
 /** Options for the {@linkcode BranchOperations.delete} function. */
-export interface BranchDeleteOptions {
+export interface BranchDeleteOptions extends BranchTypeOptions {
   /**
    * Force delete the branch.
    * @default {false}
@@ -2241,6 +2247,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           ["branch", "--no-color", "--delete"],
           flag("--force", options?.force),
+          flag("--remotes", options?.type === "remote"),
           nameArg(branch),
         );
       },
