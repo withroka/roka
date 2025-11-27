@@ -1024,6 +1024,39 @@ Deno.test("git().config.set() resets all existing values", async () => {
   assertEquals(await repo.config.get("imap.port"), 789);
 });
 
+Deno.test("git().config.unset() removes a configuration value", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("user.name", "Alice");
+  assertEquals(await repo.config.get("user.name"), "Alice");
+  await repo.config.unset("user.name");
+  assertEquals(await repo.config.get("user.name"), undefined);
+});
+
+Deno.test("git().config.unset() removes all values for array config", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("versionsort.suffix", ["-alpha", "-beta", "-rc"]);
+  assertEquals(
+    await repo.config.get("versionsort.suffix"),
+    ["-alpha", "-beta", "-rc"],
+  );
+  await repo.config.unset("versionsort.suffix");
+  assertEquals(await repo.config.get("versionsort.suffix"), undefined);
+});
+
+Deno.test("git().config.unset() does nothing for non-existent key", async () => {
+  await using repo = await tempRepository();
+  await repo.config.unset("non.existent.key");
+  assertEquals(await repo.config.get("non.existent.key"), undefined);
+});
+
+Deno.test("git().config.unset() works with custom variables", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("custom.key", "value");
+  assertEquals(await repo.config.get("custom.key"), "value");
+  await repo.config.unset("custom.key");
+  assertEquals(await repo.config.get("custom.key"), undefined);
+});
+
 Deno.test("git().index.status() lists staged modified file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
