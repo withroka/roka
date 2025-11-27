@@ -1124,7 +1124,12 @@ export interface BranchCopyOptions {
 }
 
 /** Options for the {@linkcode BranchOperations.delete} function. */
-export interface BranchDeleteOptions extends BranchTypeOptions {
+export interface BranchDeleteOptions {
+  /**
+   * Type of branch to delete.
+   * @default {"local"}
+   */
+  type?: "local" | "remote";
   /**
    * Force delete the branch.
    * @default {false}
