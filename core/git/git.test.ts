@@ -1091,6 +1091,14 @@ Deno.test("git().config.unset() works with custom variables", async () => {
   assertEquals(await repo.config.get("custom.key"), undefined);
 });
 
+Deno.test("git().config.unset() treats variables as case-insensitive", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("USER.NAME", "name");
+  assertEquals(await repo.config.get("user.name"), "name");
+  await repo.config.unset("user.NAME");
+  assertEquals(await repo.config.get("USER.name"), undefined);
+});
+
 Deno.test("git().index.status() lists staged modified file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
