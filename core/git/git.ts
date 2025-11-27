@@ -106,6 +106,22 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
+  /**
+   * Lists all git configuration values.
+   *
+   * Returns a record of all configuration keys and their values.
+   *
+   * @example List all configuration
+   * ```ts
+   * import { git } from "@roka/git";
+   * const repo = git();
+   * await repo.config.set("user.name", "Alice");
+   * await repo.config.set("user.email", "alice@example.com");
+   * await repo.config.list();
+   * // { "user.name": "Alice", "user.email": "alice@example.com", ... }
+   * ```
+   */
+  list(): Promise<Record<string, string | string[]>>;
   /** Gets a git configuration value. */
   get<K extends ConfigKey>(key: K): Promise<ConfigValue<K> | undefined>;
   /** Sets a git configuration value. */
@@ -1666,6 +1682,33 @@ export function git(options?: GitOptions): Git {
       return git({ ...gitOptions, cwd });
     },
     config: {
+      async list() {
+        const output = await run(
+          gitOptions,
+          "config",
+          "list",
+          "--local",
+        );
+        if (!output) return {};
+        const lines = output.split("\n").filter((x) => x);
+        const config: Record<string, string | string[]> = {};
+        for (const line of lines) {
+          const equalIndex = line.indexOf("=");
+          if (equalIndex === -1) continue;
+          const key = line.slice(0, equalIndex);
+          const value = line.slice(equalIndex + 1);
+          if (config[key] !== undefined) {
+            if (Array.isArray(config[key])) {
+              (config[key] as string[]).push(value);
+            } else {
+              config[key] = [config[key] as string, value];
+            }
+          } else {
+            config[key] = value;
+          }
+        }
+        return config;
+      },
       async get<K extends ConfigKey>(key: K) {
         const schema: readonly string[] | undefined =
           CONFIG_SCHEMA[key.toLowerCase() as keyof typeof CONFIG_SCHEMA];

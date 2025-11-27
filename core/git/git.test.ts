@@ -668,6 +668,40 @@ Deno.test("git().clone({ tags }) can skip tags", async () => {
   assertEquals(await repo.tag.list(), []);
 });
 
+Deno.test("git().config.list() returns all configuration values", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("user.name", "Alice");
+  await repo.config.set("user.email", "alice@example.com");
+  await repo.config.set("commit.gpgsign", false);
+  const config = await repo.config.list();
+  assertEquals(config["user.name"], "Alice");
+  assertEquals(config["user.email"], "alice@example.com");
+  assertEquals(config["commit.gpgsign"], "false");
+});
+
+Deno.test("git().config.list() returns array for multi-value config", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("versionsort.suffix", ["-alpha", "-beta", "-rc"]);
+  const config = await repo.config.list();
+  assertEquals(config["versionsort.suffix"], ["-alpha", "-beta", "-rc"]);
+});
+
+Deno.test("git().config.list() returns empty object for empty config", async () => {
+  await using repo = await tempRepository();
+  const config = await repo.config.list();
+  assertEquals(config["user.name"], "A U Thor");
+  assertEquals(config["user.email"], "author@example.com");
+});
+
+Deno.test("git().config.list() includes custom variables", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("custom.key1", "value1");
+  await repo.config.set("custom.key2", "value2");
+  const config = await repo.config.list();
+  assertEquals(config["custom.key1"], "value1");
+  assertEquals(config["custom.key2"], "value2");
+});
+
 Deno.test("git().config.get() retrieves boolean variables", async () => {
   assertType<
     IsExact<
