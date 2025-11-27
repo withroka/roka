@@ -274,6 +274,11 @@ type RunOptions = InputOptions & MessageOptions;
 function denoOptions(): DenoOptions {
   const encoder = new TextEncoder();
   let reported = false;
+  let saved = false;
+  function put(ansi: string) {
+    if (!Deno.stdout.isTerminal()) return;
+    Deno.stdout.writeSync(encoder.encode(ansi));
+  }
   function testLine(report: Partial<TestInfo>) {
     assertExists(report.test);
     const pad = "   ".repeat(report.test.length - 1);
@@ -309,19 +314,15 @@ function denoOptions(): DenoOptions {
       if (report.kind !== "test" || report.test === undefined) return;
       if (!reported) console.log();
       reported = true;
-      Deno.stdout.writeSync(
-        encoder.encode(
-          RESTORE_CURSOR + SAVE_CURSOR + ERASE_LINE_AFTER_CURSOR +
-            testLine(report),
-        ),
-      );
+      if (!saved) put(SAVE_CURSOR);
+      saved = true;
+      put(RESTORE_CURSOR + SAVE_CURSOR + ERASE_LINE_AFTER_CURSOR);
+      put(testLine(report));
     },
     onInfo(report) {
       if (!reported) console.log();
       reported = true;
-      if (Deno.stdout.isTerminal()) {
-        Deno.stdout.writeSync(encoder.encode(RESTORE_CURSOR + SAVE_CURSOR));
-      }
+      if (saved) put(RESTORE_CURSOR + ERASE_LINE_AFTER_CURSOR);
       if (report.kind === "test") console.log(testLine(report));
       if (report.output !== undefined) {
         console.log(
@@ -337,6 +338,8 @@ function denoOptions(): DenoOptions {
           }`,
         );
       }
+      put(SAVE_CURSOR);
+      saved = true;
     },
   };
 }
