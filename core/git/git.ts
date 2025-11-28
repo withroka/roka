@@ -2883,6 +2883,9 @@ function signFlag(
 function configTargetFlag(
   target: ConfigOptions["target"],
 ): string[] {
+  // When target is undefined:
+  // - Read operations use git's default lookup order (system → global → local)
+  // - Write operations default to local scope
   if (target === undefined) return [];
   if (typeof target === "string") {
     return [`--${target}`];
