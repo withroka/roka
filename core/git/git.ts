@@ -1829,7 +1829,7 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "config",
           "list",
-          configTargetFlag(options?.target),
+          ...configTargetFlag(options?.target),
         );
         const lines = output.split("\n").filter((x) => x);
         const config: Record<string, string[]> = {};
@@ -1851,7 +1851,7 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           ["config", "get", "--all"],
-          configTargetFlag(options?.target),
+          ...configTargetFlag(options?.target),
           ...type === "boolean" ? ["--bool"] : [],
           ...type === "number" ? ["--int"] : [],
           key,
@@ -1867,7 +1867,7 @@ export function git(options?: GitOptions): Git {
             "config",
             "set",
             "--all",
-            configTargetFlag(options?.target),
+            ...configTargetFlag(options?.target),
             key,
             `${value}`,
           );
@@ -1875,7 +1875,7 @@ export function git(options?: GitOptions): Git {
           await run(
             { ...gitOptions, allowCode: [5] },
             ["config", "unset", "--all"],
-            configTargetFlag(options?.target),
+            ...configTargetFlag(options?.target),
             key,
           );
           for (const element of value) {
@@ -1884,7 +1884,7 @@ export function git(options?: GitOptions): Git {
               gitOptions,
               "config",
               "--add",
-              configTargetFlag(options?.target),
+              ...configTargetFlag(options?.target),
               key,
               `${element}`,
             );
@@ -1895,7 +1895,7 @@ export function git(options?: GitOptions): Git {
         await run(
           { ...gitOptions, allowCode: [5] },
           ["config", "unset", "--all"],
-          configTargetFlag(options?.target),
+          ...configTargetFlag(options?.target),
           key,
         );
       },
