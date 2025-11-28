@@ -104,24 +104,6 @@ export interface Git {
   admin: AdminOperations;
 }
 
-/** Options for config operations. */
-export interface ConfigOptions {
-  /**
-   * Config scope to target.
-   *
-   * - `"local"`: Repository-level configuration
-   * - `"global"`: User-level configuration
-   * - `"system"`: System-level configuration
-   * - `"worktree"`: Worktree-level configuration
-   * - `{ file: string }`: Custom configuration file
-   *
-   * For read operations, when not specified, git uses its default lookup order
-   * (system → global → local). For write operations, the default target is the
-   * local repository scope.
-   */
-  target?: "local" | "global" | "system" | "worktree" | { file: string };
-}
-
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
   /** Lists all git configuration values. */
@@ -313,21 +295,29 @@ export const CONFIG_SCHEMA = {
   "branch.sort": ["string"],
   "clone.defaultremotename": ["string"],
   "clone.rejectshallow": ["boolean"],
+  "color.branch": ["boolean", "auto", "always", "never"],
+  "color.diff": ["boolean", "auto", "always", "never"],
+  "color.status": ["boolean", "auto", "always", "never"],
+  "color.ui": ["boolean", "auto", "always", "never"],
   "commit.gpgsign": ["boolean"],
   "committer.email": ["string"],
   "committer.name": ["string"],
   "core.attributesfile": ["string"],
   "core.autocrlf": ["boolean", "input"],
   "core.bare": ["boolean"],
+  "core.commitgraph": ["boolean"],
   "core.compression": ["number"],
+  "core.editor": ["string"],
   "core.eol": ["lf", "crlf", "native"],
   "core.excludesfile": ["string"],
   "core.filemode": ["boolean"],
+  "core.fsmonitor": ["boolean", "string"],
   "core.hookspath": ["string"],
   "core.ignorecase": ["boolean"],
   "core.logallrefupdates": ["boolean"],
   "core.loosecompression": ["number"],
   "core.multipackindex": ["boolean"],
+  "core.pager": ["string"],
   "core.precomposeunicode": ["boolean"],
   "core.protecthfs": ["boolean"],
   "core.protectntfs": ["boolean"],
@@ -337,10 +327,13 @@ export const CONFIG_SCHEMA = {
   "core.sparsecheckout": ["boolean"],
   "core.sparsecheckoutcone": ["boolean"],
   "core.symlinks": ["boolean"],
+  "core.untrackedcache": ["boolean", "keep"],
+  "core.whitespace": ["string"],
   "core.worktree": ["string"],
   "credential.helper": ["string"],
   "credential.username": ["string"],
   "diff.algorithm": ["default", "myers", "minimal", "patience", "histogram"],
+  "diff.external": ["string"],
   "diff.renames": ["boolean", "copies", "copy"],
   "fetch.all": ["boolean"],
   "fetch.parallel": ["number"],
@@ -351,6 +344,7 @@ export const CONFIG_SCHEMA = {
   "gc.autopacklimit": ["number"],
   "gpg.format": ["openpgp", "x509", "ssh"],
   "gpg.program": ["string"],
+  "help.autocorrect": ["boolean", "number"],
   "http.followredirects": ["boolean", "initial"],
   "http.proxy": ["string"],
   "http.proxyauthmethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
@@ -366,6 +360,7 @@ export const CONFIG_SCHEMA = {
   "merge.ff": ["boolean", "only"],
   "merge.renames": ["boolean"],
   "pack.compression": ["number"],
+  "pager.config": ["boolean"],
   "pull.ff": ["boolean", "only"],
   "pull.rebase": ["boolean", "merges", "interactive"],
   "push.autosetupremote": ["boolean"],
@@ -374,17 +369,24 @@ export const CONFIG_SCHEMA = {
   "push.forceifincludes": ["boolean"],
   "rebase.autosquash": ["boolean"],
   "rebase.autostash": ["boolean"],
+  "receive.denycurrentbranch": ["ignore", "warn", "refuse", "updateInstead"],
   "receive.denynonfastforwards": ["boolean"],
+  "receive.fsckobjects": ["boolean"],
   "remote.pushdefault": ["string"],
   "rerere.autoupdate": ["boolean"],
   "rerere.enabled": ["boolean"],
   "safe.barerepository": ["all", "explicit"],
   "safe.directory": ["array"],
+  "status.displaycommentprefix": ["boolean"],
+  "status.relativepaths": ["boolean"],
   "status.renames": ["boolean", "copies", "copy"],
+  "status.short": ["boolean"],
   "status.showuntrackedfiles": ["no", "normal", "all"],
+  "submodule.recurse": ["boolean"],
   "tag.gpgsign": ["boolean"],
   "tag.sort": ["string"],
   "trailer.separators": ["string"],
+  "transfer.fsckobjects": ["boolean"],
   "user.email": ["string"],
   "user.name": ["string"],
   "user.signingkey": ["string"],
@@ -449,7 +451,7 @@ export type ConfigSchemaType<T> = T extends readonly (infer U)[]
   : U extends "string" ? string
   : U extends "number" ? number
   : U extends "boolean" ? boolean
-  : U extends string ? U
+  : U extends string ? NonNullable<U>
   : never
   : never;
 
@@ -552,13 +554,17 @@ export interface RenamedPathStatus {
   from: string;
 }
 
-/** Status of an untracked or ignored file in the index and the working tree. */
+/**
+ * Status of an untracked or ignored file in the index and the working tree.
+ */
 export interface UntrackedPathStatus {
   /** Path to the file. */
   path: string;
 }
 
-/** A patch for a file returned by the {@linkcode DiffOperations.patch} function. */
+/**
+ * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
+ */
 export interface Patch {
   /** Path to the file. */
   path: string;
@@ -582,7 +588,10 @@ export interface Patch {
   hunks?: Hunk[];
 }
 
-/** A single hunk in a patch returned by the {@linkcode DiffOperations.patch} function. */
+/**
+ * A single hunk in a patch returned by the {@linkcode DiffOperations.patch}
+ * function.
+ */
 export interface Hunk {
   /** Line location of the hunk. */
   line: {
@@ -887,6 +896,27 @@ export interface CloneOptions
   tags?: boolean;
 }
 
+/**
+ * Options common for all config operations, such as
+ * {@linkcode ConfigOperations.get} or {@linkcode ConfigOperations.set}.
+ */
+export interface ConfigOptions {
+  /**
+   * Configuration to read from or write to.
+   *
+   * - `"system"`: System-level configuration
+   * - `"global"`: User-level configuration
+   * - `"local"`: Repository-level configuration
+   * - `"worktree"`: Worktree-level configuration
+   * - `{ file: string }`: Custom configuration file
+   *
+   * When reading, the values are read from the `"system"`, `"global"` and
+   * `"local"` configuration by default. When writing, the new value is written
+   * to the `"local"` configuration file by default.
+   */
+  target?: "system" | "global" | "local" | "worktree" | { file: string };
+}
+
 /** Options for the {@linkcode IndexOperations.status} function. */
 export interface IndexStatusOptions {
   /**
@@ -981,8 +1011,8 @@ export interface IndexRemoveOptions {
 }
 
 /**
- * Options for the {@linkcode DiffOperations.status} and {@linkcode DiffOperations.patch}
- * functions.
+ * Options for the {@linkcode DiffOperations.status} and
+ * {@linkcode DiffOperations.patch} functions.
  */
 export interface DiffOptions {
   /**
@@ -1767,8 +1797,10 @@ export function git(options?: GitOptions): Git {
       });
       if (options?.config) {
         for (const [key, value] of Object.entries(options.config)) {
-          // deno-lint-ignore no-await-in-loop
-          if (value !== undefined) await repo.config.set(key, value);
+          if (value !== undefined) {
+            // deno-lint-ignore no-await-in-loop
+            await repo.config.set(key, value as ConfigValue<ConfigKey>);
+          }
         }
       }
       return repo;
@@ -1827,9 +1859,8 @@ export function git(options?: GitOptions): Git {
       async list(options?: ConfigOptions) {
         const output = await run(
           gitOptions,
-          "config",
-          "list",
-          ...configTargetFlag(options?.target),
+          ["config", "list"],
+          configTargetFlag(options?.target),
         );
         const lines = output.split("\n").filter((x) => x);
         const config: Record<string, string[]> = {};
@@ -1850,10 +1881,11 @@ export function git(options?: GitOptions): Git {
         const [type] = schema?.length === 1 ? schema : [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
-          ["config", "get", "--all"],
-          ...configTargetFlag(options?.target),
+          ["config", "get"],
+          "--all",
           ...type === "boolean" ? ["--bool"] : [],
           ...type === "number" ? ["--int"] : [],
+          configTargetFlag(options?.target),
           key,
         );
         if (!output) return undefined;
@@ -1864,10 +1896,8 @@ export function git(options?: GitOptions): Git {
         if (!Array.isArray(value)) {
           await run(
             gitOptions,
-            "config",
-            "set",
-            "--all",
-            ...configTargetFlag(options?.target),
+            ["config", "set", "--all"],
+            configTargetFlag(options?.target),
             key,
             `${value}`,
           );
@@ -1875,16 +1905,15 @@ export function git(options?: GitOptions): Git {
           await run(
             { ...gitOptions, allowCode: [5] },
             ["config", "unset", "--all"],
-            ...configTargetFlag(options?.target),
+            configTargetFlag(options?.target),
             key,
           );
           for (const element of value) {
             // deno-lint-ignore no-await-in-loop
             await run(
               gitOptions,
-              "config",
-              "--add",
-              ...configTargetFlag(options?.target),
+              ["config", "--add"],
+              configTargetFlag(options?.target),
               key,
               `${element}`,
             );
@@ -1895,7 +1924,7 @@ export function git(options?: GitOptions): Git {
         await run(
           { ...gitOptions, allowCode: [5] },
           ["config", "unset", "--all"],
-          ...configTargetFlag(options?.target),
+          configTargetFlag(options?.target),
           key,
         );
       },
@@ -2055,10 +2084,7 @@ export function git(options?: GitOptions): Git {
       },
       async patch(options) {
         const output = await run(
-          {
-            ...gitOptions,
-            config: { ...gitOptions?.config, "diff.external": undefined },
-          },
+          gitOptions,
           ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
           flag("--diff-algorithm", options?.algorithm, { equals: true }),
           flag("--find-copies-harder", options?.copies),
@@ -2858,6 +2884,15 @@ function configFlags(config: Config | undefined, flag?: string): string[] {
     ).flat();
 }
 
+function configTargetFlag(target: ConfigOptions["target"] | undefined) {
+  if (target === undefined) return undefined;
+  if (target === "global") return "--global";
+  if (target === "system") return "--system";
+  if (target === "local") return "--local";
+  if (target === "worktree") return "--worktree";
+  return flag("--file", target.file);
+}
+
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
   if (trailers === undefined) return [];
   return Object.entries(trailers).flatMap(([token, value]) =>
@@ -2878,19 +2913,6 @@ function signFlag(
   if (sign === false) return ["--no-gpg-sign"];
   if (sign === true) return ["--gpg-sign"];
   return flag("--gpg-sign", sign, { equals: true });
-}
-
-function configTargetFlag(
-  target: ConfigOptions["target"],
-): string[] {
-  // When target is undefined:
-  // - Read operations use git's default lookup order (system → global → local)
-  // - Write operations default to local scope
-  if (target === undefined) return [];
-  if (typeof target === "string") {
-    return [`--${target}`];
-  }
-  return flag("--file", target.file);
 }
 
 function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
@@ -2916,14 +2938,11 @@ function configSchema(key: string): readonly string[] | undefined {
   return CONFIG_SCHEMA[key as keyof typeof CONFIG_SCHEMA];
 }
 
-function configValue(
-  key: string,
-  lines: string[],
-): ConfigValue<string> | undefined {
-  if (lines.length > 1) return lines;
-  const [value] = lines;
-  if (value === undefined) return value;
+function configValue(key: string, lines: string[]) {
   const schema = configSchema(key);
+  if (schema?.includes("array")) return lines;
+  const value = lines.at(-1);
+  if (value === undefined) return value;
   if (schema === undefined) return value;
   if (
     schema.includes(value) &&
