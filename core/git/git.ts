@@ -104,16 +104,41 @@ export interface Git {
   admin: AdminOperations;
 }
 
+/** Options for config operations. */
+export interface ConfigOptions {
+  /**
+   * Config scope to target.
+   *
+   * - `"local"`: Repository-level configuration
+   * - `"global"`: User-level configuration
+   * - `"system"`: System-level configuration
+   * - `"worktree"`: Worktree-level configuration
+   * - `{ file: string }`: Custom configuration file
+   *
+   * For read operations, when not specified, git uses its default lookup order
+   * (system → global → local). For write operations, the default target is the
+   * local repository scope.
+   */
+  target?: "local" | "global" | "system" | "worktree" | { file: string };
+}
+
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
   /** Lists all git configuration values. */
-  list(): Promise<Config>;
+  list(options?: ConfigOptions): Promise<Config>;
   /** Gets a git configuration value. */
-  get<K extends ConfigKey>(key: K): Promise<ConfigValue<K> | undefined>;
+  get<K extends ConfigKey>(
+    key: K,
+    options?: ConfigOptions,
+  ): Promise<ConfigValue<K> | undefined>;
   /** Sets a git configuration value. */
-  set<K extends ConfigKey>(key: K, value: ConfigValue<K>): Promise<void>;
+  set<K extends ConfigKey>(
+    key: K,
+    value: ConfigValue<K>,
+    options?: ConfigOptions,
+  ): Promise<void>;
   /** Removes a git configuration value. */
-  unset(key: ConfigKey): Promise<void>;
+  unset(key: ConfigKey, options?: ConfigOptions): Promise<void>;
 }
 
 /** Index operations from {@linkcode Git.index}. */
@@ -1799,8 +1824,13 @@ export function git(options?: GitOptions): Git {
       return git({ ...gitOptions, cwd });
     },
     config: {
-      async list() {
-        const output = await run(gitOptions, "config", "list", "--local");
+      async list(options?: ConfigOptions) {
+        const output = await run(
+          gitOptions,
+          "config",
+          "list",
+          configTargetFlag(options?.target),
+        );
         const lines = output.split("\n").filter((x) => x);
         const config: Record<string, string[]> = {};
         lines.reduce((config, line) => {
@@ -1815,12 +1845,13 @@ export function git(options?: GitOptions): Git {
           (value, key) => configValue(key, value),
         ) as Config;
       },
-      async get<K extends ConfigKey>(key: K) {
+      async get<K extends ConfigKey>(key: K, options?: ConfigOptions) {
         const schema = configSchema(key);
         const [type] = schema?.length === 1 ? schema : [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
-          ["config", "get", "--all", "--local"],
+          ["config", "get", "--all"],
+          configTargetFlag(options?.target),
           ...type === "boolean" ? ["--bool"] : [],
           ...type === "number" ? ["--int"] : [],
           key,
@@ -1829,24 +1860,43 @@ export function git(options?: GitOptions): Git {
         const lines = output.replace(/\n$/, "").split("\n");
         return configValue(key, lines) as ConfigValue<K>;
       },
-      async set(key, value) {
+      async set(key, value, options?: ConfigOptions) {
         if (!Array.isArray(value)) {
-          await run(gitOptions, "config", "set", "--all", key, `${value}`);
+          await run(
+            gitOptions,
+            "config",
+            "set",
+            "--all",
+            configTargetFlag(options?.target),
+            key,
+            `${value}`,
+          );
         } else {
           await run(
             { ...gitOptions, allowCode: [5] },
-            ["config", "unset", "--all", key],
+            ["config", "unset", "--all"],
+            configTargetFlag(options?.target),
+            key,
           );
           for (const element of value) {
             // deno-lint-ignore no-await-in-loop
-            await run(gitOptions, "config", "--add", key, `${element}`);
+            await run(
+              gitOptions,
+              "config",
+              "--add",
+              configTargetFlag(options?.target),
+              key,
+              `${element}`,
+            );
           }
         }
       },
-      async unset(key) {
+      async unset(key, options?: ConfigOptions) {
         await run(
           { ...gitOptions, allowCode: [5] },
-          ["config", "unset", "--all", key],
+          ["config", "unset", "--all"],
+          configTargetFlag(options?.target),
+          key,
         );
       },
     },
@@ -2828,6 +2878,16 @@ function signFlag(
   if (sign === false) return ["--no-gpg-sign"];
   if (sign === true) return ["--gpg-sign"];
   return flag("--gpg-sign", sign, { equals: true });
+}
+
+function configTargetFlag(
+  target: ConfigOptions["target"],
+): string[] {
+  if (target === undefined) return [];
+  if (typeof target === "string") {
+    return [`--${target}`];
+  }
+  return flag("--file", target.file);
 }
 
 function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {

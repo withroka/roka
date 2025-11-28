@@ -1286,6 +1286,84 @@ Deno.test("git().config.unset() treats variables as case-insensitive", async () 
   assertEquals(await repo.config.get("USER.name"), undefined);
 });
 
+Deno.test("git().config.list({ target }) can retrieve from local config", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "local-name" },
+  });
+  const config = await repo.config.list({ target: "local" });
+  assertEquals(config["user.name"], "local-name");
+});
+
+Deno.test("git().config.list({ target }) can retrieve from custom file", async () => {
+  await using directory = await tempDirectory();
+  const customFile = directory.path("custom-config");
+  await Deno.writeTextFile(
+    customFile,
+    "[user]\n\tname = custom-name\n\temail = custom@example.com\n",
+  );
+  await using repo = await tempRepository();
+  const config = await repo.config.list({ target: { file: customFile } });
+  assertEquals(config["user.name"], "custom-name");
+  assertEquals(config["user.email"], "custom@example.com");
+});
+
+Deno.test("git().config.get({ target }) can retrieve from local config", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "local-name" },
+  });
+  assertEquals(
+    await repo.config.get("user.name", { target: "local" }),
+    "local-name",
+  );
+});
+
+Deno.test("git().config.get({ target }) can retrieve from custom file", async () => {
+  await using directory = await tempDirectory();
+  const customFile = directory.path("custom-config");
+  await Deno.writeTextFile(
+    customFile,
+    "[user]\n\tname = custom-name\n",
+  );
+  await using repo = await tempRepository();
+  assertEquals(
+    await repo.config.get("user.name", { target: { file: customFile } }),
+    "custom-name",
+  );
+});
+
+Deno.test("git().config.set({ target }) can configure custom file", async () => {
+  await using directory = await tempDirectory();
+  const customFile = directory.path("custom-config");
+  await using repo = await tempRepository();
+  await repo.config.set("user.name", "custom-name", {
+    target: { file: customFile },
+  });
+  await repo.config.set("user.email", "custom@example.com", {
+    target: { file: customFile },
+  });
+  const content = await Deno.readTextFile(customFile);
+  assertEquals(content.includes("custom-name"), true);
+  assertEquals(content.includes("custom@example.com"), true);
+  assertEquals(
+    await repo.config.get("user.name", { target: { file: customFile } }),
+    "custom-name",
+  );
+});
+
+Deno.test("git().config.unset({ target }) can configure custom file", async () => {
+  await using directory = await tempDirectory();
+  const customFile = directory.path("custom-config");
+  await Deno.writeTextFile(
+    customFile,
+    "[user]\n\tname = custom-name\n\temail = custom@example.com\n",
+  );
+  await using repo = await tempRepository();
+  await repo.config.unset("user.name", { target: { file: customFile } });
+  const content = await Deno.readTextFile(customFile);
+  assertEquals(content.includes("custom-name"), false);
+  assertEquals(content.includes("custom@example.com"), true);
+});
+
 Deno.test("git().index.status() lists staged modified file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
