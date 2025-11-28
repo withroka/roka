@@ -459,7 +459,8 @@ export type ConfigSchemaType<T> = T extends readonly (infer U)[]
  * A value of unknown configuration key.
  *
  * If a schema for the key does not exist, any of these types are accepted but
- * only string and string array values are returned.
+ * only string values are returned. For an unknown variable with multiple
+ * values set, only the last value is returned.
  */
 export type UnknownConfigValue = boolean | number | string | string[];
 
@@ -2963,7 +2964,6 @@ function configValue(key: string, lines: string[]) {
     if (!isNaN(number)) return number;
   }
   if (schema.includes("string")) return value;
-  if (schema.includes("array")) return [value];
   return value;
 }
 
