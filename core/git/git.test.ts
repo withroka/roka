@@ -12,7 +12,7 @@ import {
 } from "@std/assert";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
-import { assertType, type IsExact, type IsUnknown } from "@std/testing/types";
+import { assertType, type IsExact } from "@std/testing/types";
 import { type Git, git, GitError, type Patch } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
@@ -704,7 +704,7 @@ Deno.test("git().config.list() handles custom configuration", async () => {
 });
 
 Deno.test("git().config.list() handles whitespace in values", async () => {
-  const config: Record<string, unknown> = {
+  const config: Record<string, string> = {
     "user.name": "  name  ",
     "user.email": "",
   };
@@ -733,7 +733,7 @@ Deno.test("git().config.get() retrieves boolean variables", async () => {
 });
 
 Deno.test("git().config.get() converts intuitive true values", async () => {
-  const config: Record<string, unknown> = {
+  const config: Record<string, number | string> = {
     "commit.gpgsign": "true",
     "tag.gpgsign": "yes",
     "diff.renames": "on",
@@ -747,7 +747,7 @@ Deno.test("git().config.get() converts intuitive true values", async () => {
 });
 
 Deno.test("git().config.get() converts intuitive false values", async () => {
-  const config: Record<string, unknown> = {
+  const config: Record<string, number | string> = {
     "commit.gpgsign": "false",
     "tag.gpgsign": "no",
     "diff.renames": "off",
@@ -761,7 +761,7 @@ Deno.test("git().config.get() converts intuitive false values", async () => {
 });
 
 Deno.test("git().config.get() rejects invalid boolean values", async () => {
-  const config: Record<string, unknown> = {
+  const config: Record<string, string | string[]> = {
     "commit.gpgsign": "maybe",
     "tag.gpgSign": ["sometimes", "always"],
   };
@@ -798,7 +798,7 @@ Deno.test("git().config.get() converts integer scale suffixes", async () => {
 });
 
 Deno.test("git().config.get() rejects invalid numeric values", async () => {
-  const config: Record<string, unknown> = { "fetch.parallel": "not-a-number" };
+  const config: Record<string, string> = { "fetch.parallel": "not-a-number" };
   await using repo = await tempRepository({ config: { ...config } });
   await assertRejects(
     () => repo.config.get("fetch.parallel"),
@@ -822,7 +822,7 @@ Deno.test("git().config.get() retrieves string variables", async () => {
 });
 
 Deno.test("git().config.get() always retrieves string variables as string", async () => {
-  const config: Record<string, unknown> = {
+  const config: Record<string, boolean | number> = {
     "user.name": true,
     "user.email": 1234,
   };
@@ -845,7 +845,7 @@ Deno.test("git().config.get() retrieves enum variables", async () => {
 });
 
 Deno.test("git().config.get() returns string for invalid enum value", async () => {
-  const config: Record<string, unknown> = {
+  const config: Record<string, string> = {
     "diff.renames": "copied", // not "copies", or "copy"
   };
   await using repo = await tempRepository({ config: { ...config } });
@@ -872,7 +872,7 @@ Deno.test("git().config.get() retrieves array variables", async () => {
 });
 
 Deno.test("git().config.get() retrieves single values as array for array variables", async () => {
-  const config: Record<string, unknown> = { "versionsort.suffix": "-alpha" };
+  const config: Record<string, string> = { "versionsort.suffix": "-alpha" };
   await using repo = await tempRepository({ config: { ...config } });
   assertEquals(await repo.config.get("versionsort.suffix"), ["-alpha"]);
 });
@@ -887,9 +887,7 @@ Deno.test("git().config.get() returns undefined for missing values", async () =>
 });
 
 Deno.test("git().config.get() can handle custom or unknown variables", async () => {
-  assertType<
-    IsUnknown<Awaited<ReturnType<typeof repo.config.get<"custom.key">>>>
-  >(true);
+  const _x: Awaited<ReturnType<typeof repo.config.get<"custom.key">>> = 0;
   await using repo = await tempRepository({
     config: {
       "custom.key1": "value",
@@ -921,11 +919,6 @@ Deno.test("git().config.get() treats variables as case-insensitive", async () =>
     IsExact<
       Awaited<ReturnType<typeof repo.config.get<"VersionSort.Suffix">>>,
       string[] | undefined
-    >
-  >(true);
-  assertType<
-    IsUnknown<
-      Awaited<ReturnType<typeof repo.config.get<"CUSTOM.KEY">>>
     >
   >(true);
   await using repo = await tempRepository({
@@ -1015,9 +1008,6 @@ Deno.test("git().config.set() configures array variables", async () => {
 });
 
 Deno.test("git().config.set() can configures custom or unknown variables", async () => {
-  assertType<
-    IsUnknown<Parameters<typeof repo.config.set<"custom.key">>[1]>
-  >(true);
   await using repo = await tempRepository();
   await repo.config.set("custom.key1", "value");
   await repo.config.set("custom.key2", true);
@@ -1048,11 +1038,6 @@ Deno.test("git().config.set() treats variables as case-insensitive", async () =>
       string[]
     >
   >(true);
-  assertType<
-    IsUnknown<
-      Parameters<typeof repo.config.set<"CUSTOM.KEY">>[1]
-    >
-  >(true);
   await using repo = await tempRepository();
   await repo.config.set("USER.NAME", "name");
   await repo.config.set("commit.gpgSign", true);
@@ -1076,7 +1061,7 @@ Deno.test("git().config.set() handles whitespace in values", async () => {
 });
 
 Deno.test("git().config.set() resets all existing values", async () => {
-  const config: Record<string, unknown> = {
+  const config: Record<string, string | string[]> = {
     "versionsort.suffix": ["-old"],
     "commit.gpgsign": ["true", "false"],
     "fetch.parallel": "1234",
@@ -1342,7 +1327,7 @@ Deno.test("git().index.status() can list staged and ignored changes to the same 
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "file");
   await repo.index.add(".gitignore");
-  await Deno.writeTextFile(repo.path("file"), "content");
+  await Deno.writeTextFile(repo.path(".gitignore"), "file");
   await repo.index.add("file", { force: true });
   await repo.commit.create({ subject: "commit" });
   await repo.index.remove("file");
@@ -1352,6 +1337,33 @@ Deno.test("git().index.status() can list staged and ignored changes to the same 
     unstaged: [],
     untracked: [],
     ignored: [{ path: "file" }],
+  });
+});
+
+Deno.test("git().index.status() handles custom configuration", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "core.excludesfile": "file1",
+      "status.displaycommentprefix": true,
+      "status.relativepaths": false,
+      "status.renames": "copies",
+      "status.short": true,
+      "status.showuntrackedfiles": "all",
+    },
+  });
+  await Deno.writeTextFile(repo.path("file1"), "file2");
+  await repo.index.add("file1");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file1"), "file3");
+  await Deno.writeTextFile(repo.path("file2"), "file2");
+  await Deno.writeTextFile(repo.path("file3"), "file2");
+  await Deno.writeTextFile(repo.path("file4"), "file2");
+  await repo.index.add(["file2"]);
+  assertEquals(await repo.index.status({ ignored: true }), {
+    staged: [{ path: "file2", status: "added" }],
+    unstaged: [{ path: "file1", status: "modified" }],
+    untracked: [{ path: "file4" }],
+    ignored: [{ path: "file3" }],
   });
 });
 
@@ -1926,6 +1938,25 @@ Deno.test("git().diff.status() does not list staged deleted file", async () => {
   await repo.commit.create({ subject: "commit" });
   await repo.index.remove("file");
   assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().diff.status() handles custom configuration", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "diff.external": "echo",
+      "diff.renames": "copies",
+    },
+  });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await Deno.remove(repo.path("file2"));
+  assertEquals(await repo.diff.status(), [
+    { path: "file1", status: "modified" },
+    { path: "file2", status: "deleted" },
+  ]);
 });
 
 Deno.test("git().diff.status({ copies }) can detect copies", async () => {
@@ -2602,6 +2633,45 @@ Deno.test("git().diff.patch() generate patch for renamed file", async () => {
   ]);
 });
 
+Deno.test("git().diff.patch() handles custom configuration", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "diff.algorithm": "patience",
+      "diff.context": 10,
+      "diff.dirstat": "files,1,cumulative",
+      "diff.dstprefix": "DST/",
+      "diff.external": "echo",
+      "diff.mnemonicprefix": true,
+      "diff.noprefix": true,
+      "diff.renames": "copies",
+      "diff.srcprefix": "SRC/",
+      "diff.interhunkcontext": 10,
+    },
+  });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await Deno.remove(repo.path("file2"));
+  await Deno.writeTextFile(repo.path("file3"), "content2");
+  await repo.index.add(["file1", "file3"]);
+  assertEquals(await repo.diff.patch(), [
+    {
+      path: "file2",
+      status: "deleted",
+      mode: { old: 33188 },
+      hunks: [{
+        line: { old: 1, new: 0 },
+        lines: [
+          { type: "deleted", content: "content2" },
+          { type: "info", content: "No newline at end of file" },
+        ],
+      }],
+    },
+  ]);
+});
+
 Deno.test("git().diff.patch({ algorithm }) controls the diff algorithm", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
@@ -3102,18 +3172,18 @@ Deno.test("git().commit.log() can work with custom trailer separator", async () 
 Deno.test("git().commit.log() handles custom configuration", async () => {
   await using repo = await tempRepository({
     config: {
-      "author.name": "author-name",
       "author.email": "author-email",
-      "committer.name": "committer-name",
+      "author.name": "author-name",
       "committer.email": "committer-email",
+      "committer.name": "committer-name",
       "format.pretty": "raw",
       "i18n.logoutputencoding": "ascii",
       "log.abbrevcommit": true,
       "log.decorate": "short",
       "log.follow": true,
+      "log.mailmap": false,
       "log.showroot": true,
       "log.showsignature": true,
-      "log.mailmap": false,
     },
   });
   const commit = await repo.commit.create({
@@ -3570,13 +3640,13 @@ Deno.test("git().commit.create() rejects empty commit", async () => {
 Deno.test("git().commit.create() handles custom configuration", async () => {
   await using repo = await tempRepository({
     config: {
-      "author.name": "author-name",
       "author.email": "author-email",
-      "committer.name": "committer-name",
-      "committer.email": "committer-email",
-      "i18n.commitEncoding": "ascii",
+      "author.name": "author-name",
       "commit.status": false,
       "commit.verbose": true,
+      "committer.email": "committer-email",
+      "committer.name": "committer-name",
+      "i18n.commitEncoding": "ascii",
     },
   });
   const commit = await repo.commit.create({

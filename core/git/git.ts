@@ -390,7 +390,7 @@ export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
         : never
     )
     : never)
-  : unknown;
+  : boolean | number | string | string[];
 
 /** An author or committer on a git repository. */
 export interface User {
@@ -1686,7 +1686,7 @@ export function git(options?: GitOptions): Git {
       if (options?.config) {
         for (const [key, value] of Object.entries(options.config)) {
           // deno-lint-ignore no-await-in-loop
-          await repo.config.set(key, value);
+          if (value !== undefined) await repo.config.set(key, value);
         }
       }
       return repo;
@@ -1946,8 +1946,11 @@ export function git(options?: GitOptions): Git {
       },
       async patch(options) {
         const output = await run(
-          gitOptions,
-          ["diff", "--no-color", "--no-prefix"],
+          {
+            ...gitOptions,
+            config: { ...gitOptions?.config, "diff.external": undefined },
+          },
+          ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
           flag("--diff-algorithm", options?.algorithm, { equals: true }),
           flag("--find-copies-harder", options?.copies),
           pickaxeFlags(options?.pickaxe),
