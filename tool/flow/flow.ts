@@ -365,8 +365,10 @@ async function files(
       return { target, paths: distinct(diff.map((f) => dirname(f.path))) };
     });
     // run on all files if not in a Git repository
-    if (!changes) paths = ["."];
-    else {
+    if (!changes) {
+      console.warn("🧽 Not in a Git repository, checking all files");
+      paths = ["."];
+    } else {
       paths = changes.paths;
       if (paths.length === 0) {
         console.warn(`🧽 No changes since '${changes.target}'`);
