@@ -57,7 +57,7 @@ import {
   assertFalse,
   assertGreater,
 } from "@std/assert";
-import { mapValues, slidingWindows } from "@std/collections";
+import { mapEntries, mapValues, slidingWindows } from "@std/collections";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
 
 /**
@@ -291,106 +291,123 @@ export interface AdminOperations {
 export const CONFIG_SCHEMA = {
   "author.email": ["string"],
   "author.name": ["string"],
-  "branch.autosetupmerge": ["boolean", "always", "inherit", "simple"],
+  "branch.autoSetupMerge": ["boolean", "always", "inherit", "simple"],
   "branch.sort": ["string"],
-  "clone.defaultremotename": ["string"],
-  "clone.rejectshallow": ["boolean"],
+  "clone.defaultRemoteName": ["string"],
+  "clone.rejectShallow": ["boolean"],
   "color.branch": ["boolean", "auto", "always", "never"],
   "color.diff": ["boolean", "auto", "always", "never"],
   "color.status": ["boolean", "auto", "always", "never"],
   "color.ui": ["boolean", "auto", "always", "never"],
-  "commit.gpgsign": ["boolean"],
+  "commit.gpgSign": ["boolean"],
+  "commit.status": ["boolean"],
+  "commit.verbose": ["boolean"],
   "committer.email": ["string"],
   "committer.name": ["string"],
-  "core.attributesfile": ["string"],
+  "core.attributesFile": ["string"],
   "core.autocrlf": ["boolean", "input"],
   "core.bare": ["boolean"],
-  "core.commitgraph": ["boolean"],
+  "core.commitGraph": ["boolean"],
   "core.compression": ["number"],
   "core.editor": ["string"],
   "core.eol": ["lf", "crlf", "native"],
-  "core.excludesfile": ["string"],
-  "core.filemode": ["boolean"],
+  "core.excludesFile": ["string"],
+  "core.fileMode": ["boolean"],
   "core.fsmonitor": ["boolean", "string"],
-  "core.hookspath": ["string"],
-  "core.ignorecase": ["boolean"],
-  "core.logallrefupdates": ["boolean"],
-  "core.loosecompression": ["number"],
-  "core.multipackindex": ["boolean"],
+  "core.hooksPath": ["string"],
+  "core.ignoreCase": ["boolean"],
+  "core.logAllRefUpdates": ["boolean"],
+  "core.looseCompression": ["number"],
+  "core.multiPackIndex": ["boolean"],
   "core.pager": ["string"],
-  "core.precomposeunicode": ["boolean"],
-  "core.protecthfs": ["boolean"],
-  "core.protectntfs": ["boolean"],
-  "core.quotepath": ["boolean"],
-  "core.repositoryformatversion": ["number"],
+  "core.precomposeUnicode": ["boolean"],
+  "core.protectHFS": ["boolean"],
+  "core.protectNTFS": ["boolean"],
+  "core.quotePath": ["boolean"],
+  "core.repositoryFormatVersion": ["number"],
   "core.safecrlf": ["boolean"],
-  "core.sparsecheckout": ["boolean"],
-  "core.sparsecheckoutcone": ["boolean"],
+  "core.sparseCheckout": ["boolean"],
+  "core.sparseCheckoutCone": ["boolean"],
   "core.symlinks": ["boolean"],
-  "core.untrackedcache": ["boolean", "keep"],
+  "core.untrackedCache": ["boolean", "keep"],
   "core.whitespace": ["string"],
   "core.worktree": ["string"],
   "credential.helper": ["string"],
   "credential.username": ["string"],
   "diff.algorithm": ["default", "myers", "minimal", "patience", "histogram"],
+  "diff.context": ["number"],
+  "diff.dirstat": ["string"],
+  "diff.dstPrefix": ["string"],
   "diff.external": ["string"],
+  "diff.interHunkContext": ["number"],
+  "diff.mnemonicPrefix": ["boolean"],
+  "diff.noPrefix": ["string"],
   "diff.renames": ["boolean", "copies", "copy"],
+  "diff.srcPrefix": ["string"],
   "fetch.all": ["boolean"],
   "fetch.parallel": ["number"],
   "fetch.prune": ["boolean"],
-  "fetch.prunetags": ["boolean"],
+  "fetch.pruneTags": ["boolean"],
+  "format.pretty": ["string"],
   "gc.auto": ["number"],
-  "gc.autodetach": ["boolean"],
-  "gc.autopacklimit": ["number"],
+  "gc.autoDetach": ["boolean"],
+  "gc.autoPackLimit": ["number"],
   "gpg.format": ["openpgp", "x509", "ssh"],
   "gpg.program": ["string"],
-  "help.autocorrect": ["boolean", "number"],
-  "http.followredirects": ["boolean", "initial"],
+  "help.autoCorrect": ["boolean", "number"],
+  "http.followRedirects": ["boolean", "initial"],
   "http.proxy": ["string"],
-  "http.proxyauthmethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
-  "http.useragent": ["string"],
+  "http.proxyAuthMethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
+  "http.userAgent": ["string"],
+  "i18n.commitEncoding": ["string"],
+  "i18n.logOutputEncoding": ["string"],
   "index.sparse": ["boolean"],
-  "init.defaultbranch": ["string"],
-  "init.defaultobjectformat": ["sha1", "sha256"],
-  "init.defaultrefformat": ["files", "reftable"],
+  "init.defaultBranch": ["string"],
+  "init.defaultObjectFormat": ["sha1", "sha256"],
+  "init.defaultRefFormat": ["files", "reftable"],
+  "log.abbrevCommit": ["boolean"],
+  "log.decorate": ["short", "full", "auto"],
+  "log.follow": ["boolean"],
+  "log.mailmap": ["boolean"],
+  "log.showRoot": ["boolean"],
+  "log.showSignature": ["boolean"],
   "maintenance.auto": ["boolean"],
-  "maintenance.autodetach": ["boolean"],
+  "maintenance.autoDetach": ["boolean"],
   "maintenance.strategy": ["none", "gc", "geometric", "incremental"],
-  "merge.conflictstyle": ["merge", "diff3", "zdiff3"],
+  "merge.conflictStyle": ["merge", "diff3", "zdiff3"],
   "merge.ff": ["boolean", "only"],
   "merge.renames": ["boolean"],
   "pack.compression": ["number"],
-  "pager.config": ["boolean"],
   "pull.ff": ["boolean", "only"],
   "pull.rebase": ["boolean", "merges", "interactive"],
-  "push.autosetupremote": ["boolean"],
+  "push.autoSetupRemote": ["boolean"],
   "push.default": ["nothing", "current", "upstream", "simple", "matching"],
-  "push.followtags": ["boolean"],
-  "push.forceifincludes": ["boolean"],
-  "rebase.autosquash": ["boolean"],
-  "rebase.autostash": ["boolean"],
-  "receive.denycurrentbranch": ["ignore", "warn", "refuse", "updateInstead"],
-  "receive.denynonfastforwards": ["boolean"],
-  "receive.fsckobjects": ["boolean"],
-  "remote.pushdefault": ["string"],
-  "rerere.autoupdate": ["boolean"],
+  "push.followTags": ["boolean"],
+  "push.useForceIfIncludes": ["boolean"],
+  "rebase.autoSquash": ["boolean"],
+  "rebase.autoStash": ["boolean"],
+  "receive.denyCurrentBranch": ["ignore", "warn", "refuse", "updateInstead"],
+  "receive.denyNonFastForwards": ["boolean"],
+  "receive.fsckObjects": ["boolean"],
+  "remote.pushDefault": ["string"],
+  "rerere.autoUpdate": ["boolean"],
   "rerere.enabled": ["boolean"],
-  "safe.barerepository": ["all", "explicit"],
+  "safe.bareRepository": ["all", "explicit"],
   "safe.directory": ["array"],
-  "status.displaycommentprefix": ["boolean"],
-  "status.relativepaths": ["boolean"],
+  "status.displayCommentPrefix": ["boolean"],
+  "status.relativePaths": ["boolean"],
   "status.renames": ["boolean", "copies", "copy"],
   "status.short": ["boolean"],
-  "status.showuntrackedfiles": ["no", "normal", "all"],
+  "status.showUntrackedFiles": ["no", "normal", "all"],
   "submodule.recurse": ["boolean"],
-  "tag.gpgsign": ["boolean"],
+  "tag.gpgSign": ["boolean"],
   "tag.sort": ["string"],
   "trailer.separators": ["string"],
-  "transfer.fsckobjects": ["boolean"],
+  "transfer.fsckObjects": ["boolean"],
   "user.email": ["string"],
   "user.name": ["string"],
-  "user.signingkey": ["string"],
-  "user.useconfigonly": ["boolean"],
+  "user.signingKey": ["string"],
+  "user.useConfigOnly": ["boolean"],
   "versionsort.suffix": ["array"],
 } as const;
 
@@ -398,7 +415,7 @@ export const CONFIG_SCHEMA = {
 export const BRANCH_CONFIG_SCHEMA = {
   "description": ["string"],
   "merge": ["string"],
-  "pushremote": ["string"],
+  "pushRemote": ["string"],
   "rebase": ["boolean", "merges", "interactive"],
   "remote": ["string"],
 } as const;
@@ -408,12 +425,12 @@ export const REMOTE_CONFIG_SCHEMA = {
   "fetch": ["string"],
   "mirror": ["boolean"],
   "proxy": ["string"],
-  "proxyauthmethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
+  "proxyAuthMethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
   "prune": ["boolean"],
-  "prunetags": ["boolean"],
+  "pruneTags": ["boolean"],
   "push": ["string"],
   "pushurl": ["string"],
-  "skipfetchall": ["boolean"],
+  "skipFetchAll": ["boolean"],
   "tagopt": ["--tags", "--no-tags"],
   "url": ["string"],
 } as const;
@@ -433,15 +450,20 @@ export type ConfigKey =
 
 /** The value type for a given configuration key. */
 export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
-  keyof typeof CONFIG_SCHEMA
-  ? ConfigSchemaType<(typeof CONFIG_SCHEMA)[Lowercase<K>]>
+  keyof ConfigSchemaLowercase<typeof CONFIG_SCHEMA> ? ConfigSchemaType<
+    (ConfigSchemaLowercase<typeof CONFIG_SCHEMA>)[Lowercase<K>]
+  >
   : Lowercase<K> extends `branch.${string}.${infer SubKey}`
-    ? SubKey extends keyof typeof BRANCH_CONFIG_SCHEMA
-      ? ConfigSchemaType<(typeof BRANCH_CONFIG_SCHEMA)[SubKey]>
+    ? SubKey extends keyof ConfigSchemaLowercase<typeof BRANCH_CONFIG_SCHEMA>
+      ? ConfigSchemaType<
+        (ConfigSchemaLowercase<typeof BRANCH_CONFIG_SCHEMA>)[SubKey]
+      >
     : UnknownConfigValue
   : Lowercase<K> extends `remote.${string}.${infer SubKey}`
-    ? SubKey extends keyof typeof REMOTE_CONFIG_SCHEMA
-      ? ConfigSchemaType<(typeof REMOTE_CONFIG_SCHEMA)[SubKey]>
+    ? SubKey extends keyof ConfigSchemaLowercase<typeof REMOTE_CONFIG_SCHEMA>
+      ? ConfigSchemaType<
+        (ConfigSchemaLowercase<typeof REMOTE_CONFIG_SCHEMA>)[SubKey]
+      >
     : UnknownConfigValue
   : UnknownConfigValue;
 
@@ -454,6 +476,11 @@ export type ConfigSchemaType<T> = T extends readonly (infer U)[]
   : U extends string ? NonNullable<U>
   : never
   : never;
+
+/** Config schema type with lowercase keys. */
+export type ConfigSchemaLowercase<T> = {
+  [K in keyof T as K extends string ? Lowercase<K> : K]: T[K];
+};
 
 /**
  * A value of unknown configuration key.
@@ -1872,14 +1899,17 @@ export function git(options?: GitOptions): Git {
           config[key]?.push(value);
           return config;
         }, config);
-        return mapValues(
+        return mapEntries(
           config,
-          (value, key) => configValue(key, value),
+          (entry) => {
+            const found = configValue(...entry);
+            return [found.key, found.value];
+          },
         ) as Config;
       },
       async get<K extends ConfigKey>(key: K, options?: ConfigOptions) {
         const schema = configSchema(key);
-        const [type] = schema?.length === 1 ? schema : [];
+        const [type] = schema?.type?.length === 1 ? schema.type : [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           ["config", "get"],
@@ -1891,7 +1921,7 @@ export function git(options?: GitOptions): Git {
         );
         if (!output) return undefined;
         const lines = output.replace(/\n$/, "").split("\n");
-        return configValue(key, lines) as ConfigValue<K>;
+        return configValue(key, lines).value as ConfigValue<K>;
       },
       async set(key, value, options?: ConfigOptions) {
         if (!Array.isArray(value)) {
@@ -2925,46 +2955,61 @@ function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
   ];
 }
 
-function configSchema(key: string): readonly string[] | undefined {
-  key = key.toLowerCase();
-  const { object, subkey } =
-    key.match(/^(?<object>branch|remote)\.[^.]+\.(?<subkey>.+)$/)
+function configSchema(
+  lowercase: string,
+): { key: string; type: readonly string[] } | undefined {
+  lowercase = lowercase.toLowerCase();
+  const { object, name, subkey } =
+    lowercase.match(/^(?<object>branch|remote)\.(?<name>[^.]+)\.(?<subkey>.+)$/)
       ?.groups ?? {};
   if (object === "branch") {
-    return BRANCH_CONFIG_SCHEMA[subkey as keyof typeof BRANCH_CONFIG_SCHEMA];
+    for (const [key, type] of Object.entries(BRANCH_CONFIG_SCHEMA)) {
+      if (key.toLowerCase() === subkey) {
+        return { key: `branch.${name}.${key}`, type };
+      }
+    }
   }
   if (object === "remote") {
-    return REMOTE_CONFIG_SCHEMA[subkey as keyof typeof REMOTE_CONFIG_SCHEMA];
+    for (const [key, type] of Object.entries(REMOTE_CONFIG_SCHEMA)) {
+      if (key.toLowerCase() === subkey) {
+        return { key: `remote.${name}.${key}`, type };
+      }
+    }
   }
-  return CONFIG_SCHEMA[key as keyof typeof CONFIG_SCHEMA];
+  for (const [key, type] of Object.entries(CONFIG_SCHEMA)) {
+    if (key.toLowerCase() === lowercase) return { key, type };
+  }
+  return undefined;
 }
 
 function configValue(key: string, lines: string[]) {
-  const schema = configSchema(key);
-  if (schema?.includes("array")) return lines;
   const value = lines.at(-1);
-  if (value === undefined) return value;
-  if (schema === undefined) return value;
+  const schema = configSchema(key);
+  if (schema === undefined) return { key, value };
+  key = schema.key;
+  if (value === undefined) return { key, value };
+  if (schema.type.includes("array")) return { key, value: lines };
   if (
-    schema.includes(value) &&
+    schema.type.includes(value) &&
     value !== "array" &&
     value !== "string" &&
     value !== "number" &&
     value !== "boolean"
   ) {
-    return value;
+    return { key, value };
   }
-  if (schema.includes("boolean")) {
+  if (schema.type.includes("boolean")) {
     const lower = value.toLowerCase();
-    if (["true", "yes", "on", "1"].includes(lower)) return true;
-    if (["false", "no", "off", "0"].includes(lower)) return false;
+    if (["true", "yes", "on", "1"].includes(lower)) return { key, value: true };
+    if (["false", "no", "off", "0"].includes(lower)) {
+      return { key, value: false };
+    }
   }
-  if (schema.includes("number")) {
+  if (schema.type.includes("number")) {
     const number = Number(value);
-    if (!isNaN(number)) return number;
+    if (!isNaN(number)) return { key, value: number };
   }
-  if (schema.includes("string")) return value;
-  return value;
+  return { key, value };
 }
 
 function statusKind(code: string): Patch["status"] {
