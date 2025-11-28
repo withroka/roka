@@ -54,7 +54,7 @@ snapshot[`flow 1`] = `
 {
   code: 0,
   output: "
-🧽 No files modified
+🧽 No changes since 'main'
 ",
 }
 `;
@@ -107,7 +107,7 @@ snapshot[`flow --check 1`] = `
 {
   code: 0,
   output: "
-🧽 No files modified
+🧽 No changes since 'main'
 ",
 }
 `;

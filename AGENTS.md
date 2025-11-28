@@ -11,11 +11,10 @@ If a role has not been specified for you, determine an agent role for yourself.
 ## Tools
 
 - Project and module structure: `deno task forge list --modules`
-- Verify module status: `deno task flow [path/to/module]`
 - Run a specific test:
   `deno task flow test [path/to/module] --filter "[test name]"`
 - Update mocks and snapshots: `deno task flow test [path/to/test/file] --update`
-- Verify all checks: `deno task flow .`
+- Verify changes before commit: `deno task ok`
 
 ## Commit conventions
 

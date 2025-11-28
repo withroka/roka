@@ -22,7 +22,7 @@ jobs:
           deno-version: canary # todo: remove after deno 3.0 release
 
       - name: Test
-        run: deno task -q flow --check --doc ${{ matrix.component }}
+        run: deno task ok ${{ matrix.component }}
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

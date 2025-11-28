@@ -356,20 +356,23 @@ async function files(
   }
   if (paths.length === 0) {
     // determine modified directories if in a Git repository
-    const { value } = await maybe(async () => {
+    const { value: changes } = await maybe(async () => {
       const repo = git();
       const remote = await repo.remote.current();
       assertExists(remote);
       const target = await repo.remote.head(remote);
       const diff = await repo.diff.status({ target });
-      return distinct(diff.map((f) => dirname(f.path)));
+      return { target, paths: distinct(diff.map((f) => dirname(f.path))) };
     });
-    if (value?.length === 0) {
-      console.warn("🧽 No files modified");
-      return [];
-    }
     // run on all files if not in a Git repository
-    paths = value ? value : ["."];
+    if (!changes) paths = ["."];
+    else {
+      paths = changes.paths;
+      if (paths.length === 0) {
+        console.warn(`🧽 No changes since '${changes.target}'`);
+        return [];
+      }
+    }
   }
   let found = await Array.fromAsync(find(paths, {
     type: "file",

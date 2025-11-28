@@ -5,7 +5,8 @@
   ],
   "tasks": {
     "flow": "deno run -Pq tool/flow/flow.ts",
-    "forge": "deno run -Pq tool/forge/forge.ts"
+    "forge": "deno run -Pq tool/forge/forge.ts",
+    "ok": "deno task -q flow --check --doc"
   },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,
