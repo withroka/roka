@@ -101,8 +101,8 @@ export async function tempRepository(
   const config: Config = {
     "user.name": "A U Thor",
     "user.email": "author@example.com",
-    "commit.gpgsign": false,
-    "tag.gpgsign": false,
+    "commit.gpgSign": false,
+    "tag.gpgSign": false,
     ...options?.config,
   };
   const repo = clone
