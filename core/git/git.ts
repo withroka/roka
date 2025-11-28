@@ -107,13 +107,20 @@ export interface Git {
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
   /** Lists all git configuration values. */
-  list(): Promise<Config>;
+  list(options?: ConfigOptions): Promise<Config>;
   /** Gets a git configuration value. */
-  get<K extends ConfigKey>(key: K): Promise<ConfigValue<K> | undefined>;
+  get<K extends ConfigKey>(
+    key: K,
+    options?: ConfigOptions,
+  ): Promise<ConfigValue<K> | undefined>;
   /** Sets a git configuration value. */
-  set<K extends ConfigKey>(key: K, value: ConfigValue<K>): Promise<void>;
+  set<K extends ConfigKey>(
+    key: K,
+    value: ConfigValue<K>,
+    options?: ConfigOptions,
+  ): Promise<void>;
   /** Removes a git configuration value. */
-  unset(key: ConfigKey): Promise<void>;
+  unset(key: ConfigKey, options?: ConfigOptions): Promise<void>;
 }
 
 /** Index operations from {@linkcode Git.index}. */
@@ -288,21 +295,29 @@ export const CONFIG_SCHEMA = {
   "branch.sort": ["string"],
   "clone.defaultremotename": ["string"],
   "clone.rejectshallow": ["boolean"],
+  "color.branch": ["boolean", "auto", "always", "never"],
+  "color.diff": ["boolean", "auto", "always", "never"],
+  "color.status": ["boolean", "auto", "always", "never"],
+  "color.ui": ["boolean", "auto", "always", "never"],
   "commit.gpgsign": ["boolean"],
   "committer.email": ["string"],
   "committer.name": ["string"],
   "core.attributesfile": ["string"],
   "core.autocrlf": ["boolean", "input"],
   "core.bare": ["boolean"],
+  "core.commitgraph": ["boolean"],
   "core.compression": ["number"],
+  "core.editor": ["string"],
   "core.eol": ["lf", "crlf", "native"],
   "core.excludesfile": ["string"],
   "core.filemode": ["boolean"],
+  "core.fsmonitor": ["boolean", "string"],
   "core.hookspath": ["string"],
   "core.ignorecase": ["boolean"],
   "core.logallrefupdates": ["boolean"],
   "core.loosecompression": ["number"],
   "core.multipackindex": ["boolean"],
+  "core.pager": ["string"],
   "core.precomposeunicode": ["boolean"],
   "core.protecthfs": ["boolean"],
   "core.protectntfs": ["boolean"],
@@ -312,10 +327,13 @@ export const CONFIG_SCHEMA = {
   "core.sparsecheckout": ["boolean"],
   "core.sparsecheckoutcone": ["boolean"],
   "core.symlinks": ["boolean"],
+  "core.untrackedcache": ["boolean", "keep"],
+  "core.whitespace": ["string"],
   "core.worktree": ["string"],
   "credential.helper": ["string"],
   "credential.username": ["string"],
   "diff.algorithm": ["default", "myers", "minimal", "patience", "histogram"],
+  "diff.external": ["string"],
   "diff.renames": ["boolean", "copies", "copy"],
   "fetch.all": ["boolean"],
   "fetch.parallel": ["number"],
@@ -326,6 +344,7 @@ export const CONFIG_SCHEMA = {
   "gc.autopacklimit": ["number"],
   "gpg.format": ["openpgp", "x509", "ssh"],
   "gpg.program": ["string"],
+  "help.autocorrect": ["boolean", "number"],
   "http.followredirects": ["boolean", "initial"],
   "http.proxy": ["string"],
   "http.proxyauthmethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
@@ -341,6 +360,7 @@ export const CONFIG_SCHEMA = {
   "merge.ff": ["boolean", "only"],
   "merge.renames": ["boolean"],
   "pack.compression": ["number"],
+  "pager.config": ["boolean"],
   "pull.ff": ["boolean", "only"],
   "pull.rebase": ["boolean", "merges", "interactive"],
   "push.autosetupremote": ["boolean"],
@@ -349,17 +369,24 @@ export const CONFIG_SCHEMA = {
   "push.forceifincludes": ["boolean"],
   "rebase.autosquash": ["boolean"],
   "rebase.autostash": ["boolean"],
+  "receive.denycurrentbranch": ["ignore", "warn", "refuse", "updateInstead"],
   "receive.denynonfastforwards": ["boolean"],
+  "receive.fsckobjects": ["boolean"],
   "remote.pushdefault": ["string"],
   "rerere.autoupdate": ["boolean"],
   "rerere.enabled": ["boolean"],
   "safe.barerepository": ["all", "explicit"],
   "safe.directory": ["array"],
+  "status.displaycommentprefix": ["boolean"],
+  "status.relativepaths": ["boolean"],
   "status.renames": ["boolean", "copies", "copy"],
+  "status.short": ["boolean"],
   "status.showuntrackedfiles": ["no", "normal", "all"],
+  "submodule.recurse": ["boolean"],
   "tag.gpgsign": ["boolean"],
   "tag.sort": ["string"],
   "trailer.separators": ["string"],
+  "transfer.fsckobjects": ["boolean"],
   "user.email": ["string"],
   "user.name": ["string"],
   "user.signingkey": ["string"],
@@ -424,7 +451,7 @@ export type ConfigSchemaType<T> = T extends readonly (infer U)[]
   : U extends "string" ? string
   : U extends "number" ? number
   : U extends "boolean" ? boolean
-  : U extends string ? U
+  : U extends string ? NonNullable<U>
   : never
   : never;
 
@@ -432,7 +459,8 @@ export type ConfigSchemaType<T> = T extends readonly (infer U)[]
  * A value of unknown configuration key.
  *
  * If a schema for the key does not exist, any of these types are accepted but
- * only string and string array values are returned.
+ * only string values are returned. For an unknown variable with multiple
+ * values set, only the last value is returned.
  */
 export type UnknownConfigValue = boolean | number | string | string[];
 
@@ -527,13 +555,17 @@ export interface RenamedPathStatus {
   from: string;
 }
 
-/** Status of an untracked or ignored file in the index and the working tree. */
+/**
+ * Status of an untracked or ignored file in the index and the working tree.
+ */
 export interface UntrackedPathStatus {
   /** Path to the file. */
   path: string;
 }
 
-/** A patch for a file returned by the {@linkcode DiffOperations.patch} function. */
+/**
+ * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
+ */
 export interface Patch {
   /** Path to the file. */
   path: string;
@@ -557,7 +589,10 @@ export interface Patch {
   hunks?: Hunk[];
 }
 
-/** A single hunk in a patch returned by the {@linkcode DiffOperations.patch} function. */
+/**
+ * A single hunk in a patch returned by the {@linkcode DiffOperations.patch}
+ * function.
+ */
 export interface Hunk {
   /** Line location of the hunk. */
   line: {
@@ -862,6 +897,27 @@ export interface CloneOptions
   tags?: boolean;
 }
 
+/**
+ * Options common for all config operations, such as
+ * {@linkcode ConfigOperations.get} or {@linkcode ConfigOperations.set}.
+ */
+export interface ConfigOptions {
+  /**
+   * Configuration to read from or write to.
+   *
+   * - `"system"`: System-level configuration
+   * - `"global"`: User-level configuration
+   * - `"local"`: Repository-level configuration
+   * - `"worktree"`: Worktree-level configuration
+   * - `{ file: string }`: Custom configuration file
+   *
+   * When reading, the values are read from the `"system"`, `"global"` and
+   * `"local"` configuration by default. When writing, the new value is written
+   * to the `"local"` configuration file by default.
+   */
+  target?: "system" | "global" | "local" | "worktree" | { file: string };
+}
+
 /** Options for the {@linkcode IndexOperations.status} function. */
 export interface IndexStatusOptions {
   /**
@@ -956,8 +1012,8 @@ export interface IndexRemoveOptions {
 }
 
 /**
- * Options for the {@linkcode DiffOperations.status} and {@linkcode DiffOperations.patch}
- * functions.
+ * Options for the {@linkcode DiffOperations.status} and
+ * {@linkcode DiffOperations.patch} functions.
  */
 export interface DiffOptions {
   /**
@@ -1742,8 +1798,10 @@ export function git(options?: GitOptions): Git {
       });
       if (options?.config) {
         for (const [key, value] of Object.entries(options.config)) {
-          // deno-lint-ignore no-await-in-loop
-          if (value !== undefined) await repo.config.set(key, value);
+          if (value !== undefined) {
+            // deno-lint-ignore no-await-in-loop
+            await repo.config.set(key, value as ConfigValue<ConfigKey>);
+          }
         }
       }
       return repo;
@@ -1799,8 +1857,12 @@ export function git(options?: GitOptions): Git {
       return git({ ...gitOptions, cwd });
     },
     config: {
-      async list() {
-        const output = await run(gitOptions, "config", "list", "--local");
+      async list(options?: ConfigOptions) {
+        const output = await run(
+          gitOptions,
+          ["config", "list"],
+          configTargetFlag(options?.target),
+        );
         const lines = output.split("\n").filter((x) => x);
         const config: Record<string, string[]> = {};
         lines.reduce((config, line) => {
@@ -1815,38 +1877,56 @@ export function git(options?: GitOptions): Git {
           (value, key) => configValue(key, value),
         ) as Config;
       },
-      async get<K extends ConfigKey>(key: K) {
+      async get<K extends ConfigKey>(key: K, options?: ConfigOptions) {
         const schema = configSchema(key);
         const [type] = schema?.length === 1 ? schema : [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
-          ["config", "get", "--all", "--local"],
+          ["config", "get"],
+          "--all",
           ...type === "boolean" ? ["--bool"] : [],
           ...type === "number" ? ["--int"] : [],
+          configTargetFlag(options?.target),
           key,
         );
         if (!output) return undefined;
         const lines = output.replace(/\n$/, "").split("\n");
         return configValue(key, lines) as ConfigValue<K>;
       },
-      async set(key, value) {
+      async set(key, value, options?: ConfigOptions) {
         if (!Array.isArray(value)) {
-          await run(gitOptions, "config", "set", "--all", key, `${value}`);
+          await run(
+            gitOptions,
+            ["config", "set", "--all"],
+            configTargetFlag(options?.target),
+            key,
+            `${value}`,
+          );
         } else {
           await run(
             { ...gitOptions, allowCode: [5] },
-            ["config", "unset", "--all", key],
+            ["config", "unset", "--all"],
+            configTargetFlag(options?.target),
+            key,
           );
           for (const element of value) {
             // deno-lint-ignore no-await-in-loop
-            await run(gitOptions, "config", "--add", key, `${element}`);
+            await run(
+              gitOptions,
+              ["config", "--add"],
+              configTargetFlag(options?.target),
+              key,
+              `${element}`,
+            );
           }
         }
       },
-      async unset(key) {
+      async unset(key, options?: ConfigOptions) {
         await run(
           { ...gitOptions, allowCode: [5] },
-          ["config", "unset", "--all", key],
+          ["config", "unset", "--all"],
+          configTargetFlag(options?.target),
+          key,
         );
       },
     },
@@ -2005,10 +2085,7 @@ export function git(options?: GitOptions): Git {
       },
       async patch(options) {
         const output = await run(
-          {
-            ...gitOptions,
-            config: { ...gitOptions?.config, "diff.external": undefined },
-          },
+          gitOptions,
           ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
           flag("--diff-algorithm", options?.algorithm, { equals: true }),
           flag("--find-copies-harder", options?.copies),
@@ -2808,6 +2885,15 @@ function configFlags(config: Config | undefined, flag?: string): string[] {
     ).flat();
 }
 
+function configTargetFlag(target: ConfigOptions["target"] | undefined) {
+  if (target === undefined) return undefined;
+  if (target === "global") return "--global";
+  if (target === "system") return "--system";
+  if (target === "local") return "--local";
+  if (target === "worktree") return "--worktree";
+  return flag("--file", target.file);
+}
+
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
   if (trailers === undefined) return [];
   return Object.entries(trailers).flatMap(([token, value]) =>
@@ -2853,14 +2939,11 @@ function configSchema(key: string): readonly string[] | undefined {
   return CONFIG_SCHEMA[key as keyof typeof CONFIG_SCHEMA];
 }
 
-function configValue(
-  key: string,
-  lines: string[],
-): ConfigValue<string> | undefined {
-  if (lines.length > 1) return lines;
-  const [value] = lines;
-  if (value === undefined) return value;
+function configValue(key: string, lines: string[]) {
   const schema = configSchema(key);
+  if (schema?.includes("array")) return lines;
+  const value = lines.at(-1);
+  if (value === undefined) return value;
   if (schema === undefined) return value;
   if (
     schema.includes(value) &&
@@ -2881,7 +2964,6 @@ function configValue(
     if (!isNaN(number)) return number;
   }
   if (schema.includes("string")) return value;
-  if (schema.includes("array")) return [value];
   return value;
 }
 
