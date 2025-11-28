@@ -282,19 +282,88 @@ export interface AdminOperations {
 
 /** Runtime schema for known git configuration. */
 export const CONFIG_SCHEMA = {
+  "author.email": ["string"],
+  "author.name": ["string"],
   "branch.autosetupmerge": ["boolean", "always", "inherit", "simple"],
+  "branch.sort": ["string"],
   "clone.defaultremotename": ["string"],
+  "clone.rejectshallow": ["boolean"],
   "commit.gpgsign": ["boolean"],
+  "committer.email": ["string"],
+  "committer.name": ["string"],
+  "core.attributesfile": ["string"],
+  "core.autocrlf": ["boolean", "input"],
+  "core.bare": ["boolean"],
+  "core.compression": ["number"],
+  "core.eol": ["lf", "crlf", "native"],
+  "core.excludesfile": ["string"],
+  "core.filemode": ["boolean"],
+  "core.hookspath": ["string"],
+  "core.ignorecase": ["boolean"],
+  "core.logallrefupdates": ["boolean"],
+  "core.loosecompression": ["number"],
+  "core.multipackindex": ["boolean"],
+  "core.precomposeunicode": ["boolean"],
+  "core.protecthfs": ["boolean"],
+  "core.protectntfs": ["boolean"],
+  "core.quotepath": ["boolean"],
+  "core.repositoryformatversion": ["number"],
+  "core.safecrlf": ["boolean"],
+  "core.sparsecheckout": ["boolean"],
+  "core.sparsecheckoutcone": ["boolean"],
+  "core.symlinks": ["boolean"],
+  "core.worktree": ["string"],
+  "credential.helper": ["string"],
+  "credential.username": ["string"],
+  "diff.algorithm": ["default", "myers", "minimal", "patience", "histogram"],
   "diff.renames": ["boolean", "copies", "copy"],
-  "imap.port": ["number"],
+  "fetch.all": ["boolean"],
+  "fetch.parallel": ["number"],
+  "fetch.prune": ["boolean"],
+  "fetch.prunetags": ["boolean"],
+  "gc.auto": ["number"],
+  "gc.autodetach": ["boolean"],
+  "gc.autopacklimit": ["number"],
+  "gpg.format": ["openpgp", "x509", "ssh"],
+  "gpg.program": ["string"],
+  "http.followredirects": ["boolean", "initial"],
+  "http.proxy": ["string"],
+  "http.proxyauthmethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
+  "http.useragent": ["string"],
+  "index.sparse": ["boolean"],
   "init.defaultbranch": ["string"],
+  "init.defaultobjectformat": ["sha1", "sha256"],
+  "init.defaultrefformat": ["files", "reftable"],
+  "maintenance.auto": ["boolean"],
+  "maintenance.autodetach": ["boolean"],
+  "maintenance.strategy": ["none", "gc", "geometric", "incremental"],
+  "merge.conflictstyle": ["merge", "diff3", "zdiff3"],
+  "merge.ff": ["boolean", "only"],
+  "merge.renames": ["boolean"],
+  "pack.compression": ["number"],
+  "pull.ff": ["boolean", "only"],
   "pull.rebase": ["boolean", "merges", "interactive"],
-  "status.renames": ["boolean", "copies"],
+  "push.autosetupremote": ["boolean"],
+  "push.default": ["nothing", "current", "upstream", "simple", "matching"],
+  "push.followtags": ["boolean"],
+  "push.forceifincludes": ["boolean"],
+  "rebase.autosquash": ["boolean"],
+  "rebase.autostash": ["boolean"],
+  "receive.denynonfastforwards": ["boolean"],
+  "remote.pushdefault": ["string"],
+  "rerere.autoupdate": ["boolean"],
+  "rerere.enabled": ["boolean"],
+  "safe.barerepository": ["all", "explicit"],
+  "safe.directory": ["array"],
+  "status.renames": ["boolean", "copies", "copy"],
+  "status.showuntrackedfiles": ["no", "normal", "all"],
   "tag.gpgsign": ["boolean"],
+  "tag.sort": ["string"],
   "trailer.separators": ["string"],
   "user.email": ["string"],
   "user.name": ["string"],
   "user.signingkey": ["string"],
+  "user.useconfigonly": ["boolean"],
   "versionsort.suffix": ["array"],
 } as const;
 
@@ -321,7 +390,7 @@ export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
         : never
     )
     : never)
-  : unknown;
+  : boolean | number | string | string[];
 
 /** An author or committer on a git repository. */
 export interface User {
@@ -1617,7 +1686,7 @@ export function git(options?: GitOptions): Git {
       if (options?.config) {
         for (const [key, value] of Object.entries(options.config)) {
           // deno-lint-ignore no-await-in-loop
-          await repo.config.set(key, value);
+          if (value !== undefined) await repo.config.set(key, value);
         }
       }
       return repo;
@@ -1877,8 +1946,11 @@ export function git(options?: GitOptions): Git {
       },
       async patch(options) {
         const output = await run(
-          gitOptions,
-          ["diff", "--no-color", "--no-prefix"],
+          {
+            ...gitOptions,
+            config: { ...gitOptions?.config, "diff.external": undefined },
+          },
+          ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
           flag("--diff-algorithm", options?.algorithm, { equals: true }),
           flag("--find-copies-harder", options?.copies),
           pickaxeFlags(options?.pickaxe),
@@ -2668,11 +2740,13 @@ function flag(
 
 function configFlags(config: Config | undefined, flag?: string): string[] {
   if (!config) return [];
-  return Object.entries(config).flatMap(([key, value]) =>
-    (Array.isArray(value) ? value : [value]).map((value) =>
-      flag ? [flag, `${key}=${value}`] : [key, `${value}`]
-    )
-  ).flat();
+  return Object.entries(config)
+    .filter(([, value]) => value !== undefined)
+    .flatMap(([key, value]) =>
+      (Array.isArray(value) ? value : [value]).map((value) =>
+        flag ? [flag, `${key}=${value}`] : [key, `${value}`]
+      )
+    ).flat();
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
