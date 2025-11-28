@@ -63,6 +63,20 @@ Deno.test("git() configures for each command", async () => {
   );
 });
 
+Deno.test("git() skips undefined config", async () => {
+  await using directory = await tempDirectory();
+  const config: Record<string, undefined> = {
+    "init.defaultbranch": undefined,
+  };
+  const repo = git({
+    cwd: directory.path(),
+    config: { ...config },
+  });
+  await repo.init();
+  const branch = await repo.branch.current();
+  assertNotEquals(branch.name, "undefined");
+});
+
 Deno.test("git().path() is persistent with absolute path", async () => {
   await using directory = await tempDirectory();
   const repo = git({ cwd: directory.path() });
@@ -1327,7 +1341,7 @@ Deno.test("git().index.status() can list staged and ignored changes to the same 
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path(".gitignore"), "file");
   await repo.index.add(".gitignore");
-  await Deno.writeTextFile(repo.path(".gitignore"), "file");
+  await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file", { force: true });
   await repo.commit.create({ subject: "commit" });
   await repo.index.remove("file");

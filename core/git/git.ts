@@ -2740,11 +2740,13 @@ function flag(
 
 function configFlags(config: Config | undefined, flag?: string): string[] {
   if (!config) return [];
-  return Object.entries(config).flatMap(([key, value]) =>
-    (Array.isArray(value) ? value : [value]).map((value) =>
-      flag ? [flag, `${key}=${value}`] : [key, `${value}`]
-    )
-  ).flat();
+  return Object.entries(config)
+    .filter(([, value]) => value !== undefined)
+    .flatMap(([key, value]) =>
+      (Array.isArray(value) ? value : [value]).map((value) =>
+        flag ? [flag, `${key}=${value}`] : [key, `${value}`]
+      )
+    ).flat();
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
