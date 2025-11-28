@@ -1893,10 +1893,10 @@ export function git(options?: GitOptions): Git {
         const lines = output.split("\n").filter((x) => x);
         const config: Record<string, string[]> = {};
         lines.reduce((config, line) => {
-          let [key = "", lines = ""] = line.split("=", 2);
+          let [key = "", value = ""] = line.split("=", 2);
           key = key.trim().toLowerCase();
           if (config[key] === undefined) config[key] = [];
-          config[key]?.push(lines);
+          config[key]?.push(value);
           return config;
         }, config);
         return mapEntries(

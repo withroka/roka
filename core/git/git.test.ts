@@ -3496,23 +3496,23 @@ Deno.test("git().commit.log({ author }) filters by author", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create({
     subject: "commit1",
-    author: { name: "name1", email: "email1@example.com" },
+    author: { name: "name1", email: "email1" },
     allowEmpty: true,
   });
   const commit2 = await repo.commit.create({
     subject: "commit2",
-    author: { name: "name2", email: "email2@example.com" },
+    author: { name: "name2", email: "email2" },
     allowEmpty: true,
   });
   assertEquals(
     await repo.commit.log({
-      author: { name: "name1", email: "email1@example.com" },
+      author: { name: "name1", email: "email1" },
     }),
     [commit1],
   );
   assertEquals(
     await repo.commit.log({
-      author: { name: "name2", email: "email2@example.com" },
+      author: { name: "name2", email: "email2" },
     }),
     [commit2],
   );
@@ -3523,17 +3523,17 @@ Deno.test("git().commit.log({ committer }) filters by committer", {
 }, async () => {
   await using repo = await tempRepository();
   await repo.config.set("user.name", "name1");
-  await repo.config.set("user.email", "email1@example.com");
+  await repo.config.set("user.email", "email1");
   const commit1 = await repo.commit.create({
     subject: "commit1",
-    author: { name: "upstream", email: "upstream@example.com" },
+    author: { name: "name", email: "email" },
     allowEmpty: true,
   });
   await repo.config.set("user.name", "name2");
-  await repo.config.set("user.email", "email2@example.com");
+  await repo.config.set("user.email", "email2");
   const commit2 = await repo.commit.create({
     subject: "commit2",
-    author: { name: "upstream", email: "upstream@example.com" },
+    author: { name: "name", email: "email" },
     allowEmpty: true,
   });
   assertEquals(
@@ -4188,11 +4188,11 @@ Deno.test("git().commit.amend({ author }) changes the author", async () => {
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit" });
   const amended = await repo.commit.amend({
-    author: { name: "new name", email: "new@example.com" },
+    author: { name: "new-name", email: "new-email" },
   });
   assertEquals(amended.author, {
-    name: "new name",
-    email: "new@example.com",
+    name: "new-name",
+    email: "new-email",
   });
 });
 
