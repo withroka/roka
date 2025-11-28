@@ -433,7 +433,7 @@ export type ConfigKey =
 
 /** The value type for a given configuration key. */
 export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
-  keyof typeof CONFIG_SCHEMA
+  Lowercase<keyof typeof CONFIG_SCHEMA>
   ? ConfigSchemaType<(typeof CONFIG_SCHEMA)[Lowercase<K>]>
   : Lowercase<K> extends `branch.${string}.${infer SubKey}`
     ? SubKey extends keyof typeof BRANCH_CONFIG_SCHEMA
