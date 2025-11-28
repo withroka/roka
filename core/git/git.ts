@@ -2842,7 +2842,7 @@ function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
 function configSchema(key: string): readonly string[] | undefined {
   key = key.toLowerCase();
   const { object, subkey } =
-    key.match(/^(?<object>branch|remote)\.(?<name>[^.]+)\.(?<subkey>.+)$/)
+    key.match(/^(?<object>branch|remote)\.[^.]+\.(?<subkey>.+)$/)
       ?.groups ?? {};
   if (object === "branch") {
     return BRANCH_CONFIG_SCHEMA[subkey as keyof typeof BRANCH_CONFIG_SCHEMA];

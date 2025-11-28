@@ -866,7 +866,7 @@ Deno.test("git().config.get() returns string for invalid enum value", async () =
   const config: object = {
     "diff.renames": "copied", // not "copies", or "copy"
   };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   assertEquals(
     await repo.config.get("diff.renames") as unknown as string,
     "copied",
@@ -891,7 +891,7 @@ Deno.test("git().config.get() retrieves array variables", async () => {
 
 Deno.test("git().config.get() retrieves single values as array for array variables", async () => {
   const config: object = { "versionsort.suffix": "-alpha" };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   assertEquals(await repo.config.get("versionsort.suffix"), ["-alpha"]);
 });
 
