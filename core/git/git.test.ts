@@ -65,13 +65,8 @@ Deno.test("git() configures for each command", async () => {
 
 Deno.test("git() skips undefined config", async () => {
   await using directory = await tempDirectory();
-  const config: Record<string, undefined> = {
-    "init.defaultbranch": undefined,
-  };
-  const repo = git({
-    cwd: directory.path(),
-    config: { ...config },
-  });
+  const config: object = { "init.defaultbranch": undefined };
+  const repo = git({ cwd: directory.path(), config });
   await repo.init();
   const branch = await repo.branch.current();
   assertNotEquals(branch.name, "undefined");
@@ -692,6 +687,8 @@ Deno.test("git().config.list() returns all configuration values", async () => {
       "tag.gpgsign": true,
       "fetch.parallel": 1234,
       "versionsort.suffix": ["-alpha", "-beta", "-rc"],
+      "branch.main.rebase": true,
+      "remote.origin.prune": true,
       "custom.key": "value",
     },
   });
@@ -702,6 +699,8 @@ Deno.test("git().config.list() returns all configuration values", async () => {
     "tag.gpgsign": true,
     "fetch.parallel": 1234,
     "versionsort.suffix": ["-alpha", "-beta", "-rc"],
+    "branch.main.rebase": true,
+    "remote.origin.prune": true,
     "custom.key": "value",
   });
 });
@@ -710,19 +709,24 @@ Deno.test("git().config.list() handles custom configuration", async () => {
   await using repo = await tempRepository({
     config: {
       "pager.config": true,
+      "branch.main.custom": true,
+      "remote.origin.custom": true,
     },
   });
   assertObjectMatch(await repo.config.list(), {
     "pager.config": "true",
+    "branch.main.custom": "true",
+    "remote.origin.custom": "true",
   });
 });
 
 Deno.test("git().config.list() handles whitespace in values", async () => {
-  const config: Record<string, string> = {
-    "user.name": "  name  ",
-    "user.email": "",
-  };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({
+    config: {
+      "user.name": "  name  ",
+      "user.email": "",
+    },
+  });
   assertObjectMatch(await repo.config.list(), {
     "user.name": "  name  ",
     "user.email": "",
@@ -730,30 +734,30 @@ Deno.test("git().config.list() handles whitespace in values", async () => {
 });
 
 Deno.test("git().config.get() retrieves boolean variables", async () => {
-  assertType<
-    IsExact<
-      Awaited<ReturnType<typeof repo.config.get<"commit.gpgsign">>>,
-      boolean | undefined
-    >
-  >(true);
   await using repo = await tempRepository({
     config: {
       "commit.gpgsign": true,
       "tag.gpgsign": false,
     },
   });
+  assertType<
+    IsExact<
+      Awaited<ReturnType<typeof repo.config.get<"commit.gpgsign">>>,
+      boolean | undefined
+    >
+  >(true);
   assertEquals(await repo.config.get("commit.gpgsign"), true);
   assertEquals(await repo.config.get("tag.gpgsign"), false);
 });
 
 Deno.test("git().config.get() converts intuitive true values", async () => {
-  const config: Record<string, number | string> = {
+  const config: object = {
     "commit.gpgsign": "true",
     "tag.gpgsign": "yes",
     "diff.renames": "on",
     "status.renames": 1,
   };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   assertEquals(await repo.config.get("commit.gpgsign"), true);
   assertEquals(await repo.config.get("tag.gpgsign"), true);
   assertEquals(await repo.config.get("diff.renames"), true);
@@ -761,13 +765,13 @@ Deno.test("git().config.get() converts intuitive true values", async () => {
 });
 
 Deno.test("git().config.get() converts intuitive false values", async () => {
-  const config: Record<string, number | string> = {
+  const config: object = {
     "commit.gpgsign": "false",
     "tag.gpgsign": "no",
     "diff.renames": "off",
     "status.renames": 0,
   };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   assertEquals(await repo.config.get("commit.gpgsign"), false);
   assertEquals(await repo.config.get("tag.gpgsign"), false);
   assertEquals(await repo.config.get("diff.renames"), false);
@@ -775,11 +779,11 @@ Deno.test("git().config.get() converts intuitive false values", async () => {
 });
 
 Deno.test("git().config.get() rejects invalid boolean values", async () => {
-  const config: Record<string, string | string[]> = {
+  const config: object = {
     "commit.gpgsign": "maybe",
     "tag.gpgSign": ["sometimes", "always"],
   };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   await assertRejects(
     () => repo.config.get("commit.gpgsign"),
     GitError,
@@ -793,27 +797,27 @@ Deno.test("git().config.get() rejects invalid boolean values", async () => {
 });
 
 Deno.test("git().config.get() retrieves numeric variables", async () => {
+  await using repo = await tempRepository({
+    config: { "fetch.parallel": 1234 },
+  });
   assertType<
     IsExact<
       Awaited<ReturnType<typeof repo.config.get<"fetch.parallel">>>,
       number | undefined
     >
   >(true);
-  await using repo = await tempRepository({
-    config: { "fetch.parallel": 1234 },
-  });
   assertEquals(await repo.config.get("fetch.parallel"), 1234);
 });
 
 Deno.test("git().config.get() converts integer scale suffixes", async () => {
-  const config: Record<string, string> = { "fetch.parallel": "1M" };
-  await using repo = await tempRepository({ config: { ...config } });
+  const config: object = { "fetch.parallel": "1M" };
+  await using repo = await tempRepository({ config });
   assertEquals(await repo.config.get("fetch.parallel"), 1024 * 1024);
 });
 
 Deno.test("git().config.get() rejects invalid numeric values", async () => {
-  const config: Record<string, string> = { "fetch.parallel": "not-a-number" };
-  await using repo = await tempRepository({ config: { ...config } });
+  const config: object = { "fetch.parallel": "not-a-number" };
+  await using repo = await tempRepository({ config });
   await assertRejects(
     () => repo.config.get("fetch.parallel"),
     GitError,
@@ -822,47 +826,47 @@ Deno.test("git().config.get() rejects invalid numeric values", async () => {
 });
 
 Deno.test("git().config.get() retrieves string variables", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "name", "user.email": "email" },
+  });
   assertType<
     IsExact<
       Awaited<ReturnType<typeof repo.config.get<"user.name">>>,
       string | undefined
     >
   >(true);
-  await using repo = await tempRepository({
-    config: { "user.name": "name", "user.email": "email" },
-  });
   assertEquals(await repo.config.get("user.name"), "name");
   assertEquals(await repo.config.get("user.email"), "email");
 });
 
 Deno.test("git().config.get() always retrieves string variables as string", async () => {
-  const config: Record<string, boolean | number> = {
+  const config: object = {
     "user.name": true,
     "user.email": 1234,
   };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   assertEquals(await repo.config.get("user.name"), "true");
   assertEquals(await repo.config.get("user.email"), "1234");
 });
 
 Deno.test("git().config.get() retrieves enum variables", async () => {
+  await using repo = await tempRepository({
+    config: { "pull.rebase": "merges" },
+  });
   assertType<
     IsExact<
       Awaited<ReturnType<typeof repo.config.get<"pull.rebase">>>,
       boolean | "merges" | "interactive" | undefined
     >
   >(true);
-  await using repo = await tempRepository({
-    config: { "pull.rebase": "merges" },
-  });
   assertEquals(await repo.config.get("pull.rebase"), "merges");
 });
 
 Deno.test("git().config.get() returns string for invalid enum value", async () => {
-  const config: Record<string, string> = {
+  const config: object = {
     "diff.renames": "copied", // not "copies", or "copy"
   };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   assertEquals(
     await repo.config.get("diff.renames") as unknown as string,
     "copied",
@@ -870,15 +874,15 @@ Deno.test("git().config.get() returns string for invalid enum value", async () =
 });
 
 Deno.test("git().config.get() retrieves array variables", async () => {
+  await using repo = await tempRepository({
+    config: { "versionsort.suffix": ["-alpha", "-beta", "-rc"] },
+  });
   assertType<
     IsExact<
       Awaited<ReturnType<typeof repo.config.get<"versionsort.suffix">>>,
       string[] | undefined
     >
   >(true);
-  await using repo = await tempRepository({
-    config: { "versionsort.suffix": ["-alpha", "-beta", "-rc"] },
-  });
   assertEquals(
     await repo.config.get("versionsort.suffix"),
     ["-alpha", "-beta", "-rc"],
@@ -886,8 +890,8 @@ Deno.test("git().config.get() retrieves array variables", async () => {
 });
 
 Deno.test("git().config.get() retrieves single values as array for array variables", async () => {
-  const config: Record<string, string> = { "versionsort.suffix": "-alpha" };
-  await using repo = await tempRepository({ config: { ...config } });
+  const config: object = { "versionsort.suffix": "-alpha" };
+  await using repo = await tempRepository({ config });
   assertEquals(await repo.config.get("versionsort.suffix"), ["-alpha"]);
 });
 
@@ -900,23 +904,88 @@ Deno.test("git().config.get() returns undefined for missing values", async () =>
   assertEquals(await repo.config.get("pull.rebase"), undefined);
 });
 
+Deno.test("git().config.get() retrieves branch config", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "branch.main.description": "description",
+      "branch.main.rebase": true,
+      "branch.main.custom": true,
+    },
+  });
+  assertType<
+    IsExact<
+      Awaited<ReturnType<typeof repo.config.get<"branch.main.description">>>,
+      string | undefined
+    >
+  >(true);
+  assertType<
+    IsExact<
+      Awaited<
+        ReturnType<typeof repo.config.get<"branch.main.rebase">>
+      >,
+      boolean | "merges" | "interactive" | undefined
+    >
+  >(true);
+  assertEquals(await repo.config.get("branch.main.description"), "description");
+  assertEquals(await repo.config.get("branch.main.rebase"), true);
+  assertEquals(await repo.config.get("branch.main.custom"), "true");
+});
+
+Deno.test("git().config.get() retrieves remote config", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "remote.origin.url": "url",
+      "remote.origin.prune": true,
+    },
+  });
+  assertType<
+    IsExact<
+      Awaited<ReturnType<typeof repo.config.get<"remote.origin.url">>>,
+      string | undefined
+    >
+  >(true);
+  assertType<
+    IsExact<
+      Awaited<
+        ReturnType<typeof repo.config.get<"remote.origin.prune">>
+      >,
+      boolean | undefined
+    >
+  >(true);
+  assertEquals(await repo.config.get("remote.origin.url"), "url");
+  assertEquals(await repo.config.get("remote.origin.prune"), true);
+});
+
 Deno.test("git().config.get() can handle custom or unknown variables", async () => {
-  const _x: Awaited<ReturnType<typeof repo.config.get<"custom.key">>> = 0;
   await using repo = await tempRepository({
     config: {
       "custom.key1": "value",
       "custom.key2": true,
       "custom.key3": 1234,
       "custom.key4": ["value1", "value2"],
+      "branch.main.custom.key": true,
+      "remote.origin.custom.key": true,
     },
   });
   assertEquals(await repo.config.get("custom.key1"), "value");
   assertEquals(await repo.config.get("custom.key2"), "true");
   assertEquals(await repo.config.get("custom.key3"), "1234");
   assertEquals(await repo.config.get("custom.key4"), ["value1", "value2"]);
+  assertEquals(await repo.config.get("branch.main.custom.key"), "true");
+  assertEquals(await repo.config.get("remote.origin.custom.key"), "true");
 });
 
 Deno.test("git().config.get() treats variables as case-insensitive", async () => {
+  await using repo = await tempRepository({
+    config: {
+      "user.name": "name",
+      "commit.gpgsign": true,
+      "versionsort.suffix": ["-alpha", "-beta"],
+      "branch.main.rebase": true,
+      "remote.origin.prune": true,
+      "custom.key": true,
+    },
+  });
   assertType<
     IsExact<
       Awaited<ReturnType<typeof repo.config.get<"USER.NAME">>>,
@@ -935,19 +1004,27 @@ Deno.test("git().config.get() treats variables as case-insensitive", async () =>
       string[] | undefined
     >
   >(true);
-  await using repo = await tempRepository({
-    config: {
-      "user.name": "name",
-      "commit.gpgsign": true,
-      "versionsort.suffix": ["-alpha", "-beta"],
-    },
-  });
+  assertType<
+    IsExact<
+      Awaited<ReturnType<typeof repo.config.get<"BRANCH.main.REBASE">>>,
+      boolean | "merges" | "interactive" | undefined
+    >
+  >(true);
+  assertType<
+    IsExact<
+      Awaited<ReturnType<typeof repo.config.get<"REMOTE.origin.PRUNE">>>,
+      boolean | undefined
+    >
+  >(true);
   assertEquals(await repo.config.get("USER.NAME"), "name");
   assertEquals(await repo.config.get("commit.gpgSign"), true);
   assertEquals(
     await repo.config.get("VersionSort.Suffix"),
     ["-alpha", "-beta"],
   );
+  assertEquals(await repo.config.get("BRANCH.main.REBASE"), true);
+  assertEquals(await repo.config.get("REMOTE.origin.PRUNE"), true);
+  assertEquals(await repo.config.get("CUSTOM.KEY"), "true");
 });
 
 Deno.test("git().config.get() handles whitespace in values", async () => {
@@ -962,10 +1039,10 @@ Deno.test("git().config.get() handles whitespace in values", async () => {
 });
 
 Deno.test("git().config.set() configures boolean variables", async () => {
+  await using repo = await tempRepository();
   assertType<
     IsExact<Parameters<typeof repo.config.set<"commit.gpgsign">>[1], boolean>
   >(true);
-  await using repo = await tempRepository();
   await repo.config.set("commit.gpgsign", true);
   await repo.config.set("tag.gpgsign", false);
   assertEquals(await repo.config.get("commit.gpgsign"), true);
@@ -973,19 +1050,19 @@ Deno.test("git().config.set() configures boolean variables", async () => {
 });
 
 Deno.test("git().config.set() configures numeric variables", async () => {
+  await using repo = await tempRepository();
   assertType<
     IsExact<Parameters<typeof repo.config.set<"fetch.parallel">>[1], number>
   >(true);
-  await using repo = await tempRepository();
   await repo.config.set("fetch.parallel", 1234);
   assertEquals(await repo.config.get("fetch.parallel"), 1234);
 });
 
 Deno.test("git().config.set() configures string variables", async () => {
+  await using repo = await tempRepository();
   assertType<
     IsExact<Parameters<typeof repo.config.set<"user.name">>[1], string>
   >(true);
-  await using repo = await tempRepository();
   await repo.config.set("user.name", "name");
   await repo.config.set("user.email", "email");
   assertEquals(await repo.config.get("user.name"), "name");
@@ -993,25 +1070,25 @@ Deno.test("git().config.set() configures string variables", async () => {
 });
 
 Deno.test("git().config.set() configures enum variables", async () => {
+  await using repo = await tempRepository();
   assertType<
     IsExact<
       Parameters<typeof repo.config.set<"pull.rebase">>[1],
       boolean | "merges" | "interactive"
     >
   >(true);
-  await using repo = await tempRepository();
   await repo.config.set("pull.rebase", "merges");
   assertEquals(await repo.config.get("pull.rebase"), "merges");
 });
 
 Deno.test("git().config.set() configures array variables", async () => {
+  await using repo = await tempRepository();
   assertType<
     IsExact<
       Parameters<typeof repo.config.set<"versionsort.suffix">>[1],
       string[]
     >
   >(true);
-  await using repo = await tempRepository();
   await repo.config.set("versionsort.suffix", ["-alpha", "-beta", "-rc"]);
   assertEquals(
     await repo.config.get("versionsort.suffix"),
@@ -1027,13 +1104,58 @@ Deno.test("git().config.set() can configures custom or unknown variables", async
   await repo.config.set("custom.key2", true);
   await repo.config.set("custom.key3", 1234);
   await repo.config.set("custom.key4", ["value1", "value2"]);
+  await repo.config.set("branch.main.custom.key", true);
+  await repo.config.set("remote.origin.custom.key", true);
   assertEquals(await repo.config.get("custom.key1"), "value");
   assertEquals(await repo.config.get("custom.key2"), "true");
   assertEquals(await repo.config.get("custom.key3"), "1234");
   assertEquals(await repo.config.get("custom.key4"), ["value1", "value2"]);
+  assertEquals(await repo.config.get("branch.main.custom.key"), "true");
+  assertEquals(await repo.config.get("remote.origin.custom.key"), "true");
+});
+
+Deno.test("git().config.set() configures branch config", async () => {
+  await using repo = await tempRepository();
+  assertType<
+    IsExact<
+      Parameters<typeof repo.config.set<"branch.main.description">>[1],
+      string
+    >
+  >(true);
+  assertType<
+    IsExact<
+      Parameters<typeof repo.config.set<"branch.main.rebase">>[1],
+      boolean | "merges" | "interactive"
+    >
+  >(true);
+  await repo.config.set("branch.main.description", "description");
+  await repo.config.set("branch.main.rebase", true);
+  assertEquals(await repo.config.get("branch.main.description"), "description");
+  assertEquals(await repo.config.get("branch.main.rebase"), true);
+});
+
+Deno.test("git().config.set() configures remote config", async () => {
+  await using repo = await tempRepository();
+  assertType<
+    IsExact<
+      Parameters<typeof repo.config.set<"remote.origin.url">>[1],
+      string
+    >
+  >(true);
+  assertType<
+    IsExact<
+      Parameters<typeof repo.config.set<"remote.origin.prune">>[1],
+      boolean
+    >
+  >(true);
+  await repo.config.set("remote.origin.url", "url");
+  await repo.config.set("remote.origin.prune", true);
+  assertEquals(await repo.config.get("remote.origin.url"), "url");
+  assertEquals(await repo.config.get("remote.origin.prune"), true);
 });
 
 Deno.test("git().config.set() treats variables as case-insensitive", async () => {
+  await using repo = await tempRepository();
   assertType<
     IsExact<
       Parameters<typeof repo.config.set<"USER.NAME">>[1],
@@ -1052,10 +1174,23 @@ Deno.test("git().config.set() treats variables as case-insensitive", async () =>
       string[]
     >
   >(true);
-  await using repo = await tempRepository();
+  assertType<
+    IsExact<
+      Parameters<typeof repo.config.set<"BRANCH.main.REBASE">>[1],
+      boolean | "merges" | "interactive"
+    >
+  >(true);
+  assertType<
+    IsExact<
+      Parameters<typeof repo.config.set<"REMOTE.origin.PRUNE">>[1],
+      boolean
+    >
+  >(true);
   await repo.config.set("USER.NAME", "name");
   await repo.config.set("commit.gpgSign", true);
   await repo.config.set("VersionSort.Suffix", ["-alpha", "-beta"]);
+  await repo.config.set("BRANCH.main.REBASE", true);
+  await repo.config.set("REMOTE.origin.PRUNE", true);
   await repo.config.set("CUSTOM.KEY", "value");
   assertEquals(await repo.config.get("user.name"), "name");
   assertEquals(await repo.config.get("commit.gpgsign"), true);
@@ -1063,6 +1198,8 @@ Deno.test("git().config.set() treats variables as case-insensitive", async () =>
     await repo.config.get("versionsort.suffix"),
     ["-alpha", "-beta"],
   );
+  assertEquals(await repo.config.get("branch.main.rebase"), true);
+  assertEquals(await repo.config.get("remote.origin.prune"), true);
   assertEquals(await repo.config.get("custom.key"), "value");
 });
 
@@ -1075,12 +1212,12 @@ Deno.test("git().config.set() handles whitespace in values", async () => {
 });
 
 Deno.test("git().config.set() resets all existing values", async () => {
-  const config: Record<string, string | string[]> = {
+  const config: object = {
     "versionsort.suffix": ["-old"],
     "commit.gpgsign": ["true", "false"],
     "fetch.parallel": "1234",
   };
-  await using repo = await tempRepository({ config: { ...config } });
+  await using repo = await tempRepository({ config });
   await repo.config.set("versionsort.suffix", ["-new1", "-new2"]);
   await repo.config.set("commit.gpgSign", true);
   await repo.config.set("fetch.parallel", 1234);
@@ -1112,6 +1249,25 @@ Deno.test("git().config.unset() does nothing for non-existent key", async () => 
   await using repo = await tempRepository();
   await repo.config.unset("non.existent.key");
   assertEquals(await repo.config.get("non.existent.key"), undefined);
+});
+
+Deno.test("git().config.unset() removes a branch configuration value", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("branch.main.description", "description");
+  assertEquals(
+    await repo.config.get("branch.main.description"),
+    "description",
+  );
+  await repo.config.unset("branch.main.description");
+  assertEquals(await repo.config.get("branch.main.description"), undefined);
+});
+
+Deno.test("git().config.unset() removes a remote configuration value", async () => {
+  await using repo = await tempRepository();
+  await repo.config.set("remote.origin.url", "url");
+  assertEquals(await repo.config.get("remote.origin.url"), "url");
+  await repo.config.unset("remote.origin.url");
+  assertEquals(await repo.config.get("remote.origin.url"), undefined);
 });
 
 Deno.test("git().config.unset() works with custom variables", async () => {

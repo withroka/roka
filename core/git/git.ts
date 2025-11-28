@@ -367,6 +367,30 @@ export const CONFIG_SCHEMA = {
   "versionsort.suffix": ["array"],
 } as const;
 
+/** Runtime schema for known branch configuration. */
+export const BRANCH_CONFIG_SCHEMA = {
+  "description": ["string"],
+  "merge": ["string"],
+  "pushremote": ["string"],
+  "rebase": ["boolean", "merges", "interactive"],
+  "remote": ["string"],
+} as const;
+
+/** Runtime schema for known remote configuration. */
+export const REMOTE_CONFIG_SCHEMA = {
+  "fetch": ["string"],
+  "mirror": ["boolean"],
+  "proxy": ["string"],
+  "proxyauthmethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
+  "prune": ["boolean"],
+  "prunetags": ["boolean"],
+  "push": ["string"],
+  "pushurl": ["string"],
+  "skipfetchall": ["boolean"],
+  "tagopt": ["--tags", "--no-tags"],
+  "url": ["string"],
+} as const;
+
 /** Configuration for a git repository. */
 export type Config = {
   [K in ConfigKey]?: ConfigValue<K>;
@@ -375,22 +399,42 @@ export type Config = {
 /** A known configuration key or string. */
 export type ConfigKey =
   | keyof typeof CONFIG_SCHEMA
+  | `branch.${string}.${keyof typeof BRANCH_CONFIG_SCHEMA}`
+  | `remote.${string}.${keyof typeof REMOTE_CONFIG_SCHEMA}`
   // deno-lint-ignore ban-types
   | (string & {});
 
 /** The value type for a given configuration key. */
 export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
   keyof typeof CONFIG_SCHEMA
-  ? ((typeof CONFIG_SCHEMA)[Lowercase<K>] extends readonly (infer U)[] ? (
-      U extends "array" ? string[]
-        : U extends "string" ? string
-        : U extends "number" ? number
-        : U extends "boolean" ? boolean
-        : U extends string ? U
-        : never
-    )
-    : never)
-  : boolean | number | string | string[];
+  ? ConfigSchemaType<(typeof CONFIG_SCHEMA)[Lowercase<K>]>
+  : Lowercase<K> extends `branch.${string}.${infer SubKey}`
+    ? SubKey extends keyof typeof BRANCH_CONFIG_SCHEMA
+      ? ConfigSchemaType<(typeof BRANCH_CONFIG_SCHEMA)[SubKey]>
+    : UnknownConfigValue
+  : Lowercase<K> extends `remote.${string}.${infer SubKey}`
+    ? SubKey extends keyof typeof REMOTE_CONFIG_SCHEMA
+      ? ConfigSchemaType<(typeof REMOTE_CONFIG_SCHEMA)[SubKey]>
+    : UnknownConfigValue
+  : UnknownConfigValue;
+
+/** Extracted type from config schema. */
+export type ConfigSchemaType<T> = T extends readonly (infer U)[]
+  ? U extends "array" ? string[]
+  : U extends "string" ? string
+  : U extends "number" ? number
+  : U extends "boolean" ? boolean
+  : U extends string ? U
+  : never
+  : never;
+
+/**
+ * A value of unknown configuration key.
+ *
+ * If a schema for the key does not exist, any of these types are accepted but
+ * only string and string array values are returned.
+ */
+export type UnknownConfigValue = boolean | number | string | string[];
 
 /** An author or committer on a git repository. */
 export interface User {
@@ -1650,6 +1694,19 @@ export interface AdminBackfillOptions {
  *   }, { concurrency: 1 });
  * });
  * ```
+ *
+ * @example Enable fetch pruning for all remotes except a single remote.
+ * ```ts
+ * import { git } from "@roka/git";
+ * (async () => {
+ *   const repo = git({ cwd: "/path/to/repo" });
+ *   await repo.config.set("fetch.prune", true);
+ *   await repo.config.set("remote.origin.prune", false);
+ * });
+ * ```
+ *
+ * @param options Options for the git repository.
+ * @returns A {@linkcode Git} instance for the given repository.
  */
 export function git(options?: GitOptions): Git {
   const directory = resolve(options?.cwd ?? ".");
@@ -1753,11 +1810,13 @@ export function git(options?: GitOptions): Git {
           config[key]?.push(value);
           return config;
         }, config);
-        return mapValues(config, (value, key) => configValue(key, value));
+        return mapValues(
+          config,
+          (value, key) => configValue(key, value),
+        ) as Config;
       },
       async get<K extends ConfigKey>(key: K) {
-        const schema: readonly string[] | undefined =
-          CONFIG_SCHEMA[key.toLowerCase() as keyof typeof CONFIG_SCHEMA];
+        const schema = configSchema(key);
         const [type] = schema?.length === 1 ? schema : [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
@@ -2780,6 +2839,20 @@ function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
   ];
 }
 
+function configSchema(key: string): readonly string[] | undefined {
+  key = key.toLowerCase();
+  const { object, subkey } =
+    key.match(/^(?<object>branch|remote)\.[^.]+\.(?<subkey>.+)$/)
+      ?.groups ?? {};
+  if (object === "branch") {
+    return BRANCH_CONFIG_SCHEMA[subkey as keyof typeof BRANCH_CONFIG_SCHEMA];
+  }
+  if (object === "remote") {
+    return REMOTE_CONFIG_SCHEMA[subkey as keyof typeof REMOTE_CONFIG_SCHEMA];
+  }
+  return CONFIG_SCHEMA[key as keyof typeof CONFIG_SCHEMA];
+}
+
 function configValue(
   key: string,
   lines: string[],
@@ -2787,12 +2860,14 @@ function configValue(
   if (lines.length > 1) return lines;
   const [value] = lines;
   if (value === undefined) return value;
-  const schema: readonly string[] | undefined =
-    CONFIG_SCHEMA[key.toLowerCase() as keyof typeof CONFIG_SCHEMA];
+  const schema = configSchema(key);
   if (schema === undefined) return value;
   if (
     schema.includes(value) &&
-    !["array", "string", "number", "boolean"].includes(value)
+    value !== "array" &&
+    value !== "string" &&
+    value !== "number" &&
+    value !== "boolean"
   ) {
     return value;
   }
