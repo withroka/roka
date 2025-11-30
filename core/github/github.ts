@@ -346,7 +346,7 @@ function repository(
         }
         assertExists(base, "Cannot determine remote base branch");
         const commit = !options?.title
-          ? (await git.commit.log({ range: { from: base } })).pop()
+          ? (await git.commit.log({ from: base })).pop()
           : undefined;
         const title = options?.title ?? commit?.subject;
         const body = options?.body ?? commit?.body;

@@ -2252,7 +2252,7 @@ export function git(options?: GitOptions): Git {
       async get(ref) {
         const [commit] = await repo.commit.log({
           maxCount: 1,
-          range: { to: commitArg(ref) },
+          to: commitArg(ref),
         });
         return commit;
       },
