@@ -48,7 +48,7 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { git, GitError, type RevisionRangeOptions, type Tag } from "@roka/git";
+import { git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
@@ -147,7 +147,7 @@ export interface Release {
   /** Release version. */
   version: string;
   /** Commit range. */
-  range: RevisionRangeOptions;
+  range: { from?: string; to: string };
 }
 
 /**
@@ -243,7 +243,7 @@ export interface CommitOptions {
    *
    * If not defined, all commits for the package are returned.
    */
-  range?: RevisionRangeOptions;
+  range?: { from?: string; to?: string };
   /**
    * Commit types to include in the changelog.
    *
@@ -436,7 +436,7 @@ export async function commits(
   options?: CommitOptions,
 ): Promise<ConventionalCommit[]> {
   const log = await git({ cwd: pkg.root }).commit.log(
-    options?.range ? { range: options?.range } : {},
+    options?.range ? { ...options.range } : {},
   );
   return log
     .map((c) => conventional(c))
