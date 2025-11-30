@@ -2525,7 +2525,7 @@ Deno.test("git().diff.status({ staged }) lists renamed file", async () => {
   ]);
 });
 
-Deno.test("git().diff.status({ target }) lists files modified since commit", async () => {
+Deno.test("git().diff.status({ from }) lists files modified since commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("committed"), "content");
   await Deno.writeTextFile(repo.path("staged"), "content");
@@ -2538,14 +2538,14 @@ Deno.test("git().diff.status({ target }) lists files modified since commit", asy
   await Deno.writeTextFile(repo.path("staged"), "modified content");
   await repo.index.add("staged");
   await Deno.writeTextFile(repo.path("unstaged"), "modified content");
-  assertEquals(await repo.diff.status({ target: commit }), [
+  assertEquals(await repo.diff.status({ from: commit }), [
     { path: "committed", status: "modified" },
     { path: "staged", status: "modified" },
     { path: "unstaged", status: "modified" },
   ]);
 });
 
-Deno.test("git().diff.status({ target }) lists files with mode change since commit", async () => {
+Deno.test("git().diff.status({ from }) lists files with mode change since commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("committed"), "content");
   await Deno.writeTextFile(repo.path("staged"), "content");
@@ -2558,14 +2558,14 @@ Deno.test("git().diff.status({ target }) lists files with mode change since comm
   await Deno.chmod(repo.path("staged"), 0o755);
   await repo.index.add("staged", { executable: true });
   await Deno.chmod(repo.path("unstaged"), 0o755);
-  assertEquals(await repo.diff.status({ target: commit }), [
+  assertEquals(await repo.diff.status({ from: commit }), [
     { path: "committed", status: "modified" },
     { path: "staged", status: "modified" },
     { path: "unstaged", status: "modified" },
   ]);
 });
 
-Deno.test("git().diff.status({ target }) lists files with type change since commit", async () => {
+Deno.test("git().diff.status({ from }) lists files with type change since commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("committed"), "content");
   await Deno.writeTextFile(repo.path("staged"), "content");
@@ -2581,14 +2581,14 @@ Deno.test("git().diff.status({ target }) lists files with type change since comm
   await repo.index.add("staged");
   await Deno.remove(repo.path("unstaged"));
   await Deno.symlink("target", repo.path("unstaged"));
-  assertEquals(await repo.diff.status({ target: commit }), [
+  assertEquals(await repo.diff.status({ from: commit }), [
     { path: "committed", status: "type-changed" },
     { path: "staged", status: "type-changed" },
     { path: "unstaged", status: "type-changed" },
   ]);
 });
 
-Deno.test("git().diff.status({ target }) lists added files since commit", async () => {
+Deno.test("git().diff.status({ from }) lists added files since commit", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create({
     subject: "commit",
@@ -2599,23 +2599,23 @@ Deno.test("git().diff.status({ target }) lists added files since commit", async 
   await repo.commit.create({ subject: "commit" });
   await Deno.writeTextFile(repo.path("staged"), "content");
   await repo.index.add("staged");
-  assertEquals(await repo.diff.status({ target: commit }), [
+  assertEquals(await repo.diff.status({ from: commit }), [
     { path: "committed", status: "added" },
     { path: "staged", status: "added" },
   ]);
 });
 
-Deno.test("git().diff.status({ target }) does not list untracked files", async () => {
+Deno.test("git().diff.status({ from }) does not list untracked files", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create({
     subject: "commit",
     allowEmpty: true,
   });
   await Deno.writeTextFile(repo.path("file"), "content");
-  assertEquals(await repo.diff.status({ target: commit }), []);
+  assertEquals(await repo.diff.status({ from: commit }), []);
 });
 
-Deno.test("git().diff.status({ target }) lists deleted files since commit", async () => {
+Deno.test("git().diff.status({ from }) lists deleted files since commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("committed"), "content");
   await Deno.writeTextFile(repo.path("staged"), "content");
@@ -2626,14 +2626,14 @@ Deno.test("git().diff.status({ target }) lists deleted files since commit", asyn
   await repo.commit.create({ subject: "commit" });
   await repo.index.remove("staged");
   await Deno.remove(repo.path("unstaged"));
-  assertEquals(await repo.diff.status({ target: commit }), [
+  assertEquals(await repo.diff.status({ from: commit }), [
     { path: "committed", status: "deleted" },
     { path: "staged", status: "deleted" },
     { path: "unstaged", status: "deleted" },
   ]);
 });
 
-Deno.test("git().diff.status({ target }) lists renamed files since commit", async () => {
+Deno.test("git().diff.status({ from }) lists renamed files since commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
     repo.path("old.committed.file"),
@@ -2645,7 +2645,7 @@ Deno.test("git().diff.status({ target }) lists renamed files since commit", asyn
   await repo.index.move("old.committed.file", "new.committed.file");
   await repo.commit.create({ subject: "commit" });
   await repo.index.move("old.staged.file", "new.staged.file");
-  assertEquals(await repo.diff.status({ target: commit }), [
+  assertEquals(await repo.diff.status({ from: commit }), [
     {
       path: "new.committed.file",
       status: "renamed",
@@ -2917,7 +2917,8 @@ Deno.test("git().diff.patch() generate patch for renamed file", async () => {
     {
       path: "new.file",
       status: "renamed",
-      from: { path: "old.file", similarity: 1 },
+      from: "old.file",
+      similarity: 1,
     },
   ]);
 });
@@ -3057,7 +3058,8 @@ Deno.test("git().diff.patch({ copies }) can detect copies", async () => {
       {
         path: "copied.file",
         status: "copied",
-        from: { path: "source.file", similarity: 1 },
+        from: "source.file",
+        similarity: 1,
       },
       {
         path: "source.file",
@@ -3219,7 +3221,8 @@ Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
     {
       path: "new.file",
       status: "renamed",
-      from: { path: "old.file", similarity: 1 },
+      from: "old.file",
+      similarity: 1,
     },
   ]);
   assertEquals(
