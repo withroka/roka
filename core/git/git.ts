@@ -126,7 +126,7 @@ export interface ConfigOperations {
 /** Index operations from {@linkcode Git.index}. */
 export interface IndexOperations {
   /** Returns the status of the index and the local working tree. */
-  status(options?: IndexStatusOptions): Promise<Status>;
+  status(options?: IndexStatusOptions): Promise<IndexStatus>;
   /** Stages files for commit. */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
   /** Move or rename a file, a directory, or a symlink. */
@@ -147,7 +147,7 @@ export interface IndexOperations {
 /** Difference operations from {@linkcode Git.diff}. */
 export interface DiffOperations {
   /** Returns the list of changed file paths with their status. */
-  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
+  status(options?: DiffStatusOptions): Promise<Status[]>;
   /** Returns the patch text for changes. */
   patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
@@ -550,7 +550,7 @@ export interface Branch {
 }
 
 /** Status of files in the index and the working tree. */
-export interface Status {
+export interface IndexStatus {
   /** Files that are staged for commit (the index). */
   staged: TrackedPathStatus[];
   /** Files that are not staged for commit (the working tree). */
@@ -559,6 +559,24 @@ export interface Status {
   untracked: UntrackedPathStatus[];
   /** Files that are ignored by git. */
   ignored: UntrackedPathStatus[];
+}
+
+/** Status of a file returned by {@linkcode DiffOperations.status}. */
+export interface Status {
+  /** Path to the file. */
+  path: string;
+  /** Status of the file. */
+  status:
+    | "modified"
+    | "added"
+    | "deleted"
+    | "type-changed"
+    | "renamed"
+    | "copied"
+    | "untracked"
+    | "ignored";
+  /** Previous file path, for renamed or copied files. */
+  from?: string;
 }
 
 /** Status of a file in the index and the working tree. */
@@ -593,24 +611,17 @@ export interface UntrackedPathStatus {
 /**
  * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
  */
-export interface Patch {
-  /** Path to the file. */
-  path: string;
+export interface Patch extends Omit<Status, "status"> {
   /** Status of the file. */
-  status: TrackedPathStatus["status"];
+  status: Exclude<Status["status"], "untracked" | "ignored">;
+  /** Similarity value (0-1) for the rename or copy. */
+  similarity?: number;
   /** File mode, if provided. */
   mode?: {
     /** Old file mode, if changed or deleted. */
     old?: number;
     /** Current or new file mode. */
     new?: number;
-  };
-  /** Previous file path, for renamed or copied files. */
-  from?: {
-    /** Previous file path. */
-    path: string;
-    /** Similarity value (0-1) for the rename or copy. */
-    similarity: number;
   };
   /** List of diff hunks in the patch. */
   hunks?: Hunk[];
@@ -1041,16 +1052,10 @@ export interface IndexRemoveOptions {
 }
 
 /**
- * Options for the {@linkcode DiffOperations.status} and
+ * Options common to the {@linkcode DiffOperations.status} and
  * {@linkcode DiffOperations.patch} functions.
  */
 export interface DiffOptions extends RevisionRangeOptions {
-  /**
-   * Target commit to diff against.
-   *
-   * If set to `HEAD`, diffs the working tree or index against the last commit.
-   */
-  target?: Commitish;
   /**
    * Limit the diff to the given pathspecs.
    *
@@ -1085,9 +1090,42 @@ export interface DiffOptions extends RevisionRangeOptions {
   /**
    * Diff staged changes, instead of changes in the working tree.
    *
-   * @default {false}
+   * When `true`, compares HEAD → index (staged only).
+   * When `false`, compares index → working tree (unstaged only).
+   * When `undefined`, compares HEAD → working tree (all uncommitted changes).
+   *
+   * Ignored when {@linkcode RevisionRangeOptions.to to} is set.
+   *
+   * @default {undefined}
    */
   staged?: boolean;
+}
+
+/** Options for the {@linkcode DiffOperations.status} function. */
+export interface DiffStatusOptions extends DiffOptions {
+  /**
+   * Control the status output for untracked files.
+   *
+   * - `false`: exclude untracked files (default)
+   * - `true`: include untracked directories, but not their files
+   * - `"all"`: include all untracked files
+   *
+   * Only applies when comparing to working tree (when {@linkcode RevisionRangeOptions.to to} is unset).
+   *
+   * @default {false}
+   */
+  untracked?: boolean | "all";
+  /**
+   * Control the status output for ignored files.
+   *
+   * - `true`: include ignored files and directories
+   * - `false`: exclude ignored files and directories (default)
+   *
+   * Only applies when comparing to working tree (when {@linkcode RevisionRangeOptions.to to} is unset).
+   *
+   * @default {false}
+   */
+  ignored?: boolean;
 }
 
 /** Options for the {@linkcode DiffOperations.patch} function. */
@@ -1973,7 +2011,7 @@ export function git(options?: GitOptions): Git {
           options?.path,
         );
         const lines = output.split("\0").filter((x) => x);
-        const status: Status = {
+        const status: IndexStatus = {
           staged: [],
           unstaged: [],
           untracked: [],
@@ -2070,20 +2108,63 @@ export function git(options?: GitOptions): Git {
     },
     diff: {
       async status(options) {
+        const statuses: Status[] = [];
+        const isCommitToCommit = options?.to !== undefined;
+        const isWorkingTreeComparison = !isCommitToCommit;
+        
+        // Build git diff command based on from/to/staged parameters
+        let fromCommit: string | undefined;
+        let toCommit: string | undefined;
+        
+        if (options?.to !== undefined) {
+          // Commit-to-commit comparison
+          fromCommit = commitArg(options.from);
+          toCommit = commitArg(options.to);
+        } else if (options?.staged === true) {
+          // HEAD → index comparison
+          // Only use HEAD if explicitly set or if it exists
+          if (options?.from !== undefined) {
+            fromCommit = commitArg(options.from);
+          } else {
+            // Check if HEAD exists before using it
+            const { value: head } = await maybe(() =>
+              run(gitOptions, "rev-parse", "HEAD")
+            );
+            if (head) fromCommit = "HEAD";
+          }
+          // No toCommit, use --staged flag
+        } else if (options?.staged === false) {
+          // index → working tree comparison
+          // No fromCommit or toCommit, git diff compares index to working tree by default
+        } else {
+          // Default: all uncommitted changes
+          // If from is set, use it; otherwise try to use HEAD if it exists
+          if (options?.from !== undefined) {
+            fromCommit = commitArg(options.from);
+          } else {
+            // Check if HEAD exists before using it
+            const { value: head } = await maybe(() =>
+              run(gitOptions, "rev-parse", "HEAD")
+            );
+            if (head) fromCommit = "HEAD";
+          }
+          // No toCommit, compares to working tree by default
+        }
+        
+        // Get tracked file changes (modified, added, deleted, renamed, copied)
         const output = await run(
           gitOptions,
           ["diff", "--no-color", "--name-status", "-z"],
-          flag("--staged", options?.staged),
+          flag("--staged", options?.staged === true),
           flag("--find-copies", options?.copies),
           pickaxeFlags(options?.pickaxe),
           flag(["--find-renames", "--no-renames"], options?.renames),
-          commitArg(options?.target),
-          rangeArg(options),
+          fromCommit,
+          toCommit,
           "--",
           options?.path,
         );
         const entries = output.split("\0").filter((x) => x);
-        const statuses: TrackedPathStatus[] = [];
         let rename: string | undefined = undefined;
         let status: Patch["status"] | undefined = undefined;
         for (
@@ -2109,9 +2190,71 @@ export function git(options?: GitOptions): Git {
           statuses.push({ path: entry, status });
           status = undefined;
         }
+        
+        // Add untracked/ignored files if requested and comparing to working tree
+        if (isWorkingTreeComparison && (options?.untracked || options?.ignored)) {
+          const statusOutput = await run(
+            gitOptions,
+            ["status", "--porcelain=1", "-z"],
+            flag("--untracked-files=normal", options?.untracked === true),
+            flag("--untracked-files=all", options?.untracked === "all"),
+            flag("--ignored=traditional", options?.ignored === true),
+            "--",
+            options?.path,
+          );
+          const lines = statusOutput.split("\0").filter((x) => x);
+          for (const entry of lines) {
+            const [x, y, path] = [entry[0], entry[1], entry.slice(3)];
+            if (x === "?" && options?.untracked) {
+              statuses.push({ path, status: "untracked" });
+            } else if (x === "!" && options?.ignored) {
+              statuses.push({ path, status: "ignored" });
+            }
+          }
+        }
+        
         return statuses;
       },
       async patch(options) {
+        // Build git diff command based on from/to/staged parameters
+        let fromCommit: string | undefined;
+        let toCommit: string | undefined;
+        
+        if (options?.to !== undefined) {
+          // Commit-to-commit comparison
+          fromCommit = commitArg(options.from);
+          toCommit = commitArg(options.to);
+        } else if (options?.staged === true) {
+          // HEAD → index comparison
+          // Only use HEAD if explicitly set or if it exists
+          if (options?.from !== undefined) {
+            fromCommit = commitArg(options.from);
+          } else {
+            // Check if HEAD exists before using it
+            const { value: head } = await maybe(() =>
+              run(gitOptions, "rev-parse", "HEAD")
+            );
+            if (head) fromCommit = "HEAD";
+          }
+          // No toCommit, use --staged flag
+        } else if (options?.staged === false) {
+          // index → working tree comparison
+          // No fromCommit or toCommit, git diff compares index to working tree by default
+        } else {
+          // Default: all uncommitted changes
+          // If from is set, use it; otherwise try to use HEAD if it exists
+          if (options?.from !== undefined) {
+            fromCommit = commitArg(options.from);
+          } else {
+            // Check if HEAD exists before using it
+            const { value: head } = await maybe(() =>
+              run(gitOptions, "rev-parse", "HEAD")
+            );
+            if (head) fromCommit = "HEAD";
+          }
+          // No toCommit, compares to working tree by default
+        }
+        
         const output = await run(
           gitOptions,
           ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
@@ -2119,10 +2262,10 @@ export function git(options?: GitOptions): Git {
           flag("--find-copies-harder", options?.copies),
           pickaxeFlags(options?.pickaxe),
           flag(["--find-renames", "--no-renames"], options?.renames),
-          flag("--staged", options?.staged),
+          flag("--staged", options?.staged === true),
           flag("--unified", options?.unified, { equals: true }),
-          commitArg(options?.target),
-          rangeArg(options),
+          fromCommit,
+          toCommit,
           "--",
           options?.path,
         );
@@ -2181,8 +2324,9 @@ export function git(options?: GitOptions): Git {
             return {
               path: patch.path,
               status: patch.status,
-              ...patch.mode !== undefined && { mode: patch.mode },
               ...patch.from !== undefined && { from: patch.from },
+              ...patch.similarity !== undefined && { similarity: patch.similarity },
+              ...patch.mode !== undefined && { mode: patch.mode },
               ...hunks.length > 0 && { hunks },
             };
           });
@@ -3440,19 +3584,13 @@ const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
   {
     pattern: /^similarity index (\d+)%$/,
     apply(patch, value) {
-      patch.from = {
-        path: patch.from?.path ?? "",
-        similarity: parseInt(value, 10) / 100,
-      };
+      patch.similarity = parseInt(value, 10) / 100;
     },
   },
   {
     pattern: /^rename from (.+)$/,
     apply(patch, value) {
-      patch.from = {
-        path: value,
-        similarity: patch.from?.similarity ?? 0,
-      };
+      patch.from = value;
       patch.status = "renamed";
     },
   },
@@ -3466,10 +3604,7 @@ const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
   {
     pattern: /^copy from (.+)$/,
     apply(patch, value) {
-      patch.from = {
-        path: value,
-        similarity: patch.from?.similarity ?? 0,
-      };
+      patch.from = value;
       patch.status = "copied";
     },
   },
