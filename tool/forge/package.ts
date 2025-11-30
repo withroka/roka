@@ -48,7 +48,7 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { git, GitError, type RevisionRange, type Tag } from "@roka/git";
+import { git, GitError, type RevisionRangeOptions, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
@@ -147,7 +147,7 @@ export interface Release {
   /** Release version. */
   version: string;
   /** Commit range. */
-  range: RevisionRange;
+  range: RevisionRangeOptions;
 }
 
 /**
@@ -243,7 +243,7 @@ export interface CommitOptions {
    *
    * If not defined, all commits for the package are returned.
    */
-  range?: RevisionRange;
+  range?: RevisionRangeOptions;
   /**
    * Commit types to include in the changelog.
    *

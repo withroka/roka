@@ -612,7 +612,7 @@ Deno.test("git().clone({ shallow }) can exclude history by depth", async () => {
     shallow: { depth: 1 },
     local: false,
   });
-  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
     omit(commit3, ["parent"]),
   ]);
 });
@@ -632,7 +632,7 @@ Deno.test("git().clone({ shallow }) can exclude history by target", async () => 
     shallow: { exclude: [tag.name] },
     local: false,
   });
-  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
     omit(commit3, ["parent"]),
   ]);
 });
@@ -2362,39 +2362,39 @@ Deno.test("git().diff.status({ range }) lists files changed in range", async () 
   await repo.index.remove("file");
   const commit4 = await repo.commit.create({ subject: "commit" });
   assertEquals(
-    await repo.diff.status({ range: { from: commit1, to: commit2 } }),
+    await repo.diff.status({ from: commit1, to: commit2 }),
     [{ path: "file", status: "added" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit2, to: commit1 } }),
+    await repo.diff.status({ from: commit2, to: commit1 }),
     [{ path: "file", status: "deleted" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit2, to: commit3 } }),
+    await repo.diff.status({ from: commit2, to: commit3 }),
     [{ path: "file", status: "modified" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit3, to: commit2 } }),
+    await repo.diff.status({ from: commit3, to: commit2 }),
     [{ path: "file", status: "modified" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit3 } }),
+    await repo.diff.status({ from: commit3 }),
     [{ path: "file", status: "deleted" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit3, to: commit4 } }),
+    await repo.diff.status({ from: commit3, to: commit4 }),
     [{ path: "file", status: "deleted" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit2, to: commit4 } }),
+    await repo.diff.status({ from: commit2, to: commit4 }),
     [{ path: "file", status: "deleted" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit4, to: commit2 } }),
+    await repo.diff.status({ from: commit4, to: commit2 }),
     [{ path: "file", status: "added" }],
   );
   assertEquals(
-    await repo.diff.status({ range: { from: commit1, to: commit4 } }),
+    await repo.diff.status({ from: commit1, to: commit4 }),
     [],
   );
 });
@@ -3187,7 +3187,7 @@ Deno.test("git().diff.patch({ range }) generates patch for range", async () => {
   await repo.index.add("file");
   const commit2 = await repo.commit.create({ subject: "commit" });
   assertEquals(
-    await repo.diff.patch({ range: { from: commit1, to: commit2 } }),
+    await repo.diff.patch({ from: commit1, to: commit2 }),
     [
       {
         path: "file",
@@ -3587,7 +3587,7 @@ Deno.test("git().commit.log({ range }) returns commit descendants", async () => 
     subject: "commit2",
     allowEmpty: true,
   });
-  assertEquals(await repo.commit.log({ range: { from: commit1 } }), [commit2]);
+  assertEquals(await repo.commit.log({ from: commit1 }), [commit2]);
 });
 
 Deno.test("git().commit.log({ range }) returns commit ancestors", async () => {
@@ -3601,7 +3601,7 @@ Deno.test("git().commit.log({ range }) returns commit ancestors", async () => {
     allowEmpty: true,
   });
   await repo.commit.create({ subject: "commit3", allowEmpty: true });
-  assertEquals(await repo.commit.log({ range: { to: commit2 } }), [
+  assertEquals(await repo.commit.log({ to: commit2 }), [
     commit2,
     commit1,
   ]);
@@ -3623,7 +3623,7 @@ Deno.test("git().commit.log({ range }) returns commit range", async () => {
   });
   await repo.commit.create({ subject: "commit3", allowEmpty: true });
   assertEquals(
-    await repo.commit.log({ range: { from: commit1, to: commit3 } }),
+    await repo.commit.log({ from: commit1, to: commit3 }),
     [
       commit3,
       commit2,
@@ -3644,7 +3644,7 @@ Deno.test("git().commit.log({ range }) interprets range as asymmetric", async ()
   });
   await repo.commit.create({ subject: "commit4", allowEmpty: true });
   assertEquals(
-    await repo.commit.log({ range: { from: commit3, to: commit1 } }),
+    await repo.commit.log({ from: commit3, to: commit1 }),
     [],
   );
 });
@@ -3666,7 +3666,9 @@ Deno.test("git().commit.log({ range }) returns symmetric commit range", async ()
   await repo.commit.create({ subject: "commit3", allowEmpty: true });
   assertEquals(
     await repo.commit.log({
-      range: { from: commit3, to: commit1, symmetric: true },
+      from: commit3,
+      to: commit1,
+      symmetric: true,
     }),
     [
       commit3,
@@ -3689,7 +3691,7 @@ Deno.test("git().commit.log({ range }) ignores empty range", async () => {
     subject: "commit3",
     allowEmpty: true,
   });
-  assertEquals(await repo.commit.log({ range: {} }), [
+  assertEquals(await repo.commit.log({}), [
     commit3,
     commit2,
     commit1,
@@ -4072,7 +4074,7 @@ Deno.test("git().commit.create({ path }) commits specified paths instead of stag
   });
   assertEquals(await repo.commit.head(), commit2);
   assertEquals(
-    await repo.diff.status({ range: { from: commit1, to: commit2 } }),
+    await repo.diff.status({ from: commit1, to: commit2 }),
     [{ path: "file1", status: "modified" }],
   );
   assertEquals(await repo.index.status(), {
@@ -4245,7 +4247,7 @@ Deno.test("git().commit.create({ path }) amends specified paths instead of stage
   const amended2 = await repo.commit.amend({ path: "file1" });
   assertEquals(await repo.commit.head(), amended2);
   assertEquals(
-    await repo.diff.status({ range: { from: commit1, to: amended2 } }),
+    await repo.diff.status({ from: commit1, to: amended2 }),
     [{ path: "file1", status: "added" }],
   );
   assertEquals(await repo.index.status(), {
@@ -6620,13 +6622,13 @@ Deno.test("git().sync.fetch({ shallow }) limits fetch by commit depth", async ()
     allowEmpty: true,
   });
   await using repo = await tempRepository({ clone: upstream });
-  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
     commit3,
     commit2,
     commit1,
   ]);
   await repo.sync.pull({ shallow: { depth: 1 } });
-  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
     omit(commit3, ["parent"]),
   ]);
 });
@@ -6647,7 +6649,7 @@ Deno.test("git().sync.fetch({ shallow }) can exclude history by target", async (
     allowEmpty: true,
   });
   await using repo = await tempRepository({ clone: upstream });
-  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
     commit3,
     commit2,
     commit1,
@@ -6655,7 +6657,7 @@ Deno.test("git().sync.fetch({ shallow }) can exclude history by target", async (
   await repo.sync.fetch({
     shallow: { exclude: [tag.name] },
   });
-  assertEquals(await repo.commit.log({ range: { to: "origin/main" } }), [
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
     omit(commit3, ["parent"]),
   ]);
 });
