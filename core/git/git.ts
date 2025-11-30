@@ -676,31 +676,6 @@ export interface Tag {
 /** A reference that recursively points to a commit object. */
 export type Commitish = Commit | Branch | Tag | string;
 
-/** A revision range over commit history in a git repository. */
-export interface RevisionRange {
-  /**
-   * Match objects that are descendants of this revision.
-   *
-   * The pointed commit itself is excluded from the range.
-   */
-  from?: Commitish;
-  /**
-   * Match objects that are ancestors of this revision.
-   *
-   * The pointed commit itself is included in the range.
-   */
-  to?: Commitish;
-  /**
-   * Match objects that are reachable from either end, but not from both.
-   *
-   * Ignored if either {@linkcode RevisionRange.from} or
-   * {@linkcode RevisionRange.to} is not set.
-   *
-   * @default {false}
-   */
-  symmetric?: boolean;
-}
-
 /**
  * A pattern to search for in diffs.
  *
@@ -799,6 +774,33 @@ export interface SignOptions {
    * If `false`, the commit is not signed.
    */
   sign?: boolean | string;
+}
+
+/**
+ * Options for specifying a revision range over commit history.
+ */
+export interface RevisionRangeOptions {
+  /**
+   * Match objects that are descendants of this revision.
+   *
+   * The pointed commit itself is excluded from the range.
+   */
+  from?: Commitish;
+  /**
+   * Match objects that are ancestors of this revision.
+   *
+   * The pointed commit itself is included in the range.
+   */
+  to?: Commitish;
+  /**
+   * Match objects that are reachable from either end, but not from both.
+   *
+   * Ignored if either {@linkcode RevisionRangeOptions.from} or
+   * {@linkcode RevisionRangeOptions.to} is not set.
+   *
+   * @default {false}
+   */
+  symmetric?: boolean;
 }
 
 /**
@@ -1042,7 +1044,7 @@ export interface IndexRemoveOptions {
  * Options for the {@linkcode DiffOperations.status} and
  * {@linkcode DiffOperations.patch} functions.
  */
-export interface DiffOptions {
+export interface DiffOptions extends RevisionRangeOptions {
   /**
    * Target commit to diff against.
    *
@@ -1071,8 +1073,6 @@ export interface DiffOptions {
   copies?: boolean;
   /** Filters for files where the given pattern is added or deleted. */
   pickaxe?: string | Pickaxe;
-  /** Revision range to diff against. */
-  range?: RevisionRange;
   /**
    * Control the diff output for renamed files.
    *
@@ -1117,15 +1117,13 @@ export interface IgnoreFilterOptions {
 }
 
 /** Options for the {@linkcode CommitOperations.log} function. */
-export interface CommitLogOptions {
+export interface CommitLogOptions extends RevisionRangeOptions {
   /** Only commits by an author. */
   author?: User;
   /** Only commits by a committer. */
   committer?: User;
   /** Only commits that modified any of the given pathspecs. */
   path?: string | string[];
-  /** Only commits in a range. */
-  range?: RevisionRange;
   /** Maximum number of commits to return. */
   maxCount?: number;
   /** Filters for commits where the given pattern is added or deleted. */
@@ -2080,7 +2078,7 @@ export function git(options?: GitOptions): Git {
           pickaxeFlags(options?.pickaxe),
           flag(["--find-renames", "--no-renames"], options?.renames),
           commitArg(options?.target),
-          rangeArg(options?.range),
+          rangeArg(options),
           "--",
           options?.path,
         );
@@ -2124,7 +2122,7 @@ export function git(options?: GitOptions): Git {
           flag("--staged", options?.staged),
           flag("--unified", options?.unified, { equals: true }),
           commitArg(options?.target),
-          rangeArg(options?.range),
+          rangeArg(options),
           "--",
           options?.path,
         );
@@ -2230,7 +2228,7 @@ export function git(options?: GitOptions): Git {
             flag("--max-count", options?.maxCount, { equals: true }),
             pickaxeFlags(options?.pickaxe),
             flag("--skip", options?.skip),
-            rangeArg(options?.range),
+            rangeArg(options),
             "--",
             options?.path,
           )
@@ -2254,7 +2252,7 @@ export function git(options?: GitOptions): Git {
       async get(ref) {
         const [commit] = await repo.commit.log({
           maxCount: 1,
-          range: { to: commitArg(ref) },
+          to: commitArg(ref),
         });
         return commit;
       },
@@ -2874,9 +2872,9 @@ function peeledArg(ref: string | undefined): string | undefined {
   return `${ref}^{}`;
 }
 
-function rangeArg(range: RevisionRange): string;
-function rangeArg(range: RevisionRange | undefined): string | undefined;
-function rangeArg(range: RevisionRange | undefined): string | undefined {
+function rangeArg(range: RevisionRangeOptions): string;
+function rangeArg(range: RevisionRangeOptions | undefined): string | undefined;
+function rangeArg(range: RevisionRangeOptions | undefined): string | undefined {
   if (range === undefined) return undefined;
   const from = range.from && commitArg(range.from);
   const to = range.to && commitArg(range.to);
