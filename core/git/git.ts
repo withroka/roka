@@ -2118,9 +2118,15 @@ export function git(options?: GitOptions): Git {
       async status(options) {
         // Determine comparison endpoints based on new logic
         const isCommitToCommit = options?.to !== undefined;
+        // Include untracked when:
+        // - Not commit-to-commit AND
+        // - Not staged-only AND
+        // - Either explicitly requested OR ignored is requested (unless explicitly excluded)
+        const wantsUntracked = options?.untracked === true || options?.untracked === "all";
+        const excludesUntracked = options?.untracked === false;
         const includeUntracked = !isCommitToCommit && 
           options?.staged !== true && 
-          options?.untracked;
+          (wantsUntracked || (options?.ignored && !excludesUntracked));
         const includeIgnored = !isCommitToCommit && 
           options?.staged !== true && 
           options?.ignored;
@@ -2178,22 +2184,7 @@ export function git(options?: GitOptions): Git {
           status = undefined;
         }
         
-        // Get untracked files if requested
-        if (includeUntracked) {
-          const untrackedOutput = await run(
-            gitOptions,
-            ["ls-files", "--others", "--exclude-standard", "-z"],
-            flag("--directory", includeUntracked === true),
-            "--",
-            options?.path,
-          );
-          const untrackedFiles = untrackedOutput.split("\0").filter((x) => x);
-          for (const path of untrackedFiles) {
-            statuses.push({ path, status: "untracked" });
-          }
-        }
-        
-        // Get ignored files if requested
+        // Get ignored files if requested (before untracked to maintain order)
         if (includeIgnored) {
           const ignoredOutput = await run(
             gitOptions,
@@ -2205,6 +2196,21 @@ export function git(options?: GitOptions): Git {
           const ignoredFiles = ignoredOutput.split("\0").filter((x) => x);
           for (const path of ignoredFiles) {
             statuses.push({ path, status: "ignored" });
+          }
+        }
+        
+        // Get untracked files if requested
+        if (includeUntracked) {
+          const untrackedOutput = await run(
+            gitOptions,
+            ["ls-files", "--others", "--exclude-standard", "-z"],
+            flag("--directory", options?.untracked === true),
+            "--",
+            options?.path,
+          );
+          const untrackedFiles = untrackedOutput.split("\0").filter((x) => x);
+          for (const path of untrackedFiles) {
+            statuses.push({ path, status: "untracked" });
           }
         }
         

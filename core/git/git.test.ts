@@ -2209,6 +2209,86 @@ Deno.test("git().diff.status() does not list untracked file", async () => {
   assertEquals(await repo.diff.status(), []);
 });
 
+Deno.test("git().diff.status({ untracked }) lists untracked directories", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "initial", allowEmpty: true });
+  await Deno.mkdir(repo.path("dir"), { recursive: true });
+  await Deno.writeTextFile(repo.path("dir/file1.txt"), "content1");
+  await Deno.writeTextFile(repo.path("dir/file2.txt"), "content2");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.diff.status({ untracked: true }), [
+    { path: "dir/", status: "untracked" },
+    { path: "file.txt", status: "untracked" },
+  ]);
+});
+
+Deno.test("git().diff.status({ untracked: 'all' }) lists all untracked files", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "initial", allowEmpty: true });
+  await Deno.mkdir(repo.path("dir"), { recursive: true });
+  await Deno.writeTextFile(repo.path("dir/file1.txt"), "content1");
+  await Deno.writeTextFile(repo.path("dir/file2.txt"), "content2");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.diff.status({ untracked: "all" }), [
+    { path: "dir/file1.txt", status: "untracked" },
+    { path: "dir/file2.txt", status: "untracked" },
+    { path: "file.txt", status: "untracked" },
+  ]);
+});
+
+Deno.test("git().diff.status({ ignored }) lists ignored and untracked files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n");
+  await repo.index.add(".gitignore");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.diff.status({ ignored: true }), [
+    { path: "file.log", status: "ignored" },
+    { path: "file.txt", status: "untracked" },
+  ]);
+});
+
+Deno.test("git().diff.status({ untracked: false, ignored }) lists only ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n");
+  await repo.index.add(".gitignore");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.diff.status({ untracked: false, ignored: true }), [
+    { path: "file.log", status: "ignored" },
+  ]);
+});
+
+Deno.test("git().diff.status({ untracked, ignored }) lists both", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "*.log\n");
+  await repo.index.add(".gitignore");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file.log"), "log content");
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.diff.status({ untracked: "all", ignored: true }), [
+    { path: "file.log", status: "ignored" },
+    { path: "file.txt", status: "untracked" },
+  ]);
+});
+
+Deno.test("git().diff.status({ staged: true }) does not list untracked files", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "initial", allowEmpty: true });
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.diff.status({ staged: true, untracked: true }), []);
+});
+
+Deno.test("git().diff.status({ from, to }) does not list untracked files", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create({ subject: "commit1", allowEmpty: true });
+  const commit2 = await repo.commit.create({ subject: "commit2", allowEmpty: true });
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.diff.status({ from: commit1, to: commit2, untracked: true }), []);
+});
+
 Deno.test("git().diff.status() lists unstaged deleted file", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
