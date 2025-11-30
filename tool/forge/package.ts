@@ -435,9 +435,7 @@ export async function commits(
   pkg: Package,
   options?: CommitOptions,
 ): Promise<ConventionalCommit[]> {
-  const log = await git({ cwd: pkg.root }).commit.log(
-    options?.range ? { ...options.range } : {},
-  );
+  const log = await git({ cwd: pkg.root }).commit.log(options?.range);
   return log
     .map((c) => conventional(c))
     // match scope only on workspaces

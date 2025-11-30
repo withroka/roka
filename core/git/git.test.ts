@@ -3665,11 +3665,7 @@ Deno.test("git().commit.log({ range }) returns symmetric commit range", async ()
   });
   await repo.commit.create({ subject: "commit3", allowEmpty: true });
   assertEquals(
-    await repo.commit.log({
-      from: commit3,
-      to: commit1,
-      symmetric: true,
-    }),
+    await repo.commit.log({ from: commit3, to: commit1, symmetric: true }),
     [
       commit3,
       commit2,
