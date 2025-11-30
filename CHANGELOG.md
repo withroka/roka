@@ -1,3 +1,80 @@
+## git@0.4.0
+
+- ♻️ redesign `git().diff` interface with new `Status` types and `from`/`to` parameters (#xxx) 💥
+- ♻️ remove `git().index.status()` in favor of `git().diff.status()` (#xxx) 💥
+
+### Breaking Changes
+
+#### Redesigned `git().diff` interface
+
+The `git().diff` interface has been redesigned to provide a cleaner, more consistent API for querying file changes:
+
+**Before:**
+```ts
+// Compare to a specific commit
+repo.diff.status({ target: "v1.0.0" });
+
+// Staged changes
+repo.diff.status({ staged: true });
+
+// Compare a range
+repo.diff.status({ range: { from: "main", to: "HEAD" } });
+```
+
+**After:**
+```ts
+// Compare from a specific commit to working tree
+repo.diff.status({ from: "v1.0.0" });
+
+// Staged changes (HEAD → index)
+repo.diff.status({ staged: true });
+
+// Unstaged changes (index → working tree)
+repo.diff.status({ staged: false });
+
+// All uncommitted changes (HEAD → working tree, default)
+repo.diff.status();
+
+// Compare between commits
+repo.diff.status({ from: "main", to: "HEAD" });
+```
+
+**New features:**
+- Explicit `from`/`to` parameters for commit comparisons
+- `staged` parameter controls workspace comparisons
+- Support for untracked and ignored files:
+  ```ts
+  repo.diff.status({ untracked: true });
+  repo.diff.status({ ignored: true });
+  ```
+- New `Status` interface includes `"untracked"` and `"ignored"` status values
+- `Patch` interface now has `similarity` as a top-level field
+
+**Migration:**
+- Replace `target: <commit>` with `from: <commit>`
+- Replace `range: { from, to }` with top-level `from` and `to` parameters
+- For renamed/copied files, `similarity` is now a top-level number field instead of nested in `from`
+
+#### Removed `git().index.status()`
+
+The `git().index.status()` method has been removed in favor of the more flexible `git().diff.status()`:
+
+**Before:**
+```ts
+const status = await repo.index.status();
+status.staged;    // staged changes
+status.unstaged;  // unstaged changes
+status.untracked; // untracked files
+```
+
+**After:**
+```ts
+// Split into explicit queries
+const staged = await repo.diff.status({ staged: true });
+const unstaged = await repo.diff.status({ staged: false });
+const untracked = await repo.diff.status({ untracked: true, staged: false });
+```
+
 ## git@0.3.1
 
 - 🐛 skip ignored files by default in `git().index.status()` (#225)

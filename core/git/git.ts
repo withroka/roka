@@ -125,8 +125,6 @@ export interface ConfigOperations {
 
 /** Index operations from {@linkcode Git.index}. */
 export interface IndexOperations {
-  /** Returns the status of the index and the local working tree. */
-  status(options?: IndexStatusOptions): Promise<IndexStatus>;
   /** Stages files for commit. */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
   /** Move or rename a file, a directory, or a symlink. */
@@ -549,18 +547,6 @@ export interface Branch {
   };
 }
 
-/** Status of files in the index and the working tree. */
-export interface IndexStatus {
-  /** Files that are staged for commit (the index). */
-  staged: TrackedPathStatus[];
-  /** Files that are not staged for commit (the working tree). */
-  unstaged: TrackedPathStatus[];
-  /** Files that are not tracked by git. */
-  untracked: UntrackedPathStatus[];
-  /** Files that are ignored by git. */
-  ignored: UntrackedPathStatus[];
-}
-
 /** Status of a file returned by {@linkcode DiffOperations.status}. */
 export interface Status {
   /** Path to the file. */
@@ -956,47 +942,6 @@ export interface ConfigOptions {
    * to the `"local"` configuration file by default.
    */
   target?: "system" | "global" | "local" | "worktree" | { file: string };
-}
-
-/** Options for the {@linkcode IndexOperations.status} function. */
-export interface IndexStatusOptions {
-  /**
-   * Limit the status to the given pathspecs.
-   *
-   * If not set, all files are included.
-   */
-  path?: string | string[];
-  /**
-   * Control the status output for ignored files.
-   *
-   * - `true`: include ignored files and directories
-   * - `false`: exclude ignored files and directories (default)
-   *
-   * Files under ignored directories are included only if
-   * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`.
-   *
-   * @default {false}
-   */
-  ignored?: boolean;
-  /**
-   * Control the status output for renamed files.
-   *
-   * - `true`: enable rename detection, and list renamed files as such (default)
-   * - `false`: disable rename detection, and list files as added and deleted
-   *
-   * @default {true}
-   */
-  renames?: boolean;
-  /**
-   * Control the status output for untracked files.
-   *
-   * - `false`: exclude untracked files
-   * - `true`: include untracked directories, but not their files (default)
-   * - `"all"`: include all untracked files
-   *
-   * @default {true}
-   */
-  untracked?: boolean | "all";
 }
 
 /** Options for the {@linkcode IndexOperations.add} function. */
@@ -1997,70 +1942,6 @@ export function git(options?: GitOptions): Git {
       },
     },
     index: {
-      async status(options?: IndexStatusOptions) {
-        const output = await run(
-          gitOptions,
-          ["status", "--porcelain=1", "-z"],
-          flag("--untracked-files=normal", options?.untracked === true),
-          flag("--ignored=traditional", options?.ignored === true),
-          flag("--ignored=no", options?.ignored === false),
-          flag("--untracked-files=no", options?.untracked === false),
-          flag("--untracked-files=all", options?.untracked === "all"),
-          flag(["--renames", "--no-renames"], options?.renames),
-          "--",
-          options?.path,
-        );
-        const lines = output.split("\0").filter((x) => x);
-        const status: IndexStatus = {
-          staged: [],
-          unstaged: [],
-          untracked: [],
-          ignored: [],
-        };
-        let rename = false;
-        for (
-          const [entry, next] of slidingWindows(lines, 2, { partial: true })
-        ) {
-          assertExists(entry, "Cannot parse status line");
-          if (rename) {
-            rename = false;
-            continue;
-          }
-          const [x, y, path] = [entry[0], entry[1], entry.slice(3)];
-          assertExists(x, "Cannot parse status entry");
-          assertExists(y, "Cannot parse status entry");
-          assertExists(path, "Cannot parse status entry");
-          if (x === "?") {
-            status.untracked.push({ path });
-            continue;
-          }
-          if (x === "!") {
-            status.ignored.push({ path });
-            continue;
-          }
-          if (x !== " ") {
-            const xStatus = statusKind(x);
-            if (xStatus === "renamed" || xStatus === "copied") {
-              assertExists(next, "Cannot parse status entry");
-              rename = true;
-              status.staged.push({ path, status: xStatus, from: next });
-            } else {
-              status.staged.push({ path, status: xStatus });
-            }
-          }
-          if (y !== " ") {
-            const yStatus = statusKind(y);
-            if (yStatus === "renamed" || yStatus === "copied") {
-              assertExists(next, "Cannot parse status entry");
-              rename = true;
-              status.unstaged.push({ path, status: yStatus, from: next });
-            } else {
-              status.unstaged.push({ path, status: yStatus });
-            }
-          }
-        }
-        return status;
-      },
       async add(path, options?: IndexAddOptions) {
         await run(
           gitOptions,
