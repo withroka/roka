@@ -28,7 +28,7 @@
 import { basename, dirname, join } from "@std/path";
 
 /**
- * A key-value stored returned by the {@linkcode config} function.
+ * A key-value store returned by the {@linkcode config} function.
  *
  * @typeParam T The type of configuration data.
  */
