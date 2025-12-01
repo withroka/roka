@@ -2283,10 +2283,19 @@ Deno.test("git().diff.status({ staged: true }) does not list untracked files", a
 
 Deno.test("git().diff.status({ from, to }) does not list untracked files", async () => {
   await using repo = await tempRepository();
-  const commit1 = await repo.commit.create({ subject: "commit1", allowEmpty: true });
-  const commit2 = await repo.commit.create({ subject: "commit2", allowEmpty: true });
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
   await Deno.writeTextFile(repo.path("file.txt"), "content");
-  assertEquals(await repo.diff.status({ from: commit1, to: commit2, untracked: true }), []);
+  assertEquals(
+    await repo.diff.status({ from: commit1, to: commit2, untracked: true }),
+    [],
+  );
 });
 
 Deno.test("git().diff.status() lists unstaged deleted file", async () => {

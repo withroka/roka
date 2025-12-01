@@ -593,25 +593,25 @@ export interface UntrackedPathStatus {
 /** Status of a file returned by the {@linkcode DiffOperations.status} function. */
 export type Status =
   | {
-      /** Path to the file. */
-      path: string;
-      /** Status of the file. */
-      status:
-        | "modified"
-        | "added"
-        | "deleted"
-        | "type-changed"
-        | "untracked"
-        | "ignored";
-    }
+    /** Path to the file. */
+    path: string;
+    /** Status of the file. */
+    status:
+      | "modified"
+      | "added"
+      | "deleted"
+      | "type-changed"
+      | "untracked"
+      | "ignored";
+  }
   | {
-      /** Path to the file. */
-      path: string;
-      /** Status of the file. */
-      status: "renamed" | "copied";
-      /** Previous file path. */
-      from: string;
-    };
+    /** Path to the file. */
+    path: string;
+    /** Status of the file. */
+    status: "renamed" | "copied";
+    /** Previous file path. */
+    from: string;
+  };
 
 /**
  * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
@@ -2116,29 +2116,29 @@ export function git(options?: GitOptions): Git {
     },
     diff: {
       async status(options) {
-        // Helper to determine if we're comparing to working tree
-        const isWorkingTreeComparison = (opts?: DiffStatusOptions) =>
-          opts?.to === undefined && opts?.staged !== true;
-        
+        const isCommitToCommit = options?.to !== undefined;
+        const wantsUntracked = options?.untracked === true ||
+          options?.untracked === "all";
+        const excludesUntracked = options?.untracked === false;
+        const includeUntracked = !isCommitToCommit &&
+          options?.staged !== true &&
+          (wantsUntracked || (options?.ignored && !excludesUntracked));
+        const includeIgnored = !isCommitToCommit &&
+          options?.staged !== true &&
+          options?.ignored;
         const statuses: Status[] = [];
-        
-        // Build git diff arguments based on comparison mode
-        let commitArgs: (string | undefined)[];
+        let commitArgs: string[];
         if (options?.to !== undefined) {
-          // Commit-to-commit comparison using range
           const from = options.from ? commitArg(options.from) : "HEAD";
           const to = commitArg(options.to);
           commitArgs = [`${from}..${to}`];
         } else {
-          // Commit-to-tree comparison (working tree or index)
           commitArgs = options?.from ? [commitArg(options.from)] : [];
         }
-        
-        // Get tracked file changes
         const output = await run(
           gitOptions,
           ["diff", "--no-color", "--name-status", "-z"],
-          flag("--staged", options?.staged),
+          flag("--staged", options?.staged === true),
           flag("--find-copies", options?.copies),
           pickaxeFlags(options?.pickaxe),
           flag(["--find-renames", "--no-renames"], options?.renames),
@@ -2172,10 +2172,7 @@ export function git(options?: GitOptions): Git {
           statuses.push({ path: entry, status });
           status = undefined;
         }
-        
-        // Get ignored files if requested (before untracked to maintain order)
-        // Only applicable when comparing to working tree
-        if (isWorkingTreeComparison(options) && options?.ignored) {
+        if (includeIgnored) {
           const ignoredOutput = await run(
             gitOptions,
             ["ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
@@ -2188,45 +2185,30 @@ export function git(options?: GitOptions): Git {
             statuses.push({ path, status: "ignored" });
           }
         }
-        
-        // Get untracked files if requested
-        // Only applicable when comparing to working tree
-        // When ignored is true, include untracked unless explicitly excluded
-        if (isWorkingTreeComparison(options)) {
-          const wantsUntracked = options?.untracked === true || options?.untracked === "all";
-          const excludesUntracked = options?.untracked === false;
-          const includeUntracked = wantsUntracked || (options?.ignored && !excludesUntracked);
-          
-          if (includeUntracked) {
-            const untrackedOutput = await run(
-              gitOptions,
-              ["ls-files", "--others", "--exclude-standard", "-z"],
-              flag("--directory", options?.untracked === true),
-              "--",
-              options?.path,
-            );
-            const untrackedFiles = untrackedOutput.split("\0").filter((x) => x);
-            for (const path of untrackedFiles) {
-              statuses.push({ path, status: "untracked" });
-            }
+        if (includeUntracked) {
+          const untrackedOutput = await run(
+            gitOptions,
+            ["ls-files", "--others", "--exclude-standard", "-z"],
+            flag("--directory", options?.untracked === true),
+            "--",
+            options?.path,
+          );
+          const untrackedFiles = untrackedOutput.split("\0").filter((x) => x);
+          for (const path of untrackedFiles) {
+            statuses.push({ path, status: "untracked" });
           }
         }
-        
         return statuses;
       },
       async patch(options) {
-        // Build git diff arguments based on comparison mode
-        let commitArgs: (string | undefined)[];
+        let commitArgs: string[];
         if (options?.to !== undefined) {
-          // Commit-to-commit comparison using range
           const from = options.from ? commitArg(options.from) : "HEAD";
           const to = commitArg(options.to);
           commitArgs = [`${from}..${to}`];
         } else {
-          // Commit-to-tree comparison (working tree or index)
           commitArgs = options?.from ? [commitArg(options.from)] : [];
         }
-        
         const output = await run(
           gitOptions,
           ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
@@ -2234,7 +2216,7 @@ export function git(options?: GitOptions): Git {
           flag("--find-copies-harder", options?.copies),
           pickaxeFlags(options?.pickaxe),
           flag(["--find-renames", "--no-renames"], options?.renames),
-          flag("--staged", options?.staged),
+          flag("--staged", options?.staged === true),
           flag("--unified", options?.unified, { equals: true }),
           commitArgs,
           "--",
@@ -2297,7 +2279,8 @@ export function git(options?: GitOptions): Git {
               status: patch.status,
               ...patch.mode !== undefined && { mode: patch.mode },
               ...patch.from !== undefined && { from: patch.from },
-              ...patch.similarity !== undefined && { similarity: patch.similarity },
+              ...patch.similarity !== undefined &&
+                { similarity: patch.similarity },
               ...hunks.length > 0 && { hunks },
             };
           });
