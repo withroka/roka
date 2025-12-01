@@ -3290,6 +3290,19 @@ Deno.test("git().commit.log({ committer }) filters by committer", {
   );
 });
 
+Deno.test("git().commit.log({ from }) returns commit descendants", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
+  assertEquals(await repo.commit.log({ from: commit1 }), [commit2]);
+});
+
 Deno.test("git().commit.log({ maxCount }) limits number of commits", async () => {
   await using repo = await tempRepository();
   await repo.commit.create({ subject: "commit1", allowEmpty: true });
@@ -3319,133 +3332,6 @@ Deno.test("git().commit.log({ path }) returns changes to a file", async () => {
     commit2,
     commit1,
   ]);
-});
-
-Deno.test("git().commit.log({ range }) returns commit descendants", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
-  const commit2 = await repo.commit.create({
-    subject: "commit2",
-    allowEmpty: true,
-  });
-  assertEquals(await repo.commit.log({ from: commit1 }), [commit2]);
-});
-
-Deno.test("git().commit.log({ range }) returns commit ancestors", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
-  const commit2 = await repo.commit.create({
-    subject: "commit2",
-    allowEmpty: true,
-  });
-  await repo.commit.create({ subject: "commit3", allowEmpty: true });
-  assertEquals(await repo.commit.log({ to: commit2 }), [
-    commit2,
-    commit1,
-  ]);
-});
-
-Deno.test("git().commit.log({ range }) returns commit range", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
-  const commit2 = await repo.commit.create({
-    subject: "commit2",
-    allowEmpty: true,
-  });
-  const commit3 = await repo.commit.create({
-    subject: "commit3",
-    allowEmpty: true,
-  });
-  await repo.commit.create({ subject: "commit3", allowEmpty: true });
-  assertEquals(
-    await repo.commit.log({ from: commit1, to: commit3 }),
-    [
-      commit3,
-      commit2,
-    ],
-  );
-});
-
-Deno.test("git().commit.log({ range }) interprets range as asymmetric", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
-  await repo.commit.create({ subject: "commit2", allowEmpty: true });
-  const commit3 = await repo.commit.create({
-    subject: "commit3",
-    allowEmpty: true,
-  });
-  await repo.commit.create({ subject: "commit4", allowEmpty: true });
-  assertEquals(
-    await repo.commit.log({ from: commit3, to: commit1 }),
-    [],
-  );
-});
-
-Deno.test("git().commit.log({ range }) returns symmetric commit range", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
-  const commit2 = await repo.commit.create({
-    subject: "commit2",
-    allowEmpty: true,
-  });
-  const commit3 = await repo.commit.create({
-    subject: "commit3",
-    allowEmpty: true,
-  });
-  await repo.commit.create({ subject: "commit3", allowEmpty: true });
-  assertEquals(
-    await repo.commit.log({ from: commit3, to: commit1, symmetric: true }),
-    [
-      commit3,
-      commit2,
-    ],
-  );
-});
-
-Deno.test("git().commit.log({ range }) ignores empty range", async () => {
-  await using repo = await tempRepository();
-  const commit1 = await repo.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
-  const commit2 = await repo.commit.create({
-    subject: "commit2",
-    allowEmpty: true,
-  });
-  const commit3 = await repo.commit.create({
-    subject: "commit3",
-    allowEmpty: true,
-  });
-  assertEquals(await repo.commit.log({}), [
-    commit3,
-    commit2,
-    commit1,
-  ]);
-});
-
-Deno.test("git().commit.log({ skip }) skips a number of commits", async () => {
-  await using repo = await tempRepository();
-  const commit = await repo.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
-  await repo.commit.create({ subject: "commit2", allowEmpty: true });
-  assertEquals(await repo.commit.log({ skip: 1, maxCount: 1 }), [commit]);
 });
 
 Deno.test("git().commit.log({ pickaxe }) finds added and deleted lines", async () => {
@@ -3531,6 +3417,99 @@ Deno.test("git().commit.log({ pickaxe }) can match extended regular expressions"
     commit1,
   ]);
   assertEquals(await repo.commit.log({ pickaxe: ".+\d?" }), [commit2, commit1]);
+});
+
+Deno.test("git().commit.log({ skip }) skips a number of commits", async () => {
+  await using repo = await tempRepository();
+  const commit = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  await repo.commit.create({ subject: "commit2", allowEmpty: true });
+  assertEquals(await repo.commit.log({ skip: 1, maxCount: 1 }), [commit]);
+});
+
+Deno.test("git().commit.log({ symmetric }) returns symmetric commit range", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
+  const commit3 = await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+  });
+  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  assertEquals(
+    await repo.commit.log({ from: commit3, to: commit1, symmetric: true }),
+    [
+      commit3,
+      commit2,
+    ],
+  );
+});
+
+Deno.test("git().commit.log({ to }) returns commit ancestors", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
+  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  assertEquals(await repo.commit.log({ to: commit2 }), [
+    commit2,
+    commit1,
+  ]);
+});
+
+Deno.test("git().commit.log({ to }) returns commit range", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
+  const commit3 = await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+  });
+  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  assertEquals(
+    await repo.commit.log({ from: commit1, to: commit3 }),
+    [
+      commit3,
+      commit2,
+    ],
+  );
+});
+
+Deno.test("git().commit.log({ to }) interprets range as asymmetric", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  await repo.commit.create({ subject: "commit2", allowEmpty: true });
+  const commit3 = await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+  });
+  await repo.commit.create({ subject: "commit4", allowEmpty: true });
+  assertEquals(
+    await repo.commit.log({ from: commit3, to: commit1 }),
+    [],
+  );
 });
 
 Deno.test("git().commit.head() rejects empty repository", async () => {

@@ -749,33 +749,6 @@ export interface SignOptions {
 }
 
 /**
- * Options for specifying a revision range over commit history.
- */
-export interface RevisionRangeOptions {
-  /**
-   * Match objects that are descendants of this revision.
-   *
-   * The pointed commit itself is excluded from the range.
-   */
-  from?: Commitish;
-  /**
-   * Match objects that are ancestors of this revision.
-   *
-   * The pointed commit itself is included in the range.
-   */
-  to?: Commitish;
-  /**
-   * Match objects that are reachable from either end, but not from both.
-   *
-   * Ignored if either {@linkcode RevisionRangeOptions.from} or
-   * {@linkcode RevisionRangeOptions.to} is not set.
-   *
-   * @default {false}
-   */
-  symmetric?: boolean;
-}
-
-/**
  * Options common to the {@linkcode Git.init} and {@linkcode Git.clone}
  * functions.
  */
@@ -986,7 +959,7 @@ export interface DiffOptions {
    * To exclude all uncommitted changes, use {@linkcode DiffOptions.from from}
    * and {@linkcode DiffOptions.to to} to provide a specific revision range.
    *
-   * Ignored if {@linkcode RevisionRangeOptions.to to} is set.
+   * Ignored if {@linkcode RevisionRange.to to} is set.
    */
   staged?: boolean;
   /**
@@ -1087,19 +1060,40 @@ export interface IgnoreFilterOptions {
 }
 
 /** Options for the {@linkcode CommitOperations.log} function. */
-export interface CommitLogOptions extends RevisionRangeOptions {
+export interface CommitLogOptions {
   /** Only commits by an author. */
   author?: User;
   /** Only commits by a committer. */
   committer?: User;
   /** Only commits that modified any of the given pathspecs. */
   path?: string | string[];
+  /**
+   * Only commits that are descendants of this revision.
+   *
+   * The pointed commit itself is excluded from the range.
+   */
+  from?: Commitish;
+  /**
+   * Only commits that are ancestors of this revision.
+   *
+   * The pointed commit itself is included in the range.
+   */
+  to?: Commitish;
+  /**
+   * Only commits that are reachable from either end, but not from both.
+   *
+   * Ignored if either {@linkcode RevisionRange.from} or
+   * {@linkcode RevisionRange.to} is not set.
+   *
+   * @default {false}
+   */
+  symmetric?: boolean;
   /** Maximum number of commits to return. */
   maxCount?: number;
-  /** Filters for commits where the given pattern is added or deleted. */
-  pickaxe?: string | Pickaxe;
   /** Number of commits to skip. */
   skip?: number;
+  /** Filters for commits where the given pattern is added or deleted. */
+  pickaxe?: string | Pickaxe;
 }
 
 /**
@@ -2831,9 +2825,14 @@ function peeledArg(ref: string | undefined): string | undefined {
   return `${ref}^{}`;
 }
 
-function rangeArg(range: RevisionRangeOptions): string;
-function rangeArg(range: RevisionRangeOptions | undefined): string | undefined;
-function rangeArg(range: RevisionRangeOptions | undefined): string | undefined {
+interface RevisionRange {
+  from?: Commitish;
+  to?: Commitish;
+  symmetric?: boolean;
+}
+function rangeArg(range: RevisionRange): string;
+function rangeArg(range: RevisionRange | undefined): string | undefined;
+function rangeArg(range: RevisionRange | undefined): string | undefined {
   if (range === undefined) return undefined;
   const from = range.from && commitArg(range.from);
   const to = range.to && commitArg(range.to);
