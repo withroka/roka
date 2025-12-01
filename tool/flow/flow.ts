@@ -360,9 +360,9 @@ async function files(
       const repo = git();
       const remote = await repo.remote.current();
       assertExists(remote);
-      const target = await repo.remote.head(remote);
-      const diff = await repo.diff.status({ from: target });
-      return { target, paths: distinct(diff.map((f) => dirname(f.path))) };
+      const from = await repo.remote.head(remote);
+      const diff = await repo.diff.status({ from });
+      return { from, paths: distinct(diff.map((f) => dirname(f.path))) };
     });
     // run on all files if not in a Git repository
     if (!changes) {
@@ -371,7 +371,7 @@ async function files(
     } else {
       paths = changes.paths;
       if (paths.length === 0) {
-        console.warn(`🧽 No changes since '${changes.target}'`);
+        console.warn(`🧽 No changes since '${changes.from}'`);
         return [];
       }
     }

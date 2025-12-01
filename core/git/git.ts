@@ -547,47 +547,6 @@ export interface Branch {
   };
 }
 
-/** Status of files in the index and the working tree. */
-export interface IndexStatus {
-  /** Files that are staged for commit (the index). */
-  staged: TrackedPathStatus[];
-  /** Files that are not staged for commit (the working tree). */
-  unstaged: TrackedPathStatus[];
-  /** Files that are not tracked by git. */
-  untracked: UntrackedPathStatus[];
-  /** Files that are ignored by git. */
-  ignored: UntrackedPathStatus[];
-}
-
-/** Status of a file in the index and the working tree. */
-export type TrackedPathStatus = UpdatedPathStatus | RenamedPathStatus;
-
-/** Status of a non-renamed file in the index and the working tree. */
-export interface UpdatedPathStatus {
-  /** Path to the file. */
-  path: string;
-  /** Status of the file. */
-  status: "modified" | "type-changed" | "added" | "deleted";
-}
-
-/** Status of a renamed file in the index and the working tree. */
-export interface RenamedPathStatus {
-  /** Path to the file. */
-  path: string;
-  /** Status of the file. */
-  status: "renamed" | "copied";
-  /** Previous file path. */
-  from: string;
-}
-
-/**
- * Status of an untracked or ignored file in the index and the working tree.
- */
-export interface UntrackedPathStatus {
-  /** Path to the file. */
-  path: string;
-}
-
 /** Status of a file returned by the {@linkcode DiffOperations.status} function. */
 export type Status = {
   /** Path to the file. */
@@ -2017,7 +1976,7 @@ export function git(options?: GitOptions): Git {
     },
     diff: {
       async status(options) {
-        async function tracked() {
+        async function tracked(staged: boolean | undefined) {
           const { value: output, error } = await maybe(() =>
             run(
               gitOptions,
@@ -2025,29 +1984,21 @@ export function git(options?: GitOptions): Git {
               flag("--find-copies", options?.copies),
               pickaxeFlags(options?.pickaxe),
               flag(["--find-renames", "--no-renames"], options?.renames),
+              flag("--staged", staged === true),
               flag(
                 commitArg(options?.from) ?? "HEAD",
-                options?.staged === undefined && options?.to === undefined,
+                staged === undefined && options?.to === undefined,
               ),
               options?.to !== undefined ? rangeArg(options) : undefined,
-              flag("--staged", options?.staged === true),
               "--",
               options?.path,
             )
           );
           if (error) {
-            if (error.message.includes("bad revision 'HEAD'")) {
-              const output = await run(
-                gitOptions,
-                ["ls-files", "--cached", "-z"],
-                "--",
-                options?.path,
-              );
-              return output
-                .split("\0")
-                .filter((x) => x)
-                .map((path) => ({ path, status: "added" as const }));
-            }
+            if (
+              options?.from === undefined && staged === undefined &&
+              error.message.includes("bad revision 'HEAD'")
+            ) return await tracked(true);
             throw error;
           }
           const entries = output.split("\0").filter((x) => x);
@@ -2097,34 +2048,42 @@ export function git(options?: GitOptions): Git {
             }));
         }
         return (await Promise.all([
-          tracked(),
+          tracked(options?.staged),
           options?.untracked ? untracked(false) : [],
           options?.ignored ? untracked(true) : [],
         ])).flat();
       },
       async patch(options) {
-        let commitArgs: string[];
-        if (options?.to !== undefined) {
-          const from = options.from ? commitArg(options.from) : "HEAD";
-          const to = commitArg(options.to);
-          commitArgs = [`${from}..${to}`];
-        } else {
-          commitArgs = options?.from ? [commitArg(options.from)] : [];
+        async function tracked(staged: boolean | undefined) {
+          const { value: output, error } = await maybe(() =>
+            run(
+              gitOptions,
+              ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
+              flag("--diff-algorithm", options?.algorithm, { equals: true }),
+              flag("--find-copies-harder", options?.copies),
+              pickaxeFlags(options?.pickaxe),
+              flag(["--find-renames", "--no-renames"], options?.renames),
+              flag("--staged", staged === true),
+              flag("--unified", options?.unified, { equals: true }),
+              flag(
+                commitArg(options?.from) ?? "HEAD",
+                staged === undefined && options?.to === undefined,
+              ),
+              options?.to !== undefined ? rangeArg(options) : undefined,
+              "--",
+              options?.path,
+            )
+          );
+          if (error) {
+            if (
+              options?.from === undefined && staged === undefined &&
+              error.message.includes("bad revision 'HEAD'")
+            ) return await tracked(true);
+            throw error;
+          }
+          return output;
         }
-        const output = await run(
-          gitOptions,
-          ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
-          flag("--diff-algorithm", options?.algorithm, { equals: true }),
-          flag("--find-copies-harder", options?.copies),
-          pickaxeFlags(options?.pickaxe),
-          flag(["--find-renames", "--no-renames"], options?.renames),
-          flag("--staged", options?.staged === true),
-          flag("--unified", options?.unified, { equals: true }),
-          commitArgs,
-          "--",
-          options?.path,
-        );
-        return output.split(/\n(?=diff --git )/)
+        return (await tracked(options?.staged)).split(/\n(?=diff --git )/)
           .filter((x) => x)
           .map((content) => {
             const [header, ...body] = content.split(/\n(?=@@ )/);
@@ -3010,9 +2969,7 @@ function configValue(key: string, lines: string[]) {
   return { key, value };
 }
 
-function statusKind(
-  code: string,
-): "modified" | "type-changed" | "added" | "deleted" | "renamed" | "copied" {
+function statusKind(code: string) {
   switch (code[0]) {
     case "M":
       return "modified";
