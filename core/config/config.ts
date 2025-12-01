@@ -7,7 +7,7 @@
  *
  * ```ts
  * // deno-lint-ignore-file no-console
- * import { config } from "@roka/cli/config";
+ * import { config } from "@roka/config";
  * (async () => {
  *   using cfg = config<{ username: string; email: string }>();
  *   const data = await cfg.get();
@@ -66,7 +66,7 @@ export interface ConfigOptions {
  *
  * @example Use a file-based user configuration.
  * ```ts
- * import { config } from "@roka/cli/config";
+ * import { config } from "@roka/config";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
  * await using directory = await tempDirectory();
@@ -80,7 +80,7 @@ export interface ConfigOptions {
  *
  * @example Use an in-memory configuration.
  * ```ts
- * import { config } from "@roka/cli/config";
+ * import { config } from "@roka/config";
  * import { assertEquals } from "@std/assert";
  * using cfg = config<{ foo: string; bar: number }>({
  *   path: ":memory:",

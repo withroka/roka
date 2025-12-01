@@ -36,10 +36,7 @@ jobs:
             async
             async/any
             async/pool
-            cli
-            cli/config
-            cli/input
-            cli/testing
+            config
             collections
             deno
             flow

@@ -12,7 +12,7 @@ on:
         options:
           - All packages
           - async
-          - cli
+          - config
           - forge
           - git
           - github
