@@ -959,7 +959,7 @@ export interface DiffOptions {
    * To exclude all uncommitted changes, use {@linkcode DiffOptions.from from}
    * and {@linkcode DiffOptions.to to} to provide a specific revision range.
    *
-   * Ignored if {@linkcode RevisionRange.to to} is set.
+   * Ignored if {@linkcode DiffOptions.to to} is set.
    */
   staged?: boolean;
   /**
@@ -1026,7 +1026,7 @@ export interface DiffStatusOptions extends DiffOptions {
    * - `false`: exclude ignored files and directories (default)
    *
    * Files under ignored directories are included only if
-   * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`.
+   * {@linkcode DiffStatusOptions.untracked untracked} is set to `"all"`.
    *
    * @default {false}
    */
@@ -1082,8 +1082,8 @@ export interface CommitLogOptions {
   /**
    * Only commits that are reachable from either end, but not from both.
    *
-   * Ignored if either {@linkcode RevisionRange.from} or
-   * {@linkcode RevisionRange.to} is not set.
+   * Ignored if either {@linkcode CommitLogOptions.from} or
+   * {@linkcode CommitLogOptions.to} is not set.
    *
    * @default {false}
    */
