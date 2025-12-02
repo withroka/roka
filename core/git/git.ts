@@ -950,7 +950,7 @@ export interface IndexRemoveOptions {
  */
 export interface DiffOptions {
   /**
-   * Diff staged changes in the working tree, unstaged changes, or both.
+   * Diff staged changes, unstaged changes, or both.
    *
    * - `true`: include changes staged to index, but exclude unstaged changes
    * - `false`: exclude staged changes, but include unstaged changes
