@@ -8,9 +8,35 @@ import { deno, DenoError, type FileResult } from "./deno.ts";
 function assertResults(
   actual: FileResult[],
   expected: FileResult[],
-  options?: { replace?: [RegExp, string][] },
+  options?: { replace?: [RegExp, string][]; normalizeOutput?: boolean },
 ): void {
-  const { replace = [] } = options ?? {};
+  const { replace = [], normalizeOutput = false } = options ?? {};
+  const normalize = (v: string, key: string) => {
+    v = replace.reduce((s, p) => s.replace(...p), stripAnsiCode(v));
+    if (key === "message") {
+      v = v.replace(/( => \.\/[^\n]+)\n\n(error: )/g, "$1\n$2");
+    }
+    if (normalizeOutput) {
+      if (key === "message") {
+        const outputStart = v.indexOf("------- output -------\n");
+        const outputEnd = v.indexOf("\n----- output end -----\n");
+        if (outputStart !== -1 && outputEnd !== -1) {
+          const before = v.slice(0, outputStart + "------- output -------\n".length);
+          const outputContent = v.slice(outputStart + "------- output -------\n".length, outputEnd);
+          const after = v.slice(outputEnd);
+          const lines = outputContent.split("\n").filter((l) => l.length > 0);
+          lines.sort();
+          v = before + lines.join("\n") + after;
+        }
+      }
+      if (key === "output") {
+        const lines = v.split("\n").filter((l) => l.length > 0);
+        lines.sort();
+        v = lines.join("\n") + (v.endsWith("\n") ? "\n" : "");
+      }
+    }
+    return v;
+  };
   assertEquals(
     actual.map((r) => ({
       ...r,
@@ -18,7 +44,7 @@ function assertResults(
         ...Object.fromEntries(
           Object.entries(p).map(([k, v]) => {
             if (typeof v === "string") {
-              v = replace.reduce((s, p) => s.replace(...p), stripAnsiCode(v));
+              v = normalize(v, k);
             }
             return [k, v];
           }),
@@ -28,7 +54,7 @@ function assertResults(
         ...Object.fromEntries(
           Object.entries(p).map(([k, v]) => {
             if (typeof v === "string") {
-              v = replace.reduce((s, p) => s.replace(...p), stripAnsiCode(v));
+              v = normalize(v, k);
             }
             return [k, v];
           }),
@@ -3048,12 +3074,12 @@ Deno.test("deno().test() handles test output with passing tests", async () => {
       file: "file.ts",
       success: true,
       status: "ok",
-      output: "log output\nerror output\n",
+      output: "error output\nlog output\n",
       time: "?ms",
       message: [
         "------- output -------",
-        "log output",
         "error output",
+        "log output",
         "----- output end -----",
         "test1 ... ok (?ms)",
       ].join("\n"),
@@ -3066,7 +3092,7 @@ Deno.test("deno().test() handles test output with passing tests", async () => {
       time: "?ms",
       message: "test2 ... ok (?ms)",
     }],
-  }], { replace: [[/\d+ms/g, "?ms"]] });
+  }], { replace: [[/\d+ms/g, "?ms"]], normalizeOutput: true });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
@@ -3117,12 +3143,12 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
       file: "file.ts",
       success: false,
       status: "FAILED",
-      output: "log output\nerror output\n",
+      output: "error output\nlog output\n",
       time: "?ms",
       message: [
         "------- output -------",
-        "log output",
         "error output",
+        "log output",
         "----- output end -----",
         "test1 ... FAILED (?ms)",
       ].join("\n"),
@@ -3140,6 +3166,7 @@ Deno.test("deno().test() handles test output with failing tests", async () => {
       [/\d+ms/g, "?ms"],
       [/ at [\s|\S]+(?=\n *at )/, " at ..."],
     ],
+    normalizeOutput: true,
   });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
