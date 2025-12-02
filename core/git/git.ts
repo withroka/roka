@@ -872,24 +872,31 @@ export interface CloneOptions
 }
 
 /**
- * Options common for all config operations, such as
+ * Options common to all config operations, such as
  * {@linkcode ConfigOperations.get} or {@linkcode ConfigOperations.set}.
  */
-export interface ConfigOptions {
+export type ConfigOptions = ConfigLevelOptions | ConfigFileOptions;
+
+/** Options for reading from or writing to a configuration level. */
+export interface ConfigLevelOptions {
   /**
-   * Configuration to read from or write to.
+   * Configuration level to read from or write to.
    *
    * - `"system"`: System-level configuration
    * - `"global"`: User-level configuration
-   * - `"local"`: Repository-level configuration
+   * - `"local"`: Repository-level configuration (default for writes)
    * - `"worktree"`: Worktree-level configuration
-   * - `{ file: string }`: Custom configuration file
    *
-   * When reading, the values are read from the `"system"`, `"global"` and
-   * `"local"` configuration by default. When writing, the new value is written
-   * to the `"local"` configuration file by default.
+   * When reading, values are read from `"system"`, `"global"`, and `"local"`
+   * by default. When writing, the new value is written to `"local"` by default.
    */
-  target?: "system" | "global" | "local" | "worktree" | { file: string };
+  level?: "system" | "global" | "local" | "worktree";
+}
+
+/** Options for reading from or writing to a custom configuration file. */
+export interface ConfigFileOptions {
+  /** Path to a custom configuration file. */
+  file: string;
 }
 
 /** Options for the {@linkcode IndexOperations.add} function. */
@@ -1856,7 +1863,7 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["config", "list"],
-          configTargetFlag(options?.target),
+          configSourceFlag(options),
         );
         const lines = output.split("\n").filter((x) => x);
         const config: Record<string, string[]> = {};
@@ -1884,7 +1891,7 @@ export function git(options?: GitOptions): Git {
           "--all",
           ...type === "boolean" ? ["--bool"] : [],
           ...type === "number" ? ["--int"] : [],
-          configTargetFlag(options?.target),
+          configSourceFlag(options),
           key,
         );
         if (!output) return undefined;
@@ -1896,7 +1903,7 @@ export function git(options?: GitOptions): Git {
           await run(
             gitOptions,
             ["config", "set", "--all"],
-            configTargetFlag(options?.target),
+            configSourceFlag(options),
             key,
             `${value}`,
           );
@@ -1904,7 +1911,7 @@ export function git(options?: GitOptions): Git {
           await run(
             { ...gitOptions, allowCode: [5] },
             ["config", "unset", "--all"],
-            configTargetFlag(options?.target),
+            configSourceFlag(options),
             key,
           );
           for (const element of value) {
@@ -1912,7 +1919,7 @@ export function git(options?: GitOptions): Git {
             await run(
               gitOptions,
               ["config", "--add"],
-              configTargetFlag(options?.target),
+              configSourceFlag(options),
               key,
               `${element}`,
             );
@@ -1923,7 +1930,7 @@ export function git(options?: GitOptions): Git {
         await run(
           { ...gitOptions, allowCode: [5] },
           ["config", "unset", "--all"],
-          configTargetFlag(options?.target),
+          configSourceFlag(options),
           key,
         );
       },
@@ -2878,13 +2885,13 @@ function configFlags(config: Config | undefined, flag?: string): string[] {
     ).flat();
 }
 
-function configTargetFlag(target: ConfigOptions["target"] | undefined) {
-  if (target === undefined) return undefined;
-  if (target === "global") return "--global";
-  if (target === "system") return "--system";
-  if (target === "local") return "--local";
-  if (target === "worktree") return "--worktree";
-  return flag("--file", target.file);
+function configSourceFlag(options: ConfigOptions | undefined) {
+  if (options === undefined) return undefined;
+  if ("file" in options) return flag("--file", options.file);
+  if (options.level === "global") return "--global";
+  if (options.level === "system") return "--system";
+  if (options.level === "local") return "--local";
+  if (options.level === "worktree") return "--worktree";
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
