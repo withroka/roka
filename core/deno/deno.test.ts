@@ -183,54 +183,52 @@ Deno.test("deno().check() reports type errors in code blocks in JSDoc", async ()
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   const results = await deno().check(["file.ts"]);
-  assertResults(results, [
-    {
+  assertResults(results, [{
+    file: "file.ts",
+    problem: [{
+      kind: "check",
       file: "file.ts",
-      problem: [{
-        kind: "check",
-        file: "file.ts",
-        line: 6,
-        column: 4,
-        rule: "TS2367",
-        reason: "This comparison appears to be unintentional because " +
-          "the types '{ value: number; }' and 'string' have no overlap.",
-        message: [
-          "TS2367 [ERROR]: This comparison appears to be unintentional " +
-          "because the types '{ value: number; }' and 'string' have no overlap.",
-          'x === "string";',
-          "~~~~~~~~~~~~~~",
-          `    at file://${Deno.cwd()}/file.ts:6:4`,
-        ].join("\n"),
-      }, {
-        kind: "check",
-        file: "file.ts",
-        line: 8,
-        column: 14,
-        rule: "TS2588",
-        reason: "Cannot assign to 'x' because it is a constant.",
-        message: [
-          "TS2588 [ERROR]: Cannot assign to 'x' because it is a constant.",
-          "if (true) x = false;",
-          "          ^",
-          `    at file://${Deno.cwd()}/file.ts:8:14`,
-        ].join("\n"),
-      }, {
-        kind: "check",
-        file: "file.ts",
-        line: 9,
-        column: 4,
-        rule: "TS2322",
-        reason: "Type 'boolean' is not assignable to type 'number'.",
-        message: [
-          "TS2322 [ERROR]: Type 'boolean' is not assignable to type 'number'.",
-          "x.value = false;",
-          "~~~~~~~",
-          `    at file://${Deno.cwd()}/file.ts:9:4`,
-        ].join("\n"),
-      }],
-      info: [],
-    },
-  ]);
+      line: 6,
+      column: 4,
+      rule: "TS2367",
+      reason: "This comparison appears to be unintentional because " +
+        "the types '{ value: number; }' and 'string' have no overlap.",
+      message: [
+        "TS2367 [ERROR]: This comparison appears to be unintentional " +
+        "because the types '{ value: number; }' and 'string' have no overlap.",
+        'x === "string";',
+        "~~~~~~~~~~~~~~",
+        `    at file://${Deno.cwd()}/file.ts:6:4`,
+      ].join("\n"),
+    }, {
+      kind: "check",
+      file: "file.ts",
+      line: 8,
+      column: 14,
+      rule: "TS2588",
+      reason: "Cannot assign to 'x' because it is a constant.",
+      message: [
+        "TS2588 [ERROR]: Cannot assign to 'x' because it is a constant.",
+        "if (true) x = false;",
+        "          ^",
+        `    at file://${Deno.cwd()}/file.ts:8:14`,
+      ].join("\n"),
+    }, {
+      kind: "check",
+      file: "file.ts",
+      line: 9,
+      column: 4,
+      rule: "TS2322",
+      reason: "Type 'boolean' is not assignable to type 'number'.",
+      message: [
+        "TS2322 [ERROR]: Type 'boolean' is not assignable to type 'number'.",
+        "x.value = false;",
+        "~~~~~~~",
+        `    at file://${Deno.cwd()}/file.ts:9:4`,
+      ].join("\n"),
+    }],
+    info: [],
+  }]);
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
@@ -254,54 +252,52 @@ Deno.test("deno().check() reports type errors in code blocks in Markdown", async
   ].join("\n");
   await Deno.writeTextFile("file.md", content);
   const results = await deno().check(["file.md"]);
-  assertResults(results, [
-    {
+  assertResults(results, [{
+    file: "file.md",
+    problem: [{
+      kind: "check",
       file: "file.md",
-      problem: [{
-        kind: "check",
-        file: "file.md",
-        line: 7,
-        column: 1,
-        rule: "TS2367",
-        reason: "This comparison appears to be unintentional because " +
-          "the types '{ value: number; }' and 'string' have no overlap.",
-        message: [
-          "TS2367 [ERROR]: This comparison appears to be unintentional " +
-          "because the types '{ value: number; }' and 'string' have no overlap.",
-          'x === "string";',
-          "~~~~~~~~~~~~~~",
-          `    at file://${Deno.cwd()}/file.md:7:1`,
-        ].join("\n"),
-      }, {
-        kind: "check",
-        file: "file.md",
-        line: 9,
-        column: 11,
-        rule: "TS2588",
-        reason: "Cannot assign to 'x' because it is a constant.",
-        message: [
-          "TS2588 [ERROR]: Cannot assign to 'x' because it is a constant.",
-          "if (true) x = false;",
-          "          ^",
-          `    at file://${Deno.cwd()}/file.md:9:11`,
-        ].join("\n"),
-      }, {
-        kind: "check",
-        file: "file.md",
-        line: 10,
-        column: 1,
-        rule: "TS2322",
-        reason: "Type 'boolean' is not assignable to type 'number'.",
-        message: [
-          "TS2322 [ERROR]: Type 'boolean' is not assignable to type 'number'.",
-          "x.value = false;",
-          "~~~~~~~",
-          `    at file://${Deno.cwd()}/file.md:10:1`,
-        ].join("\n"),
-      }],
-      info: [],
-    },
-  ]);
+      line: 7,
+      column: 1,
+      rule: "TS2367",
+      reason: "This comparison appears to be unintentional because " +
+        "the types '{ value: number; }' and 'string' have no overlap.",
+      message: [
+        "TS2367 [ERROR]: This comparison appears to be unintentional " +
+        "because the types '{ value: number; }' and 'string' have no overlap.",
+        'x === "string";',
+        "~~~~~~~~~~~~~~",
+        `    at file://${Deno.cwd()}/file.md:7:1`,
+      ].join("\n"),
+    }, {
+      kind: "check",
+      file: "file.md",
+      line: 9,
+      column: 11,
+      rule: "TS2588",
+      reason: "Cannot assign to 'x' because it is a constant.",
+      message: [
+        "TS2588 [ERROR]: Cannot assign to 'x' because it is a constant.",
+        "if (true) x = false;",
+        "          ^",
+        `    at file://${Deno.cwd()}/file.md:9:11`,
+      ].join("\n"),
+    }, {
+      kind: "check",
+      file: "file.md",
+      line: 10,
+      column: 1,
+      rule: "TS2322",
+      reason: "Type 'boolean' is not assignable to type 'number'.",
+      message: [
+        "TS2322 [ERROR]: Type 'boolean' is not assignable to type 'number'.",
+        "x.value = false;",
+        "~~~~~~~",
+        `    at file://${Deno.cwd()}/file.md:10:1`,
+      ].join("\n"),
+    }],
+    info: [],
+  }]);
   assertEquals(await Deno.readTextFile("file.md"), content);
 });
 
@@ -496,70 +492,50 @@ Deno.test("deno().check() reports errors from multiple files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await Deno.writeTextFile(
     "file1.ts",
-    "function f(a?: string, b: number) { return a.concat(b); }",
+    "export function f(arg: number): string { return arg; }",
   );
-  await Deno.writeTextFile("file2.ts", "let x: number = 'string';");
+  await Deno.writeTextFile(
+    "file2.ts",
+    [
+      "import { f } from './file1.ts';",
+      "console.log(f());",
+    ].join("\n"),
+  );
   const results = await deno().check(["file1.ts", "file2.ts"]);
   assertResults(results, [{
     file: "file1.ts",
     problem: [{
-      kind: "check",
+      column: 42,
       file: "file1.ts",
-      line: 1,
-      column: 24,
-      rule: "TS1016",
-      reason: "A required parameter cannot follow an optional parameter.",
-      message: [
-        "TS1016 [ERROR]: A required parameter cannot follow an optional parameter.",
-        "function f(a?: string, b: number) { return a.concat(b); }",
-        "                       ^",
-        `    at file://${Deno.cwd()}/file1.ts:1:24`,
-      ].join("\n"),
-    }, {
       kind: "check",
-      file: "file1.ts",
       line: 1,
-      column: 44,
-      rule: "TS18048",
-      reason: "'a' is possibly 'undefined'.",
-      message: [
-        "TS18048 [ERROR]: 'a' is possibly 'undefined'.",
-        "function f(a?: string, b: number) { return a.concat(b); }",
-        "                                           ^",
-        `    at file://${Deno.cwd()}/file1.ts:1:44`,
-      ].join("\n"),
-    }, {
-      kind: "check",
-      file: "file1.ts",
-      line: 1,
-      column: 53,
-      rule: "TS2345",
-      reason:
-        "Argument of type 'number' is not assignable to parameter of type 'string'.",
-      message: [
-        "TS2345 [ERROR]: Argument of type 'number' is not assignable to " +
-        "parameter of type 'string'.",
-        "function f(a?: string, b: number) { return a.concat(b); }",
-        "                                                    ^",
-        `    at file://${Deno.cwd()}/file1.ts:1:53`,
-      ].join("\n"),
+      message:
+        "TS2322 [ERROR]: Type 'number' is not assignable to type 'string'.\n" +
+        "export function f(arg: number): string { return arg; }\n" +
+        "                                         ~~~~~~\n" +
+        `    at file://${Deno.cwd()}/file1.ts:1:42`,
+      reason: "Type 'number' is not assignable to type 'string'.",
+      rule: "TS2322",
     }],
     info: [],
   }, {
     file: "file2.ts",
     problem: [{
-      kind: "check",
+      column: 13,
       file: "file2.ts",
-      line: 1,
-      column: 5,
-      rule: "TS2322",
-      reason: "Type 'string' is not assignable to type 'number'.",
-      message: [
-        "TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.",
-        "let x: number = 'string';",
-        "    ^",
-        `    at file://${Deno.cwd()}/file2.ts:1:5`,
-      ].join("\n"),
+      kind: "check",
+      line: 2,
+      message: "TS2554 [ERROR]: Expected 1 arguments, but got 0.\n" +
+        "console.log(f());\n" +
+        "            ^\n" +
+        `    at file://${Deno.cwd()}/file2.ts:2:13\n` +
+        "\n" +
+        "    An argument for 'arg' was not provided.\n" +
+        "    export function f(arg: number): string { return arg; }\n" +
+        "                      ~~~~~~~~~~~\n" +
+        `        at file://${Deno.cwd()}/file1.ts:1:19`,
+      reason: "Expected 1 arguments, but got 0.",
+      rule: "TS2554",
     }],
     info: [],
   }]);
@@ -2235,33 +2211,29 @@ Deno.test("deno().lint({ permitNoFiles }) accepts unsupported file", async () =>
 Deno.test("deno().test() rejects runtime failure", async () => {
   await using _ = await tempDirectory({ chdir: true });
   const content = [
-    [
-      "const x = 42;",
-      "x = 13;",
-    ].join("\n"),
+    "const x = 42;",
+    "x = 13;",
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
-  assertResults(await deno().test(["file.ts"]), [
-    {
+  assertResults(await deno().test(["file.ts"]), [{
+    file: "file.ts",
+    problem: [{
+      kind: "error",
       file: "file.ts",
-      problem: [{
-        kind: "error",
-        file: "file.ts",
-        line: 2,
-        column: 1,
-        message: [
-          "./file.ts (uncaught error)",
-          "error: (in promise) TypeError: Assignment to constant variable.",
-          "x = 13;",
-          "^",
-          `    at file://${Deno.cwd()}/file.ts:2:1`,
-          "This error was not caught from a test and caused the test runner to fail on the referenced module.",
-          "It most likely originated from a dangling promise, event/timeout handler or top-level code.",
-        ].join("\n"),
-      }],
-      info: [],
-    },
-  ], { replace: [[/\d+ms/g, "?ms"]] });
+      line: 2,
+      column: 1,
+      message: [
+        "./file.ts (uncaught error)",
+        "error: (in promise) TypeError: Assignment to constant variable.",
+        "x = 13;",
+        "^",
+        `    at file://${Deno.cwd()}/file.ts:2:1`,
+        "This error was not caught from a test and caused the test runner to fail on the referenced module.",
+        "It most likely originated from a dangling promise, event/timeout handler or top-level code.",
+      ].join("\n"),
+    }],
+    info: [],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
@@ -3275,14 +3247,12 @@ Deno.test("deno().test() reports missing file", async () => {
   const results = await deno().test(["file.ts"]);
   assertResults(results, [{
     file: "file.ts",
-    problem: [
-      {
-        kind: "error",
-        file: "file.ts",
-        message:
-          `error: Import 'file://${Deno.cwd()}/file.ts' failed, not found.`,
-      },
-    ],
+    problem: [{
+      kind: "error",
+      file: "file.ts",
+      message:
+        `error: Import 'file://${Deno.cwd()}/file.ts' failed, not found.`,
+    }],
     info: [],
   }]);
   await assertRejects(() => Deno.stat("file.ts"));
@@ -3316,23 +3286,19 @@ Deno.test("deno().test({ filter }) runs specific tests", async () => {
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   const results = await deno().test(["file.ts"], { filter: "test2" });
-  assertResults(results, [
-    {
+  assertResults(results, [{
+    file: "file.ts",
+    problem: [],
+    info: [{
+      kind: "test",
+      message: "test2 ... ok (?ms)",
+      test: ["test2"],
       file: "file.ts",
-      problem: [],
-      info: [
-        {
-          kind: "test",
-          message: "test2 ... ok (?ms)",
-          test: ["test2"],
-          file: "file.ts",
-          success: true,
-          status: "ok",
-          time: "?ms",
-        },
-      ],
-    },
-  ], { replace: [[/\d+ms/g, "?ms"]] });
+      success: true,
+      status: "ok",
+      time: "?ms",
+    }],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
@@ -3345,13 +3311,11 @@ Deno.test("deno().test({ filter }) escapes regular expression syntax", async () 
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   const results = await deno().test(["file.ts"], { filter: "/test2/" });
-  assertResults(results, [
-    {
-      file: "file.ts",
-      problem: [],
-      info: [],
-    },
-  ], { replace: [[/\d+ms/g, "?ms"]] });
+  assertResults(results, [{
+    file: "file.ts",
+    problem: [],
+    info: [],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
@@ -3364,23 +3328,19 @@ Deno.test("deno().test({ filter }) can match tests with regular expression", asy
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   const results = await deno().test(["file.ts"], { filter: /.*2/ });
-  assertResults(results, [
-    {
+  assertResults(results, [{
+    file: "file.ts",
+    problem: [],
+    info: [{
+      kind: "test",
+      message: "test2 ... ok (?ms)",
+      test: ["test2"],
       file: "file.ts",
-      problem: [],
-      info: [
-        {
-          kind: "test",
-          message: "test2 ... ok (?ms)",
-          test: ["test2"],
-          file: "file.ts",
-          success: true,
-          status: "ok",
-          time: "?ms",
-        },
-      ],
-    },
-  ], { replace: [[/\d+ms/g, "?ms"]] });
+      success: true,
+      status: "ok",
+      time: "?ms",
+    }],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(await Deno.readTextFile("file.ts"), content);
 });
 
@@ -3396,23 +3356,19 @@ Deno.test("deno().test({ update }) updates snapshots", async () => {
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   const results = await deno().test(["file.ts"], { update: true });
-  assertResults(results, [
-    {
+  assertResults(results, [{
+    file: "file.ts",
+    problem: [],
+    info: [{
+      kind: "test",
+      message: "snapshotTest ... ok (?ms)",
+      test: ["snapshotTest"],
       file: "file.ts",
-      problem: [],
-      info: [
-        {
-          kind: "test",
-          message: "snapshotTest ... ok (?ms)",
-          test: ["snapshotTest"],
-          file: "file.ts",
-          success: true,
-          status: "ok",
-          time: "?ms",
-        },
-      ],
-    },
-  ], { replace: [[/\d+ms/g, "?ms"]] });
+      success: true,
+      status: "ok",
+      time: "?ms",
+    }],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(
     await Deno.readTextFile("__snapshots__/file.ts.snap"),
     [
@@ -3440,23 +3396,19 @@ Deno.test("deno().test({ update }) updates mocks", async () => {
   ].join("\n");
   await Deno.writeTextFile("file.ts", content);
   const results = await deno().test(["file.ts"], { update: true });
-  assertResults(results, [
-    {
+  assertResults(results, [{
+    file: "file.ts",
+    problem: [],
+    info: [{
+      kind: "test",
+      message: "snapshotTest ... ok (?ms)",
+      test: ["snapshotTest"],
       file: "file.ts",
-      problem: [],
-      info: [
-        {
-          kind: "test",
-          message: "snapshotTest ... ok (?ms)",
-          test: ["snapshotTest"],
-          file: "file.ts",
-          success: true,
-          status: "ok",
-          time: "?ms",
-        },
-      ],
-    },
-  ], { replace: [[/\d+ms/g, "?ms"]] });
+      success: true,
+      status: "ok",
+      time: "?ms",
+    }],
+  }], { replace: [[/\d+ms/g, "?ms"]] });
   assertEquals(
     await Deno.readTextFile("__mocks__/file.ts.mock"),
     [
