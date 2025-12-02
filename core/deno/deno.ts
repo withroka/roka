@@ -809,16 +809,20 @@ export function deno(options?: DenoOptions): DenoCommands {
           ],
           report: "failure",
         }, {
-          states: ["failure"],
-          patterns: [/^$/],
-          ignore: true,
-        }, {
-          states: ["failure", "error", "error-body"],
+          states: ["failure", "failure-empty", "error", "error-body"],
           patterns: [
             /^\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
             /^./,
           ],
           next: "error-body",
+        }, {
+          states: ["failure", "error", "error-body"],
+          patterns: [/^$/],
+          next: "failure-empty",
+        }, {
+          states: ["failure-empty"],
+          patterns: [/^$/],
+          ignore: true,
         }, {
           patterns: [
             /^Error generating coverage report: [\s\S]+$/,
@@ -833,7 +837,9 @@ export function deno(options?: DenoOptions): DenoCommands {
           report: "output",
         }, {
           states: ["output"],
-          patterns: [/^(?<output>.*)----- (?:pre|post)-test output end -----$/],
+          patterns: [
+            /^(?<output>.*)----- (?:pre|post)-test output end -----$/,
+          ],
           aggregate: ["output"],
           next: "output-end",
         }, {
