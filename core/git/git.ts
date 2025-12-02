@@ -1230,7 +1230,7 @@ export interface DiffOptions {
 
 /** Options for the {@linkcode DiffOperations.status} function. */
 export interface DiffStatusOptions extends DiffOptions {
-  /** Include diffstats in the output. */
+  /** Include diff stats in the output. */
   stats?: boolean;
   /**
    * Control the status output for untracked files.
