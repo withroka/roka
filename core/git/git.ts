@@ -58,6 +58,7 @@ import {
   assertGreater,
 } from "@std/assert";
 import { mapEntries, mapValues, slidingWindows } from "@std/collections";
+import { deepMerge } from "@std/collections/deep-merge";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
 
 /**
@@ -740,8 +741,10 @@ export interface Branch {
   };
 }
 
-/** Status of a file returned by the {@linkcode DiffOperations.status} function. */
-export type Status = {
+/**
+ * Status of a file returned by the {@linkcode DiffOperations.status} function.
+ */
+export interface Status {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
@@ -754,9 +757,11 @@ export type Status = {
     | "copied"
     | "untracked"
     | "ignored";
+  /** Number of lines inserted or deleted. */
+  stats?: DiffStats;
   /** Previous file path, if copied or renamed. */
   from?: string;
-};
+}
 
 /**
  * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
@@ -777,8 +782,18 @@ export interface Patch {
     /** Current or new file mode. */
     new?: number;
   };
+  /** Number of lines inserted or deleted. */
+  stats?: DiffStats;
   /** List of diff hunks in the patch. */
   hunks?: Hunk[];
+}
+
+/** Diff statistics with line insertions and deletions. */
+export interface DiffStats {
+  /** Number of lines inserted. */
+  added: number;
+  /** Number of lines deleted. */
+  deleted: number;
 }
 
 /**
@@ -1215,6 +1230,8 @@ export interface DiffOptions {
 
 /** Options for the {@linkcode DiffOperations.status} function. */
 export interface DiffStatusOptions extends DiffOptions {
+  /** Include diffstats in the output. */
+  stats?: boolean;
   /**
    * Control the status output for untracked files.
    *
@@ -2175,11 +2192,14 @@ export function git(options?: GitOptions): Git {
     },
     diff: {
       async status(options) {
-        async function tracked(location: "index" | "worktree" | "both") {
+        async function tracked(
+          format: string,
+          location: "index" | "worktree" | "both",
+        ) {
           const { value: output, error } = await maybe(() =>
             run(
               gitOptions,
-              ["diff", "--no-color", "--name-status", "-z"],
+              ["diff", "--no-color", format, "-z"],
               flag("--find-copies", options?.copies),
               pickaxeFlags(options?.pickaxe),
               flag(["--find-renames", "--no-renames"], options?.renames),
@@ -2197,11 +2217,32 @@ export function git(options?: GitOptions): Git {
             if (
               options?.from === undefined && location === "both" &&
               error.message.includes("bad revision 'HEAD'")
-            ) return await tracked("index");
+            ) return await tracked(format, "index");
             throw error;
           }
+          return output;
+        }
+        async function untracked(ignored: boolean) {
+          const output = await run(
+            gitOptions,
+            ["ls-files", "--others", "--exclude-standard", "-z"],
+            flag("--directory", options?.untracked === true),
+            flag("--ignored", ignored),
+            "--",
+            options?.path,
+          );
+          const result: Record<string, Status> = {};
+          for (const path of output.split("\0").filter((x) => x)) {
+            result[path] = {
+              path,
+              status: ignored ? "ignored" as const : "untracked" as const,
+            };
+          }
+          return result;
+        }
+        function parseStatus(output: string) {
           const entries = output.split("\0").filter((x) => x);
-          const statuses: Status[] = [];
+          const result: Record<string, Status> = {};
           let rename: string | undefined = undefined;
           let status: Patch["status"] | undefined = undefined;
           for (
@@ -2217,40 +2258,42 @@ export function git(options?: GitOptions): Git {
               }
               continue;
             }
+            const path = entry;
             if (status === "renamed" || status === "copied") {
               assertExists(rename, "Cannot parse diff entry");
-              statuses.push({ path: entry, status, from: rename });
+              result[path] = { path, status, from: rename };
               rename = undefined;
               status = undefined;
               continue;
             }
-            statuses.push({ path: entry, status });
+            result[path] = { path, status };
             status = undefined;
           }
-          return statuses;
+          return result;
         }
-        async function untracked(ignored: boolean) {
-          const output = await run(
-            gitOptions,
-            ["ls-files", "--others", "--exclude-standard", "-z"],
-            flag("--directory", options?.untracked === true),
-            flag("--ignored", ignored),
-            "--",
-            options?.path,
-          );
-          return output
-            .split("\0")
-            .filter((x) => x)
-            .map((path) => ({
-              path,
-              status: ignored ? "ignored" as const : "untracked" as const,
-            }));
+        function parseStats(output: string) {
+          const result: Record<string, { stats: Status["stats"] }> = {};
+          for (const line of output.split("\0").filter((x) => x)) {
+            const [added, deleted, file] = line.split("\t", 3);
+            const stats = { added: Number(added), deleted: Number(deleted) };
+            if (file && !isNaN(stats.added) && !isNaN(stats.deleted)) {
+              result[file] = { stats };
+            }
+          }
+          return result;
         }
-        return (await Promise.all([
-          tracked(options?.location ?? "both"),
-          options?.untracked ? untracked(false) : [],
-          options?.ignored ? untracked(true) : [],
-        ])).flat();
+        const [statusOutput, statOutput, ...others] = await Promise.all([
+          tracked("--name-status", options?.location ?? "both"),
+          options?.stats
+            ? tracked("--numstat", options?.location ?? "both")
+            : undefined,
+          options?.untracked ? untracked(false) : undefined,
+          options?.ignored ? untracked(true) : undefined,
+        ]);
+        const status = parseStatus(statusOutput);
+        const stats = statOutput ? parseStats(statOutput) : {};
+        for (const other of others) if (other) Object.assign(status, other);
+        return Object.values(stats ? deepMerge(status, stats) : status);
       },
       async patch(options) {
         async function tracked(location: "index" | "worktree" | "both") {
@@ -2301,6 +2344,7 @@ export function git(options?: GitOptions): Git {
               },
               {},
             );
+            const stats: DiffStats = { added: 0, deleted: 0 };
             const hunks: Hunk[] = body.map((hunk) => {
               const match = hunk.match(
                 /^@@ -(?<oldLine>\d+)(,\d*)? \+(?<newLine>\d+)(,\d*)? @@.*\n(?<body>(?:.|\n)*)$/,
@@ -2323,6 +2367,8 @@ export function git(options?: GitOptions): Git {
                       : line.startsWith("\\")
                       ? "info" as const
                       : "context" as const;
+                    if (type === "added") stats.added += 1;
+                    if (type === "deleted") stats.deleted += 1;
                     return {
                       type,
                       content: type === "info"
@@ -2342,6 +2388,7 @@ export function git(options?: GitOptions): Git {
               ...patch.from !== undefined && { from: patch.from },
               ...patch.similarity !== undefined &&
                 { similarity: patch.similarity },
+              ...(stats.added || stats.deleted) && { stats },
               ...hunks.length > 0 && { hunks },
             };
           });

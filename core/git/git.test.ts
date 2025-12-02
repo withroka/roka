@@ -2143,6 +2143,30 @@ Deno.test("git().diff.status({ from }) can ignored staged or unstaged files", as
   ]);
 });
 
+Deno.test("git().diff.status({ ignored }) can include ignored files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "ignored");
+  await repo.index.add(".gitignore");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("ignored"), "content");
+  assertEquals(await repo.diff.status({ ignored: true }), [
+    { path: "ignored", status: "ignored" },
+  ]);
+});
+
+Deno.test("git().diff.status({ ignored }) can separate ignored files from untracked files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path(".gitignore"), "ignored");
+  await repo.index.add(".gitignore");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("ignored"), "content");
+  await Deno.writeTextFile(repo.path("untracked"), "content");
+  assertEquals(await repo.diff.status({ ignored: true, untracked: true }), [
+    { path: "untracked", status: "untracked" },
+    { path: "ignored", status: "ignored" },
+  ]);
+});
+
 Deno.test("git().diff.status({ location }) can limit to staged or unstaged changes", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
@@ -2288,27 +2312,44 @@ Deno.test("git().diff.status({ untracked }) can list files under untracked direc
   ]);
 });
 
-Deno.test("git().diff.status({ ignored }) can include ignored files", async () => {
+Deno.test("git().diff.status({ stats }) generates diff stats", async () => {
   await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "ignored");
-  await repo.index.add(".gitignore");
+  await Deno.writeTextFile(repo.path("file1"), "line1\nline2\nline3\n");
+  await Deno.writeTextFile(repo.path("file2"), "line1\nline2\nline3\n");
+  await repo.index.add(["file1", "file2"]);
   await repo.commit.create({ subject: "commit" });
-  await Deno.writeTextFile(repo.path("ignored"), "content");
-  assertEquals(await repo.diff.status({ ignored: true }), [
-    { path: "ignored", status: "ignored" },
+  await Deno.writeTextFile(repo.path("file1"), "line1\nline4\n");
+  await Deno.remove(repo.path("file2"));
+  assertEquals(await repo.diff.status({ stats: true }), [
+    {
+      path: "file1",
+      status: "modified",
+      stats: { added: 1, deleted: 2 },
+    },
+    {
+      path: "file2",
+      status: "deleted",
+      stats: { added: 0, deleted: 3 },
+    },
   ]);
 });
 
-Deno.test("git().diff.status({ ignored }) can separate ignored files from untracked files", async () => {
+Deno.test("git().diff.status({ stats }) does not generate stats for renamed files", async () => {
   await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path(".gitignore"), "ignored");
-  await repo.index.add(".gitignore");
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
   await repo.commit.create({ subject: "commit" });
-  await Deno.writeTextFile(repo.path("ignored"), "content");
-  await Deno.writeTextFile(repo.path("untracked"), "content");
-  assertEquals(await repo.diff.status({ ignored: true, untracked: true }), [
-    { path: "untracked", status: "untracked" },
-    { path: "ignored", status: "ignored" },
+  await repo.index.move("old.file", "new.file");
+  assertEquals(await repo.diff.status({ stats: true }), [
+    { path: "new.file", status: "renamed", from: "old.file" },
+  ]);
+});
+
+Deno.test("git().diff.status({ stats }) does not generate stats for untracked files", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  assertEquals(await repo.diff.status({ stats: true, untracked: true }), [
+    { path: "file", status: "untracked" },
   ]);
 });
 
@@ -2353,6 +2394,7 @@ Deno.test("git().diff.patch() generates patch for committed file", async () => {
     path: "file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2374,6 +2416,7 @@ Deno.test("git().diff.patch() generates no newline at the end of file info", asy
     path: "file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2396,6 +2439,7 @@ Deno.test("git().diff.patch() generates patch for staged file", async () => {
     path: "file",
     status: "added",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 0 },
     hunks: [{
       line: { old: 0, new: 1 },
       lines: [
@@ -2416,6 +2460,7 @@ Deno.test("git().diff.patch() generates patch for unstaged file", async () => {
     path: "file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 0 },
     hunks: [{
       line: { old: 0, new: 1 },
       lines: [
@@ -2435,6 +2480,7 @@ Deno.test("git().diff.patch() generates patch for file with whitespace in name",
     path: "file with spaces",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2463,6 +2509,7 @@ Deno.test("git().diff.patch() generates patch with multiple hunks", async () => 
     path: "file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 2, deleted: 2 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2499,6 +2546,7 @@ Deno.test("git().diff.patch() generates patch for multiple files", async () => {
     path: "file1",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2510,6 +2558,7 @@ Deno.test("git().diff.patch() generates patch for multiple files", async () => {
     path: "file2",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2528,6 +2577,7 @@ Deno.test("git().diff.patch() generates patch for added file", async () => {
     path: "file",
     status: "added",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 0 },
     hunks: [{
       line: { old: 0, new: 1 },
       lines: [
@@ -2562,6 +2612,7 @@ Deno.test("git().diff.patch() generates patch for file with type change", async 
   assertEquals(await repo.diff.patch(), [{
     path: "file",
     status: "deleted",
+    stats: { added: 0, deleted: 1 },
     mode: { old: 0o100644 },
     hunks: [{
       line: { old: 1, new: 0 },
@@ -2570,6 +2621,7 @@ Deno.test("git().diff.patch() generates patch for file with type change", async 
   }, {
     path: "file",
     status: "added",
+    stats: { added: 1, deleted: 0 },
     mode: { new: 0o120000 },
     hunks: [{
       line: { old: 0, new: 1 },
@@ -2591,6 +2643,7 @@ Deno.test("git().diff.patch() generates patch for deleted file", async () => {
     path: "file",
     status: "deleted",
     mode: { old: 0o100644 },
+    stats: { added: 0, deleted: 1 },
     hunks: [
       {
         line: { old: 1, new: 0 },
@@ -2625,6 +2678,7 @@ Deno.test("git().diff.patch() generates patch in empty repository", async () => 
     path: "file",
     status: "added",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 0 },
     hunks: [{
       line: { old: 0, new: 1 },
       lines: [
@@ -2640,7 +2694,7 @@ Deno.test("git().diff.patch() handles configuration overrides", async () => {
       "color.diff": "always",
       "diff.algorithm": "patience",
       "diff.context": 10,
-      "diff.dirstat": "files,1,cumulative",
+      "diff.dirstat": "files,1,cumulafive",
       "diff.dstPrefix": "DST/",
       "diff.external": "echo",
       "diff.interHunkContext": 10,
@@ -2661,19 +2715,19 @@ Deno.test("git().diff.patch() handles configuration overrides", async () => {
     path: "file1",
     status: "modified",
     mode: { new: 0o100644 },
-    hunks: [
-      {
-        line: { old: 1, new: 1 },
-        lines: [
-          { type: "deleted", content: "content1" },
-          { type: "added", content: "content3" },
-        ],
-      },
-    ],
+    stats: { added: 1, deleted: 1 },
+    hunks: [{
+      line: { old: 1, new: 1 },
+      lines: [
+        { type: "deleted", content: "content1" },
+        { type: "added", content: "content3" },
+      ],
+    }],
   }, {
     path: "file2",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2746,6 +2800,7 @@ Deno.test("git().diff.patch({ copies }) can detect copies", async () => {
     path: "copied.file",
     status: "added",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 0 },
     hunks: [{
       line: { old: 0, new: 1 },
       lines: [
@@ -2756,6 +2811,7 @@ Deno.test("git().diff.patch({ copies }) can detect copies", async () => {
     path: "source.file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2773,6 +2829,7 @@ Deno.test("git().diff.patch({ copies }) can detect copies", async () => {
     path: "source.file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2796,6 +2853,7 @@ Deno.test("git().diff.patch({ location }) can limit to staged or unstaged change
     path: "file1",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2808,6 +2866,7 @@ Deno.test("git().diff.patch({ location }) can limit to staged or unstaged change
     path: "file2",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2834,6 +2893,7 @@ Deno.test("git().diff.patch({ pickaxe }) finds added and deleted lines", async (
     path: "file1",
     status: "deleted",
     mode: { old: 0o100644 },
+    stats: { added: 0, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 0 },
       lines: [{ content: "content1", type: "deleted" }],
@@ -2855,6 +2915,7 @@ Deno.test("git().diff.patch({ pickaxe }) can use pickaxe object", async () => {
     path: "file1",
     status: "deleted",
     mode: { old: 0o100644 },
+    stats: { added: 0, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 0 },
       lines: [{ content: "content1", type: "deleted" }],
@@ -2867,6 +2928,7 @@ Deno.test("git().diff.patch({ pickaxe }) can use pickaxe object", async () => {
       path: "file2",
       status: "modified",
       mode: { new: 0o100644 },
+      stats: { added: 1, deleted: 1 },
       hunks: [{
         line: { old: 1, new: 1 },
         lines: [
@@ -2886,6 +2948,7 @@ Deno.test("git().diff.patch({ pickaxe }) can match extended regular expressions"
     path: "file1",
     status: "added",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 0 },
     hunks: [{
       line: { old: 0, new: 1 },
       lines: [{ content: "content1", type: "added" }],
@@ -2914,6 +2977,7 @@ Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
     path: "new.file",
     status: "added",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 0 },
     hunks: [{
       line: { old: 0, new: 1 },
       lines: [
@@ -2924,6 +2988,7 @@ Deno.test("git().diff.patch({ renames }) can ignore renames", async () => {
     path: "old.file",
     status: "deleted",
     mode: { old: 0o100644 },
+    stats: { added: 0, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 0 },
       lines: [
@@ -2951,6 +3016,7 @@ Deno.test("git().diff.patch({ to }) generates patch for revision range", async (
     path: "file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 1, new: 1 },
       lines: [
@@ -2979,6 +3045,7 @@ Deno.test("git().diff.patch({ unified }) controls the number of context lines", 
     path: "file",
     status: "modified",
     mode: { new: 0o100644 },
+    stats: { added: 1, deleted: 1 },
     hunks: [{
       line: { old: 2, new: 2 },
       lines: [
