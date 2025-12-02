@@ -502,18 +502,18 @@ export function deno(options?: DenoOptions): DenoCommands {
           patterns: [
             /^\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
           ],
-          next: "check-end",
+          next: "check-rest",
         }, {
-          states: ["error", "check"],
+          states: ["error", "check", "check-rest"],
           patterns: [/^.?/],
-        }, {
-          patterns: [/^$/],
         }, {
           patterns: [/^error: /],
           report: "fatal",
         }, {
           states: ["fatal"],
           patterns: [/^\s/],
+        }, {
+          patterns: [/^$/],
         }],
       });
       return await runner.run(files);

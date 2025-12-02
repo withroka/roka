@@ -496,71 +496,55 @@ Deno.test("deno().check() reports errors from multiple files", async () => {
   await using _ = await tempDirectory({ chdir: true });
   await Deno.writeTextFile(
     "file1.ts",
-    "function f(a?: string, b: number) { return a.concat(b); }",
+    "export function f(arg: number): string { return arg; }",
   );
-  await Deno.writeTextFile("file2.ts", "let x: number = 'string';");
+  await Deno.writeTextFile(
+    "file2.ts",
+    [
+      "import { f } from './file1.ts';",
+      "console.log(f());",
+    ].join("\n"),
+  );
   const results = await deno().check(["file1.ts", "file2.ts"]);
   assertResults(results, [{
     file: "file1.ts",
-    problem: [{
-      kind: "check",
-      file: "file1.ts",
-      line: 1,
-      column: 24,
-      rule: "TS1016",
-      reason: "A required parameter cannot follow an optional parameter.",
-      message: [
-        "TS1016 [ERROR]: A required parameter cannot follow an optional parameter.",
-        "function f(a?: string, b: number) { return a.concat(b); }",
-        "                       ^",
-        `    at file://${Deno.cwd()}/file1.ts:1:24`,
-      ].join("\n"),
-    }, {
-      kind: "check",
-      file: "file1.ts",
-      line: 1,
-      column: 44,
-      rule: "TS18048",
-      reason: "'a' is possibly 'undefined'.",
-      message: [
-        "TS18048 [ERROR]: 'a' is possibly 'undefined'.",
-        "function f(a?: string, b: number) { return a.concat(b); }",
-        "                                           ^",
-        `    at file://${Deno.cwd()}/file1.ts:1:44`,
-      ].join("\n"),
-    }, {
-      kind: "check",
-      file: "file1.ts",
-      line: 1,
-      column: 53,
-      rule: "TS2345",
-      reason:
-        "Argument of type 'number' is not assignable to parameter of type 'string'.",
-      message: [
-        "TS2345 [ERROR]: Argument of type 'number' is not assignable to " +
-        "parameter of type 'string'.",
-        "function f(a?: string, b: number) { return a.concat(b); }",
-        "                                                    ^",
-        `    at file://${Deno.cwd()}/file1.ts:1:53`,
-      ].join("\n"),
-    }],
+    problem: [
+      {
+        column: 42,
+        file: "file1.ts",
+        kind: "check",
+        line: 1,
+        message:
+          "TS2322 [ERROR]: Type 'number' is not assignable to type 'string'.\n" +
+          "export function f(arg: number): string { return arg; }\n" +
+          "                                         ~~~~~~\n" +
+          `    at file://${Deno.cwd()}/file1.ts:1:42`,
+        reason: "Type 'number' is not assignable to type 'string'.",
+        rule: "TS2322",
+      },
+    ],
     info: [],
   }, {
     file: "file2.ts",
-    problem: [{
-      kind: "check",
-      file: "file2.ts",
-      line: 1,
-      column: 5,
-      rule: "TS2322",
-      reason: "Type 'string' is not assignable to type 'number'.",
-      message: [
-        "TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.",
-        "let x: number = 'string';",
-        "    ^",
-        `    at file://${Deno.cwd()}/file2.ts:1:5`,
-      ].join("\n"),
-    }],
+    problem: [
+      {
+        column: 13,
+        file: "file2.ts",
+        kind: "check",
+        line: 2,
+        message: "TS2554 [ERROR]: Expected 1 arguments, but got 0.\n" +
+          "console.log(f());\n" +
+          "            ^\n" +
+          `    at file://${Deno.cwd()}/file2.ts:2:13\n` +
+          "\n" +
+          "    An argument for 'arg' was not provided.\n" +
+          "    export function f(arg: number): string { return arg; }\n" +
+          "                      ~~~~~~~~~~~\n" +
+          `        at file://${Deno.cwd()}/file1.ts:1:19`,
+        reason: "Expected 1 arguments, but got 0.",
+        rule: "TS2554",
+      },
+    ],
     info: [],
   }]);
 });
