@@ -125,8 +125,6 @@ export interface ConfigOperations {
 
 /** Index operations from {@linkcode Git.index}. */
 export interface IndexOperations {
-  /** Returns the status of the index and the local working tree. */
-  status(options?: IndexStatusOptions): Promise<Status>;
   /** Stages files for commit. */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
   /** Move or rename a file, a directory, or a symlink. */
@@ -147,7 +145,7 @@ export interface IndexOperations {
 /** Difference operations from {@linkcode Git.diff}. */
 export interface DiffOperations {
   /** Returns the list of changed file paths with their status. */
-  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
+  status(options?: DiffStatusOptions): Promise<Status[]>;
   /** Returns the patch text for changes. */
   patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
@@ -289,85 +287,225 @@ export interface AdminOperations {
 
 /** Runtime schema for known git configuration. */
 export const CONFIG_SCHEMA = {
+  "add.ignoreErrors": ["boolean"],
   "author.email": ["string"],
   "author.name": ["string"],
+  "blame.blankBoundary": ["boolean"],
+  "blame.coloring": ["none", "repeatedLines", "highlightRecent"],
+  "blame.ignoreRevsFile": ["array"],
+  "blame.markIgnoredLines": ["boolean"],
+  "blame.markUnblamableLines": ["boolean"],
+  "blame.showEmail": ["boolean"],
+  "blame.showRoot": ["boolean"],
   "branch.autoSetupMerge": ["boolean", "always", "inherit", "simple"],
+  "branch.autoSetupRebase": ["never", "local", "remote", "always"],
   "branch.sort": ["string"],
+  "bundle.heuristic": ["creationToken"],
+  "bundle.mode": ["all", "any"],
+  "bundle.version": ["number"],
+  "clean.requireForce": ["boolean"],
   "clone.defaultRemoteName": ["string"],
   "clone.rejectShallow": ["boolean"],
-  "color.branch": ["boolean", "auto", "always", "never"],
-  "color.diff": ["boolean", "auto", "always", "never"],
-  "color.status": ["boolean", "auto", "always", "never"],
-  "color.ui": ["boolean", "auto", "always", "never"],
+  "color.branch": ["never", "auto", "always"],
+  "color.diff": ["never", "auto", "always"],
+  "color.log": ["never", "auto", "always"],
+  "color.status": ["never", "auto", "always"],
+  "color.ui": ["never", "auto", "always"],
+  "column.branch": ["string"],
+  "column.clean": ["string"],
+  "column.status": ["string"],
+  "column.tag": ["string"],
+  "commit.cleanup": ["strip", "whitespace", "verbatim", "scissors", "default"],
   "commit.gpgSign": ["boolean"],
   "commit.status": ["boolean"],
   "commit.verbose": ["boolean"],
   "committer.email": ["string"],
   "committer.name": ["string"],
+  "core.abbrev": ["number"],
+  "core.alternateRefsCommand": ["string"],
+  "core.alternateRefsPrefixes": ["string"],
+  "core.askPass": ["string"],
   "core.attributesFile": ["string"],
   "core.autocrlf": ["boolean", "input"],
   "core.bare": ["boolean"],
+  "core.bigFileThreshold": ["number"],
+  "core.checkRoundtripEncoding": ["string"],
+  "core.checkStat": ["minimal", "default"],
   "core.commitGraph": ["boolean"],
   "core.compression": ["number"],
+  "core.createObject": ["link", "rename"],
+  "core.deltaBaseCacheLimit": ["number"],
   "core.editor": ["string"],
   "core.eol": ["lf", "crlf", "native"],
   "core.excludesFile": ["string"],
   "core.fileMode": ["boolean"],
+  "core.filesRefLockTimeout": ["number"],
   "core.fsmonitor": ["boolean", "string"],
+  "core.fsmonitorHookVersion": ["number"],
+  "core.fsync": ["string"],
+  "core.fsyncMethod": ["fsync", "writeout-only", "batch"],
+  "core.fsyncObjectFiles": ["boolean"],
+  "core.gitProxy": ["string"],
+  "core.hideDotFiles": ["boolean"],
   "core.hooksPath": ["string"],
   "core.ignoreCase": ["boolean"],
+  "core.ignoreStat": ["boolean"],
   "core.logAllRefUpdates": ["boolean"],
   "core.looseCompression": ["number"],
+  "core.maxTreeDepth": ["number"],
   "core.multiPackIndex": ["boolean"],
+  "core.notesRef": ["string"],
+  "core.packedGitLimit": ["number"],
+  "core.packedGitWindowSize": ["number"],
+  "core.packedRefsTimeout": ["number"],
   "core.pager": ["string"],
   "core.precomposeUnicode": ["boolean"],
+  "core.preferSymlinkRefs": ["boolean"],
+  "core.preloadIndex": ["boolean"],
   "core.protectHFS": ["boolean"],
   "core.protectNTFS": ["boolean"],
   "core.quotePath": ["boolean"],
   "core.repositoryFormatVersion": ["number"],
   "core.safecrlf": ["boolean"],
+  "core.sharedRepository": ["boolean", "group", "all", "umask", "string"],
   "core.sparseCheckout": ["boolean"],
   "core.sparseCheckoutCone": ["boolean"],
+  "core.splitIndex": ["boolean"],
+  "core.sshCommand": ["string"],
   "core.symlinks": ["boolean"],
+  "core.trustctime": ["boolean"],
+  "core.unsetenvvars": ["string"],
   "core.untrackedCache": ["boolean", "keep"],
+  "core.useReplaceRefs": ["boolean"],
+  "core.warnAmbiguousRefs": ["boolean"],
   "core.whitespace": ["string"],
   "core.worktree": ["string"],
   "credential.helper": ["string"],
+  "credential.interactive": ["boolean"],
+  "credential.protectProtocol": ["boolean"],
+  "credential.sanitizePrompt": ["boolean"],
+  "credential.useHttpPath": ["boolean"],
   "credential.username": ["string"],
+  "credentialCache.ignoreSIGHUP": ["boolean"],
   "diff.algorithm": ["default", "myers", "minimal", "patience", "histogram"],
+  "diff.autoRefreshIndex": ["boolean"],
+  "diff.colorMoved": ["boolean", "zebra", "dimmed-zebra", "blocks", "plain"],
+  "diff.colorMovedWs": ["string"],
   "diff.context": ["number"],
   "diff.dirstat": ["string"],
   "diff.dstPrefix": ["string"],
   "diff.external": ["string"],
+  "diff.guitool": ["string"],
+  "diff.indentHeuristic": ["boolean"],
   "diff.interHunkContext": ["number"],
   "diff.mnemonicPrefix": ["boolean"],
   "diff.noPrefix": ["string"],
+  "diff.orderFile": ["string"],
+  "diff.relative": ["boolean"],
+  "diff.renameLimit": ["number"],
   "diff.renames": ["boolean", "copies", "copy"],
   "diff.srcPrefix": ["string"],
+  "diff.statGraphWidth": ["number"],
+  "diff.statNameWidth": ["number"],
+  "diff.suppressBlankEmpty": ["boolean"],
+  "diff.tool": ["string"],
+  "diff.trustExitCode": ["boolean"],
+  "diff.wordRegex": ["string"],
+  "diff.wsErrorHighlight": ["string"],
   "fetch.all": ["boolean"],
+  "fetch.bundleCreationToken": ["string"],
+  "fetch.bundleURI": ["string"],
+  "fetch.fsck.skipList": ["string"],
+  "fetch.fsckObjects": ["boolean"],
+  "fetch.negotiationAlgorithm": ["consecutive", "skipping", "noop", "default"],
+  "fetch.output": ["full", "compact"],
   "fetch.parallel": ["number"],
   "fetch.prune": ["boolean"],
   "fetch.pruneTags": ["boolean"],
+  "fetch.showForcedUpdates": ["boolean"],
+  "fetch.unpackLimit": ["number"],
+  "fetch.writeCommitGraph": ["boolean"],
   "format.pretty": ["string"],
+  "fsck.skipList": ["string"],
+  "fsmonitor.allowRemote": ["boolean"],
+  "fsmonitor.socketDir": ["string"],
   "gc.auto": ["number"],
   "gc.autoDetach": ["boolean"],
   "gc.autoPackLimit": ["number"],
   "gpg.format": ["openpgp", "x509", "ssh"],
+  "gpg.minTrustLevel": ["undefined", "never", "marginal", "fully", "ultimate"],
   "gpg.program": ["string"],
+  "gpg.ssh.allowedSignersFile": ["string"],
+  "gpg.ssh.defaultKeyCommand": ["string"],
+  "gpg.ssh.revocationFile": ["string"],
   "help.autoCorrect": ["boolean", "number"],
+  "http.cookieFile": ["string"],
+  "http.curloptResolve": ["array"],
+  "http.delegation": ["none", "policy", "always"],
+  "http.emptyAuth": ["boolean"],
+  "http.extraHeader": ["array"],
   "http.followRedirects": ["boolean", "initial"],
+  "http.keepAliveCount": ["number"],
+  "http.keepAliveIdle": ["number"],
+  "http.keepAliveInterval": ["number"],
+  "http.lowSpeedLimit": ["number"],
+  "http.lowSpeedTime": ["number"],
+  "http.maxRequests": ["number"],
+  "http.minSessions": ["number"],
+  "http.noEPSV": ["boolean"],
+  "http.pinnedPubkey": ["string"],
+  "http.postBuffer": ["number"],
+  "http.proactiveAuth": ["basic", "auto", "none"],
   "http.proxy": ["string"],
   "http.proxyAuthMethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
+  "http.proxySSLCAInfo": ["string"],
+  "http.proxySSLCert": ["string"],
+  "http.proxySSLCertPasswordProtected": ["boolean"],
+  "http.proxySSLKey": ["string"],
+  "http.saveCookies": ["boolean"],
+  "http.schannelCheckRevoke": ["boolean"],
+  "http.schannelUseSSLCAInfo": ["boolean"],
+  "http.sslBackend": ["string"],
+  "http.sslCAInfo": ["string"],
+  "http.sslCAPath": ["string"],
+  "http.sslCert": ["string"],
+  "http.sslCertPasswordProtected": ["boolean"],
+  "http.sslCertType": ["PEM", "DER", "P12"],
+  "http.sslCipherList": ["string"],
+  "http.sslKey": ["string"],
+  "http.sslKeyType": ["PEM", "DER", "ENG", "PROV"],
+  "http.sslTry": ["boolean"],
+  "http.sslVerify": ["boolean"],
+  "http.sslVersion": [
+    "sslv2",
+    "sslv3",
+    "tlsv1",
+    "tlsv1.0",
+    "tlsv1.1",
+    "tlsv1.2",
+    "tlsv1.3",
+  ],
   "http.userAgent": ["string"],
+  "http.version": ["HTTP/1.1", "HTTP/2"],
   "i18n.commitEncoding": ["string"],
   "i18n.logOutputEncoding": ["string"],
+  "index.recordEndOfIndexEntries": ["boolean"],
+  "index.recordOffsetTable": ["boolean"],
+  "index.skipHash": ["boolean"],
   "index.sparse": ["boolean"],
+  "index.threads": ["number"],
+  "index.version": ["number"],
   "init.defaultBranch": ["string"],
   "init.defaultObjectFormat": ["sha1", "sha256"],
   "init.defaultRefFormat": ["files", "reftable"],
+  "init.templateDir": ["string"],
   "log.abbrevCommit": ["boolean"],
   "log.decorate": ["short", "full", "auto"],
+  "log.diffMerges": ["boolean", "string"],
+  "log.excludeDecoration": ["string"],
   "log.follow": ["boolean"],
+  "log.graphColors": ["string"],
+  "log.initialDecorationSet": ["all"],
   "log.mailmap": ["boolean"],
   "log.showRoot": ["boolean"],
   "log.showSignature": ["boolean"],
@@ -378,11 +516,35 @@ export const CONFIG_SCHEMA = {
   "merge.ff": ["boolean", "only"],
   "merge.renames": ["boolean"],
   "pack.compression": ["number"],
+  "pager.branch": ["boolean", "string"],
+  "pager.config": ["boolean", "string"],
+  "pager.diff": ["boolean", "string"],
+  "pager.log": ["boolean", "string"],
+  "pager.tag": ["boolean", "string"],
+  "partialCloneFilter": ["string"],
+  "promisor.acceptFromServer": ["none", "all", "knownName", "knownUrl"],
+  "promisor.advertise": ["boolean"],
+  "promisor.checkFields": ["string"],
+  "promisor.quiet": ["boolean"],
+  "promisor.sendFields": ["string"],
+  "protocol.allow": ["always", "never", "user"],
+  "protocol.file.allow": ["always", "never", "user"],
+  "protocol.git.allow": ["always", "never", "user"],
+  "protocol.http.allow": ["always", "never", "user"],
+  "protocol.ssh.allow": ["always", "never", "user"],
+  "protocol.version": ["number"],
+  "pull.autoStash": ["boolean"],
   "pull.ff": ["boolean", "only"],
+  "pull.octopus": ["string"],
   "pull.rebase": ["boolean", "merges", "interactive"],
+  "pull.twohead": ["string"],
   "push.autoSetupRemote": ["boolean"],
   "push.default": ["nothing", "current", "upstream", "simple", "matching"],
   "push.followTags": ["boolean"],
+  "push.gpgSign": ["boolean", "if-asked"],
+  "push.negotiate": ["boolean"],
+  "push.pushOption": ["array"],
+  "push.useBitmaps": ["boolean"],
   "push.useForceIfIncludes": ["boolean"],
   "rebase.autoSquash": ["boolean"],
   "rebase.autoStash": ["boolean"],
@@ -394,16 +556,39 @@ export const CONFIG_SCHEMA = {
   "rerere.enabled": ["boolean"],
   "safe.bareRepository": ["all", "explicit"],
   "safe.directory": ["array"],
+  "ssh.variant": ["ssh", "simple", "plink", "putty", "tortoiseplink"],
+  "status.aheadBehind": ["boolean"],
+  "status.branch": ["boolean"],
   "status.displayCommentPrefix": ["boolean"],
   "status.relativePaths": ["boolean"],
+  "status.renameLimit": ["number"],
   "status.renames": ["boolean", "copies", "copy"],
   "status.short": ["boolean"],
+  "status.showStash": ["boolean"],
   "status.showUntrackedFiles": ["no", "normal", "all"],
   "submodule.recurse": ["boolean"],
+  "tag.forceSignAnnotated": ["boolean"],
   "tag.gpgSign": ["boolean"],
   "tag.sort": ["string"],
+  "tar.umask": ["string"],
+  "token": ["string"],
+  "trailer.ifexists": [
+    "addIfDifferentNeighbor",
+    "addIfDifferent",
+    "add",
+    "replace",
+    "doNothing",
+  ],
+  "trailer.ifmissing": ["add", "doNothing"],
   "trailer.separators": ["string"],
+  "trailer.where": ["end", "start", "after", "before"],
+  "transfer.advertiseObjectInfo": ["boolean"],
+  "transfer.advertiseSID": ["boolean"],
+  "transfer.bundleURI": ["boolean"],
+  "transfer.credentialsInUrl": ["allow", "warn", "die"],
   "transfer.fsckObjects": ["boolean"],
+  "transfer.hideRefs": ["boolean"],
+  "transfer.unpackLimit": ["number"],
   "user.email": ["string"],
   "user.name": ["string"],
   "user.signingKey": ["string"],
@@ -423,15 +608,21 @@ export const BRANCH_CONFIG_SCHEMA = {
 /** Runtime schema for known remote configuration. */
 export const REMOTE_CONFIG_SCHEMA = {
   "fetch": ["string"],
+  "followRemoteHEAD": ["string"],
   "mirror": ["boolean"],
+  "partialCloneFilter": ["string"],
+  "promisor": ["boolean"],
   "proxy": ["string"],
   "proxyAuthMethod": ["anyauth", "basic", "digest", "ntlm", "negotiate"],
   "prune": ["boolean"],
   "pruneTags": ["boolean"],
   "push": ["string"],
   "pushurl": ["string"],
+  "receivepack": ["string"],
+  "serverOption": ["array"],
   "skipFetchAll": ["boolean"],
-  "tagopt": ["--tags", "--no-tags"],
+  "tagOpt": ["--tags", "--no-tags"],
+  "uploadpack": ["string"],
   "url": ["string"],
 } as const;
 
@@ -549,46 +740,23 @@ export interface Branch {
   };
 }
 
-/** Status of files in the index and the working tree. */
-export interface Status {
-  /** Files that are staged for commit (the index). */
-  staged: TrackedPathStatus[];
-  /** Files that are not staged for commit (the working tree). */
-  unstaged: TrackedPathStatus[];
-  /** Files that are not tracked by git. */
-  untracked: UntrackedPathStatus[];
-  /** Files that are ignored by git. */
-  ignored: UntrackedPathStatus[];
-}
-
-/** Status of a file in the index and the working tree. */
-export type TrackedPathStatus = UpdatedPathStatus | RenamedPathStatus;
-
-/** Status of a non-renamed file in the index and the working tree. */
-export interface UpdatedPathStatus {
+/** Status of a file returned by the {@linkcode DiffOperations.status} function. */
+export type Status = {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
-  status: "modified" | "type-changed" | "added" | "deleted";
-}
-
-/** Status of a renamed file in the index and the working tree. */
-export interface RenamedPathStatus {
-  /** Path to the file. */
-  path: string;
-  /** Status of the file. */
-  status: "renamed" | "copied";
-  /** Previous file path. */
-  from: string;
-}
-
-/**
- * Status of an untracked or ignored file in the index and the working tree.
- */
-export interface UntrackedPathStatus {
-  /** Path to the file. */
-  path: string;
-}
+  status:
+    | "modified"
+    | "added"
+    | "deleted"
+    | "type-changed"
+    | "renamed"
+    | "copied"
+    | "untracked"
+    | "ignored";
+  /** Previous file path, if copied or renamed. */
+  from?: string;
+};
 
 /**
  * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
@@ -597,20 +765,17 @@ export interface Patch {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
-  status: TrackedPathStatus["status"];
+  status: Exclude<Status["status"], "untracked" | "ignored">;
+  /** Previous file path, if copied or renamed. */
+  from?: string;
+  /** Similarity value (0-1) for the rename or copy. */
+  similarity?: number;
   /** File mode, if provided. */
   mode?: {
     /** Old file mode, if changed or deleted. */
     old?: number;
     /** Current or new file mode. */
     new?: number;
-  };
-  /** Previous file path, for renamed or copied files. */
-  from?: {
-    /** Previous file path. */
-    path: string;
-    /** Similarity value (0-1) for the rename or copy. */
-    similarity: number;
   };
   /** List of diff hunks in the patch. */
   hunks?: Hunk[];
@@ -777,33 +942,6 @@ export interface SignOptions {
 }
 
 /**
- * Options for specifying a revision range over commit history.
- */
-export interface RevisionRangeOptions {
-  /**
-   * Match objects that are descendants of this revision.
-   *
-   * The pointed commit itself is excluded from the range.
-   */
-  from?: Commitish;
-  /**
-   * Match objects that are ancestors of this revision.
-   *
-   * The pointed commit itself is included in the range.
-   */
-  to?: Commitish;
-  /**
-   * Match objects that are reachable from either end, but not from both.
-   *
-   * Ignored if either {@linkcode RevisionRangeOptions.from} or
-   * {@linkcode RevisionRangeOptions.to} is not set.
-   *
-   * @default {false}
-   */
-  symmetric?: boolean;
-}
-
-/**
  * Options common to the {@linkcode Git.init} and {@linkcode Git.clone}
  * functions.
  */
@@ -927,65 +1065,31 @@ export interface CloneOptions
 }
 
 /**
- * Options common for all config operations, such as
+ * Options common to all config operations, such as
  * {@linkcode ConfigOperations.get} or {@linkcode ConfigOperations.set}.
  */
-export interface ConfigOptions {
+export type ConfigOptions = ConfigLevelOptions | ConfigFileOptions;
+
+/** Options for reading from or writing to a configuration level. */
+export interface ConfigLevelOptions {
   /**
-   * Configuration to read from or write to.
+   * Configuration level to read from or write to.
    *
    * - `"system"`: System-level configuration
    * - `"global"`: User-level configuration
-   * - `"local"`: Repository-level configuration
+   * - `"local"`: Repository-level configuration (default for writes)
    * - `"worktree"`: Worktree-level configuration
-   * - `{ file: string }`: Custom configuration file
    *
-   * When reading, the values are read from the `"system"`, `"global"` and
-   * `"local"` configuration by default. When writing, the new value is written
-   * to the `"local"` configuration file by default.
+   * When reading, values are read from `"system"`, `"global"`, and `"local"`
+   * by default. When writing, the new value is written to `"local"` by default.
    */
-  target?: "system" | "global" | "local" | "worktree" | { file: string };
+  level?: "system" | "global" | "local" | "worktree";
 }
 
-/** Options for the {@linkcode IndexOperations.status} function. */
-export interface IndexStatusOptions {
-  /**
-   * Limit the status to the given pathspecs.
-   *
-   * If not set, all files are included.
-   */
-  path?: string | string[];
-  /**
-   * Control the status output for ignored files.
-   *
-   * - `true`: include ignored files and directories
-   * - `false`: exclude ignored files and directories (default)
-   *
-   * Files under ignored directories are included only if
-   * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`.
-   *
-   * @default {false}
-   */
-  ignored?: boolean;
-  /**
-   * Control the status output for renamed files.
-   *
-   * - `true`: enable rename detection, and list renamed files as such (default)
-   * - `false`: disable rename detection, and list files as added and deleted
-   *
-   * @default {true}
-   */
-  renames?: boolean;
-  /**
-   * Control the status output for untracked files.
-   *
-   * - `false`: exclude untracked files
-   * - `true`: include untracked directories, but not their files (default)
-   * - `"all"`: include all untracked files
-   *
-   * @default {true}
-   */
-  untracked?: boolean | "all";
+/** Options for reading from or writing to a custom configuration file. */
+export interface ConfigFileOptions {
+  /** Path to a custom configuration file. */
+  file: string;
 }
 
 /** Options for the {@linkcode IndexOperations.add} function. */
@@ -1018,13 +1122,19 @@ export interface IndexRestoreOptions {
   /**
    * Source commit to restore from.
    *
-   * If not specified, the contents are restored from `HEAD`.
+   * The default restore source depends on the
+   * {@linkcode IndexRestoreOptions.location location} option.
    *
-   * @default {"HEAD"}
+   * - `HEAD` is the default source, if restoring the index (staging area)
+   * - the index is the default source, if restoring the working tree only
    */
   source?: Commitish;
   /**
-   * Location to restore files in.
+   * Restore location.
+   *
+   * - `index`: restore files in the staging area from source
+   * - `worktree`: restore files in the working tree from source (default)
+   * - `both`: restore both the index and working tree
    *
    * @default {"worktree"}
    */
@@ -1044,13 +1154,32 @@ export interface IndexRemoveOptions {
  * Options for the {@linkcode DiffOperations.status} and
  * {@linkcode DiffOperations.patch} functions.
  */
-export interface DiffOptions extends RevisionRangeOptions {
+export interface DiffOptions {
   /**
-   * Target commit to diff against.
+   * Diff location for uncommitted changes.
    *
-   * If set to `HEAD`, diffs the working tree or index against the last commit.
+   * - `"index"`: include changes staged to index, exclude unstaged changes
+   * - `"worktree"`: include unstaged changes, exclude staged changes
+   * - `"both"`: include all uncommitted changes (default)
+   *
+   * To exclude all uncommitted changes, use {@linkcode DiffOptions.from from}
+   * and {@linkcode DiffOptions.to to} to provide a specific revision range.
+   *
+   * Ignored if {@linkcode DiffOptions.to to} is set.
    */
-  target?: Commitish;
+  location?: "index" | "worktree" | "both";
+  /**
+   * Include changes since the given commit.
+   *
+   * @default {"HEAD"}
+   */
+  from?: Commitish;
+  /**
+   * Include changes up to the given commit.
+   *
+   * Uncommitted changes will be included if not set.
+   */
+  to?: Commitish;
   /**
    * Limit the diff to the given pathspecs.
    *
@@ -1071,8 +1200,6 @@ export interface DiffOptions extends RevisionRangeOptions {
    * @default {false}
    */
   copies?: boolean;
-  /** Filters for files where the given pattern is added or deleted. */
-  pickaxe?: string | Pickaxe;
   /**
    * Control the diff output for renamed files.
    *
@@ -1082,12 +1209,34 @@ export interface DiffOptions extends RevisionRangeOptions {
    * @default {true}
    */
   renames?: boolean;
+  /** Filters for files where the given pattern is added or deleted. */
+  pickaxe?: string | Pickaxe;
+}
+
+/** Options for the {@linkcode DiffOperations.status} function. */
+export interface DiffStatusOptions extends DiffOptions {
   /**
-   * Diff staged changes, instead of changes in the working tree.
+   * Control the status output for untracked files.
+   *
+   * - `false`: exclude untracked files (default)
+   * - `true`: include untracked directories, but not their files
+   * - `"all"`: include all untracked files
    *
    * @default {false}
    */
-  staged?: boolean;
+  untracked?: boolean | "all";
+  /**
+   * Control the status output for ignored files.
+   *
+   * - `true`: include ignored files and directories
+   * - `false`: exclude ignored files and directories (default)
+   *
+   * Files under ignored directories are included only if
+   * {@linkcode DiffStatusOptions.untracked untracked} is set to `"all"`.
+   *
+   * @default {false}
+   */
+  ignored?: boolean;
 }
 
 /** Options for the {@linkcode DiffOperations.patch} function. */
@@ -1117,19 +1266,40 @@ export interface IgnoreFilterOptions {
 }
 
 /** Options for the {@linkcode CommitOperations.log} function. */
-export interface CommitLogOptions extends RevisionRangeOptions {
+export interface CommitLogOptions {
   /** Only commits by an author. */
   author?: User;
   /** Only commits by a committer. */
   committer?: User;
   /** Only commits that modified any of the given pathspecs. */
   path?: string | string[];
+  /**
+   * Only commits that are descendants of this revision.
+   *
+   * The pointed commit itself is excluded from the range.
+   */
+  from?: Commitish;
+  /**
+   * Only commits that are ancestors of this revision.
+   *
+   * The pointed commit itself is included in the range.
+   */
+  to?: Commitish;
+  /**
+   * Only commits that are reachable from either end, but not from both.
+   *
+   * Ignored if either {@linkcode CommitLogOptions.from} or
+   * {@linkcode CommitLogOptions.to} is not set.
+   *
+   * @default {false}
+   */
+  symmetric?: boolean;
   /** Maximum number of commits to return. */
   maxCount?: number;
-  /** Filters for commits where the given pattern is added or deleted. */
-  pickaxe?: string | Pickaxe;
   /** Number of commits to skip. */
   skip?: number;
+  /** Filters for commits where the given pattern is added or deleted. */
+  pickaxe?: string | Pickaxe;
 }
 
 /**
@@ -1335,8 +1505,7 @@ export interface TagListOptions extends RefListOptions {
    *
    * By default, pre-release versions are sorted lexically, and they are
    * considered newer than the release versions. To change this behavior, set
-   * the {@linkcode Config.versionsort.suffix versionsort.suffix} config
-   * option to the pre-release suffixes.
+   * the `"versionsort.suffix"` config option to the pre-release suffixes.
    *
    * ```ts
    * import { tempRepository } from "@roka/git/testing";
@@ -1886,7 +2055,7 @@ export function git(options?: GitOptions): Git {
         const output = await run(
           gitOptions,
           ["config", "list"],
-          configTargetFlag(options?.target),
+          configSourceFlag(options),
         );
         const lines = output.split("\n").filter((x) => x);
         const config: Record<string, string[]> = {};
@@ -1914,7 +2083,7 @@ export function git(options?: GitOptions): Git {
           "--all",
           ...type === "boolean" ? ["--bool"] : [],
           ...type === "number" ? ["--int"] : [],
-          configTargetFlag(options?.target),
+          configSourceFlag(options),
           key,
         );
         if (!output) return undefined;
@@ -1926,7 +2095,7 @@ export function git(options?: GitOptions): Git {
           await run(
             gitOptions,
             ["config", "set", "--all"],
-            configTargetFlag(options?.target),
+            configSourceFlag(options),
             key,
             `${value}`,
           );
@@ -1934,7 +2103,7 @@ export function git(options?: GitOptions): Git {
           await run(
             { ...gitOptions, allowCode: [5] },
             ["config", "unset", "--all"],
-            configTargetFlag(options?.target),
+            configSourceFlag(options),
             key,
           );
           for (const element of value) {
@@ -1942,7 +2111,7 @@ export function git(options?: GitOptions): Git {
             await run(
               gitOptions,
               ["config", "--add"],
-              configTargetFlag(options?.target),
+              configSourceFlag(options),
               key,
               `${element}`,
             );
@@ -1953,76 +2122,12 @@ export function git(options?: GitOptions): Git {
         await run(
           { ...gitOptions, allowCode: [5] },
           ["config", "unset", "--all"],
-          configTargetFlag(options?.target),
+          configSourceFlag(options),
           key,
         );
       },
     },
     index: {
-      async status(options?: IndexStatusOptions) {
-        const output = await run(
-          gitOptions,
-          ["status", "--porcelain=1", "-z"],
-          flag("--untracked-files=normal", options?.untracked === true),
-          flag("--ignored=traditional", options?.ignored === true),
-          flag("--ignored=no", options?.ignored === false),
-          flag("--untracked-files=no", options?.untracked === false),
-          flag("--untracked-files=all", options?.untracked === "all"),
-          flag(["--renames", "--no-renames"], options?.renames),
-          "--",
-          options?.path,
-        );
-        const lines = output.split("\0").filter((x) => x);
-        const status: Status = {
-          staged: [],
-          unstaged: [],
-          untracked: [],
-          ignored: [],
-        };
-        let rename = false;
-        for (
-          const [entry, next] of slidingWindows(lines, 2, { partial: true })
-        ) {
-          assertExists(entry, "Cannot parse status line");
-          if (rename) {
-            rename = false;
-            continue;
-          }
-          const [x, y, path] = [entry[0], entry[1], entry.slice(3)];
-          assertExists(x, "Cannot parse status entry");
-          assertExists(y, "Cannot parse status entry");
-          assertExists(path, "Cannot parse status entry");
-          if (x === "?") {
-            status.untracked.push({ path });
-            continue;
-          }
-          if (x === "!") {
-            status.ignored.push({ path });
-            continue;
-          }
-          if (x !== " ") {
-            const xStatus = statusKind(x);
-            if (xStatus === "renamed" || xStatus === "copied") {
-              assertExists(next, "Cannot parse status entry");
-              rename = true;
-              status.staged.push({ path, status: xStatus, from: next });
-            } else {
-              status.staged.push({ path, status: xStatus });
-            }
-          }
-          if (y !== " ") {
-            const yStatus = statusKind(y);
-            if (yStatus === "renamed" || yStatus === "copied") {
-              assertExists(next, "Cannot parse status entry");
-              rename = true;
-              status.unstaged.push({ path, status: yStatus, from: next });
-            } else {
-              status.unstaged.push({ path, status: yStatus });
-            }
-          }
-        }
-        return status;
-      },
       async add(path, options?: IndexAddOptions) {
         await run(
           gitOptions,
@@ -2046,6 +2151,7 @@ export function git(options?: GitOptions): Git {
         await run(
           gitOptions,
           "restore",
+          flag("--source", commitArg(options?.source), { equals: true }),
           flag(
             "--staged",
             options?.location === "index" || options?.location === "both",
@@ -2054,7 +2160,6 @@ export function git(options?: GitOptions): Git {
             "--worktree",
             options?.location === "worktree" || options?.location === "both",
           ),
-          flag("--source", commitArg(options?.source), { equals: true }),
           "--",
           path,
         );
@@ -2070,62 +2175,114 @@ export function git(options?: GitOptions): Git {
     },
     diff: {
       async status(options) {
-        const output = await run(
-          gitOptions,
-          ["diff", "--no-color", "--name-status", "-z"],
-          flag("--staged", options?.staged),
-          flag("--find-copies", options?.copies),
-          pickaxeFlags(options?.pickaxe),
-          flag(["--find-renames", "--no-renames"], options?.renames),
-          commitArg(options?.target),
-          rangeArg(options),
-          "--",
-          options?.path,
-        );
-        const entries = output.split("\0").filter((x) => x);
-        const statuses: TrackedPathStatus[] = [];
-        let rename: string | undefined = undefined;
-        let status: Patch["status"] | undefined = undefined;
-        for (
-          const [entry, next] of slidingWindows(entries, 2, { partial: true })
-        ) {
-          assertExists(entry, "Cannot parse diff entry");
-          if (entry === rename) continue;
-          if (status === undefined) {
-            status = statusKind(entry);
-            if (status === "renamed" || status === "copied") {
-              assertExists(next, "Cannot parse diff entry");
-              rename = next;
+        async function tracked(location: "index" | "worktree" | "both") {
+          const { value: output, error } = await maybe(() =>
+            run(
+              gitOptions,
+              ["diff", "--no-color", "--name-status", "-z"],
+              flag("--find-copies", options?.copies),
+              pickaxeFlags(options?.pickaxe),
+              flag(["--find-renames", "--no-renames"], options?.renames),
+              flag("--staged", location === "index"),
+              flag(
+                commitArg(options?.from) ?? "HEAD",
+                location === "both" && options?.to === undefined,
+              ),
+              options?.to !== undefined ? rangeArg(options) : undefined,
+              "--",
+              options?.path,
+            )
+          );
+          if (error) {
+            if (
+              options?.from === undefined && location === "both" &&
+              error.message.includes("bad revision 'HEAD'")
+            ) return await tracked("index");
+            throw error;
+          }
+          const entries = output.split("\0").filter((x) => x);
+          const statuses: Status[] = [];
+          let rename: string | undefined = undefined;
+          let status: Patch["status"] | undefined = undefined;
+          for (
+            const [entry, next] of slidingWindows(entries, 2, { partial: true })
+          ) {
+            assertExists(entry, "Cannot parse diff entry");
+            if (entry === rename) continue;
+            if (status === undefined) {
+              status = statusKind(entry);
+              if (status === "renamed" || status === "copied") {
+                assertExists(next, "Cannot parse diff entry");
+                rename = next;
+              }
+              continue;
             }
-            continue;
-          }
-          if (status === "renamed" || status === "copied") {
-            assertExists(rename, "Cannot parse diff entry");
-            statuses.push({ path: entry, status, from: rename });
-            rename = undefined;
+            if (status === "renamed" || status === "copied") {
+              assertExists(rename, "Cannot parse diff entry");
+              statuses.push({ path: entry, status, from: rename });
+              rename = undefined;
+              status = undefined;
+              continue;
+            }
+            statuses.push({ path: entry, status });
             status = undefined;
-            continue;
           }
-          statuses.push({ path: entry, status });
-          status = undefined;
+          return statuses;
         }
-        return statuses;
+        async function untracked(ignored: boolean) {
+          const output = await run(
+            gitOptions,
+            ["ls-files", "--others", "--exclude-standard", "-z"],
+            flag("--directory", options?.untracked === true),
+            flag("--ignored", ignored),
+            "--",
+            options?.path,
+          );
+          return output
+            .split("\0")
+            .filter((x) => x)
+            .map((path) => ({
+              path,
+              status: ignored ? "ignored" as const : "untracked" as const,
+            }));
+        }
+        return (await Promise.all([
+          tracked(options?.location ?? "both"),
+          options?.untracked ? untracked(false) : [],
+          options?.ignored ? untracked(true) : [],
+        ])).flat();
       },
       async patch(options) {
-        const output = await run(
-          gitOptions,
-          ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
-          flag("--diff-algorithm", options?.algorithm, { equals: true }),
-          flag("--find-copies-harder", options?.copies),
-          pickaxeFlags(options?.pickaxe),
-          flag(["--find-renames", "--no-renames"], options?.renames),
-          flag("--staged", options?.staged),
-          flag("--unified", options?.unified, { equals: true }),
-          commitArg(options?.target),
-          rangeArg(options),
-          "--",
-          options?.path,
-        );
+        async function tracked(location: "index" | "worktree" | "both") {
+          const { value: output, error } = await maybe(() =>
+            run(
+              gitOptions,
+              ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
+              flag("--diff-algorithm", options?.algorithm, { equals: true }),
+              flag("--find-copies-harder", options?.copies),
+              pickaxeFlags(options?.pickaxe),
+              flag(["--find-renames", "--no-renames"], options?.renames),
+              flag("--staged", location === "index"),
+              flag("--unified", options?.unified, { equals: true }),
+              flag(
+                commitArg(options?.from) ?? "HEAD",
+                location === "both" && options?.to === undefined,
+              ),
+              options?.to !== undefined ? rangeArg(options) : undefined,
+              "--",
+              options?.path,
+            )
+          );
+          if (error) {
+            if (
+              options?.from === undefined && location === "both" &&
+              error.message.includes("bad revision 'HEAD'")
+            ) return await tracked("index");
+            throw error;
+          }
+          return output;
+        }
+        const output = await tracked(options?.location ?? "both");
         return output.split(/\n(?=diff --git )/)
           .filter((x) => x)
           .map((content) => {
@@ -2183,6 +2340,8 @@ export function git(options?: GitOptions): Git {
               status: patch.status,
               ...patch.mode !== undefined && { mode: patch.mode },
               ...patch.from !== undefined && { from: patch.from },
+              ...patch.similarity !== undefined &&
+                { similarity: patch.similarity },
               ...hunks.length > 0 && { hunks },
             };
           });
@@ -2314,7 +2473,7 @@ export function git(options?: GitOptions): Git {
       async list(options) {
         const output = await run(
           gitOptions,
-          ["branch", "--no-color", "--list"],
+          ["branch", "--no-color", "--no-column", "--list"],
           flag("--format", formatArg(BRANCH_FORMAT), { equals: true }),
           flag("--all", options?.type === "all"),
           flag("--remotes", options?.type === "remote"),
@@ -2491,7 +2650,7 @@ export function git(options?: GitOptions): Git {
       async list(options) {
         const output = await run(
           gitOptions,
-          ["tag", "--list"],
+          ["tag", "--no-color", "--no-column", "--list"],
           flag("--format", formatArg(TAG_FORMAT), { equals: true }),
           flag("--contains", commitArg(options?.contains)),
           flag("--no-contains", commitArg(options?.noContains)),
@@ -2872,9 +3031,14 @@ function peeledArg(ref: string | undefined): string | undefined {
   return `${ref}^{}`;
 }
 
-function rangeArg(range: RevisionRangeOptions): string;
-function rangeArg(range: RevisionRangeOptions | undefined): string | undefined;
-function rangeArg(range: RevisionRangeOptions | undefined): string | undefined {
+interface RevisionRange {
+  from?: Commitish;
+  to?: Commitish;
+  symmetric?: boolean;
+}
+function rangeArg(range: RevisionRange): string;
+function rangeArg(range: RevisionRange | undefined): string | undefined;
+function rangeArg(range: RevisionRange | undefined): string | undefined {
   if (range === undefined) return undefined;
   const from = range.from && commitArg(range.from);
   const to = range.to && commitArg(range.to);
@@ -2913,13 +3077,13 @@ function configFlags(config: Config | undefined, flag?: string): string[] {
     ).flat();
 }
 
-function configTargetFlag(target: ConfigOptions["target"] | undefined) {
-  if (target === undefined) return undefined;
-  if (target === "global") return "--global";
-  if (target === "system") return "--system";
-  if (target === "local") return "--local";
-  if (target === "worktree") return "--worktree";
-  return flag("--file", target.file);
+function configSourceFlag(options: ConfigOptions | undefined) {
+  if (options === undefined) return undefined;
+  if ("file" in options) return flag("--file", options.file);
+  if (options.level === "global") return "--global";
+  if (options.level === "system") return "--system";
+  if (options.level === "local") return "--local";
+  if (options.level === "worktree") return "--worktree";
 }
 
 function trailerFlag(trailers: Record<string, string> | undefined): string[] {
@@ -3010,7 +3174,7 @@ function configValue(key: string, lines: string[]) {
   return { key, value };
 }
 
-function statusKind(code: string): Patch["status"] {
+function statusKind(code: string) {
   switch (code[0]) {
     case "M":
       return "modified";
@@ -3440,19 +3604,13 @@ const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
   {
     pattern: /^similarity index (\d+)%$/,
     apply(patch, value) {
-      patch.from = {
-        path: patch.from?.path ?? "",
-        similarity: parseInt(value, 10) / 100,
-      };
+      patch.similarity = parseInt(value, 10) / 100;
     },
   },
   {
     pattern: /^rename from (.+)$/,
     apply(patch, value) {
-      patch.from = {
-        path: value,
-        similarity: patch.from?.similarity ?? 0,
-      };
+      patch.from = value;
       patch.status = "renamed";
     },
   },
@@ -3466,10 +3624,7 @@ const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
   {
     pattern: /^copy from (.+)$/,
     apply(patch, value) {
-      patch.from = {
-        path: value,
-        similarity: patch.from?.similarity ?? 0,
-      };
+      patch.from = value;
       patch.status = "copied";
     },
   },
