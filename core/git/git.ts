@@ -930,15 +930,11 @@ export interface IndexRestoreOptions {
    */
   source?: Commitish;
   /**
-   * Restore the index (staging area).
-   * @default {false}
+   * Target location to restore files in.
+   *
+   * @default {"worktree"}
    */
-  staged?: boolean;
-  /**
-   * Restore the working tree.
-   * @default {true}
-   */
-  worktree?: boolean;
+  target?: "index" | "worktree" | "both";
 }
 
 /** Options for the {@linkcode IndexOperations.remove} function. */
@@ -1953,8 +1949,14 @@ export function git(options?: GitOptions): Git {
           gitOptions,
           "restore",
           flag("--source", commitArg(options?.source), { equals: true }),
-          flag("--staged", options?.staged),
-          flag("--worktree", options?.worktree),
+          flag(
+            "--staged",
+            options?.target === "index" || options?.target === "both",
+          ),
+          flag(
+            "--worktree",
+            options?.target === "worktree" || options?.target === "both",
+          ),
           "--",
           path,
         );
