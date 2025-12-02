@@ -733,7 +733,7 @@ Deno.test("git().config.list() handles whitespace in values", async () => {
   });
 });
 
-Deno.test("git().config.list({ level, file }) can retrieve from file config", async () => {
+Deno.test("git().config.list({ file }) can retrieve from file config", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
     repo.path("config"),
