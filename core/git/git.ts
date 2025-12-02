@@ -3583,103 +3583,89 @@ interface PatchTransform {
   apply(patch: Partial<Patch>, value: string): void;
 }
 
-const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
-  {
-    pattern: /^diff --git (.+)$/m,
-    apply(patch, value) {
-      if (
-        value.length % 2 === 1 &&
-        value.slice(0, value.length / 2) ===
-          value.slice(value.length / 2 + 1)
-      ) {
-        patch.path ??= value.slice(0, value.length / 2);
-        patch.status ??= "modified";
-      }
-    },
+const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [{
+  pattern: /^diff --git (.+)$/m,
+  apply(patch, value) {
+    if (
+      value.length % 2 === 1 &&
+      value.slice(0, value.length / 2) ===
+        value.slice(value.length / 2 + 1)
+    ) {
+      patch.path ??= value.slice(0, value.length / 2);
+      patch.status ??= "modified";
+    }
   },
-  {
-    pattern: /^\+\+\+ (.+)$/,
-    apply(patch, value) {
-      if (value !== "/dev/null") patch.path ??= value;
-      else patch.status ??= "deleted";
-    },
+}, {
+  pattern: /^\+\+\+ (.+)$/,
+  apply(patch, value) {
+    if (value !== "/dev/null") patch.path ??= value;
+    else patch.status ??= "deleted";
   },
-  {
-    pattern: /^--- (.+)$/,
-    apply(patch, value) {
-      if (value !== "/dev/null") patch.path ??= value;
-      else patch.status ??= "added";
-    },
+}, {
+  pattern: /^--- (.+)$/,
+  apply(patch, value) {
+    if (value !== "/dev/null") patch.path ??= value;
+    else patch.status ??= "added";
   },
-  {
-    pattern: /^index \S+ (\d+)$/,
-    apply(patch, value) {
-      patch.mode ??= {};
-      patch.mode.new = parseInt(value, 8);
-    },
+}, {
+  pattern: /^index \S+ (\d+)$/,
+  apply(patch, value) {
+    patch.mode ??= {};
+    patch.mode.new = parseInt(value, 8);
   },
-  {
-    pattern: /^old mode (\d+)$/,
-    apply(patch, value) {
-      patch.mode ??= {};
-      patch.mode.old = parseInt(value, 8);
-    },
+}, {
+  pattern: /^old mode (\d+)$/,
+  apply(patch, value) {
+    patch.mode ??= {};
+    patch.mode.old = parseInt(value, 8);
   },
-  {
-    pattern: /^new mode (\d+)$/,
-    apply(patch, value) {
-      patch.mode ??= {};
-      patch.mode.new = parseInt(value, 8);
-    },
+}, {
+  pattern: /^new mode (\d+)$/,
+  apply(patch, value) {
+    patch.mode ??= {};
+    patch.mode.new = parseInt(value, 8);
   },
-  {
-    pattern: /^new file mode (\d+)$/,
-    apply(patch, value) {
-      patch.mode ??= {};
-      patch.mode.new = parseInt(value, 8);
-      patch.status = "added";
-    },
+}, {
+  pattern: /^new file mode (\d+)$/,
+  apply(patch, value) {
+    patch.mode ??= {};
+    patch.mode.new = parseInt(value, 8);
+    patch.status = "added";
   },
-  {
-    pattern: /^deleted file mode (\d+)$/,
-    apply(patch, value) {
-      patch.mode ??= {};
-      patch.mode.old = parseInt(value, 8);
-      patch.status = "deleted";
-    },
+}, {
+  pattern: /^deleted file mode (\d+)$/,
+  apply(patch, value) {
+    patch.mode ??= {};
+    patch.mode.old = parseInt(value, 8);
+    patch.status = "deleted";
   },
-  {
-    pattern: /^similarity index (\d+)%$/,
-    apply(patch, value) {
-      patch.similarity = parseInt(value, 10) / 100;
-    },
+}, {
+  pattern: /^similarity index (\d+)%$/,
+  apply(patch, value) {
+    patch.similarity = parseInt(value, 10) / 100;
   },
-  {
-    pattern: /^rename from (.+)$/,
-    apply(patch, value) {
-      patch.from = value;
-      patch.status = "renamed";
-    },
+}, {
+  pattern: /^rename from (.+)$/,
+  apply(patch, value) {
+    patch.from = value;
+    patch.status = "renamed";
   },
-  {
-    pattern: /^rename to (.+)$/,
-    apply(patch, value) {
-      patch.path = value;
-      patch.status = "renamed";
-    },
+}, {
+  pattern: /^rename to (.+)$/,
+  apply(patch, value) {
+    patch.path = value;
+    patch.status = "renamed";
   },
-  {
-    pattern: /^copy from (.+)$/,
-    apply(patch, value) {
-      patch.from = value;
-      patch.status = "copied";
-    },
+}, {
+  pattern: /^copy from (.+)$/,
+  apply(patch, value) {
+    patch.from = value;
+    patch.status = "copied";
   },
-  {
-    pattern: /^copy to (.+)$/,
-    apply(patch, value) {
-      patch.path = value;
-      patch.status = "copied";
-    },
+}, {
+  pattern: /^copy to (.+)$/,
+  apply(patch, value) {
+    patch.path = value;
+    patch.status = "copied";
   },
-];
+}];

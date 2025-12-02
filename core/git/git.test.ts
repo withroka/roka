@@ -2320,18 +2320,15 @@ Deno.test("git().diff.status({ stats }) generates diff stats", async () => {
   await repo.commit.create({ subject: "commit" });
   await Deno.writeTextFile(repo.path("file1"), "line1\nline4\n");
   await Deno.remove(repo.path("file2"));
-  assertEquals(await repo.diff.status({ stats: true }), [
-    {
-      path: "file1",
-      status: "modified",
-      stats: { added: 1, deleted: 2 },
-    },
-    {
-      path: "file2",
-      status: "deleted",
-      stats: { added: 0, deleted: 3 },
-    },
-  ]);
+  assertEquals(await repo.diff.status({ stats: true }), [{
+    path: "file1",
+    status: "modified",
+    stats: { added: 1, deleted: 2 },
+  }, {
+    path: "file2",
+    status: "deleted",
+    stats: { added: 0, deleted: 3 },
+  }]);
 });
 
 Deno.test("git().diff.status({ stats }) does not generate stats for renamed files", async () => {
@@ -2644,14 +2641,12 @@ Deno.test("git().diff.patch() generates patch for deleted file", async () => {
     status: "deleted",
     mode: { old: 0o100644 },
     stats: { added: 0, deleted: 1 },
-    hunks: [
-      {
-        line: { old: 1, new: 0 },
-        lines: [
-          { type: "deleted", content: "content" },
-        ],
-      },
-    ],
+    hunks: [{
+      line: { old: 1, new: 0 },
+      lines: [
+        { type: "deleted", content: "content" },
+      ],
+    }],
   }]);
 });
 
@@ -4105,24 +4100,20 @@ Deno.test("git().branch.list() detects deleted upstream branches", async () => {
   await repo.branch.create("branch", { target: "origin/branch" });
   const remoteBranch = await repo.branch.get("origin/branch");
   assertExists(remoteBranch);
-  assertEquals(await repo.branch.list({ name: "branch" }), [
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "branch", remote, branch: remoteBranch },
-      push: { name: "branch", remote, branch: remoteBranch },
-    },
-  ]);
+  assertEquals(await repo.branch.list({ name: "branch" }), [{
+    name: "branch",
+    commit,
+    fetch: { name: "branch", remote, branch: remoteBranch },
+    push: { name: "branch", remote, branch: remoteBranch },
+  }]);
   await upstream.branch.delete("branch");
   await repo.sync.fetch({ prune: true });
-  assertEquals(await repo.branch.list({ name: "branch" }), [
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "branch", remote },
-      push: { name: "branch", remote },
-    },
-  ]);
+  assertEquals(await repo.branch.list({ name: "branch" }), [{
+    name: "branch",
+    commit,
+    fetch: { name: "branch", remote },
+    push: { name: "branch", remote },
+  }]);
 });
 
 Deno.test("git().branch.list() handles configuration overrides", async () => {
@@ -4607,10 +4598,7 @@ Deno.test("git().branch.create({ track }) can disable tracking", async () => {
       target: "origin/branch",
       track: false,
     }),
-    {
-      name: "branch",
-      commit,
-    },
+    { name: "branch", commit },
   );
 });
 
@@ -5237,14 +5225,12 @@ Deno.test("git().branch.track() sets upstream branch", async () => {
   assertExists(remoteTarget);
   const branch = await repo.branch.create("branch");
   await repo.branch.track(branch, "origin/target");
-  assertEquals(await repo.branch.list({ name: "branch" }), [
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "target", remote, branch: remoteTarget },
-      push: { name: "target", remote, branch: remoteTarget },
-    },
-  ]);
+  assertEquals(await repo.branch.list({ name: "branch" }), [{
+    name: "branch",
+    commit,
+    fetch: { name: "target", remote, branch: remoteTarget },
+    push: { name: "target", remote, branch: remoteTarget },
+  }]);
 });
 
 Deno.test("git().branch.untrack() unsets upstream branch", async () => {
@@ -5262,14 +5248,12 @@ Deno.test("git().branch.untrack() unsets upstream branch", async () => {
   const branch = await repo.branch.create("branch", {
     target: "origin/target",
   });
-  assertEquals(await repo.branch.list({ name: "branch" }), [
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "target", remote, branch: remoteTarget },
-      push: { name: "target", remote, branch: remoteTarget },
-    },
-  ]);
+  assertEquals(await repo.branch.list({ name: "branch" }), [{
+    name: "branch",
+    commit,
+    fetch: { name: "target", remote, branch: remoteTarget },
+    push: { name: "target", remote, branch: remoteTarget },
+  }]);
   await repo.branch.untrack(branch);
   assertEquals(await repo.branch.list({ name: "branch" }), [
     { name: "branch", commit },
@@ -6487,15 +6471,12 @@ Deno.test("git().sync.fetch({ track }) sets upstream tracking", async () => {
   assertExists(remote);
   const remoteBranch = await repo.branch.get("origin/branch");
   assertExists(remoteBranch);
-  assertEquals(
-    await repo.branch.get("branch"),
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "branch", remote, branch: remoteBranch },
-      push: { name: "branch", remote, branch: remoteBranch },
-    },
-  );
+  assertEquals(await repo.branch.get("branch"), {
+    name: "branch",
+    commit,
+    fetch: { name: "branch", remote, branch: remoteBranch },
+    push: { name: "branch", remote, branch: remoteBranch },
+  });
 });
 
 Deno.test("git().sync.pull() pulls commits and tags", async () => {
@@ -6794,15 +6775,12 @@ Deno.test("git().sync.pull({ track }) sets upstream tracking", async () => {
   assertExists(remote);
   const remoteBranch = await repo.branch.get("origin/branch");
   assertExists(remoteBranch);
-  assertEquals(
-    await repo.branch.get("branch"),
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "branch", remote, branch: remoteBranch },
-      push: { name: "branch", remote, branch: remoteBranch },
-    },
-  );
+  assertEquals(await repo.branch.get("branch"), {
+    name: "branch",
+    commit,
+    fetch: { name: "branch", remote, branch: remoteBranch },
+    push: { name: "branch", remote, branch: remoteBranch },
+  });
 });
 
 Deno.test("git().sync.push() pushes current branch to remote", async () => {
@@ -7197,14 +7175,12 @@ Deno.test("git().sync.push({ track }) sets upstream tracking", async () => {
   });
   const remoteBranch = await repo.branch.get("remote/branch");
   assertExists(remoteBranch);
-  assertEquals(await repo.branch.list({ name: "branch" }), [
-    {
-      name: "branch",
-      commit,
-      fetch: { name: "branch", remote, branch: remoteBranch },
-      push: { name: "branch", remote, branch: remoteBranch },
-    },
-  ]);
+  assertEquals(await repo.branch.list({ name: "branch" }), [{
+    name: "branch",
+    commit,
+    fetch: { name: "branch", remote, branch: remoteBranch },
+    push: { name: "branch", remote, branch: remoteBranch },
+  }]);
 });
 
 Deno.test("git().sync.unshallow() unshallows a shallow repository", async () => {
