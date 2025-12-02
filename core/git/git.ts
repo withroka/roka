@@ -956,18 +956,18 @@ export interface IndexRemoveOptions {
  */
 export interface DiffOptions {
   /**
-   * Diff staged changes, unstaged changes, or both.
+   * Diff location for uncommitted changes.
    *
-   * - `true`: include changes staged to index, but exclude unstaged changes
-   * - `false`: exclude staged changes, but include unstaged changes
-   * - unset: include all uncommitted changes (default)
+   * - `"index"`: include changes staged to index, exclude unstaged changes
+   * - `"worktree"`: include unstaged changes, exclude staged changes
+   * - `"both"`: include all uncommitted changes (default)
    *
    * To exclude all uncommitted changes, use {@linkcode DiffOptions.from from}
    * and {@linkcode DiffOptions.to to} to provide a specific revision range.
    *
    * Ignored if {@linkcode DiffOptions.to to} is set.
    */
-  staged?: boolean;
+  location?: "index" | "worktree" | "both";
   /**
    * Include changes since the given commit.
    *
@@ -1976,7 +1976,7 @@ export function git(options?: GitOptions): Git {
     },
     diff: {
       async status(options) {
-        async function tracked(staged: boolean | undefined) {
+        async function tracked(location: "index" | "worktree" | "both") {
           const { value: output, error } = await maybe(() =>
             run(
               gitOptions,
@@ -1984,10 +1984,10 @@ export function git(options?: GitOptions): Git {
               flag("--find-copies", options?.copies),
               pickaxeFlags(options?.pickaxe),
               flag(["--find-renames", "--no-renames"], options?.renames),
-              flag("--staged", staged === true),
+              flag("--staged", location === "index"),
               flag(
                 commitArg(options?.from) ?? "HEAD",
-                staged === undefined && options?.to === undefined,
+                location === "both" && options?.to === undefined,
               ),
               options?.to !== undefined ? rangeArg(options) : undefined,
               "--",
@@ -1996,9 +1996,9 @@ export function git(options?: GitOptions): Git {
           );
           if (error) {
             if (
-              options?.from === undefined && staged === undefined &&
+              options?.from === undefined && location === "both" &&
               error.message.includes("bad revision 'HEAD'")
-            ) return await tracked(true);
+            ) return await tracked("index");
             throw error;
           }
           const entries = output.split("\0").filter((x) => x);
@@ -2048,13 +2048,13 @@ export function git(options?: GitOptions): Git {
             }));
         }
         return (await Promise.all([
-          tracked(options?.staged),
+          tracked(options?.location ?? "both"),
           options?.untracked ? untracked(false) : [],
           options?.ignored ? untracked(true) : [],
         ])).flat();
       },
       async patch(options) {
-        async function tracked(staged: boolean | undefined) {
+        async function tracked(location: "index" | "worktree" | "both") {
           const { value: output, error } = await maybe(() =>
             run(
               gitOptions,
@@ -2063,11 +2063,11 @@ export function git(options?: GitOptions): Git {
               flag("--find-copies-harder", options?.copies),
               pickaxeFlags(options?.pickaxe),
               flag(["--find-renames", "--no-renames"], options?.renames),
-              flag("--staged", staged === true),
+              flag("--staged", location === "index"),
               flag("--unified", options?.unified, { equals: true }),
               flag(
                 commitArg(options?.from) ?? "HEAD",
-                staged === undefined && options?.to === undefined,
+                location === "both" && options?.to === undefined,
               ),
               options?.to !== undefined ? rangeArg(options) : undefined,
               "--",
@@ -2076,14 +2076,15 @@ export function git(options?: GitOptions): Git {
           );
           if (error) {
             if (
-              options?.from === undefined && staged === undefined &&
+              options?.from === undefined && location === "both" &&
               error.message.includes("bad revision 'HEAD'")
-            ) return await tracked(true);
+            ) return await tracked("index");
             throw error;
           }
           return output;
         }
-        return (await tracked(options?.staged)).split(/\n(?=diff --git )/)
+        const output = await tracked(options?.location ?? "both");
+        return output.split(/\n(?=diff --git )/)
           .filter((x) => x)
           .map((content) => {
             const [header, ...body] = content.split(/\n(?=@@ )/);
