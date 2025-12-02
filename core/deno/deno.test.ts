@@ -21,8 +21,14 @@ function assertResults(
         const outputStart = v.indexOf("------- output -------\n");
         const outputEnd = v.indexOf("\n----- output end -----\n");
         if (outputStart !== -1 && outputEnd !== -1) {
-          const before = v.slice(0, outputStart + "------- output -------\n".length);
-          const outputContent = v.slice(outputStart + "------- output -------\n".length, outputEnd);
+          const before = v.slice(
+            0,
+            outputStart + "------- output -------\n".length,
+          );
+          const outputContent = v.slice(
+            outputStart + "------- output -------\n".length,
+            outputEnd,
+          );
           const after = v.slice(outputEnd);
           const lines = outputContent.split("\n").filter((l) => l.length > 0);
           lines.sort();
