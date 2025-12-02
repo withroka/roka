@@ -1,6 +1,7 @@
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
+import { type Git, git, GitError, type Patch } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import {
   assertEquals,
@@ -13,7 +14,6 @@ import {
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
 import { assertType, type IsExact } from "@std/testing/types";
-import { type Git, git, GitError, type Patch } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
@@ -708,6 +708,8 @@ Deno.test("git().config.list() returns all configuration values", async () => {
 Deno.test("git().config.list() handles configuration overrides", async () => {
   await using repo = await tempRepository({
     config: {
+      "color.config": "always",
+      "pager.config": "less",
       "custom.key": 1234,
       "branch.main.custom.key": true,
       "remote.origin.custom.key": false,
@@ -1960,8 +1962,10 @@ Deno.test("git().diff.status() lists staged file in empty repository", async () 
 Deno.test("git().diff.status() handles configuration overrides", async () => {
   await using repo = await tempRepository({
     config: {
+      "color.diff": "always",
       "diff.external": "echo",
       "diff.renames": "copies",
+      "pager.diff": "less",
     },
   });
   await Deno.writeTextFile(repo.path("file1"), "content1");
@@ -2631,9 +2635,10 @@ Deno.test("git().diff.patch() generates patch in empty repository", async () => 
   }]);
 });
 
-Deno.test("git().diff.patch() handles custom configuration", async () => {
+Deno.test("git().diff.patch() handles configuration overrides", async () => {
   await using repo = await tempRepository({
     config: {
+      "color.diff": "always",
       "diff.algorithm": "patience",
       "diff.context": 10,
       "diff.dirstat": "files,1,cumulative",
@@ -2644,6 +2649,7 @@ Deno.test("git().diff.patch() handles custom configuration", async () => {
       "diff.noprefix": true,
       "diff.renames": "copies",
       "diff.srcPrefix": "SRC/",
+      "pager.diff": "less",
     },
   });
   await Deno.writeTextFile(repo.path("file1"), ["content1", ""].join("\n"));
@@ -3157,13 +3163,10 @@ Deno.test("git().commit.log() can work with custom trailer separator", async () 
   assertEquals(commit?.trailers, { key1: "value1", key2: "value2" });
 });
 
-Deno.test("git().commit.log() handles custom configuration", async () => {
+Deno.test("git().commit.log() handles configuration overrides", async () => {
   await using repo = await tempRepository({
     config: {
-      "author.email": "author-email",
-      "author.name": "author-name",
-      "committer.email": "committer-email",
-      "committer.name": "committer-name",
+      "color.log": "always",
       "format.pretty": "raw",
       "i18n.logOutputEncoding": "ascii",
       "log.abbrevCommit": true,
@@ -3172,6 +3175,11 @@ Deno.test("git().commit.log() handles custom configuration", async () => {
       "log.mailmap": false,
       "log.showRoot": true,
       "log.showSignature": true,
+      "pager.log": "less",
+      "author.email": "author-email",
+      "author.name": "author-name",
+      "committer.email": "committer-email",
+      "committer.name": "committer-name",
     },
   });
   const commit = await repo.commit.create({
@@ -3602,7 +3610,7 @@ Deno.test("git().commit.create() rejects empty commit", async () => {
   );
 });
 
-Deno.test("git().commit.create() handles custom configuration", async () => {
+Deno.test("git().commit.create() handles configuration overrides", async () => {
   await using repo = await tempRepository({
     config: {
       "author.email": "author-email",
@@ -4055,7 +4063,9 @@ Deno.test("git().branch.list() handles configuration overrides", async () => {
   await using repo = await tempRepository({
     branch: "main",
     config: {
-      "pager.branch": true,
+      "color.branch": "always",
+      "column.branch": "always,plain,dense",
+      "pager.branch": "less",
     },
   });
   const commit = await repo.commit.create({
@@ -5299,6 +5309,29 @@ Deno.test("git().tag.list() returns single tag", async () => {
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   const tag = await repo.tag.create("tag");
   assertEquals(await repo.tag.list(), [tag]);
+});
+
+Deno.test("git().tag.list() returns multiple tags", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  assertEquals(await repo.tag.list(), [tag1, tag2]);
+});
+
+Deno.test("git().tag.list() handles configuration overrides", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: {
+      "color.tag": "always",
+      "column.tag": "always,plain,dense",
+      "pager.tag": "less",
+    },
+  });
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  const tag1 = await repo.tag.create("tag1");
+  const tag2 = await repo.tag.create("tag2");
+  assertEquals(await repo.tag.list(), [tag1, tag2]);
 });
 
 Deno.test("git().tag.list({ contains }) returns tags that contain commit", async () => {
