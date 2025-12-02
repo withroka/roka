@@ -1973,9 +1973,9 @@ Deno.test("git().diff.status() handles configuration overrides", async () => {
   await repo.commit.create({ subject: "commit" });
   await Deno.writeTextFile(repo.path("file1"), "content3");
   await Deno.remove(repo.path("file2"));
-  assertEquals(await repo.diff.status(), [
-    { path: "file1", status: "modified" },
-    { path: "file2", status: "deleted" },
+  assertEquals(await repo.diff.status({ stats: true }), [
+    { path: "file1", status: "modified", stats: { added: 1, deleted: 1 } },
+    { path: "file2", status: "deleted", stats: { added: 0, deleted: 1 } },
   ]);
 });
 
@@ -2694,7 +2694,7 @@ Deno.test("git().diff.patch() handles configuration overrides", async () => {
       "color.diff": "always",
       "diff.algorithm": "patience",
       "diff.context": 10,
-      "diff.dirstat": "files,1,cumulafive",
+      "diff.dirstat": "files,1,cumulative",
       "diff.dstPrefix": "DST/",
       "diff.external": "echo",
       "diff.interHunkContext": 10,
