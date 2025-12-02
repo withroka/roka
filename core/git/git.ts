@@ -125,8 +125,6 @@ export interface ConfigOperations {
 
 /** Index operations from {@linkcode Git.index}. */
 export interface IndexOperations {
-  /** Returns the status of the index and the local working tree. */
-  status(options?: IndexStatusOptions): Promise<Status>;
   /** Stages files for commit. */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
   /** Move or rename a file, a directory, or a symlink. */
@@ -147,7 +145,7 @@ export interface IndexOperations {
 /** Difference operations from {@linkcode Git.diff}. */
 export interface DiffOperations {
   /** Returns the list of changed file paths with their status. */
-  status(options?: DiffOptions): Promise<TrackedPathStatus[]>;
+  status(options?: DiffStatusOptions): Promise<Status[]>;
   /** Returns the patch text for changes. */
   patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
@@ -549,46 +547,23 @@ export interface Branch {
   };
 }
 
-/** Status of files in the index and the working tree. */
-export interface Status {
-  /** Files that are staged for commit (the index). */
-  staged: TrackedPathStatus[];
-  /** Files that are not staged for commit (the working tree). */
-  unstaged: TrackedPathStatus[];
-  /** Files that are not tracked by git. */
-  untracked: UntrackedPathStatus[];
-  /** Files that are ignored by git. */
-  ignored: UntrackedPathStatus[];
-}
-
-/** Status of a file in the index and the working tree. */
-export type TrackedPathStatus = UpdatedPathStatus | RenamedPathStatus;
-
-/** Status of a non-renamed file in the index and the working tree. */
-export interface UpdatedPathStatus {
+/** Status of a file returned by the {@linkcode DiffOperations.status} function. */
+export type Status = {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
-  status: "modified" | "type-changed" | "added" | "deleted";
-}
-
-/** Status of a renamed file in the index and the working tree. */
-export interface RenamedPathStatus {
-  /** Path to the file. */
-  path: string;
-  /** Status of the file. */
-  status: "renamed" | "copied";
-  /** Previous file path. */
-  from: string;
-}
-
-/**
- * Status of an untracked or ignored file in the index and the working tree.
- */
-export interface UntrackedPathStatus {
-  /** Path to the file. */
-  path: string;
-}
+  status:
+    | "modified"
+    | "added"
+    | "deleted"
+    | "type-changed"
+    | "renamed"
+    | "copied"
+    | "untracked"
+    | "ignored";
+  /** Previous file path, if copied or renamed. */
+  from?: string;
+};
 
 /**
  * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
@@ -597,20 +572,17 @@ export interface Patch {
   /** Path to the file. */
   path: string;
   /** Status of the file. */
-  status: TrackedPathStatus["status"];
+  status: Exclude<Status["status"], "untracked" | "ignored">;
+  /** Previous file path, if copied or renamed. */
+  from?: string;
+  /** Similarity value (0-1) for the rename or copy. */
+  similarity?: number;
   /** File mode, if provided. */
   mode?: {
     /** Old file mode, if changed or deleted. */
     old?: number;
     /** Current or new file mode. */
     new?: number;
-  };
-  /** Previous file path, for renamed or copied files. */
-  from?: {
-    /** Previous file path. */
-    path: string;
-    /** Similarity value (0-1) for the rename or copy. */
-    similarity: number;
   };
   /** List of diff hunks in the patch. */
   hunks?: Hunk[];
@@ -777,33 +749,6 @@ export interface SignOptions {
 }
 
 /**
- * Options for specifying a revision range over commit history.
- */
-export interface RevisionRangeOptions {
-  /**
-   * Match objects that are descendants of this revision.
-   *
-   * The pointed commit itself is excluded from the range.
-   */
-  from?: Commitish;
-  /**
-   * Match objects that are ancestors of this revision.
-   *
-   * The pointed commit itself is included in the range.
-   */
-  to?: Commitish;
-  /**
-   * Match objects that are reachable from either end, but not from both.
-   *
-   * Ignored if either {@linkcode RevisionRangeOptions.from} or
-   * {@linkcode RevisionRangeOptions.to} is not set.
-   *
-   * @default {false}
-   */
-  symmetric?: boolean;
-}
-
-/**
  * Options common to the {@linkcode Git.init} and {@linkcode Git.clone}
  * functions.
  */
@@ -947,47 +892,6 @@ export interface ConfigOptions {
   target?: "system" | "global" | "local" | "worktree" | { file: string };
 }
 
-/** Options for the {@linkcode IndexOperations.status} function. */
-export interface IndexStatusOptions {
-  /**
-   * Limit the status to the given pathspecs.
-   *
-   * If not set, all files are included.
-   */
-  path?: string | string[];
-  /**
-   * Control the status output for ignored files.
-   *
-   * - `true`: include ignored files and directories
-   * - `false`: exclude ignored files and directories (default)
-   *
-   * Files under ignored directories are included only if
-   * {@linkcode IndexStatusOptions.untracked untracked} is set to `"all"`.
-   *
-   * @default {false}
-   */
-  ignored?: boolean;
-  /**
-   * Control the status output for renamed files.
-   *
-   * - `true`: enable rename detection, and list renamed files as such (default)
-   * - `false`: disable rename detection, and list files as added and deleted
-   *
-   * @default {true}
-   */
-  renames?: boolean;
-  /**
-   * Control the status output for untracked files.
-   *
-   * - `false`: exclude untracked files
-   * - `true`: include untracked directories, but not their files (default)
-   * - `"all"`: include all untracked files
-   *
-   * @default {true}
-   */
-  untracked?: boolean | "all";
-}
-
 /** Options for the {@linkcode IndexOperations.add} function. */
 export interface IndexAddOptions {
   /**
@@ -1044,13 +948,32 @@ export interface IndexRemoveOptions {
  * Options for the {@linkcode DiffOperations.status} and
  * {@linkcode DiffOperations.patch} functions.
  */
-export interface DiffOptions extends RevisionRangeOptions {
+export interface DiffOptions {
   /**
-   * Target commit to diff against.
+   * Diff staged changes, unstaged changes, or both.
    *
-   * If set to `HEAD`, diffs the working tree or index against the last commit.
+   * - `true`: include changes staged to index, but exclude unstaged changes
+   * - `false`: exclude staged changes, but include unstaged changes
+   * - unset: include all uncommitted changes (default)
+   *
+   * To exclude all uncommitted changes, use {@linkcode DiffOptions.from from}
+   * and {@linkcode DiffOptions.to to} to provide a specific revision range.
+   *
+   * Ignored if {@linkcode DiffOptions.to to} is set.
    */
-  target?: Commitish;
+  staged?: boolean;
+  /**
+   * Include changes since the given commit.
+   *
+   * @default {"HEAD"}
+   */
+  from?: Commitish;
+  /**
+   * Include changes up to the given commit.
+   *
+   * Uncommitted changes will be included if not set.
+   */
+  to?: Commitish;
   /**
    * Limit the diff to the given pathspecs.
    *
@@ -1071,8 +994,6 @@ export interface DiffOptions extends RevisionRangeOptions {
    * @default {false}
    */
   copies?: boolean;
-  /** Filters for files where the given pattern is added or deleted. */
-  pickaxe?: string | Pickaxe;
   /**
    * Control the diff output for renamed files.
    *
@@ -1082,12 +1003,34 @@ export interface DiffOptions extends RevisionRangeOptions {
    * @default {true}
    */
   renames?: boolean;
+  /** Filters for files where the given pattern is added or deleted. */
+  pickaxe?: string | Pickaxe;
+}
+
+/** Options for the {@linkcode DiffOperations.status} function. */
+export interface DiffStatusOptions extends DiffOptions {
   /**
-   * Diff staged changes, instead of changes in the working tree.
+   * Control the status output for untracked files.
+   *
+   * - `false`: exclude untracked files (default)
+   * - `true`: include untracked directories, but not their files
+   * - `"all"`: include all untracked files
    *
    * @default {false}
    */
-  staged?: boolean;
+  untracked?: boolean | "all";
+  /**
+   * Control the status output for ignored files.
+   *
+   * - `true`: include ignored files and directories
+   * - `false`: exclude ignored files and directories (default)
+   *
+   * Files under ignored directories are included only if
+   * {@linkcode DiffStatusOptions.untracked untracked} is set to `"all"`.
+   *
+   * @default {false}
+   */
+  ignored?: boolean;
 }
 
 /** Options for the {@linkcode DiffOperations.patch} function. */
@@ -1117,19 +1060,40 @@ export interface IgnoreFilterOptions {
 }
 
 /** Options for the {@linkcode CommitOperations.log} function. */
-export interface CommitLogOptions extends RevisionRangeOptions {
+export interface CommitLogOptions {
   /** Only commits by an author. */
   author?: User;
   /** Only commits by a committer. */
   committer?: User;
   /** Only commits that modified any of the given pathspecs. */
   path?: string | string[];
+  /**
+   * Only commits that are descendants of this revision.
+   *
+   * The pointed commit itself is excluded from the range.
+   */
+  from?: Commitish;
+  /**
+   * Only commits that are ancestors of this revision.
+   *
+   * The pointed commit itself is included in the range.
+   */
+  to?: Commitish;
+  /**
+   * Only commits that are reachable from either end, but not from both.
+   *
+   * Ignored if either {@linkcode CommitLogOptions.from} or
+   * {@linkcode CommitLogOptions.to} is not set.
+   *
+   * @default {false}
+   */
+  symmetric?: boolean;
   /** Maximum number of commits to return. */
   maxCount?: number;
-  /** Filters for commits where the given pattern is added or deleted. */
-  pickaxe?: string | Pickaxe;
   /** Number of commits to skip. */
   skip?: number;
+  /** Filters for commits where the given pattern is added or deleted. */
+  pickaxe?: string | Pickaxe;
 }
 
 /**
@@ -1959,70 +1923,6 @@ export function git(options?: GitOptions): Git {
       },
     },
     index: {
-      async status(options?: IndexStatusOptions) {
-        const output = await run(
-          gitOptions,
-          ["status", "--porcelain=1", "-z"],
-          flag("--untracked-files=normal", options?.untracked === true),
-          flag("--ignored=traditional", options?.ignored === true),
-          flag("--ignored=no", options?.ignored === false),
-          flag("--untracked-files=no", options?.untracked === false),
-          flag("--untracked-files=all", options?.untracked === "all"),
-          flag(["--renames", "--no-renames"], options?.renames),
-          "--",
-          options?.path,
-        );
-        const lines = output.split("\0").filter((x) => x);
-        const status: Status = {
-          staged: [],
-          unstaged: [],
-          untracked: [],
-          ignored: [],
-        };
-        let rename = false;
-        for (
-          const [entry, next] of slidingWindows(lines, 2, { partial: true })
-        ) {
-          assertExists(entry, "Cannot parse status line");
-          if (rename) {
-            rename = false;
-            continue;
-          }
-          const [x, y, path] = [entry[0], entry[1], entry.slice(3)];
-          assertExists(x, "Cannot parse status entry");
-          assertExists(y, "Cannot parse status entry");
-          assertExists(path, "Cannot parse status entry");
-          if (x === "?") {
-            status.untracked.push({ path });
-            continue;
-          }
-          if (x === "!") {
-            status.ignored.push({ path });
-            continue;
-          }
-          if (x !== " ") {
-            const xStatus = statusKind(x);
-            if (xStatus === "renamed" || xStatus === "copied") {
-              assertExists(next, "Cannot parse status entry");
-              rename = true;
-              status.staged.push({ path, status: xStatus, from: next });
-            } else {
-              status.staged.push({ path, status: xStatus });
-            }
-          }
-          if (y !== " ") {
-            const yStatus = statusKind(y);
-            if (yStatus === "renamed" || yStatus === "copied") {
-              assertExists(next, "Cannot parse status entry");
-              rename = true;
-              status.unstaged.push({ path, status: yStatus, from: next });
-            } else {
-              status.unstaged.push({ path, status: yStatus });
-            }
-          }
-        }
-        return status;
-      },
       async add(path, options?: IndexAddOptions) {
         await run(
           gitOptions,
@@ -2070,63 +1970,114 @@ export function git(options?: GitOptions): Git {
     },
     diff: {
       async status(options) {
-        const output = await run(
-          gitOptions,
-          ["diff", "--no-color", "--name-status", "-z"],
-          flag("--staged", options?.staged),
-          flag("--find-copies", options?.copies),
-          pickaxeFlags(options?.pickaxe),
-          flag(["--find-renames", "--no-renames"], options?.renames),
-          commitArg(options?.target),
-          rangeArg(options),
-          "--",
-          options?.path,
-        );
-        const entries = output.split("\0").filter((x) => x);
-        const statuses: TrackedPathStatus[] = [];
-        let rename: string | undefined = undefined;
-        let status: Patch["status"] | undefined = undefined;
-        for (
-          const [entry, next] of slidingWindows(entries, 2, { partial: true })
-        ) {
-          assertExists(entry, "Cannot parse diff entry");
-          if (entry === rename) continue;
-          if (status === undefined) {
-            status = statusKind(entry);
-            if (status === "renamed" || status === "copied") {
-              assertExists(next, "Cannot parse diff entry");
-              rename = next;
+        async function tracked(staged: boolean | undefined) {
+          const { value: output, error } = await maybe(() =>
+            run(
+              gitOptions,
+              ["diff", "--no-color", "--name-status", "-z"],
+              flag("--find-copies", options?.copies),
+              pickaxeFlags(options?.pickaxe),
+              flag(["--find-renames", "--no-renames"], options?.renames),
+              flag("--staged", staged === true),
+              flag(
+                commitArg(options?.from) ?? "HEAD",
+                staged === undefined && options?.to === undefined,
+              ),
+              options?.to !== undefined ? rangeArg(options) : undefined,
+              "--",
+              options?.path,
+            )
+          );
+          if (error) {
+            if (
+              options?.from === undefined && staged === undefined &&
+              error.message.includes("bad revision 'HEAD'")
+            ) return await tracked(true);
+            throw error;
+          }
+          const entries = output.split("\0").filter((x) => x);
+          const statuses: Status[] = [];
+          let rename: string | undefined = undefined;
+          let status: Patch["status"] | undefined = undefined;
+          for (
+            const [entry, next] of slidingWindows(entries, 2, { partial: true })
+          ) {
+            assertExists(entry, "Cannot parse diff entry");
+            if (entry === rename) continue;
+            if (status === undefined) {
+              status = statusKind(entry);
+              if (status === "renamed" || status === "copied") {
+                assertExists(next, "Cannot parse diff entry");
+                rename = next;
+              }
+              continue;
             }
-            continue;
-          }
-          if (status === "renamed" || status === "copied") {
-            assertExists(rename, "Cannot parse diff entry");
-            statuses.push({ path: entry, status, from: rename });
-            rename = undefined;
+            if (status === "renamed" || status === "copied") {
+              assertExists(rename, "Cannot parse diff entry");
+              statuses.push({ path: entry, status, from: rename });
+              rename = undefined;
+              status = undefined;
+              continue;
+            }
+            statuses.push({ path: entry, status });
             status = undefined;
-            continue;
           }
-          statuses.push({ path: entry, status });
-          status = undefined;
+          return statuses;
         }
-        return statuses;
+        async function untracked(ignored: boolean) {
+          const output = await run(
+            gitOptions,
+            ["ls-files", "--others", "--exclude-standard", "-z"],
+            flag("--directory", options?.untracked === true),
+            flag("--ignored", ignored),
+            "--",
+            options?.path,
+          );
+          return output
+            .split("\0")
+            .filter((x) => x)
+            .map((path) => ({
+              path,
+              status: ignored ? "ignored" as const : "untracked" as const,
+            }));
+        }
+        return (await Promise.all([
+          tracked(options?.staged),
+          options?.untracked ? untracked(false) : [],
+          options?.ignored ? untracked(true) : [],
+        ])).flat();
       },
       async patch(options) {
-        const output = await run(
-          gitOptions,
-          ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
-          flag("--diff-algorithm", options?.algorithm, { equals: true }),
-          flag("--find-copies-harder", options?.copies),
-          pickaxeFlags(options?.pickaxe),
-          flag(["--find-renames", "--no-renames"], options?.renames),
-          flag("--staged", options?.staged),
-          flag("--unified", options?.unified, { equals: true }),
-          commitArg(options?.target),
-          rangeArg(options),
-          "--",
-          options?.path,
-        );
-        return output.split(/\n(?=diff --git )/)
+        async function tracked(staged: boolean | undefined) {
+          const { value: output, error } = await maybe(() =>
+            run(
+              gitOptions,
+              ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
+              flag("--diff-algorithm", options?.algorithm, { equals: true }),
+              flag("--find-copies-harder", options?.copies),
+              pickaxeFlags(options?.pickaxe),
+              flag(["--find-renames", "--no-renames"], options?.renames),
+              flag("--staged", staged === true),
+              flag("--unified", options?.unified, { equals: true }),
+              flag(
+                commitArg(options?.from) ?? "HEAD",
+                staged === undefined && options?.to === undefined,
+              ),
+              options?.to !== undefined ? rangeArg(options) : undefined,
+              "--",
+              options?.path,
+            )
+          );
+          if (error) {
+            if (
+              options?.from === undefined && staged === undefined &&
+              error.message.includes("bad revision 'HEAD'")
+            ) return await tracked(true);
+            throw error;
+          }
+          return output;
+        }
+        return (await tracked(options?.staged)).split(/\n(?=diff --git )/)
           .filter((x) => x)
           .map((content) => {
             const [header, ...body] = content.split(/\n(?=@@ )/);
@@ -2183,6 +2134,8 @@ export function git(options?: GitOptions): Git {
               status: patch.status,
               ...patch.mode !== undefined && { mode: patch.mode },
               ...patch.from !== undefined && { from: patch.from },
+              ...patch.similarity !== undefined &&
+                { similarity: patch.similarity },
               ...hunks.length > 0 && { hunks },
             };
           });
@@ -2872,9 +2825,14 @@ function peeledArg(ref: string | undefined): string | undefined {
   return `${ref}^{}`;
 }
 
-function rangeArg(range: RevisionRangeOptions): string;
-function rangeArg(range: RevisionRangeOptions | undefined): string | undefined;
-function rangeArg(range: RevisionRangeOptions | undefined): string | undefined {
+interface RevisionRange {
+  from?: Commitish;
+  to?: Commitish;
+  symmetric?: boolean;
+}
+function rangeArg(range: RevisionRange): string;
+function rangeArg(range: RevisionRange | undefined): string | undefined;
+function rangeArg(range: RevisionRange | undefined): string | undefined {
   if (range === undefined) return undefined;
   const from = range.from && commitArg(range.from);
   const to = range.to && commitArg(range.to);
@@ -3010,7 +2968,7 @@ function configValue(key: string, lines: string[]) {
   return { key, value };
 }
 
-function statusKind(code: string): Patch["status"] {
+function statusKind(code: string) {
   switch (code[0]) {
     case "M":
       return "modified";
@@ -3440,19 +3398,13 @@ const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
   {
     pattern: /^similarity index (\d+)%$/,
     apply(patch, value) {
-      patch.from = {
-        path: patch.from?.path ?? "",
-        similarity: parseInt(value, 10) / 100,
-      };
+      patch.similarity = parseInt(value, 10) / 100;
     },
   },
   {
     pattern: /^rename from (.+)$/,
     apply(patch, value) {
-      patch.from = {
-        path: value,
-        similarity: patch.from?.similarity ?? 0,
-      };
+      patch.from = value;
       patch.status = "renamed";
     },
   },
@@ -3466,10 +3418,7 @@ const PATCH_HEADER_TRANSFORMS: PatchTransform[] = [
   {
     pattern: /^copy from (.+)$/,
     apply(patch, value) {
-      patch.from = {
-        path: value,
-        similarity: patch.from?.similarity ?? 0,
-      };
+      patch.from = value;
       patch.status = "copied";
     },
   },
