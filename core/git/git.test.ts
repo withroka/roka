@@ -1,7 +1,6 @@
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
-import { type Git, git, GitError, type Patch } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import {
   assertEquals,
@@ -14,6 +13,7 @@ import {
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
 import { assertType, type IsExact } from "@std/testing/types";
+import { type Git, git, GitError, type Patch } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
@@ -708,7 +708,6 @@ Deno.test("git().config.list() returns all configuration values", async () => {
 Deno.test("git().config.list() handles configuration overrides", async () => {
   await using repo = await tempRepository({
     config: {
-      "color.config": "always",
       "pager.config": "less",
       "custom.key": 1234,
       "branch.main.custom.key": true,

@@ -307,7 +307,6 @@ export const CONFIG_SCHEMA = {
   "clone.defaultRemoteName": ["string"],
   "clone.rejectShallow": ["boolean"],
   "color.branch": ["never", "auto", "always"],
-  "color.config": ["never", "auto", "always"],
   "color.diff": ["never", "auto", "always"],
   "color.log": ["never", "auto", "always"],
   "color.status": ["never", "auto", "always"],
