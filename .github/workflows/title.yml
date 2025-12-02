@@ -38,6 +38,7 @@ jobs:
             async/pool
             config
             collections
+            config
             deno
             flow
             flow/fmt
