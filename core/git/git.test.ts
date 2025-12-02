@@ -713,7 +713,7 @@ Deno.test("git().config.list() handles configuration overrides", async () => {
       "remote.origin.custom.key": false,
     },
   });
-  assertObjectMatch(await repo.config.list({ target: "local" }), {
+  assertObjectMatch(await repo.config.list({ level: "local" }), {
     "custom.key": "1234",
     "branch.main.custom.key": "true",
     "remote.origin.custom.key": "false",
@@ -733,13 +733,13 @@ Deno.test("git().config.list() handles whitespace in values", async () => {
   });
 });
 
-Deno.test("git().config.list({ target }) can retrieve from file config", async () => {
+Deno.test("git().config.list({ level, file }) can retrieve from file config", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
     repo.path("config"),
     ["[user]", "name = user-name", "email = user-email"].join("\n"),
   );
-  assertEquals(await repo.config.list({ target: { file: "config" } }), {
+  assertEquals(await repo.config.list({ file: "config" }), {
     "user.name": "user-name",
     "user.email": "user-email",
   });
@@ -910,23 +910,23 @@ Deno.test("git().config.get() retrieves single values as array for array variabl
 Deno.test("git().config.get() returns undefined for missing values", async () => {
   await using repo = await tempRepository();
   assertEquals(
-    await repo.config.get("init.defaultBranch", { target: "local" }),
+    await repo.config.get("init.defaultBranch", { level: "local" }),
     undefined,
   );
   assertEquals(
-    await repo.config.get("fetch.parallel", { target: "local" }),
+    await repo.config.get("fetch.parallel", { level: "local" }),
     undefined,
   );
   assertEquals(
-    await repo.config.get("user.signingKey", { target: "local" }),
+    await repo.config.get("user.signingKey", { level: "local" }),
     undefined,
   );
   assertEquals(
-    await repo.config.get("versionsort.suffix", { target: "local" }),
+    await repo.config.get("versionsort.suffix", { level: "local" }),
     undefined,
   );
   assertEquals(
-    await repo.config.get("pull.rebase", { target: "local" }),
+    await repo.config.get("pull.rebase", { level: "local" }),
     undefined,
   );
 });
@@ -1087,18 +1087,18 @@ Deno.test("git().config.set() configures boolean variables", async () => {
   assertEquals(await repo.config.get("tag.gpgSign"), false);
 });
 
-Deno.test("git().config.get({ target }) can retrieve from file config", async () => {
+Deno.test("git().config.get({ file }) can retrieve from file config", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
     repo.path("config"),
     ["[user]", "name = user-name", "email = user-email"].join("\n"),
   );
   assertEquals(
-    await repo.config.get("user.name", { target: { file: "config" } }),
+    await repo.config.get("user.name", { file: "config" }),
     "user-name",
   );
   assertEquals(
-    await repo.config.get("user.email", { target: { file: "config" } }),
+    await repo.config.get("user.email", { file: "config" }),
     "user-email",
   );
 });
@@ -1288,10 +1288,10 @@ Deno.test("git().config.set() resets all existing values", async () => {
   assertEquals(await repo.config.get("fetch.parallel"), 1234);
 });
 
-Deno.test("git().config.set({ target }) can configure file config", async () => {
+Deno.test("git().config.set({ file }) can configure file config", async () => {
   await using repo = await tempRepository();
-  await repo.config.set("user.name", "name", { target: { file: "config" } });
-  await repo.config.set("user.email", "email", { target: { file: "config" } });
+  await repo.config.set("user.name", "name", { file: "config" });
+  await repo.config.set("user.email", "email", { file: "config" });
   assertEquals(
     (await Deno.readTextFile(repo.path("config"))).trimEnd().replace(/\t/g, ""),
     ["[user]", "name = name", "email = email"].join("\n"),
@@ -1304,7 +1304,7 @@ Deno.test("git().config.unset() removes a configuration value", async () => {
   assertEquals(await repo.config.get("user.name"), "name");
   await repo.config.unset("user.name");
   assertEquals(
-    await repo.config.get("user.name", { target: "local" }),
+    await repo.config.get("user.name", { level: "local" }),
     undefined,
   );
 });
@@ -1318,7 +1318,7 @@ Deno.test("git().config.unset() removes all values for array config", async () =
   );
   await repo.config.unset("versionsort.suffix");
   assertEquals(
-    await repo.config.get("versionsort.suffix", { target: "local" }),
+    await repo.config.get("versionsort.suffix", { level: "local" }),
     undefined,
   );
 });
@@ -1327,7 +1327,7 @@ Deno.test("git().config.unset() does nothing for non-existent key", async () => 
   await using repo = await tempRepository();
   await repo.config.unset("non.existent.key");
   assertEquals(
-    await repo.config.get("non.existent.key", { target: "local" }),
+    await repo.config.get("non.existent.key", { level: "local" }),
     undefined,
   );
 });
@@ -1341,7 +1341,7 @@ Deno.test("git().config.unset() removes a branch configuration value", async () 
   );
   await repo.config.unset("branch.main.description");
   assertEquals(
-    await repo.config.get("branch.main.description", { target: "local" }),
+    await repo.config.get("branch.main.description", { level: "local" }),
     undefined,
   );
 });
@@ -1352,7 +1352,7 @@ Deno.test("git().config.unset() removes a remote configuration value", async () 
   assertEquals(await repo.config.get("remote.origin.url"), "url");
   await repo.config.unset("remote.origin.url");
   assertEquals(
-    await repo.config.get("remote.origin.url", { target: "local" }),
+    await repo.config.get("remote.origin.url", { level: "local" }),
     undefined,
   );
 });
@@ -1363,7 +1363,7 @@ Deno.test("git().config.unset() works with custom variables", async () => {
   assertEquals(await repo.config.get("custom.key"), "value");
   await repo.config.unset("custom.key");
   assertEquals(
-    await repo.config.get("custom.key", { target: "local" }),
+    await repo.config.get("custom.key", { level: "local" }),
     undefined,
   );
 });
@@ -1373,21 +1373,21 @@ Deno.test("git().config.unset() treats variables as case-insensitive", async () 
   assertEquals(await repo.config.get("user.name"), "name");
   await repo.config.unset("User.Name");
   assertEquals(
-    await repo.config.get("user.name", { target: "local" }),
+    await repo.config.get("user.name", { level: "local" }),
     undefined,
   );
 });
 
-Deno.test("git().config.unset({ target }) can configure file config", async () => {
+Deno.test("git().config.unset({ file }) can configure file config", async () => {
   await using repo = await tempRepository();
-  await repo.config.set("user.name", "name", { target: { file: "config" } });
+  await repo.config.set("user.name", "name", { file: "config" });
   assertEquals(
-    await repo.config.get("user.name", { target: { file: "config" } }),
+    await repo.config.get("user.name", { file: "config" }),
     "name",
   );
-  await repo.config.unset("user.name", { target: { file: "config" } });
+  await repo.config.unset("user.name", { file: "config" });
   assertEquals(
-    await repo.config.get("user.name", { target: { file: "config" } }),
+    await repo.config.get("user.name", { file: "config" }),
     undefined,
   );
 });
