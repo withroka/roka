@@ -299,7 +299,7 @@ export const CONFIG_SCHEMA = {
   "blame.showRoot": ["boolean"],
   "branch.autoSetupMerge": ["boolean", "always", "inherit", "simple"],
   "branch.autoSetupRebase": ["never", "local", "remote", "always"],
-  "branch.sort": ["array"],
+  "branch.sort": ["string"],
   "bundle.heuristic": ["creationToken"],
   "bundle.mode": ["all", "any"],
   "bundle.version": ["number"],
