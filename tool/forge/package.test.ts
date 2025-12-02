@@ -424,23 +424,19 @@ Deno.test("workspace() matches commit scope", async () => {
   assertExists(commit1);
   assertExists(commit2);
   assertExists(commit3);
-  assertArrayObjectMatch(await workspace({ root }), [
-    {
-      name: "pkg1",
-      version: `0.0.1-pre.1+${commit1.short}`,
-      changes: [conventional(commit1)],
-    },
-    {
-      name: "pkg2",
-      version: `0.0.1-pre.1+${commit2.short}`,
-      changes: [conventional(commit2)],
-    },
-    {
-      name: "pkg3",
-      version: `0.0.1-pre.1+${commit3.short}`,
-      changes: [conventional(commit3)],
-    },
-  ]);
+  assertArrayObjectMatch(await workspace({ root }), [{
+    name: "pkg1",
+    version: `0.0.1-pre.1+${commit1.short}`,
+    changes: [conventional(commit1)],
+  }, {
+    name: "pkg2",
+    version: `0.0.1-pre.1+${commit2.short}`,
+    changes: [conventional(commit2)],
+  }, {
+    name: "pkg3",
+    version: `0.0.1-pre.1+${commit3.short}`,
+    changes: [conventional(commit3)],
+  }]);
 });
 
 Deno.test("workspace() considers unstable changes", async () => {
@@ -465,18 +461,15 @@ Deno.test("workspace() considers unstable changes", async () => {
   assertExists(commit1);
   assertExists(commit2);
   assertExists(commit3);
-  assertArrayObjectMatch(await workspace({ root }), [
-    {
-      name: "pkg1",
-      version: `1.2.4-pre.1+${commit1.short}`,
-      changes: [conventional(commit1)],
-    },
-    {
-      name: "pkg2",
-      version: `1.3.0-pre.2+${commit3.short}`,
-      changes: [conventional(commit3), conventional(commit2)],
-    },
-  ]);
+  assertArrayObjectMatch(await workspace({ root }), [{
+    name: "pkg1",
+    version: `1.2.4-pre.1+${commit1.short}`,
+    changes: [conventional(commit1)],
+  }, {
+    name: "pkg2",
+    version: `1.3.0-pre.2+${commit3.short}`,
+    changes: [conventional(commit3), conventional(commit2)],
+  }]);
 });
 
 Deno.test("workspace({ filters }) filters packages", async () => {
