@@ -1638,7 +1638,7 @@ Deno.test("git().index.restore({ target }) can restore the index", async () => {
     { path: "file2", status: "modified" },
   ]);
   await repo.index.restore(["file1", "file2"], {
-    target: "index",
+    location: "index",
   });
   assertEquals(await repo.diff.status({ staged: true }), []);
   assertEquals(await repo.diff.status({ staged: false }), [
@@ -1665,7 +1665,7 @@ Deno.test("git().index.restore({ target }) can restore the working tree", async 
     { path: "file2", status: "modified" },
   ]);
   await repo.index.restore(["file1", "file2"], {
-    target: "worktree",
+    location: "worktree",
   });
   assertEquals(await repo.diff.status({ staged: true }), [
     { path: "file1", status: "modified" },
@@ -1691,7 +1691,7 @@ Deno.test("git().index.restore({ target }) can restore the index and working tre
     { path: "file2", status: "modified" },
   ]);
   await repo.index.restore(["file1", "file2"], {
-    target: "both",
+    location: "both",
   });
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file1")), "content1");
@@ -1706,7 +1706,7 @@ Deno.test("git().index.restore({ target }) can revert new files from the index",
   assertEquals(await repo.diff.status({ staged: true }), [
     { path: "file", status: "added" },
   ]);
-  await repo.index.restore("file", { target: "index" });
+  await repo.index.restore("file", { location: "index" });
   assertEquals(await repo.diff.status({ untracked: true }), [
     { path: "file", status: "untracked" },
   ]);

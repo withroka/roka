@@ -923,18 +923,22 @@ export interface IndexRestoreOptions {
    * Source commit to restore from.
    *
    * The default restore source depends on the
-   * {@linkcode IndexRestoreOptions.staged staged} option.
+   * {@linkcode IndexRestoreOptions.location location} option.
    *
    * - `HEAD` is the default source, if restoring the index (staging area)
    * - the index is the default source, if restoring the working tree only
    */
   source?: Commitish;
   /**
-   * Target location to restore files in.
+   * Restore location.
+   *
+   * - `index`: restore files in the staging area from source
+   * - `worktree`: restore files in the working tree from source (default)
+   * - `both`: restore both the index and working tree
    *
    * @default {"worktree"}
    */
-  target?: "index" | "worktree" | "both";
+  location?: "index" | "worktree" | "both";
 }
 
 /** Options for the {@linkcode IndexOperations.remove} function. */
@@ -1951,11 +1955,11 @@ export function git(options?: GitOptions): Git {
           flag("--source", commitArg(options?.source), { equals: true }),
           flag(
             "--staged",
-            options?.target === "index" || options?.target === "both",
+            options?.location === "index" || options?.location === "both",
           ),
           flag(
             "--worktree",
-            options?.target === "worktree" || options?.target === "both",
+            options?.location === "worktree" || options?.location === "both",
           ),
           "--",
           path,
