@@ -23,7 +23,7 @@ import { assert, assertExists } from "@std/assert";
 import { firstNotNullishOf, omit, pick } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { extname, fromFileUrl, join, resolve } from "@std/path";
-import { mergeReadableStreams } from "@std/streams";
+import { mergeReadableStreams, toTransformStream } from "@std/streams";
 
 /**
  * An error thrown by the `deno` command.
@@ -809,6 +809,10 @@ export function deno(options?: DenoOptions): DenoCommands {
           ],
           report: "failure",
         }, {
+          states: ["failure"],
+          patterns: [/^$/],
+          ignore: true,
+        }, {
           states: ["failure", "error", "error-body"],
           patterns: [
             /^\s+at (?<file>.*):(?<line>\d+):(?<column>\d+)(?:\n.*)*$/,
@@ -1077,24 +1081,29 @@ class Runner implements AsyncDisposable {
       stream: typeof process.stdout,
       source: LineData["source"],
     ) => {
-      let last: string | undefined = undefined;
+      let last: LineData | undefined = undefined;
       return stream
         .pipeThrough(new TextDecoderStream())
+        .pipeThrough(toTransformStream(async function* (values) {
+          for await (const chunk of values) {
+            yield { source, chunk };
+          }
+        }))
         .pipeThrough(
-          new TransformStream<string, LineData>({
-            transform(chunk, controller) {
-              const lines = ((last ?? "") + chunk).split("\n");
-              last = lines.pop();
+          new TransformStream({
+            transform({ source, chunk }, controller) {
+              const lines = (last ? last.line + chunk : chunk).split("\n");
+              const line = lines.pop();
+              last = line !== undefined
+                ? { source, line, done: false }
+                : undefined;
               for (const line of lines) {
                 controller.enqueue({ source, line, done: true });
               }
-              if (last !== undefined) {
-                controller.enqueue({ source, line: last, done: false });
-              }
+              if (last) controller.enqueue(last);
             },
             flush(controller) {
-              if (last === undefined) return;
-              controller.enqueue({ source, line: last, done: true });
+              if (last) controller.enqueue({ ...last, done: true });
             },
           }),
         );
