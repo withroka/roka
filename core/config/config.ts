@@ -1,19 +1,23 @@
 /**
- * This module provides the {@linkcode config} function, which provides access
- * to a user configuration on the file system for the running application.
+ * A library for managing configuration data.
+ *
+ * This package only provides the {@linkcode config} function to manage a local
+ * file system user configuration.
  *
  * The config object is a disposable resource that should be closed when no
  * longer needed, which can be achieved via the `using` keyword.
  *
  * ```ts
- * // deno-lint-ignore-file no-console
- * import { config } from "@roka/cli/config";
+ * import { config } from "@roka/config";
+ * type AppConfig = {
+ *   username: string;
+ *   email: string;
+ * };
  * (async () => {
- *   using cfg = config<{ username: string; email: string }>();
- *   const data = await cfg.get();
- *   console.log(data.username);
- *   console.log(data.email);
- *   await cfg.set({ email: "new-email@example.com" });
+ *   using cfg = config<AppConfig>();
+ *   const { username } = await cfg.get();
+ *   if (!username) throw Error("No username configured");
+ *   await cfg.set({ username, email: "new-email@example.com" });
  * });
  * ```
  *
@@ -28,7 +32,7 @@
 import { basename, dirname, join } from "@std/path";
 
 /**
- * A key-value stored returned by the {@linkcode config} function.
+ * A key-value store returned by the {@linkcode config} function.
  *
  * @typeParam T The type of configuration data.
  */
@@ -66,7 +70,7 @@ export interface ConfigOptions {
  *
  * @example Use a file-based user configuration.
  * ```ts
- * import { config } from "@roka/cli/config";
+ * import { config } from "@roka/config";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
  * await using directory = await tempDirectory();
@@ -80,7 +84,7 @@ export interface ConfigOptions {
  *
  * @example Use an in-memory configuration.
  * ```ts
- * import { config } from "@roka/cli/config";
+ * import { config } from "@roka/config";
  * import { assertEquals } from "@std/assert";
  * using cfg = config<{ foo: string; bar: number }>({
  *   path: ":memory:",
