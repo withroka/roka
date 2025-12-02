@@ -41,6 +41,7 @@ jobs:
             cli/input
             cli/testing
             collections
+            config
             deno
             flow
             flow/fmt
