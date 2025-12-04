@@ -35,14 +35,16 @@
  *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
  * @todo Add `git().worktree.*`
- * @todo Add `git().cherrypick.*`
- * @todo Add `git().revert.*`
+ * @todo Add `git().stash.*`
  * @todo Add `git().merge.*`
  * @todo Add `git().rebase.*`
+ * @todo Add `git().cherrypick.*`
+ * @todo Add `git().revert.*`
+ * @todo Add `git().bisect.*`
  * @todo Add `git().submodule.*`
- * @todo Add `git().replace.*` (grafts)
- * @todo Add `git().hook.*`
  * @todo Add `git().reflog.*`
+ * @todo Add `git().maintenance.*`
+ * @todo Add `git().hook.*`
  * @todo Add templates.
  * @todo Expose dates.
  * @todo Verify signatures.
