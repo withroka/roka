@@ -7219,10 +7219,10 @@ Deno.test("git().sync.unshallow() rejects complete repository", async () => {
   );
 });
 
-Deno.test("git().admin.backfill({ minBatchSize }) rejects negative values", async () => {
+Deno.test("git().sync.backfill({ minBatchSize }) rejects negative values", async () => {
   await using repo = await tempRepository();
   await assertRejects(
-    () => repo.admin.backfill({ minBatchSize: -1 }),
+    () => repo.sync.backfill({ minBatchSize: -1 }),
     GitError,
     "expects a non-negative integer value",
   );
