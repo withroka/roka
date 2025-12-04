@@ -35,14 +35,16 @@
  *  -  {@link [testing]}: Write tests using temporary git repositories.
  *
  * @todo Add `git().worktree.*`
- * @todo Add `git().cherrypick.*`
- * @todo Add `git().revert.*`
+ * @todo Add `git().stash.*`
  * @todo Add `git().merge.*`
  * @todo Add `git().rebase.*`
+ * @todo Add `git().cherrypick.*`
+ * @todo Add `git().revert.*`
+ * @todo Add `git().bisect.*`
  * @todo Add `git().submodule.*`
- * @todo Add `git().replace.*` (grafts)
- * @todo Add `git().hook.*`
  * @todo Add `git().reflog.*`
+ * @todo Add `git().maintenance.*`
+ * @todo Add `git().hook.*`
  * @todo Add templates.
  * @todo Expose dates.
  * @todo Verify signatures.
@@ -101,8 +103,6 @@ export interface Git {
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
   sync: SyncOperations;
-  /** Administration and maintenance operations. */
-  admin: AdminOperations;
 }
 
 /** Config operations from {@linkcode Git.config}. */
@@ -278,12 +278,8 @@ export interface SyncOperations {
   push(options?: SyncPushOptions): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
   unshallow(options?: SyncRemoteOptions): Promise<void>;
-}
-
-/** Administration operations from {@linkcode Git.admin}. */
-export interface AdminOperations {
   /** Fetches missing objects in a partial clone. */
-  backfill(options?: AdminBackfillOptions): Promise<void>;
+  backfill(options?: SyncBackfillOptions): Promise<void>;
 }
 
 /** Runtime schema for known git configuration. */
@@ -1656,7 +1652,7 @@ export interface SyncFilterOptions {
    * When cloning, this will result in a partial clone where some objects are
    * omitted from the initial clone, which are fetched on-demand later.
    *
-   * The {@linkcode AdminOperations.backfill backfill} function can be used
+   * The {@linkcode SyncOperations.backfill backfill} function can be used
    * to fetch missing objects later.
    *
    * Common filter values:
@@ -1886,8 +1882,8 @@ export interface SyncPushForceOptions {
   force?: boolean | "with-lease" | "with-lease-if-includes";
 }
 
-/** Options for the {@linkcode AdminOperations.backfill} function. */
-export interface AdminBackfillOptions {
+/** Options for the {@linkcode SyncOperations.backfill} function. */
+export interface SyncBackfillOptions {
   /**
    * Minimum number of objects to backfill in a single batch.
    * @default {50000}
@@ -2957,8 +2953,6 @@ export function git(options?: GitOptions): Git {
           remoteArg(remote),
         );
       },
-    },
-    admin: {
       async backfill(options) {
         await run(
           gitOptions,
