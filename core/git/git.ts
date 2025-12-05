@@ -819,8 +819,8 @@ export interface Commit {
   hash: string;
   /** Short hash of commit. */
   short: string;
-  /** Parent commit, if any. */
-  parent?: Pick<Commit, "hash" | "short">;
+  /** Parent commit hashes, if any. */
+  parents?: string[];
   /** Author, who wrote the code. */
   author: User;
   /** Committer, who created the commit. */
@@ -3355,7 +3355,7 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
       },
     },
   },
-} satisfies FormatDescriptor<Branch>;
+};
 
 const COMMIT_FORMAT: FormatDescriptor<Commit> = {
   delimiter: "<%H>",
@@ -3363,20 +3363,13 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
   fields: {
     hash: { kind: "string", format: "%H" },
     short: { kind: "string", format: "%h" },
-    parent: {
-      kind: "object",
+    parents: {
+      kind: "string",
       optional: true,
-      fields: {
-        hash: {
-          kind: "string",
-          format: "%P",
-          transform: (value) => value ? value : "\x00",
-        },
-        short: {
-          kind: "string",
-          format: "%p",
-          transform: (value) => value ? value : "\x00",
-        },
+      format: "%P",
+      transform: (value) => {
+        if (!value) return undefined;
+        return value.split(" ");
       },
     },
     author: {
@@ -3407,7 +3400,7 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
       transform: parseTrailers,
     },
   },
-} satisfies FormatDescriptor<Commit>;
+};
 
 const TAG_FORMAT: FormatDescriptor<Tag> = {
   delimiter: "<%(objectname)>",
@@ -3464,7 +3457,7 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
       transform: parseTrailers,
     },
   },
-} satisfies FormatDescriptor<Tag>;
+};
 
 function formatFields<T>(format: FormatFieldDescriptor<T>): string[] {
   if (format.kind === "skip") return [];

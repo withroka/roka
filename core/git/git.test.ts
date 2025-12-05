@@ -613,7 +613,7 @@ Deno.test("git().clone({ shallow }) can exclude history by depth", async () => {
     local: false,
   });
   assertEquals(await repo.commit.log({ to: "origin/main" }), [
-    omit(commit3, ["parent"]),
+    omit(commit3, ["parents"]),
   ]);
 });
 
@@ -633,7 +633,7 @@ Deno.test("git().clone({ shallow }) can exclude history by target", async () => 
     local: false,
   });
   assertEquals(await repo.commit.log({ to: "origin/main" }), [
-    omit(commit3, ["parent"]),
+    omit(commit3, ["parents"]),
   ]);
 });
 
@@ -3193,8 +3193,8 @@ Deno.test("git().commit.log() returns multiple commits", async () => {
     subject: "commit2",
     allowEmpty: true,
   });
-  assertEquals(commit1.parent, undefined);
-  assertEquals(commit2.parent, { hash: commit1.hash, short: commit1.short });
+  assertEquals(commit1.parents, undefined);
+  assertEquals(commit2.parents, [commit1.hash]);
   assertEquals(await repo.commit.log(), [commit2, commit1]);
 });
 
@@ -6331,7 +6331,7 @@ Deno.test("git().sync.fetch({ shallow }) limits fetch by commit depth", async ()
   ]);
   await repo.sync.pull({ shallow: { depth: 1 } });
   assertEquals(await repo.commit.log({ to: "origin/main" }), [
-    omit(commit3, ["parent"]),
+    omit(commit3, ["parents"]),
   ]);
 });
 
@@ -6360,7 +6360,7 @@ Deno.test("git().sync.fetch({ shallow }) can exclude history by target", async (
     shallow: { exclude: [tag.name] },
   });
   assertEquals(await repo.commit.log({ to: "origin/main" }), [
-    omit(commit3, ["parent"]),
+    omit(commit3, ["parents"]),
   ]);
 });
 
@@ -6617,7 +6617,7 @@ Deno.test("git().sync.pull({ shallow }) can exclude history by depth", async () 
   await using repo = await tempRepository({ clone: upstream });
   assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
   await repo.sync.pull({ shallow: { depth: 1 } });
-  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parents"])]);
 });
 
 Deno.test("git().sync.pull({ shallow }) can exclude history by target", async () => {
@@ -6638,7 +6638,7 @@ Deno.test("git().sync.pull({ shallow }) can exclude history by target", async ()
   await using repo = await tempRepository({ clone: upstream });
   assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
   await repo.sync.pull({ shallow: { exclude: [tag.name] } });
-  assertEquals(await repo.commit.log(), [omit(commit3, ["parent"])]);
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parents"])]);
 });
 
 Deno.test("git().sync.pull({ sign }) cannot use wrong key", async () => {
@@ -7199,7 +7199,7 @@ Deno.test("git().sync.unshallow() unshallows a shallow repository", async () => 
     shallow: { depth: 1 },
     local: false,
   });
-  assertEquals(await repo.commit.log(), [omit(commit2, ["parent"])]);
+  assertEquals(await repo.commit.log(), [omit(commit2, ["parents"])]);
   await repo.sync.unshallow();
   assertEquals(await repo.commit.log(), [commit2, commit1]);
 });
