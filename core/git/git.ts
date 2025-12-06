@@ -36,7 +36,6 @@
  *
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
- * @todo Add `git().merge.*`
  * @todo Add `git().rebase.*`
  * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
@@ -59,7 +58,12 @@ import {
   assertFalse,
   assertGreater,
 } from "@std/assert";
-import { mapEntries, mapValues, slidingWindows } from "@std/collections";
+import {
+  distinct,
+  mapEntries,
+  mapValues,
+  slidingWindows,
+} from "@std/collections";
 import { deepMerge } from "@std/collections/deep-merge";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
 
@@ -99,6 +103,8 @@ export interface Git {
   branch: BranchOperations;
   /** Tag operations. */
   tag: TagOperations;
+  /** Merge operations. */
+  merge: MergeOperations;
   /** Remote operations. */
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
@@ -237,6 +243,20 @@ export interface TagOperations {
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
   /** Deletes a tag. */
   delete(tag: string | Tag): Promise<void>;
+}
+
+/** Merge operations from {@linkcode Git.merge}. */
+export interface MergeOperations {
+  /** Attempts to merge given source head into current head. */
+  from(source: Commitish, options?: MergeOptions): Promise<Merge>;
+  /** Continues an ongoing merge operation with resolved conflicts. */
+  continue(): Promise<Merge>;
+  /** Aborts an ongoing merge operation. */
+  abort(): Promise<void>;
+  /** Quits an ongoing merge operation, keeping the working tree as is. */
+  quit(): Promise<void>;
+  /** Returns the current active merge operation, if any. */
+  active(): Promise<Merge | undefined>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -782,6 +802,8 @@ export interface Patch {
   stats?: DiffStats;
   /** List of diff hunks in the patch. */
   hunks?: Hunk[];
+  /** List of conflicted lines in the patch. */
+  conflicts?: Conflict[];
 }
 
 /** Diff statistics with line insertions and deletions. */
@@ -811,6 +833,30 @@ export interface Hunk {
     /** Content of the line, excluding the leading indicator. */
     content: string;
   }[];
+}
+
+/**
+ * A conflict region in a patch returned by the {@linkcode DiffOperations.patch}
+ * function.
+ */
+export interface Conflict {
+  /**
+   * Line number where the conflict starts.
+   *
+   * This number is based on the pre-merge version of the file, before the
+   * conflict markers ares added.
+   */
+  line: number;
+  /** Lines from our version of the file. */
+  ours: string[];
+  /** Lines from their version of the file. */
+  theirs: string[];
+  /**
+   * Base lines from the common ancestor, if available.
+   *
+   * This is only available when using `"diff3"` or `"zdiff3"` conflict styles.
+   */
+  base?: string[];
 }
 
 /** A single commit in a git repository. */
@@ -851,6 +897,12 @@ export interface Tag {
 
 /** A reference that recursively points to a commit object. */
 export type Commitish = Commit | Branch | Tag | string;
+
+/** Result of a merge operation from {@linkcode Git.merge}. */
+export interface Merge {
+  /** List of unmerged files due to conflicts. */
+  conflicts?: string[];
+}
 
 /**
  * A pattern to search for in diffs.
@@ -934,6 +986,25 @@ export interface MessageOptions {
   body?: string;
   /** Message trailers. */
   trailers?: Record<string, string>;
+}
+
+/**
+ * Options common to operations that create merge conflicts. such as
+ * {@linkcode Git.merge}.
+ */
+export interface ResolveOptions {
+  /**
+   * Automatically resolve conflicts using the given version.
+   *
+   * - `"ours"`: in case of conflicts, prefer our changes
+   * - `"theirs"`: in case of conflicts, prefer their changes
+   *
+   * By default, git uses the `ort` strategy when merging two heads, and the
+   * 'octopus' strategy when merging more than two heads. When this options is
+   * provided, merge is done using the `ort` strategy with the provided
+   * resolution method.
+   */
+  resolve?: "ours" | "theirs";
 }
 
 /**
@@ -1563,6 +1634,33 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
   target?: Commitish;
   /** Replace existing tags instead of failing. */
   force?: boolean;
+}
+
+/** Options for the {@linkcode Git.merge} function. */
+export interface MergeOptions
+  extends Omit<MessageOptions, "trailers">, ResolveOptions, SignOptions {
+  /**
+   * Control whether a merge commit is created.
+   * @default {true}
+   */
+  commit?: boolean;
+  /**
+   * Fast-forward mode.
+   *
+   * - `true`: allow fast-forwarding (default for most scenarios)
+   * - `false`: disable fast-forwarding
+   * - `"only"`: only allow fast-forwarding, fail otherwise
+   */
+  fastForward?: boolean | "only";
+  /**
+   * Produce the working tree and index state as if a merge has happened, but
+   * do not create a merge commit.
+   *
+   * Implies {@linkcode MergeOptions.commit commit} is `false`.
+   *
+   * @default {false}
+   */
+  squash?: boolean;
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -2375,6 +2473,33 @@ export function git(options?: GitOptions): Git {
                 ),
               };
             });
+            const conflicts: Conflict[] = [];
+            let lastConflict: Conflict | undefined = undefined;
+            let contentSource: string[] | undefined;
+            for (const hunk of hunks) {
+              for (const line of hunk.lines) {
+                if (line.type === "info") continue;
+                if (line.content.match(/^<<<<<<< /)) {
+                  lastConflict ??= {
+                    line: hunk.line.old + 1,
+                    ours: [],
+                    theirs: [],
+                  };
+                  contentSource = lastConflict.ours;
+                } else if (line.content.match(/^\|\|\|\|\|\|\| /)) {
+                  if (lastConflict) lastConflict.base = [];
+                  contentSource = lastConflict?.base;
+                } else if (line.content.match(/^=======$/)) {
+                  contentSource = lastConflict?.theirs;
+                } else if (line.content.match(/^>>>>>>> /)) {
+                  if (lastConflict) conflicts.push(lastConflict);
+                  lastConflict = undefined;
+                  contentSource = undefined;
+                } else {
+                  contentSource?.push(line.content);
+                }
+              }
+            }
             assertExists(patch.path, "Cannot parse diff patch: path");
             assertExists(patch.status, "Cannot parse diff patch: status");
             return {
@@ -2386,6 +2511,7 @@ export function git(options?: GitOptions): Git {
                 { similarity: patch.similarity },
               ...(stats.added || stats.deleted) && { stats },
               ...hunks.length > 0 && { hunks },
+              ...conflicts.length > 0 && { conflicts },
             };
           });
       },
@@ -2739,6 +2865,44 @@ export function git(options?: GitOptions): Git {
         await run(gitOptions, ["tag", "--delete"], nameArg(tag));
       },
     },
+    merge: {
+      async from(source, options) {
+        await run(
+          { ...gitOptions, allowCode: [1] },
+          ["merge", "--no-edit", "--no-summary"],
+          flag("--message", options?.subject, { equals: true }),
+          flag("--message", options?.body, { equals: true }),
+          flag(["--commit", "--no-commit"], options?.commit),
+          flag("--no-ff", options?.fastForward === false),
+          flag("--ff", options?.fastForward === true),
+          flag("--ff-only", options?.fastForward === "only"),
+          flag("--strategy-option", options?.resolve),
+          signFlag("commit", options?.sign),
+          flag("--squash", options?.squash),
+          commitArg(source),
+        );
+        const unmerged = await run(
+          gitOptions,
+          ["ls-files", "-z", "--unmerged", "--format=%(path)"],
+        );
+        const conflicts = distinct(unmerged.split("\0").filter((x) => x));
+        return { ...conflicts.length > 0 && { conflicts } };
+      },
+      async continue() {
+        await run(gitOptions, "merge", "--continue");
+        return {};
+      },
+      async abort() {
+        await run(gitOptions, "merge", "--abort");
+      },
+      async quit() {
+        await run(gitOptions, "merge", "--quit");
+      },
+      async active() {
+        await Promise.resolve();
+        return undefined;
+      },
+    },
     remote: {
       async list() {
         function toUrl(str: string) {
@@ -2984,6 +3148,7 @@ async function run(
   });
   try {
     const { code, stdout, stderr } = await command.output();
+    // console.log(new TextDecoder().decode(stdout));
     if (code !== 0 && !(options.allowCode?.includes(code))) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
       throw new GitError(

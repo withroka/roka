@@ -1,3 +1,4 @@
+import { assertSameElements } from "@roka/assert";
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
@@ -2664,6 +2665,212 @@ Deno.test("git().diff.patch() generates patch for renamed file", async () => {
   }]);
 });
 
+Deno.test("git().diff.patch() can parse merge conflict markers", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: { "merge.conflictStyle": "merge" },
+  });
+  await Deno.writeTextFile(
+    repo.path("file"),
+    [
+      "header",
+      "content1",
+      "content2",
+      "common1",
+      "common2",
+      "common3",
+      "content3",
+      "content4",
+      "footer",
+      "",
+    ].join("\n"),
+  );
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(
+    repo.path("file"),
+    [
+      "header",
+      "content2",
+      "content5",
+      "common1",
+      "common2",
+      "common3",
+      "content3",
+      "footer",
+      "",
+    ].join("\n"),
+  );
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(
+    repo.path("file"),
+    [
+      "header",
+      "content6",
+      "content2",
+      "common1",
+      "common2",
+      "common3",
+      "content4",
+      "content7",
+      "footer",
+      "",
+    ].join("\n"),
+  );
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit3" });
+  await repo.merge.from("branch");
+  assertEquals(await repo.diff.patch({ unified: 1 }), [{
+    path: "file",
+    status: "modified",
+    mode: { new: 33188 },
+    stats: { added: 8, deleted: 0 },
+    hunks: [{
+      line: { old: 1, new: 1 },
+      lines: [
+        { type: "context", content: "header" },
+        { type: "added", content: "<<<<<<< HEAD" },
+        { type: "context", content: "content6" },
+        { type: "added", content: "=======" },
+        { type: "added", content: ">>>>>>> branch" },
+        { type: "context", content: "content2" },
+        { type: "added", content: "content5" },
+        { type: "context", content: "common1" },
+      ],
+    }, {
+      line: { old: 6, new: 10 },
+      lines: [
+        { type: "context", content: "common3" },
+        { type: "added", content: "<<<<<<< HEAD" },
+        { type: "context", content: "content4" },
+        { type: "context", content: "content7" },
+        { type: "added", content: "=======" },
+        { type: "added", content: "content3" },
+        { type: "added", content: ">>>>>>> branch" },
+        { type: "context", content: "footer" },
+      ],
+    }],
+    conflicts: [
+      { line: 2, ours: ["content6"], theirs: [] },
+      { line: 7, ours: ["content4", "content7"], theirs: ["content3"] },
+    ],
+  }]);
+});
+
+Deno.test("git().diff.patch() can parse merge conflict markers in diff3 style", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: { "merge.conflictStyle": "diff3" },
+  });
+  await Deno.writeTextFile(
+    repo.path("file"),
+    [
+      "header",
+      "content1",
+      "content2",
+      "common1",
+      "common2",
+      "common3",
+      "content3",
+      "content4",
+      "footer",
+      "",
+    ].join("\n"),
+  );
+  await repo.index.add(["file"]);
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(
+    repo.path("file"),
+    [
+      "header",
+      "content2",
+      "content5",
+      "common1",
+      "common2",
+      "common3",
+      "content3",
+      "footer",
+      "",
+    ].join("\n"),
+  );
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(
+    repo.path("file"),
+    [
+      "header",
+      "content6",
+      "content2",
+      "common1",
+      "common2",
+      "common3",
+      "content4",
+      "content7",
+      "footer",
+      "",
+    ].join("\n"),
+  );
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit3" });
+  const patch: Patch = {
+    path: "file",
+    status: "modified",
+    mode: { new: 33188 },
+    stats: { added: 13, deleted: 0 },
+    hunks: [{
+      line: { old: 1, new: 1 },
+      lines: [
+        { type: "context", content: "header" },
+        { type: "added", content: "<<<<<<< HEAD" },
+        { type: "context", content: "content6" },
+        { type: "added", content: `||||||| ${commit1.short}` },
+        { type: "added", content: "content1" },
+        { type: "added", content: "=======" },
+        { type: "added", content: ">>>>>>> branch" },
+        { type: "context", content: "content2" },
+        { type: "added", content: "content5" },
+        { type: "context", content: "common1" },
+      ],
+    }, {
+      line: { old: 6, new: 12 },
+      lines: [
+        { type: "context", content: "common3" },
+        { type: "added", content: "<<<<<<< HEAD" },
+        { type: "context", content: "content4" },
+        { type: "context", content: "content7" },
+        { type: "added", content: `||||||| ${commit1.short}` },
+        { type: "added", content: "content3" },
+        { type: "added", content: "content4" },
+        { type: "added", content: "=======" },
+        { type: "added", content: "content3" },
+        { type: "added", content: ">>>>>>> branch" },
+        { type: "context", content: "footer" },
+      ],
+    }],
+    conflicts: [
+      { line: 2, ours: ["content6"], theirs: [], base: ["content1"] },
+      {
+        line: 7,
+        ours: ["content4", "content7"],
+        theirs: ["content3"],
+        base: ["content3", "content4"],
+      },
+    ],
+  };
+  await repo.config.set("merge.conflictStyle", "diff3");
+  await repo.merge.from("branch");
+  assertEquals(await repo.diff.patch({ unified: 1 }), [patch]);
+  await repo.merge.abort();
+  await repo.config.set("merge.conflictStyle", "zdiff3");
+  await repo.merge.from("branch");
+  assertEquals(await repo.diff.patch({ unified: 1 }), [patch]);
+});
+
 Deno.test("git().diff.patch() generates patch in empty repository", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.diff.patch(), []);
@@ -3815,7 +4022,7 @@ Deno.test("git().commit.create({ path }) commits specified paths instead of stag
   ]);
 });
 
-Deno.test("git().commit.create({ sign }) cannot use wrong key", async () => {
+Deno.test("git().commit.create({ sign }) rejects wrong key", async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () =>
@@ -3975,7 +4182,7 @@ Deno.test("git().commit.create({ path }) amends specified paths instead of stage
   ]);
 });
 
-Deno.test("git().commit.amend({ sign }) cannot use wrong key", async () => {
+Deno.test("git().commit.amend({ sign }) rejects wrong key", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
@@ -5632,7 +5839,7 @@ Deno.test("git().tag.create({ force }) can force move a tag", async () => {
   await repo.tag.create("tag", { force: true });
 });
 
-Deno.test("git().tag.create({ sign }) cannot use wrong key", async () => {
+Deno.test("git().tag.create({ sign }) rejects wrong key", async () => {
   await using repo = await tempRepository();
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   await assertRejects(
@@ -5753,6 +5960,267 @@ Deno.test("git().tag.delete() rejects unknown tag", async () => {
     () => repo.tag.delete("unknown"),
     GitError,
     "not found",
+  );
+});
+
+Deno.test("git().merge.from() performs a fast-forward merge", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  const merge = await repo.merge.from("branch");
+  assertEquals(merge, {});
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().merge.from() performs a three-way merge", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.from("branch");
+  assertEquals(merge, {});
+  const [commit, ...parents] = await repo.commit.log({ maxCount: 3 });
+  assertExists(commit);
+  assertObjectMatch(commit, {
+    subject: "Merge branch 'branch'",
+    parents: [commit3.hash, commit2.hash],
+  });
+  assertSameElements(parents, [commit3, commit2]);
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().merge.from() can merge from a commit", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  const merge = await repo.merge.from(commit2);
+  assertEquals(merge, {});
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().merge.from() can merge from a tag", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  const tag = await repo.tag.create("tag");
+  await repo.branch.switch("main");
+  const merge = await repo.merge.from(tag);
+  assertEquals(merge, {});
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().merge.from() can customize the merge commit message", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await repo.commit.create({ subject: "commit1", allowEmpty: true });
+  await repo.branch.switch("branch", { create: true });
+  await repo.commit.create({ subject: "commit2", allowEmpty: true });
+  await repo.branch.switch("main");
+  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  const merge = await repo.merge.from("branch", {
+    subject: "subject",
+    body: "body",
+  });
+  assertEquals(merge, {});
+  assertObjectMatch(await repo.commit.head(), {
+    subject: "subject",
+    body: "body",
+  });
+});
+
+Deno.test("git().merge.from() reports conflicts", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await Deno.writeTextFile(repo.path("file3"), "content3");
+  await repo.index.add(["file1", "file2", "file3"]);
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file1"), "content4");
+  await repo.index.remove("file2");
+  await Deno.writeTextFile(repo.path("file3"), "content5");
+  await Deno.writeTextFile(repo.path("file4"), "content6");
+  await repo.index.add(["file1", "file3", "file4"]);
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file1"), "content7");
+  await Deno.writeTextFile(repo.path("file2"), "content8");
+  await repo.index.remove("file3");
+  await Deno.writeTextFile(repo.path("file5"), "content9");
+  await repo.index.add(["file1", "file2", "file5"]);
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.from("branch");
+  assertEquals(merge, { conflicts: ["file1", "file2", "file3"] });
+  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.diff.status(), [
+    { path: "file1", status: "modified" },
+    { path: "file3", status: "added" },
+    { path: "file4", status: "added" },
+  ]);
+});
+
+Deno.test("git().merge.from({ commit }) skip commit creation", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.from("branch", { commit: false });
+  assertEquals(merge, {});
+  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.diff.status(), [{ path: "file2", status: "added" }]);
+});
+
+Deno.test("git().merge.from({ fastForward }) can force a three-way merge", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  const merge = await repo.merge.from("branch", { fastForward: false });
+  assertEquals(merge, {});
+  const [commit, ...parents] = await repo.commit.log();
+  assertExists(commit);
+  assertObjectMatch(commit, {
+    subject: "Merge branch 'branch'",
+    parents: [commit1.hash, commit2.hash],
+  });
+  assertSameElements(parents, [commit1, commit2]);
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().merge.from({ fastForward }) can reject a three-way merge", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await repo.commit.create({ subject: "commit1", allowEmpty: true });
+  await repo.branch.switch("branch", { create: true });
+  await repo.commit.create({ subject: "commit2", allowEmpty: true });
+  await repo.branch.switch("main");
+  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  await assertRejects(
+    () => repo.merge.from("branch", { fastForward: "only" }),
+    GitError,
+    "Diverging branches",
+  );
+});
+
+Deno.test("git().merge.from({ sign }) rejects wrong key", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await repo.commit.create({ subject: "commit1", allowEmpty: true });
+  await repo.branch.switch("branch", { create: true });
+  await repo.commit.create({ subject: "commit2", allowEmpty: true });
+  await repo.branch.switch("main");
+  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  await assertRejects(
+    () => repo.merge.from("branch", { sign: "not-a-key" }),
+    GitError,
+    "gpg failed to sign",
+  );
+});
+
+Deno.test("git().merge.from({ squash }) performs a squash merge", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.from("branch", { squash: true });
+  assertEquals(merge, {});
+  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.diff.status(), [{ path: "file2", status: "added" }]);
+});
+
+Deno.test("git().merge.from({ strategy }) can resolve to our version", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: { "diff.context": 1 },
+  });
+  await Deno.writeTextFile(repo.path("file"), "content1\n\ncontent1");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file"), "content2\n\ncontent2");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file"), "content3\n\ncontent1");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.from("branch", { resolve: "ours" });
+  assertEquals(merge, {});
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    "content3\n\ncontent2",
+  );
+});
+
+Deno.test("git().merge.from({ strategy }) can resolve to their version", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: { "diff.context": 1 },
+  });
+  await Deno.writeTextFile(repo.path("file"), "content1\n\ncontent1");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file"), "content2\n\ncontent1");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file"), "content3\n\ncontent3");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.from("branch", { resolve: "theirs" });
+  assertEquals(merge, {});
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    "content2\n\ncontent3",
   );
 });
 
@@ -6641,7 +7109,7 @@ Deno.test("git().sync.pull({ shallow }) can exclude history by target", async ()
   assertEquals(await repo.commit.log(), [omit(commit3, ["parents"])]);
 });
 
-Deno.test("git().sync.pull({ sign }) cannot use wrong key", async () => {
+Deno.test("git().sync.pull({ sign }) rejects wrong key", async () => {
   await using upstream = await tempRepository();
   await upstream.commit.create({ subject: "commit1", allowEmpty: true });
   await using repo = await tempRepository({
