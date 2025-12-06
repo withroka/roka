@@ -1069,7 +1069,15 @@ class Runner implements AsyncDisposable {
           Object.keys(this.blocksByPath).length > 0
         ? [this.blocksDir.path()]
         : [],
-      ...scriptArgs.length ? ["--", ...scriptArgs] : [],
+      ...scriptArgs.length
+        ? [
+          ...(this.command !== "compile" ||
+              Number(Deno.version.deno.split(".")[0]) >= 3)
+            ? ["--"]
+            : [],
+          ...scriptArgs,
+        ]
+        : [],
     ];
     const process = new Deno.Command("deno", {
       cwd,
