@@ -23,6 +23,7 @@ import { assert, assertExists } from "@std/assert";
 import { firstNotNullishOf, omit, pick } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { extname, fromFileUrl, join, resolve } from "@std/path";
+import { parse } from "@std/semver";
 import { mergeReadableStreams, toTransformStream } from "@std/streams";
 
 /**
@@ -1071,10 +1072,9 @@ class Runner implements AsyncDisposable {
         : [],
       ...scriptArgs.length
         ? [
-          ...(this.command !== "compile" ||
-              Number(Deno.version.deno.split(".")[0]) >= 3)
-            ? ["--"]
-            : [],
+          ...(this.command === "compile" && parse(Deno.version.deno).major < 3)
+            ? []
+            : ["--"],
           ...scriptArgs,
         ]
         : [],
