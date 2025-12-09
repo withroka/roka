@@ -1015,7 +1015,7 @@ export interface MessageOptions {
 }
 
 /**
- * Options common to operations that create merge conflicts. such as
+ * Options common to operations that create merge conflicts, such as
  * {@linkcode Git.merge}.
  */
 export interface ResolveOptions {
