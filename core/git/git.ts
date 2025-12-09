@@ -2457,11 +2457,11 @@ export function git(options?: GitOptions): Git {
               gitOptions,
               ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
               flag("--diff-algorithm", options?.algorithm, { equals: true }),
+              flag("--unified", options?.context, { equals: true }),
               flag("--find-copies-harder", options?.copies),
               pickaxeFlags(options?.pickaxe),
               flag(["--find-renames", "--no-renames"], options?.renames),
               flag("--staged", location === "index"),
-              flag("--unified", options?.context, { equals: true }),
               flag(
                 commitArg(options?.from) ?? "HEAD",
                 location === "both" && options?.to === undefined,
