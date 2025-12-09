@@ -298,16 +298,12 @@ function denoOptions(): DenoOptions {
   return {
     onProblem({ message }) {
       reported = true;
-      console.error();
-      console.error(message);
-      console.error();
+      console.error(`\n${message}\n`);
     },
     onDebug({ message }) {
       if (!verbose) return;
       reported = true;
-      console.debug();
-      console.debug(message);
-      console.debug();
+      console.debug(`\n${message}\n`);
     },
     onPartialInfo(report) {
       if (!Deno.stdout.isTerminal()) return;
@@ -326,12 +322,11 @@ function denoOptions(): DenoOptions {
       if (report.kind === "test") console.log(testLine(report));
       if (report.output !== undefined) {
         console.log(
-          report.kind === "test"
-            ? yellow("------- test output -------")
-            : yellow("------- non-test output -------"),
-        );
-        console.log(
-          `${report.output}${
+          `${
+            report.kind === "test"
+              ? yellow("------- test output -------")
+              : yellow("------- non-test output -------")
+          }\n${report.output}${
             report.kind === "test"
               ? yellow("----- test output end -----")
               : yellow("----- non-test output end -----")
