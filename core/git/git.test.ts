@@ -2380,6 +2380,17 @@ Deno.test("git().diff.status({ stats }) does not generate stats for untracked fi
   ]);
 });
 
+Deno.test("git().diff.status({ stats }) excludes stats for binary file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "\x00\x01\x02\x03");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file"), "\x00\x01\x02\x04");
+  assertEquals(await repo.diff.status({ stats: true }), [
+    { path: "file", status: "modified" },
+  ]);
+});
+
 Deno.test("git().diff.status({ to }) lists files changed up to commit", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content1");
@@ -2677,6 +2688,19 @@ Deno.test("git().diff.patch() generates patch for deleted file", async () => {
         { type: "deleted", content: "content" },
       ],
     }],
+  }]);
+});
+
+Deno.test("git().diff.patch() excludes hunks for binary file", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "\x00\x01\x02\x03");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file"), "\x00\x01\x02\x04");
+  assertEquals(await repo.diff.patch(), [{
+    path: "file",
+    status: "modified",
+    mode: { new: 0o100644 },
   }]);
 });
 
