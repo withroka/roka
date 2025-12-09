@@ -1411,7 +1411,7 @@ export interface CommitLogOptions {
    */
   symmetric?: boolean;
   /** Maximum number of commits to return. */
-  maxCount?: number;
+  limit?: number;
   /** Number of commits to skip. */
   skip?: number;
   /** Filters for commits where the given pattern is added or deleted. */
@@ -2615,7 +2615,7 @@ export function git(options?: GitOptions): Git {
             flag("--author", userArg(options?.author), { equals: true }),
             flag("--committer", userArg(options?.committer), { equals: true }),
             flag("--first-parent", options?.firstParent),
-            flag("--max-count", options?.maxCount, { equals: true }),
+            flag("--max-count", options?.limit, { equals: true }),
             flag(["--merges", "--no-merges"], options?.merges),
             pickaxeFlags(options?.pickaxe),
             flag("--skip", options?.skip),
@@ -2642,7 +2642,7 @@ export function git(options?: GitOptions): Git {
       },
       async get(ref) {
         const [commit] = await repo.commit.log({
-          maxCount: 1,
+          limit: 1,
           to: commitArg(ref),
         });
         return commit;
