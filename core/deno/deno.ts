@@ -783,6 +783,38 @@ export function deno(options?: DenoOptions): DenoCommands {
           columnOffset: -4,
         },
         parser: [{
+          patterns: [/^------- (?:pre|post)-test output -------$/],
+          report: "output",
+        }, {
+          states: ["output"],
+          source: "stdout",
+          patterns: [/^(?<output>.*)----- (?:pre|post)-test output end -----$/],
+          aggregate: ["output"],
+          next: "output-end",
+        }, {
+          patterns: [/^------- output -------$/],
+          report: "test",
+          next: "test-output",
+        }, {
+          states: ["test-output"],
+          source: "stdout",
+          patterns: [/^(?<output>.*)----- output end -----$/],
+          aggregate: ["output"],
+          next: "test-output-end",
+        }, {
+          states: ["output", "test-output"],
+          source: "stdout",
+          patterns: [/^(?<output>.*$)/],
+          aggregate: ["output"],
+        }, {
+          states: ["test-output-end"],
+          patterns: [testPattern],
+          next: "test",
+        }, {
+          source: "stderr",
+          patterns: [/^$/],
+          ignore: true,
+        }, {
           patterns: [/^error: Test failed$/],
           ignore: true,
         }, {
@@ -817,14 +849,6 @@ export function deno(options?: DenoOptions): DenoCommands {
           ],
           next: "error-body",
         }, {
-          states: ["failure", "error", "error-body"],
-          patterns: [/^$/],
-          next: "failure-empty",
-        }, {
-          states: ["failure-empty"],
-          patterns: [/^$/],
-          ignore: true,
-        }, {
           patterns: [
             /^Error generating coverage report: [\s\S]+$/,
             /^error: /,
@@ -833,33 +857,6 @@ export function deno(options?: DenoOptions): DenoCommands {
         }, {
           states: ["fatal"],
           patterns: [/^\s/],
-        }, {
-          patterns: [/^------- (?:pre|post)-test output -------$/],
-          report: "output",
-        }, {
-          states: ["output"],
-          patterns: [
-            /^(?<output>.*)----- (?:pre|post)-test output end -----$/,
-          ],
-          aggregate: ["output"],
-          next: "output-end",
-        }, {
-          patterns: [/^------- output -------$/],
-          report: "test",
-          next: "test-output",
-        }, {
-          states: ["test-output"],
-          patterns: [/^(?<output>.*)----- output end -----$/],
-          aggregate: ["output"],
-          next: "test-output-end",
-        }, {
-          states: ["output", "test-output"],
-          patterns: [/^(?<output>.*$)/],
-          aggregate: ["output"],
-        }, {
-          states: ["test-output-end"],
-          patterns: [testPattern],
-          next: "test",
         }, {
           patterns: [
             /^running \d+ tests? from (?<file>.*)(?:\$(?<line>\d+)-\d+)?$/,
@@ -977,6 +974,7 @@ interface RunOptions {
   };
   parser?: {
     states?: string[];
+    source?: "stdout" | "stderr";
     patterns: RegExp[];
     first?: string[];
     aggregate?: string[];
@@ -1149,10 +1147,14 @@ class Runner implements AsyncDisposable {
     const { source, line, done } = data;
     const { parser = [] } = this.options ?? {};
     const found = firstNotNullishOf(
-      parser.filter((state) => (state.states === undefined ||
-        (this.report.state !== undefined &&
-          state.states.includes(this.report.state)))
-      ),
+      parser
+        .filter((state) => (state.states === undefined ||
+          (this.report.state !== undefined &&
+            state.states.includes(this.report.state)))
+        )
+        .filter((
+          state,
+        ) => (state.source === undefined || state.source === source)),
       (state) => {
         const match = firstNotNullishOf(
           state.patterns,
@@ -1236,7 +1238,9 @@ class Runner implements AsyncDisposable {
     };
     if (data.file !== undefined) {
       if (data.file.startsWith("file://")) {
-        data.file = fromFileUrl(data.file);
+        try {
+          data.file = fromFileUrl(data.file);
+        } catch { /* ignore */ }
       }
       const block = this.resolveBlock(data);
       if (block === undefined) this.resolveLocation(data);
