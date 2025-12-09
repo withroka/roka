@@ -1366,7 +1366,7 @@ export interface DiffPatchOptions extends DiffOptions {
    * Number of context lines.
    * @default {3}
    */
-  unified?: number;
+  context?: number;
 }
 
 /**
@@ -2461,7 +2461,7 @@ export function git(options?: GitOptions): Git {
               pickaxeFlags(options?.pickaxe),
               flag(["--find-renames", "--no-renames"], options?.renames),
               flag("--staged", location === "index"),
-              flag("--unified", options?.unified, { equals: true }),
+              flag("--unified", options?.context, { equals: true }),
               flag(
                 commitArg(options?.from) ?? "HEAD",
                 location === "both" && options?.to === undefined,
