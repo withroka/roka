@@ -1235,7 +1235,7 @@ class Runner implements AsyncDisposable {
       message: this.report.data.message.replace(/\n+$/, ""),
     };
     if (data.file !== undefined) {
-      if (data.file.startsWith("file://")) {
+      if (data.file.startsWith("file://") && !data.file.includes("<")) {
         data.file = fromFileUrl(data.file);
       }
       const block = this.resolveBlock(data);
