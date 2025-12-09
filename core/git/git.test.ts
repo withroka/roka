@@ -3578,7 +3578,7 @@ Deno.test("git().commit.log({ from }) returns commit descendants", async () => {
   assertEquals(await repo.commit.log({ from: commit1 }), [commit2]);
 });
 
-Deno.test("git().commit.log({ maxCount }) limits number of commits", async () => {
+Deno.test("git().commit.log({ limit }) limits number of commits", async () => {
   await using repo = await tempRepository();
   await repo.commit.create({ subject: "commit1", allowEmpty: true });
   const commit2 = await repo.commit.create({
@@ -3589,7 +3589,7 @@ Deno.test("git().commit.log({ maxCount }) limits number of commits", async () =>
     subject: "commit3",
     allowEmpty: true,
   });
-  assertEquals(await repo.commit.log({ maxCount: 2 }), [commit3, commit2]);
+  assertEquals(await repo.commit.log({ limit: 2 }), [commit3, commit2]);
 });
 
 Deno.test("git().commit.log({ merges }) filters merge commits", async () => {
@@ -3725,7 +3725,7 @@ Deno.test("git().commit.log({ skip }) skips a number of commits", async () => {
     allowEmpty: true,
   });
   await repo.commit.create({ subject: "commit2", allowEmpty: true });
-  assertEquals(await repo.commit.log({ skip: 1, maxCount: 1 }), [commit]);
+  assertEquals(await repo.commit.log({ skip: 1, limit: 1 }), [commit]);
 });
 
 Deno.test("git().commit.log({ symmetric }) returns symmetric commit range", async () => {
@@ -6064,7 +6064,7 @@ Deno.test("git().merge.with() performs a three-way merge", async () => {
   const merge = await repo.merge.with("branch");
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log({ maxCount: 3 });
+  const [commit, ...parents] = await repo.commit.log({ limit: 3 });
   assertExists(commit);
   assertObjectMatch(commit, {
     subject: "Merge branch 'branch'",
@@ -6128,7 +6128,7 @@ Deno.test("git().merge.with() can merge multiple heads", async () => {
   const merge = await repo.merge.with([branch1, branch2]);
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log({ maxCount: 4 });
+  const [commit, ...parents] = await repo.commit.log({ limit: 4 });
   assertExists(commit);
   assertObjectMatch(commit, {
     subject: "Merge branches 'branch1' and 'branch2'",
@@ -6218,7 +6218,7 @@ Deno.test("git().merge.with() handles configuration overrides", async () => {
   const merge = await repo.merge.with("branch");
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log({ maxCount: 3 });
+  const [commit, ...parents] = await repo.commit.log({ limit: 3 });
   assertExists(commit);
   assertObjectMatch(commit, {
     subject: "Merge branch 'branch'",
@@ -6428,7 +6428,7 @@ Deno.test("git().merge.continue() completes an ongoing merge", async () => {
   assertEquals(await repo.merge.active(), merge);
   merge = await repo.merge.continue();
   assertEquals(merge, undefined);
-  const [commit, ...parents] = await repo.commit.log({ maxCount: 3 });
+  const [commit, ...parents] = await repo.commit.log({ limit: 3 });
   assertExists(commit);
   assertObjectMatch(commit, {
     subject: "Merge branch 'branch'",
