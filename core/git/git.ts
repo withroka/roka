@@ -870,7 +870,7 @@ export interface Conflict {
    * Line number where the conflict starts.
    *
    * This number is based on the pre-merge version of the file, before the
-   * conflict markers ares added.
+   * conflict markers are added.
    */
   line: number;
   /** Lines from our version of the file. */
