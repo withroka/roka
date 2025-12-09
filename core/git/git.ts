@@ -36,7 +36,6 @@
  *
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
- * @todo Add `git().merge.*`
  * @todo Add `git().rebase.*`
  * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
@@ -59,7 +58,12 @@ import {
   assertFalse,
   assertGreater,
 } from "@std/assert";
-import { mapEntries, mapValues, slidingWindows } from "@std/collections";
+import {
+  distinct,
+  mapEntries,
+  mapValues,
+  slidingWindows,
+} from "@std/collections";
 import { deepMerge } from "@std/collections/deep-merge";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
 
@@ -99,6 +103,8 @@ export interface Git {
   branch: BranchOperations;
   /** Tag operations. */
   tag: TagOperations;
+  /** Merge operations. */
+  merge: MergeOperations;
   /** Remote operations. */
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
@@ -237,6 +243,23 @@ export interface TagOperations {
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
   /** Deletes a tag. */
   delete(tag: string | Tag): Promise<void>;
+}
+
+/** Merge operations from {@linkcode Git.merge}. */
+export interface MergeOperations {
+  /** Merge given heads into current branch, and returns incomplete merges. */
+  with(
+    source: Commitish | Commitish[],
+    options?: MergeWithOptions,
+  ): Promise<Merge | undefined>;
+  /** Continues an ongoing merge operation with resolved conflicts. */
+  continue(): Promise<Merge | undefined>;
+  /** Aborts an ongoing merge operation. */
+  abort(): Promise<void>;
+  /** Quits an ongoing merge operation, keeping the working tree as is. */
+  quit(): Promise<void>;
+  /** Returns the current active merge operation, if any. */
+  active(): Promise<Merge | undefined>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -498,7 +521,15 @@ export const CONFIG_SCHEMA = {
   "init.templateDir": ["string"],
   "log.abbrevCommit": ["boolean"],
   "log.decorate": ["short", "full", "auto"],
-  "log.diffMerges": ["boolean", "string"],
+  "log.diffMerges": [
+    "off",
+    "on",
+    "first-parent",
+    "separate",
+    "combined",
+    "dense-combined",
+    "remerge",
+  ],
   "log.excludeDecoration": ["string"],
   "log.follow": ["boolean"],
   "log.graphColors": ["string"],
@@ -509,9 +540,22 @@ export const CONFIG_SCHEMA = {
   "maintenance.auto": ["boolean"],
   "maintenance.autoDetach": ["boolean"],
   "maintenance.strategy": ["none", "gc", "geometric", "incremental"],
+  "merge.autoStash": ["boolean"],
+  "merge.branchdesc": ["boolean"],
   "merge.conflictStyle": ["merge", "diff3", "zdiff3"],
+  "merge.defaultToUpstream": ["boolean"],
+  "merge.directoryRenames": ["boolean", "conflict"],
   "merge.ff": ["boolean", "only"],
+  "merge.guitool": ["string"],
+  "merge.log": ["boolean", "number"],
+  "merge.renameLimit": ["number"],
   "merge.renames": ["boolean"],
+  "merge.renormalize": ["boolean"],
+  "merge.stat": ["boolean", "compact"],
+  "merge.suppressDest": ["array"],
+  "merge.tool": ["string"],
+  "merge.verbosity": ["number"],
+  "merge.verifySignatures": ["boolean"],
   "pack.compression": ["number"],
   "pager.branch": ["boolean", "string"],
   "pager.config": ["boolean", "string"],
@@ -545,6 +589,7 @@ export const CONFIG_SCHEMA = {
   "push.useForceIfIncludes": ["boolean"],
   "rebase.autoSquash": ["boolean"],
   "rebase.autoStash": ["boolean"],
+  "rebase.rebaseMerges": ["boolean", "rebase-cousins", "no-rebase-cousins"],
   "receive.denyCurrentBranch": ["ignore", "warn", "refuse", "updateInstead"],
   "receive.denyNonFastForwards": ["boolean"],
   "receive.fsckObjects": ["boolean"],
@@ -597,6 +642,7 @@ export const CONFIG_SCHEMA = {
 export const BRANCH_CONFIG_SCHEMA = {
   "description": ["string"],
   "merge": ["string"],
+  "mergeOptions": ["string"],
   "pushRemote": ["string"],
   "rebase": ["boolean", "merges", "interactive"],
   "remote": ["string"],
@@ -782,6 +828,8 @@ export interface Patch {
   stats?: DiffStats;
   /** List of diff hunks in the patch. */
   hunks?: Hunk[];
+  /** List of conflicted lines in the patch. */
+  conflicts?: Conflict[];
 }
 
 /** Diff statistics with line insertions and deletions. */
@@ -811,6 +859,30 @@ export interface Hunk {
     /** Content of the line, excluding the leading indicator. */
     content: string;
   }[];
+}
+
+/**
+ * A conflict region in a patch returned by the {@linkcode DiffOperations.patch}
+ * function.
+ */
+export interface Conflict {
+  /**
+   * Line number where the conflict starts.
+   *
+   * This number is based on the pre-merge version of the file, before the
+   * conflict markers ares added.
+   */
+  line: number;
+  /** Lines from our version of the file. */
+  ours: string[];
+  /** Lines from their version of the file. */
+  theirs: string[];
+  /**
+   * Base lines from the common ancestor, if available.
+   *
+   * This is only available when using `"diff3"` or `"zdiff3"` conflict styles.
+   */
+  base?: string[];
 }
 
 /** A single commit in a git repository. */
@@ -851,6 +923,12 @@ export interface Tag {
 
 /** A reference that recursively points to a commit object. */
 export type Commitish = Commit | Branch | Tag | string;
+
+/** Result of a merge operation from {@linkcode Git.merge}. */
+export interface Merge {
+  /** List of unmerged files due to conflicts. */
+  conflicts?: string[];
+}
 
 /**
  * A pattern to search for in diffs.
@@ -934,6 +1012,25 @@ export interface MessageOptions {
   body?: string;
   /** Message trailers. */
   trailers?: Record<string, string>;
+}
+
+/**
+ * Options common to operations that create merge conflicts. such as
+ * {@linkcode Git.merge}.
+ */
+export interface ResolveOptions {
+  /**
+   * Automatically resolve conflicts using the given version.
+   *
+   * - `"ours"`: in case of conflicts, prefer our changes
+   * - `"theirs"`: in case of conflicts, prefer their changes
+   *
+   * By default, git uses the `ort` strategy when merging two heads, and the
+   * 'octopus' strategy when merging more than two heads. When this options is
+   * provided, merge is done using the `ort` strategy with the provided
+   * resolution method.
+   */
+  resolve?: "ours" | "theirs";
 }
 
 /**
@@ -1138,8 +1235,14 @@ export interface IndexRestoreOptions {
    *
    * - `HEAD` is the default source, if restoring the index (staging area)
    * - the index is the default source, if restoring the working tree only
+   *
+   * If a merge is in progress, the following special sources can be used:
+   *
+   * - `{ merge: true }`: recreate the conflicted merge in the working tree
+   * - `{ merge: "ours" }`: restore unmerged files from our version
+   * - `{ merge: "theirs" }`: restore unmerged files from their version
    */
-  source?: Commitish;
+  source?: Commitish | { merge: true | "ours" | "theirs" };
   /**
    * Restore location.
    *
@@ -1313,6 +1416,15 @@ export interface CommitLogOptions {
   skip?: number;
   /** Filters for commits where the given pattern is added or deleted. */
   pickaxe?: string | Pickaxe;
+  /** Follow only the first parent of merge commits. */
+  firstParent?: boolean;
+  /**
+   * Filters for merge commits.
+   *
+   * - `true`: only return merged commits
+   * - `false`: only return non-merged commits
+   */
+  merges?: boolean;
 }
 
 /**
@@ -1565,6 +1677,45 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
   force?: boolean;
 }
 
+/**
+ * Options common to operations that can merge heads, such as
+ * {@linkcode MergeOperations.with} or {@linkcode SyncOperations.pull}.
+ */
+export interface MergeOptions extends ResolveOptions, SignOptions {
+  /**
+   * Controls whether a merge will be completed with a commit.
+   * @default {true}
+   */
+  commit?: boolean;
+  /**
+   * Fast-forward mode.
+   *
+   * - `true`: allow fast-forwarding (default for most scenarios)
+   * - `false`: disable fast-forwarding
+   * - `"only"`: only allow fast-forwarding, fail otherwise
+   */
+  fastForward?: boolean | "only";
+  /**
+   * Produces the working tree and index state as if a merge has happened, but
+   * do not create a merge commit.
+   *
+   * Implies {@linkcode MergeOptions.commit commit} is `false`.
+   *
+   * @default {false}
+   */
+  squash?: boolean;
+}
+
+/** Options for the {@linkcode MergeOperations.with} function. */
+export interface MergeWithOptions
+  extends MergeOptions, Omit<MessageOptions, "trailers"> {
+  /**
+   * Update the index with resolutions resolved with rerere.
+   * @default {true}
+   */
+  rerereAutoUpdate?: boolean;
+}
+
 /** Options for the {@linkcode RemoteOperations.add} function. */
 export interface RemoteAddOptions {
   /** Fetch remote immediately after adding. */
@@ -1738,7 +1889,7 @@ export interface SyncPullSingleOptions
     SyncOptions,
     SyncTrackOptions,
     SyncShallowOptions,
-    SignOptions {
+    MergeOptions {
   /**
    * Branch or tag to pull commits from.
    *
@@ -1754,7 +1905,7 @@ export interface SyncPullSingleOptions
  * all repositories.
  */
 export interface SyncPullAllOptions
-  extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SignOptions {
+  extends SyncOptions, SyncTrackOptions, SyncShallowOptions, MergeOptions {
   /** Pull from all configured repositories. */
   all: boolean;
   /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
@@ -2161,10 +2312,18 @@ export function git(options?: GitOptions): Git {
         );
       },
       async restore(path, options?: IndexRestoreOptions) {
+        const [commitSource, mergeSource] =
+          typeof options?.source === "object" &&
+            "merge" in options.source
+            ? [undefined, options.source.merge]
+            : [options?.source, undefined];
         await run(
           gitOptions,
           "restore",
-          flag("--source", commitArg(options?.source), { equals: true }),
+          flag("--source", commitArg(commitSource), { equals: true }),
+          flag("--merge", mergeSource === true),
+          flag("--ours", mergeSource === "ours"),
+          flag("--theirs", mergeSource === "theirs"),
           flag(
             "--staged",
             options?.location === "index" || options?.location === "both",
@@ -2375,6 +2534,33 @@ export function git(options?: GitOptions): Git {
                 ),
               };
             });
+            const conflicts: Conflict[] = [];
+            let lastConflict: Conflict | undefined = undefined;
+            let contentSource: string[] | undefined;
+            for (const hunk of hunks) {
+              for (const line of hunk.lines) {
+                if (line.type === "info") continue;
+                if (line.content.match(/^<<<<<<< /)) {
+                  lastConflict ??= {
+                    line: hunk.line.old + 1,
+                    ours: [],
+                    theirs: [],
+                  };
+                  contentSource = lastConflict.ours;
+                } else if (line.content.match(/^\|\|\|\|\|\|\| /)) {
+                  if (lastConflict) lastConflict.base = [];
+                  contentSource = lastConflict?.base;
+                } else if (line.content.match(/^=======$/)) {
+                  contentSource = lastConflict?.theirs;
+                } else if (line.content.match(/^>>>>>>> /)) {
+                  if (lastConflict) conflicts.push(lastConflict);
+                  lastConflict = undefined;
+                  contentSource = undefined;
+                } else {
+                  contentSource?.push(line.content);
+                }
+              }
+            }
             assertExists(patch.path, "Cannot parse diff patch: path");
             assertExists(patch.status, "Cannot parse diff patch: status");
             return {
@@ -2386,6 +2572,7 @@ export function git(options?: GitOptions): Git {
                 { similarity: patch.similarity },
               ...(stats.added || stats.deleted) && { stats },
               ...hunks.length > 0 && { hunks },
+              ...conflicts.length > 0 && { conflicts },
             };
           });
       },
@@ -2427,7 +2614,9 @@ export function git(options?: GitOptions): Git {
             flag("--format", formatArg(COMMIT_FORMAT), { equals: true }),
             flag("--author", userArg(options?.author), { equals: true }),
             flag("--committer", userArg(options?.committer), { equals: true }),
+            flag("--first-parent", options?.firstParent),
             flag("--max-count", options?.maxCount, { equals: true }),
+            flag(["--merges", "--no-merges"], options?.merges),
             pickaxeFlags(options?.pickaxe),
             flag("--skip", options?.skip),
             rangeArg(options),
@@ -2739,6 +2928,51 @@ export function git(options?: GitOptions): Git {
         await run(gitOptions, ["tag", "--delete"], nameArg(tag));
       },
     },
+    merge: {
+      async with(source, options) {
+        await run(
+          { ...gitOptions, allowCode: [1] },
+          ["merge", "--no-edit", "--no-summary"],
+          flag("--message", options?.subject, { equals: true }),
+          flag("--message", options?.body, { equals: true }),
+          flag(["--commit", "--no-commit"], options?.commit),
+          flag("--no-ff", options?.fastForward === false),
+          flag("--ff", options?.fastForward === true),
+          flag("--ff-only", options?.fastForward === "only"),
+          flag("--strategy-option", options?.resolve),
+          flag(
+            ["--rerere-autoupdate", "--no-rerere-autoupdate"],
+            options?.rerereAutoUpdate,
+          ),
+          signFlag("commit", options?.sign),
+          flag("--squash", options?.squash),
+          commitArg(source),
+        );
+        return await repo.merge.active();
+      },
+      async continue() {
+        await run(gitOptions, "merge", "--continue");
+        return await repo.merge.active();
+      },
+      async abort() {
+        await run(gitOptions, "merge", "--abort");
+      },
+      async quit() {
+        await run(gitOptions, "merge", "--quit");
+      },
+      async active() {
+        const { error } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--verify", "MERGE_HEAD"])
+        );
+        if (error) return undefined;
+        const unmerged = await run(
+          gitOptions,
+          ["ls-files", "-z", "--unmerged", "--format=%(path)"],
+        );
+        const conflicts = distinct(unmerged.split("\0").filter((x) => x));
+        return { ...conflicts.length > 0 && { conflicts } };
+      },
+    },
     remote: {
       async list() {
         function toUrl(str: string) {
@@ -2894,14 +3128,20 @@ export function git(options?: GitOptions): Git {
       async pull(options) {
         await run(
           gitOptions,
-          "pull",
+          ["pull", "--no-edit", "--no-summary"],
           flag("--atomic", options?.atomic),
+          flag(["--commit", "--no-commit"], options?.commit),
           flag("--prune", options?.prune),
           flag("--depth", options?.shallow?.depth),
+          flag("--no-ff", options?.fastForward === false),
+          flag("--ff", options?.fastForward === true),
+          flag("--ff-only", options?.fastForward === "only"),
+          flag("--strategy-option", options?.resolve),
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
           }),
           signFlag("commit", options?.sign),
+          flag("--squash", options?.squash),
           flag("--no-tags", options?.tags === "none"),
           flag("--tags", options?.tags === "all"),
           flag("--set-upstream", options?.track),
@@ -3054,9 +3294,14 @@ function nameArg(
 }
 
 function commitArg(commit: Commitish): string;
+function commitArg(commit: Commitish[]): string[];
 function commitArg(commit: Commitish | undefined): string | undefined;
-function commitArg(commit: Commitish | undefined): string | undefined {
+function commitArg(commit: Commitish | Commitish[]): string | string[];
+function commitArg(
+  commit: Commitish | Commitish[] | undefined,
+): string | string[] | undefined {
   if (commit === undefined) return undefined;
+  if (Array.isArray(commit)) return commit.flatMap((c) => commitArg(c));
   return typeof commit === "string"
     ? commit
     : "name" in commit
