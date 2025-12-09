@@ -1026,7 +1026,7 @@ export interface ResolveOptions {
    * - `"theirs"`: in case of conflicts, prefer their changes
    *
    * By default, git uses the `ort` strategy when merging two heads, and the
-   * 'octopus' strategy when merging more than two heads. When this options is
+   * 'octopus' strategy when merging more than two heads. When this option is
    * provided, merge is done using the `ort` strategy with the provided
    * resolution method.
    */
