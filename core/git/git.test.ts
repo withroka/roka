@@ -1154,7 +1154,7 @@ Deno.test("git().config.set() configures array variables", async () => {
   assertEquals(await repo.config.get("versionsort.suffix"), ["-alpha"]);
 });
 
-Deno.test("git().config.set() can configures custom or unknown variables", async () => {
+Deno.test("git().config.set() can configure custom or unknown variables", async () => {
   await using repo = await tempRepository();
   await repo.config.set("custom.key1", "value");
   await repo.config.set("custom.key2", true);
@@ -4251,7 +4251,7 @@ Deno.test("git().commit.amend({ body }) overrides commit trailers", async () => 
   assertEquals(amended.trailers, undefined);
 });
 
-Deno.test("git().commit.create({ path }) amends specified paths instead of staged files", async () => {
+Deno.test("git().commit.amend({ path }) amends specified paths instead of staged files", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create({
     subject: "commit1",
@@ -6223,7 +6223,7 @@ Deno.test("git().merge.with() handles configuration overrides", async () => {
       "merge.branchdesc": true,
       "merge.conflictStyle": "diff3",
       "merge.log": true,
-      "merge.stat": false,
+      "merge.stat": true,
       "merge.suppressDest": ["main"],
       "merge.verbosity": 5,
     },
@@ -6310,39 +6310,56 @@ Deno.test("git().merge.with({ fastForward }) can reject a three-way merge", asyn
   );
 });
 
-Deno.test("git().merge.with({ rerere }) controls recorded resolution reuse", async () => {
+Deno.test("git().merge.with({ resolve }) can resolve conflicts to our version", async () => {
   await using repo = await tempRepository({
     branch: "main",
-    config: { "rerere.enabled": true },
+    config: { "diff.context": 1 },
   });
-  await Deno.writeTextFile(repo.path("file"), "content1");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file"), "content1\n\ncontent1");
+  await repo.index.add(["file"]);
   await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file"), "content2");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file"), "content2\n\ncontent2");
+  await repo.index.add(["file"]);
   await repo.commit.create({ subject: "commit2" });
   await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file"), "content3");
-  await repo.index.add("file");
-  await repo.commit.create({ subject: "main" });
-  await repo.merge.with("branch");
-  assertEquals(await repo.merge.active(), { conflicts: ["file"] });
-  await Deno.writeTextFile(repo.path("file"), "content4");
-  await repo.index.add("file");
-  await repo.merge.continue();
+  await Deno.writeTextFile(repo.path("file"), "content3\n\ncontent1");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.with("branch", { resolve: "ours" });
+  assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  await repo.branch.reset({ target: "HEAD~1", mode: "hard" });
-  assertEquals(await repo.merge.with("branch", { rerereAutoUpdate: true }), {});
-  await repo.merge.continue();
+  assertEquals(await repo.diff.status(), []);
   assertEquals(
     await Deno.readTextFile(repo.path("file")),
-    "content4",
+    "content3\n\ncontent2",
   );
-  await repo.branch.reset({ target: "HEAD~1", mode: "hard" });
-  assertEquals(await repo.merge.with("branch", { rerereAutoUpdate: false }), {
-    conflicts: ["file"],
+});
+
+Deno.test("git().merge.with({ resolve }) can resolve conflicts to their version", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: { "diff.context": 1 },
   });
+  await Deno.writeTextFile(repo.path("file"), "content1\n\ncontent1");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file"), "content2\n\ncontent1");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file"), "content3\n\ncontent3");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit3" });
+  const merge = await repo.merge.with("branch", { resolve: "theirs" });
+  assertEquals(merge, undefined);
+  assertEquals(await repo.merge.active(), undefined);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    "content2\n\ncontent3",
+  );
 });
 
 Deno.test("git().merge.with({ sign }) rejects wrong key", async () => {
@@ -6380,58 +6397,6 @@ Deno.test("git().merge.with({ squash }) performs a squash merge", async () => {
   assertEquals(await repo.merge.active(), undefined);
   assertEquals(await repo.commit.log(), [commit3, commit1]);
   assertEquals(await repo.diff.status(), [{ path: "file2", status: "added" }]);
-});
-
-Deno.test("git().merge.with({ strategy }) can resolve to our version", async () => {
-  await using repo = await tempRepository({
-    branch: "main",
-    config: { "diff.context": 1 },
-  });
-  await Deno.writeTextFile(repo.path("file"), "content1\n\ncontent1");
-  await repo.index.add(["file"]);
-  await repo.commit.create({ subject: "commit1" });
-  await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file"), "content2\n\ncontent2");
-  await repo.index.add(["file"]);
-  await repo.commit.create({ subject: "commit2" });
-  await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file"), "content3\n\ncontent1");
-  await repo.index.add(["file"]);
-  await repo.commit.create({ subject: "commit3" });
-  const merge = await repo.merge.with("branch", { resolve: "ours" });
-  assertEquals(merge, undefined);
-  assertEquals(await repo.merge.active(), undefined);
-  assertEquals(await repo.diff.status(), []);
-  assertEquals(
-    await Deno.readTextFile(repo.path("file")),
-    "content3\n\ncontent2",
-  );
-});
-
-Deno.test("git().merge.with({ strategy }) can resolve to their version", async () => {
-  await using repo = await tempRepository({
-    branch: "main",
-    config: { "diff.context": 1 },
-  });
-  await Deno.writeTextFile(repo.path("file"), "content1\n\ncontent1");
-  await repo.index.add(["file"]);
-  await repo.commit.create({ subject: "commit1" });
-  await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file"), "content2\n\ncontent1");
-  await repo.index.add(["file"]);
-  await repo.commit.create({ subject: "commit2" });
-  await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file"), "content3\n\ncontent3");
-  await repo.index.add(["file"]);
-  await repo.commit.create({ subject: "commit3" });
-  const merge = await repo.merge.with("branch", { resolve: "theirs" });
-  assertEquals(merge, undefined);
-  assertEquals(await repo.merge.active(), undefined);
-  assertEquals(await repo.diff.status(), []);
-  assertEquals(
-    await Deno.readTextFile(repo.path("file")),
-    "content2\n\ncontent3",
-  );
 });
 
 Deno.test("git().merge.continue() completes an ongoing merge", async () => {
@@ -6559,6 +6524,596 @@ Deno.test("git().merge.active() returns ongoing merge", async () => {
   });
   assertExists(merge);
   assertEquals(await repo.merge.active(), merge);
+});
+
+Deno.test("git().rebase.onto() performs a rebase", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  const rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit3", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().rebase.onto() performs a fast-forward rebase", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  const rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+});
+
+Deno.test("git().rebase.onto() can rebase from a commit", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  assertEquals(await repo.commit.log(), [commit1]);
+  const rebase = await repo.rebase.onto(commit2);
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+});
+
+Deno.test("git().rebase.onto() can rebase from a tag", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  const tag = await repo.tag.create("tag");
+  await repo.branch.switch("branch");
+  assertEquals(await repo.commit.log(), [commit1]);
+  const rebase = await repo.rebase.onto(tag);
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+});
+
+Deno.test("git().rebase.onto() reports conflicts", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  const rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, {
+    step: 1,
+    total: 1,
+    conflicts: ["file"],
+  });
+  assertEquals(await repo.rebase.active(), rebase);
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.diff.status(), [
+    { path: "file", status: "modified" },
+  ]);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    [
+      "<<<<<<< HEAD",
+      "content2",
+      "=======",
+      "content3",
+      `>>>>>>> ${commit3.short} (commit3)`,
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("git().rebase.onto() handles configuration overrides", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: {
+      "rebase.backend": "apply",
+      "rebase.forkPoint": false,
+      "rebase.missingCommitsCheck": "error",
+      "rebase.stat": true,
+      "rebase.updateRefs": true,
+    },
+  });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.rebase.onto("main"), {
+    step: 1,
+    total: 1,
+    conflicts: ["file"],
+  });
+  await Deno.writeTextFile(repo.path("file"), "resolved");
+  await repo.index.add("file");
+  assertEquals(await repo.rebase.continue(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit3", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+});
+
+Deno.test("git().rebase.onto({ after }) excludes commits from rebase", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
+  const rebase = await repo.rebase.onto(commit1, { after: commit2 });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit3", parents: [commit1.hash] },
+    { ...commit1 },
+  ]);
+});
+
+Deno.test("git().rebase.onto({ branch }) can rebase a specific branch", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch1");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch1");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const branch2 = await repo.branch.create("branch2");
+  await Deno.writeTextFile(repo.path("file4"), "content");
+  await repo.index.add("file4");
+  const commit4 = await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
+  const rebase = await repo.rebase.onto("main", { branch: branch2 });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.branch.current(), await repo.branch.get("branch2"));
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit3", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  await repo.branch.switch("branch1");
+  assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
+});
+
+Deno.test("git().rebase.onto({ branch }) can rebase a specific branch and exclude commits", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch1");
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch1");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await Deno.writeTextFile(repo.path("file4"), "content");
+  await repo.index.add("file4");
+  const commit4 = await repo.commit.create({ subject: "commit4" });
+  const branch2 = await repo.branch.create("branch2");
+  assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
+  const rebase = await repo.rebase.onto("main", {
+    after: commit3,
+    branch: branch2,
+  });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.branch.current(), await repo.branch.get("branch2"));
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit4", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  await repo.branch.switch("branch1");
+  assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
+});
+
+Deno.test("git().rebase.onto({ fastForward }) can disable fast-forward rebase", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: { "committer.name": "author" },
+  });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  await repo.config.set("committer.name", "rebaser");
+  const rebase = await repo.rebase.onto("main", { fastForward: false });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  const replayed = await repo.commit.head();
+  assertEquals(replayed.subject, commit2.subject);
+  assertNotEquals(replayed.hash, commit2.hash);
+});
+
+Deno.test("git().rebase.onto({ merges }) preserves merge commits", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch1");
+  await repo.branch.switch("branch2", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch1");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await repo.merge.with("branch2");
+  assertObjectMatch(await repo.commit.head(), {
+    subject: "Merge branch 'branch2' into branch1",
+    parents: [commit3.hash, commit2.hash],
+  });
+  await repo.branch.create("branch3");
+  await repo.rebase.onto("main", { merges: false });
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit2", parents: [commit3.hash] },
+    { ...commit3 },
+    { ...commit1 },
+  ]);
+  await repo.branch.switch("branch3");
+  await repo.rebase.onto("main", { merges: true });
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "Merge branch 'branch2' into branch1" },
+    { ...commit3 },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+});
+
+Deno.test("git().rebase.onto({ resolve }) can resolve conflicts to our version", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit3" });
+  const rebase = await repo.rebase.onto("main", { resolve: "ours" });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    "content2",
+  );
+});
+
+Deno.test("git().rebase.onto({ resolve }) can resolve conflicts to their version", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit3" });
+  const rebase = await repo.rebase.onto("main", { resolve: "theirs" });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit3", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    "content3",
+  );
+});
+
+Deno.test("git().rebase.onto({ sign }) rejects wrong key", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await repo.index.add("file1");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file2"), "content4");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit3" });
+  await assertRejects(
+    () => repo.rebase.onto("main", { sign: "not-a-key" }),
+    GitError,
+    "gpg failed to sign",
+  );
+});
+
+Deno.test("git().rebase.onto({ sign }) rejects wrong key after continue", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit3" });
+  await repo.rebase.onto("main", { sign: "not-a-key" });
+  assertEquals(await repo.rebase.active(), {
+    step: 1,
+    total: 1,
+    conflicts: ["file"],
+  });
+  await Deno.writeTextFile(repo.path("file"), "resolved");
+  await repo.index.add("file");
+  await assertRejects(
+    () => repo.rebase.continue(),
+    GitError,
+    "gpg failed to sign",
+  );
+});
+
+Deno.test("git().rebase.onto({ sign }) rejects wrong key after skip", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit3" });
+  await Deno.writeTextFile(repo.path("file"), "content4");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit4" });
+  await repo.rebase.onto("main", { sign: "not-a-key" });
+  assertEquals(await repo.rebase.active(), {
+    step: 1,
+    total: 2,
+    conflicts: ["file"],
+  });
+  await repo.rebase.skip();
+  assertEquals(await repo.rebase.active(), {
+    step: 2,
+    total: 2,
+    conflicts: ["file"],
+  });
+  await Deno.writeTextFile(repo.path("file"), "resolved");
+  await repo.index.add("file");
+  await assertRejects(
+    () => repo.rebase.continue(),
+    GitError,
+    "gpg failed to sign",
+  );
+});
+
+Deno.test("git().rebase.continue() completes a rebase with conflicts", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await Deno.writeTextFile(repo.path("file2"), "content4");
+  await repo.index.add(["file1", "file2"]);
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file1"), "content5");
+  await repo.index.add("file1");
+  await repo.commit.create({ subject: "commit3" });
+  await Deno.writeTextFile(repo.path("file2"), "content6");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit4" });
+  let rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, { step: 1, total: 2, conflicts: ["file1"] });
+  await Deno.writeTextFile(repo.path("file1"), "resolved");
+  await repo.index.add("file1");
+  rebase = await repo.rebase.continue();
+  assertEquals(rebase, { step: 2, total: 2, conflicts: ["file2"] });
+  await Deno.writeTextFile(repo.path("file2"), "resolved");
+  await repo.index.add("file2");
+  rebase = await repo.rebase.continue();
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit4" },
+    { subject: "commit3", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file1")), "resolved");
+  assertEquals(await Deno.readTextFile(repo.path("file2")), "resolved");
+});
+
+Deno.test("git().rebase.skip() skips a commit during an ongoing rebase", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await Deno.writeTextFile(repo.path("file2"), "content4");
+  await repo.index.add(["file1", "file2"]);
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file1"), "content5");
+  await repo.index.add("file1");
+  await repo.commit.create({ subject: "commit3" });
+  await Deno.writeTextFile(repo.path("file2"), "content6");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit4" });
+  let rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, { step: 1, total: 2, conflicts: ["file1"] });
+  rebase = await repo.rebase.skip();
+  assertEquals(rebase, { step: 2, total: 2, conflicts: ["file2"] });
+  await Deno.writeTextFile(repo.path("file2"), "resolved");
+  await repo.index.add("file2");
+  rebase = await repo.rebase.continue();
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit4", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file1")), "content3");
+  assertEquals(await Deno.readTextFile(repo.path("file2")), "resolved");
+});
+
+Deno.test("git().rebase.abort() reverts an ongoing rebase", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add(["file"]);
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, { step: 1, total: 1, conflicts: ["file"] });
+  await repo.rebase.abort();
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+});
+
+Deno.test("git().rebase.quit() stops an ongoing rebase", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add(["file"]);
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, { step: 1, total: 1, conflicts: ["file"] });
+  await repo.rebase.quit();
+  assertEquals(await repo.rebase.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.diff.status(), [
+    { path: "file", status: "modified" },
+  ]);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    [
+      "<<<<<<< HEAD",
+      "content2",
+      "=======",
+      "content3",
+      `>>>>>>> ${commit3.short} (commit3)`,
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("git().rebase.active() returns ongoing rebase", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  assertEquals(await repo.rebase.active(), undefined);
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit" });
+  await repo.branch.create("branch");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit" });
+  await repo.branch.switch("branch");
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit" });
+  const rebase = await repo.rebase.onto("main");
+  assertExists(rebase);
+  assertEquals(await repo.rebase.active(), rebase);
 });
 
 Deno.test("git().remote.list() returns remotes", async () => {
@@ -7056,7 +7611,7 @@ Deno.test("git().sync.fetch({ prune }) removes deleted remote branches", async (
   assertEquals(await repo.branch.get("origin/branch"), undefined);
 });
 
-Deno.test("git().sync.fetch({ remote }) can from a remote by name", async () => {
+Deno.test("git().sync.fetch({ remote }) can fetch from a remote by name", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository({ branch: "main" });
   const commit = await upstream.commit.create({
@@ -7074,7 +7629,7 @@ Deno.test("git().sync.fetch({ remote }) can from a remote by name", async () => 
   assertEquals(await repo.commit.log(), []);
 });
 
-Deno.test("git().sync.fetch({ remote }) can from a remote by address", async () => {
+Deno.test("git().sync.fetch({ remote }) can fetch from a remote by address", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository({ branch: "main" });
   const commit = await upstream.commit.create({
@@ -7437,6 +7992,61 @@ Deno.test("git().sync.pull({ prune }) removes deleted remote branches", async ()
   assertEquals(await repo.branch.get("origin/branch"), undefined);
 });
 
+Deno.test("git().sync.pull({ rebase }) can rebase commits", async () => {
+  await using upstream = await tempRepository();
+  const commit1 = await upstream.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  await using repo = await tempRepository({ clone: upstream });
+  const commit2 = await upstream.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
+  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  await repo.sync.pull({ rebase: true });
+  assertEquals(await repo.merge.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: "commit3", parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+});
+
+Deno.test("git().sync.pull({ rebase }) can preserve merge commits", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const commit1 = await upstream.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  await using repo = await tempRepository({
+    clone: upstream,
+    config: { "rebase.rebaseMerges": false },
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
+  await repo.branch.switch("branch", { create: true });
+  const commit3 = await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+  });
+  await repo.branch.switch("main");
+  await repo.merge.with("branch", { fastForward: false });
+  await repo.sync.pull({ rebase: "merges" });
+  assertEquals(await repo.merge.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    {
+      subject: "Merge branch 'branch'",
+      parents: [commit2.hash, commit3.hash],
+    },
+    { ...commit2 },
+    { ...commit3 },
+    { ...commit1 },
+  ]);
+});
+
 Deno.test("git().sync.pull({ remote }) can pull from a remote by name", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository();
@@ -7462,7 +8072,7 @@ Deno.test("git().sync.pull({ remote }) can pull from a remote by address", async
   assertEquals(await repo.commit.log(), [commit]);
 });
 
-Deno.test("git().sync.pull({ resolve }) can resolve to our version", async () => {
+Deno.test("git().sync.pull({ resolve }) can resolve conflicts to our version", async () => {
   await using upstream = await tempRepository({
     config: { "diff.context": 1 },
   });
@@ -7489,7 +8099,7 @@ Deno.test("git().sync.pull({ resolve }) can resolve to our version", async () =>
   );
 });
 
-Deno.test("git().sync.pull({ resolve }) can resolve to their version", async () => {
+Deno.test("git().sync.pull({ resolve }) can resolve conflicts to their version", async () => {
   await using upstream = await tempRepository({
     config: { "diff.context": 1 },
   });

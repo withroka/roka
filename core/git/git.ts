@@ -36,7 +36,6 @@
  *
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
- * @todo Add `git().rebase.*`
  * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
  * @todo Add `git().bisect.*`
@@ -105,6 +104,8 @@ export interface Git {
   tag: TagOperations;
   /** Merge operations. */
   merge: MergeOperations;
+  /** Rebase operations. */
+  rebase: RebaseOperations;
   /** Remote operations. */
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
@@ -247,7 +248,7 @@ export interface TagOperations {
 
 /** Merge operations from {@linkcode Git.merge}. */
 export interface MergeOperations {
-  /** Merge given heads into current branch, and returns incomplete merges. */
+  /** Merges given heads into current branch, and returns incomplete merges. */
   with(
     source: Commitish | Commitish[],
     options?: MergeWithOptions,
@@ -260,6 +261,22 @@ export interface MergeOperations {
   quit(): Promise<void>;
   /** Returns the current active merge operation, if any. */
   active(): Promise<Merge | undefined>;
+}
+
+/** Rebase operations from {@linkcode Git.rebase}. */
+export interface RebaseOperations {
+  /** Rebases heads onto given base. */
+  onto(base: Commitish, options?: RebaseOptions): Promise<Rebase | undefined>;
+  /** Continues an ongoing rebase operation with resolved conflicts. */
+  continue(): Promise<Rebase | undefined>;
+  /** Skips current commit and continues with the next one. */
+  skip(): Promise<Rebase | undefined>;
+  /** Aborts an ongoing rebase operation. */
+  abort(): Promise<void>;
+  /** Quits an ongoing rebase operation, keeping the working tree as is. */
+  quit(): Promise<void>;
+  /** Returns the current active rebase operation, if any. */
+  active(): Promise<Rebase | undefined>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -587,9 +604,17 @@ export const CONFIG_SCHEMA = {
   "push.pushOption": ["array"],
   "push.useBitmaps": ["boolean"],
   "push.useForceIfIncludes": ["boolean"],
+  "rebase.abbreviateCommands": ["boolean"],
   "rebase.autoSquash": ["boolean"],
   "rebase.autoStash": ["boolean"],
+  "rebase.forkPoint": ["boolean"],
+  "rebase.instructionFormat": ["string"],
+  "rebase.maxLabelLength": ["number"],
+  "rebase.missingCommitsCheck": ["ignore", "warn", "error"],
   "rebase.rebaseMerges": ["boolean", "rebase-cousins", "no-rebase-cousins"],
+  "rebase.rescheduleFailedExec": ["boolean"],
+  "rebase.updateRefs": ["boolean"],
+  "rebase.stat": ["boolean"],
   "receive.denyCurrentBranch": ["ignore", "warn", "refuse", "updateInstead"],
   "receive.denyNonFastForwards": ["boolean"],
   "receive.fsckObjects": ["boolean"],
@@ -598,6 +623,7 @@ export const CONFIG_SCHEMA = {
   "rerere.enabled": ["boolean"],
   "safe.bareRepository": ["all", "explicit"],
   "safe.directory": ["array"],
+  "sequence.editor": ["string"],
   "ssh.variant": ["ssh", "simple", "plink", "putty", "tortoiseplink"],
   "status.aheadBehind": ["boolean"],
   "status.branch": ["boolean"],
@@ -926,6 +952,16 @@ export type Commitish = Commit | Branch | Tag | string;
 
 /** Result of a merge operation from {@linkcode Git.merge}. */
 export interface Merge {
+  /** List of unmerged files due to conflicts. */
+  conflicts?: string[];
+}
+
+/** Result of a rebase operation from {@linkcode Git.rebase}. */
+export interface Rebase {
+  /** Current step in the rebase sequence. */
+  step: number;
+  /** Total commits being rebased. */
+  total: number;
   /** List of unmerged files due to conflicts. */
   conflicts?: string[];
 }
@@ -1708,12 +1744,31 @@ export interface MergeOptions extends ResolveOptions, SignOptions {
 
 /** Options for the {@linkcode MergeOperations.with} function. */
 export interface MergeWithOptions
-  extends MergeOptions, Omit<MessageOptions, "trailers"> {
+  extends MergeOptions, Omit<MessageOptions, "trailers"> {}
+
+/** Options for the {@linkcode RebaseOperations.onto} function. */
+export interface RebaseOptions extends ResolveOptions, SignOptions {
   /**
-   * Update the index with resolutions resolved with rerere.
+   * Branch to rebase.
+   * @default {"HEAD"}
+   */
+  branch?: Commitish;
+  /** Excludes commits reachable from this commit (--onto mode). */
+  after?: Commitish;
+  /**
+   * Fast-forward mode.
+   *
+   * - `true`: allow fast-forwarding (default)
+   * - `false`: disable fast-forwarding, and recreate every commit
+   *
    * @default {true}
    */
-  rerereAutoUpdate?: boolean;
+  fastForward?: boolean;
+  /**
+   * Preserve the branch structure for merge commits.
+   * @default {false}
+   */
+  merges?: boolean;
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -1889,7 +1944,7 @@ export interface SyncPullSingleOptions
     SyncOptions,
     SyncTrackOptions,
     SyncShallowOptions,
-    MergeOptions {
+    SyncPullMergeOptions {
   /**
    * Branch or tag to pull commits from.
    *
@@ -1905,13 +1960,34 @@ export interface SyncPullSingleOptions
  * all repositories.
  */
 export interface SyncPullAllOptions
-  extends SyncOptions, SyncTrackOptions, SyncShallowOptions, MergeOptions {
+  extends
+    SyncOptions,
+    SyncTrackOptions,
+    SyncShallowOptions,
+    SyncPullMergeOptions {
   /** Pull from all configured repositories. */
   all: boolean;
   /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
   remote?: never;
   /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
   target?: never;
+}
+
+/**
+ * Options for the {@linkcode SyncOperations.pull} function for controlling
+ * rebase and merge behavior.
+ */
+export interface SyncPullMergeOptions extends MergeOptions {
+  /**
+   * Rebase instead of merge when integrating fetched changes.
+   *
+   * - `false`: merge fetched changes (default)
+   * - `true`: rebase current branch on top of fetched changes
+   * - `"merges"`: rebase preserving merge commits
+   *
+   * @default {false}
+   */
+  rebase?: boolean | "merges";
 }
 
 /** Options for the {@linkcode SyncOperations.push} function. */
@@ -2932,7 +3008,7 @@ export function git(options?: GitOptions): Git {
       async with(source, options) {
         await run(
           { ...gitOptions, allowCode: [1] },
-          ["merge", "--no-edit", "--no-summary"],
+          ["merge", "--no-edit", "--no-stat"],
           flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
           flag(["--commit", "--no-commit"], options?.commit),
@@ -2940,10 +3016,6 @@ export function git(options?: GitOptions): Git {
           flag("--ff", options?.fastForward === true),
           flag("--ff-only", options?.fastForward === "only"),
           flag("--strategy-option", options?.resolve),
-          flag(
-            ["--rerere-autoupdate", "--no-rerere-autoupdate"],
-            options?.rerereAutoUpdate,
-          ),
           signFlag("commit", options?.sign),
           flag("--squash", options?.squash),
           commitArg(source),
@@ -2971,6 +3043,96 @@ export function git(options?: GitOptions): Git {
         );
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
         return { ...conflicts.length > 0 && { conflicts } };
+      },
+    },
+    rebase: {
+      async onto(base, options) {
+        const { error } = await maybe(() =>
+          run(
+            gitOptions,
+            ["rebase", "--no-stat"],
+            flag("--force-rebase", options?.fastForward === false),
+            flag(["--rebase-merges", "--no-rebase-merges"], options?.merges),
+            flag("--strategy-option", options?.resolve),
+            signFlag("commit", options?.sign),
+            flag("--onto", options?.after !== undefined),
+            commitArg(base),
+            commitArg(options?.after),
+            commitArg(options?.branch),
+          )
+        );
+        const rebase = await repo.rebase.active();
+        if (error?.message.includes("gpg failed to sign")) {
+          // signing failure leaves a rebase in progress
+          if (rebase) await repo.rebase.abort();
+          throw error;
+        }
+        return rebase;
+      },
+      async continue() {
+        const { error } = await maybe(() =>
+          run(gitOptions, "rebase", "--continue")
+        );
+        const rebase = await repo.rebase.active();
+        if (error?.message.includes("gpg failed to sign")) {
+          // signing failure leaves a rebase in progress
+          if (rebase) await repo.rebase.abort();
+          throw error;
+        }
+        return rebase;
+      },
+      async skip() {
+        await run({ ...gitOptions, allowCode: [1] }, "rebase", "--skip");
+        return await repo.rebase.active();
+      },
+      async abort() {
+        await run(gitOptions, "rebase", "--abort");
+      },
+      async quit() {
+        await run(gitOptions, "rebase", "--quit");
+      },
+      async active() {
+        async function stateNumber(gitDir: string, file: string) {
+          const { value } = await maybe(() =>
+            Deno.readTextFile(repo.path(gitDir.trim(), file))
+          );
+          if (!value) return undefined;
+          const state = Number(value.trim());
+          if (Number.isNaN(state)) return undefined;
+          return state;
+        }
+        const { error } = await maybe(() =>
+          run(gitOptions, ["rebase", "--show-current-patch"])
+        );
+        if (error) return undefined;
+        const [gitDir, unmerged] = await Promise.all([
+          run(gitOptions, ["rev-parse", "--git-dir"]),
+          run(gitOptions, [
+            "ls-files",
+            "-z",
+            "--unmerged",
+            "--format=%(path)",
+          ]),
+        ]);
+        let [step, total] = await Promise.all([
+          stateNumber(gitDir, "rebase-merge/msgnum"),
+          stateNumber(gitDir, "rebase-merge/end"),
+        ]);
+        if (step === undefined || total === undefined) {
+          [step, total] = await Promise.all([
+            stateNumber(gitDir, "rebase-apply/next"),
+            stateNumber(gitDir, "rebase-apply/last"),
+          ]);
+        }
+        if (step === undefined || total === undefined) {
+          throw new GitError("Cannot determine rebase progress");
+        }
+        const conflicts = distinct(unmerged.split("\0").filter((x) => x));
+        return {
+          step,
+          total,
+          ...conflicts.length > 0 && { conflicts },
+        };
       },
     },
     remote: {
@@ -3128,7 +3290,7 @@ export function git(options?: GitOptions): Git {
       async pull(options) {
         await run(
           gitOptions,
-          ["pull", "--no-edit", "--no-summary"],
+          ["pull", "--no-edit", "--no-stat"],
           flag("--atomic", options?.atomic),
           flag(["--commit", "--no-commit"], options?.commit),
           flag("--prune", options?.prune),
@@ -3136,6 +3298,7 @@ export function git(options?: GitOptions): Git {
           flag("--no-ff", options?.fastForward === false),
           flag("--ff", options?.fastForward === true),
           flag("--ff-only", options?.fastForward === "only"),
+          flag(["--rebase", "--no-rebase"], options?.rebase, { equals: true }),
           flag("--strategy-option", options?.resolve),
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
