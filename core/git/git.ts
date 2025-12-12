@@ -3242,6 +3242,8 @@ export function git(options?: GitOptions): Git {
           "--format=%(path)",
         ]);
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
+        // Git's cherry-pick sequencer doesn't track the original sequence count,
+        // so step is always 1 (the current commit) and total is remaining commits
         return {
           step: 1,
           total: total > 0 ? total : 1,
