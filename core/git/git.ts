@@ -36,7 +36,6 @@
  *
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
- * @todo Add `git().cherrypick.*`
  * @todo Add `git().revert.*`
  * @todo Add `git().bisect.*`
  * @todo Add `git().submodule.*`
@@ -106,6 +105,8 @@ export interface Git {
   merge: MergeOperations;
   /** Rebase operations. */
   rebase: RebaseOperations;
+  /** Cherry-pick operations. */
+  cherrypick: CherrypickOperations;
   /** Remote operations. */
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
@@ -277,6 +278,25 @@ export interface RebaseOperations {
   quit(): Promise<void>;
   /** Returns the current active rebase operation, if any. */
   active(): Promise<Rebase | undefined>;
+}
+
+/** Cherry-pick operations from {@linkcode Git.cherrypick}. */
+export interface CherrypickOperations {
+  /** Applies one or more commits to the current branch. */
+  apply(
+    commit: Commitish | Commitish[],
+    options?: CherrypickOptions,
+  ): Promise<Cherrypick | undefined>;
+  /** Continues an ongoing cherry-pick operation with resolved conflicts. */
+  continue(): Promise<Cherrypick | undefined>;
+  /** Aborts an ongoing cherry-pick operation. */
+  abort(): Promise<void>;
+  /** Skips current commit and continues with the next one. */
+  skip(): Promise<Cherrypick | undefined>;
+  /** Quits an ongoing cherry-pick operation, keeping the working tree as is. */
+  quit(): Promise<void>;
+  /** Returns the current active cherry-pick operation, if any. */
+  active(): Promise<Cherrypick | undefined>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -961,6 +981,16 @@ export interface Rebase {
   /** Current step in the rebase sequence. */
   step: number;
   /** Total commits being rebased. */
+  total: number;
+  /** List of unmerged files due to conflicts. */
+  conflicts?: string[];
+}
+
+/** Result of a cherry-pick operation from {@linkcode Git.cherrypick}. */
+export interface Cherrypick {
+  /** Current step in the cherry-pick sequence. */
+  step: number;
+  /** Total commits being cherry-picked. */
   total: number;
   /** List of unmerged files due to conflicts. */
   conflicts?: string[];
@@ -1769,6 +1799,20 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    * @default {false}
    */
   merges?: boolean;
+}
+
+/** Options for the {@linkcode CherrypickOperations.apply} function. */
+export interface CherrypickOptions extends ResolveOptions, SignOptions {
+  /**
+   * Create commit after cherry-pick.
+   * @default {true}
+   */
+  commit?: boolean;
+  /**
+   * Allow empty commits.
+   * @default {false}
+   */
+  allowEmpty?: boolean;
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -3131,6 +3175,75 @@ export function git(options?: GitOptions): Git {
         return {
           step,
           total,
+          ...conflicts.length > 0 && { conflicts },
+        };
+      },
+    },
+    cherrypick: {
+      async apply(commit, options) {
+        const { error } = await maybe(() =>
+          run(
+            { ...gitOptions, allowCode: [1] },
+            "cherry-pick",
+            flag(["--commit", "--no-commit"], options?.commit),
+            flag("--allow-empty", options?.allowEmpty),
+            flag("--strategy-option", options?.resolve),
+            signFlag("commit", options?.sign),
+            commitArg(commit),
+          )
+        );
+        const cherrypick = await repo.cherrypick.active();
+        if (error?.message.includes("gpg failed to sign")) {
+          if (cherrypick) await repo.cherrypick.abort();
+          throw error;
+        }
+        return cherrypick;
+      },
+      async continue() {
+        const { error } = await maybe(() =>
+          run(gitOptions, "cherry-pick", "--continue")
+        );
+        const cherrypick = await repo.cherrypick.active();
+        if (error?.message.includes("gpg failed to sign")) {
+          if (cherrypick) await repo.cherrypick.abort();
+          throw error;
+        }
+        return cherrypick;
+      },
+      async abort() {
+        await run(gitOptions, "cherry-pick", "--abort");
+      },
+      async skip() {
+        await run({ ...gitOptions, allowCode: [1] }, "cherry-pick", "--skip");
+        return await repo.cherrypick.active();
+      },
+      async quit() {
+        await run(gitOptions, "cherry-pick", "--quit");
+      },
+      async active() {
+        const { value: gitDir } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--git-dir"])
+        );
+        if (!gitDir) return undefined;
+        const headPath = repo.path(gitDir.trim(), "CHERRY_PICK_HEAD");
+        const { value: headExists } = await maybe(() => Deno.stat(headPath));
+        if (!headExists) return undefined;
+        const todoPath = repo.path(gitDir.trim(), "sequencer/todo");
+        const todoContent = await maybe(() => Deno.readTextFile(todoPath));
+        const todoLines = todoContent.value?.split("\n").filter((line) =>
+          line.trim() && !line.startsWith("#") && line.startsWith("pick")
+        ) ?? [];
+        const total = todoLines.length;
+        const unmerged = await run(gitOptions, [
+          "ls-files",
+          "-z",
+          "--unmerged",
+          "--format=%(path)",
+        ]);
+        const conflicts = distinct(unmerged.split("\0").filter((x) => x));
+        return {
+          step: 1,
+          total: total > 0 ? total : 1,
           ...conflicts.length > 0 && { conflicts },
         };
       },
