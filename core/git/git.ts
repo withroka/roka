@@ -106,7 +106,7 @@ export interface Git {
   /** Rebase operations. */
   rebase: RebaseOperations;
   /** Cherry-pick operations. */
-  cherrypick: CherrypickOperations;
+  cherrypick: CherryPickOperations;
   /** Remote operations. */
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
@@ -281,22 +281,22 @@ export interface RebaseOperations {
 }
 
 /** Cherry-pick operations from {@linkcode Git.cherrypick}. */
-export interface CherrypickOperations {
+export interface CherryPickOperations {
   /** Applies one or more commits to the current branch. */
   apply(
     commit: Commitish | Commitish[],
-    options?: CherrypickOptions,
-  ): Promise<Cherrypick | undefined>;
+    options?: CherryPickOptions,
+  ): Promise<CherryPick | undefined>;
   /** Continues an ongoing cherry-pick operation with resolved conflicts. */
-  continue(): Promise<Cherrypick | undefined>;
+  continue(): Promise<CherryPick | undefined>;
+  /** Skips current commit and continues with the next one. */
+  skip(): Promise<CherryPick | undefined>;
   /** Aborts an ongoing cherry-pick operation. */
   abort(): Promise<void>;
-  /** Skips current commit and continues with the next one. */
-  skip(): Promise<Cherrypick | undefined>;
   /** Quits an ongoing cherry-pick operation, keeping the working tree as is. */
   quit(): Promise<void>;
   /** Returns the current active cherry-pick operation, if any. */
-  active(): Promise<Cherrypick | undefined>;
+  active(): Promise<CherryPick | undefined>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -980,6 +980,8 @@ export interface Merge {
 export interface Rebase {
   /** Current step in the rebase sequence. */
   step: number;
+  /** Remaining commits to be rebased. */
+  remaining: number;
   /** Total commits being rebased. */
   total: number;
   /** List of unmerged files due to conflicts. */
@@ -987,11 +989,9 @@ export interface Rebase {
 }
 
 /** Result of a cherry-pick operation from {@linkcode Git.cherrypick}. */
-export interface Cherrypick {
-  /** Current step in the cherry-pick sequence. */
-  step: number;
-  /** Total commits being cherry-picked. */
-  total: number;
+export interface CherryPick {
+  /** Remaining commits to be cherry-picked. */
+  remaining: number;
   /** List of unmerged files due to conflicts. */
   conflicts?: string[];
 }
@@ -1749,7 +1749,7 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
  */
 export interface MergeOptions extends ResolveOptions, SignOptions {
   /**
-   * Controls whether a merge will be completed with a commit.
+   * Create a merge commit after merging.
    * @default {true}
    */
   commit?: boolean;
@@ -1801,18 +1801,22 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
   merges?: boolean;
 }
 
-/** Options for the {@linkcode CherrypickOperations.apply} function. */
-export interface CherrypickOptions extends ResolveOptions, SignOptions {
+/** Options for the {@linkcode CherryPickOperations.apply} function. */
+export interface CherryPickOptions extends ResolveOptions, SignOptions {
+  /**
+   * Allow empty commits.
+   *
+   * By default, Git stops cherry-pick sequence if an empty commit is
+   * encountered.
+   *
+   * @default {false}
+   */
+  allowEmpty?: boolean;
   /**
    * Create commit after cherry-pick.
    * @default {true}
    */
   commit?: boolean;
-  /**
-   * Allow empty commits.
-   * @default {false}
-   */
-  allowEmpty?: boolean;
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -3174,6 +3178,7 @@ export function git(options?: GitOptions): Git {
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
         return {
           step,
+          remaining: total - step + 1,
           total,
           ...conflicts.length > 0 && { conflicts },
         };
@@ -3183,10 +3188,10 @@ export function git(options?: GitOptions): Git {
       async apply(commit, options) {
         const { error } = await maybe(() =>
           run(
-            { ...gitOptions, allowCode: [1] },
+            gitOptions,
             "cherry-pick",
-            flag(["--commit", "--no-commit"], options?.commit),
             flag("--allow-empty", options?.allowEmpty),
+            flag(["--commit", "--no-commit"], options?.commit),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             commitArg(commit),
@@ -3210,43 +3215,39 @@ export function git(options?: GitOptions): Git {
         }
         return cherrypick;
       },
-      async abort() {
-        await run(gitOptions, "cherry-pick", "--abort");
-      },
       async skip() {
         await run({ ...gitOptions, allowCode: [1] }, "cherry-pick", "--skip");
         return await repo.cherrypick.active();
+      },
+      async abort() {
+        await run(gitOptions, "cherry-pick", "--abort");
       },
       async quit() {
         await run(gitOptions, "cherry-pick", "--quit");
       },
       async active() {
+        const { error } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--verify", "CHERRY_PICK_HEAD"])
+        );
+        if (error) return undefined;
         const { value: gitDir } = await maybe(() =>
           run(gitOptions, ["rev-parse", "--git-dir"])
         );
         if (!gitDir) return undefined;
-        const headPath = repo.path(gitDir.trim(), "CHERRY_PICK_HEAD");
-        const { value: headExists } = await maybe(() => Deno.stat(headPath));
-        if (!headExists) return undefined;
-        const todoPath = repo.path(gitDir.trim(), "sequencer/todo");
-        const todoContent = await maybe(() => Deno.readTextFile(todoPath));
-        const todoLines =
-          todoContent.value?.split("\n").filter((line) =>
-            line.trim() && !line.startsWith("#") && line.startsWith("pick")
-          ) ?? [];
-        const total = todoLines.length;
-        const unmerged = await run(gitOptions, [
-          "ls-files",
-          "-z",
-          "--unmerged",
-          "--format=%(path)",
+        const [todo, unmerged] = await Promise.all([
+          maybe(() =>
+            Deno.readTextFile(repo.path(gitDir.trim(), "sequencer/todo"))
+          ),
+          run(gitOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
         ]);
+        const remaining = todo.value
+          ? todo.value.trim().split("\n")
+            .filter((x) => x.trim().startsWith("pick"))
+            .length
+          : 1;
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
-        // Git's cherry-pick sequencer doesn't track the original sequence count,
-        // so step is always 1 (the current commit) and total is remaining commits
         return {
-          step: 1,
-          total: total > 0 ? total : 1,
+          remaining,
           ...conflicts.length > 0 && { conflicts },
         };
       },
