@@ -3305,7 +3305,7 @@ export function git(options?: GitOptions): Git {
           )
         );
         const revert = await repo.revert.active();
-        if (revert && !error) {
+        if (revert) {
           const { value: gitDir } = await maybe(() =>
             run(gitOptions, ["rev-parse", "--git-dir"])
           );

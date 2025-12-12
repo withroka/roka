@@ -7558,6 +7558,362 @@ Deno.test("git().cherrypick.active() returns ongoing cherry-pick", async () => {
   assertEquals(await repo.cherrypick.active(), cherrypick);
 });
 
+Deno.test("git().revert.apply() reverts a single commit", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  const revert = await repo.revert.apply(commit2);
+  assertEquals(revert, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"', parents: [commit2.hash] },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.stat(repo.path("file1")).then(() => true, () => false), true);
+  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+});
+
+Deno.test("git().revert.apply() reverts from a branch", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit2" });
+  const revert = await repo.revert.apply("branch");
+  assertEquals(revert, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"' },
+    { subject: "commit2", parents: [commit1.hash] },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+});
+
+Deno.test("git().revert.apply() reverts from a tag", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit2" });
+  const tag = await repo.tag.create("v1.0.0");
+  const revert = await repo.revert.apply(tag);
+  assertEquals(revert, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"' },
+    { subject: "commit2", parents: [commit1.hash] },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+});
+
+Deno.test("git().revert.apply() reverts multiple commits", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await Deno.writeTextFile(repo.path("file4"), "content");
+  await repo.index.add("file4");
+  const commit4 = await repo.commit.create({ subject: "commit4" });
+  const revert = await repo.revert.apply([commit4, commit3, commit2]);
+  assertEquals(revert, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"' },
+    { subject: 'Revert "commit3"' },
+    { subject: 'Revert "commit4"' },
+    { ...commit4 },
+    { ...commit3 },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+  assertEquals(await Deno.stat(repo.path("file3")).then(() => true, () => false), false);
+  assertEquals(await Deno.stat(repo.path("file4")).then(() => true, () => false), false);
+});
+
+Deno.test("git().revert.apply() reports conflicts", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const revert = await repo.revert.apply(commit2);
+  assertEquals(revert, { step: 1, total: 1, conflicts: ["file"] });
+  assertEquals(await repo.revert.active(), revert);
+  assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
+  assertEquals(await repo.diff.status(), [
+    { path: "file", status: "modified" },
+  ]);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    [
+      "<<<<<<< HEAD",
+      "content3",
+      "=======",
+      "content1",
+      `>>>>>>> parent of ${commit2.short} (commit2)`,
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("git().revert.apply({ commit }) stages without committing", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "updated");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  const revert = await repo.revert.apply(commit2, { commit: false });
+  assertEquals(revert, { step: 1, total: 1 });
+  assertEquals(await repo.revert.active(), { step: 1, total: 1 });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  assertEquals(await repo.diff.status(), [
+    { path: "file", status: "modified" },
+  ]);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "content");
+  await repo.revert.abort();
+});
+
+Deno.test("git().revert.apply({ resolve }) can resolve conflicts to our version", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "line1\nline2\nline3");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "line1\nmodified\nline3");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "line1\nmodified\nline3\nline4");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const revert = await repo.revert.apply(commit2, { resolve: "ours" });
+  assertEquals(revert, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"', parents: [commit3.hash] },
+    { ...commit3 },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "line1\nmodified\nline3\nline4");
+});
+
+Deno.test("git().revert.apply({ resolve }) can resolve conflicts to their version", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const revert = await repo.revert.apply(commit2, { resolve: "theirs" });
+  assertEquals(revert, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"', parents: [commit3.hash] },
+    { ...commit3 },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
+});
+
+Deno.test("git().revert.continue() completes a revert with conflicts", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const revert = await repo.revert.apply(commit2);
+  assertEquals(revert, { step: 1, total: 1, conflicts: ["file"] });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const continued = await repo.revert.continue();
+  assertEquals(continued, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"', parents: [commit3.hash] },
+    { ...commit3 },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
+});
+
+Deno.test("git().revert.continue() continues multi-commit revert", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await Deno.writeTextFile(repo.path("file"), "content4");
+  await repo.index.add("file");
+  const commit4 = await repo.commit.create({ subject: "commit4" });
+  const revert = await repo.revert.apply([commit3, commit2]);
+  assertEquals(revert, { step: 1, total: 2, conflicts: ["file"] });
+  await Deno.writeTextFile(repo.path("file"), "resolved1");
+  await repo.index.add("file");
+  const continued = await repo.revert.continue();
+  assertEquals(continued, { step: 2, total: 2, conflicts: ["file"] });
+  await Deno.writeTextFile(repo.path("file"), "resolved2");
+  await repo.index.add("file");
+  const done = await repo.revert.continue();
+  assertEquals(done, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit2"' },
+    { subject: 'Revert "commit3"' },
+    { ...commit4 },
+    { ...commit3 },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+});
+
+Deno.test("git().revert.skip() skips conflicting commit", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await Deno.writeTextFile(repo.path("file"), "content4");
+  await Deno.writeTextFile(repo.path("file2"), "other");
+  await repo.index.add("file", "file2");
+  const commit4 = await repo.commit.create({ subject: "commit4" });
+  const revert = await repo.revert.apply([commit3, commit4]);
+  assertEquals(revert, { step: 1, total: 2, conflicts: ["file"] });
+  const skipped = await repo.revert.skip();
+  assertEquals(skipped, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  assertArrayObjectMatch(await repo.commit.log(), [
+    { subject: 'Revert "commit4"' },
+    { ...commit4 },
+    { ...commit3 },
+    { ...commit2 },
+    { ...commit1 },
+  ]);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+});
+
+Deno.test("git().revert.abort() reverts revert operation", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const revert = await repo.revert.apply(commit2);
+  assertEquals(revert, { step: 1, total: 1, conflicts: ["file"] });
+  await repo.revert.abort();
+  assertEquals(await repo.revert.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+});
+
+Deno.test("git().revert.quit() stops revert operation", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  const revert = await repo.revert.apply(commit2);
+  assertEquals(revert, { step: 1, total: 1, conflicts: ["file"] });
+  await repo.revert.quit();
+  assertEquals(await repo.revert.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
+  assertEquals(await repo.diff.status(), [
+    { path: "file", status: "modified" },
+  ]);
+  assertEquals(
+    await Deno.readTextFile(repo.path("file")),
+    [
+      "<<<<<<< HEAD",
+      "content3",
+      "=======",
+      "content1",
+      `>>>>>>> parent of ${commit2.short} (commit2)`,
+      "",
+    ].join("\n"),
+  );
+});
+
+Deno.test("git().revert.active() returns ongoing revert", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  assertEquals(await repo.revert.active(), undefined);
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file"), "content3");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit3" });
+  const revert = await repo.revert.apply(commit2);
+  assertExists(revert);
+  assertEquals(await repo.revert.active(), revert);
+});
+
 Deno.test("git().remote.list() returns remotes", async () => {
   await using repo = await tempRepository();
   await using upstream = await tempRepository();
