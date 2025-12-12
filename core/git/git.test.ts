@@ -7575,8 +7575,14 @@ Deno.test("git().revert.apply() reverts a single commit", async () => {
     { ...commit1 },
   ]);
   assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.stat(repo.path("file1")).then(() => true, () => false), true);
-  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+  assertEquals(
+    await Deno.stat(repo.path("file1")).then(() => true, () => false),
+    true,
+  );
+  assertEquals(
+    await Deno.stat(repo.path("file2")).then(() => true, () => false),
+    false,
+  );
 });
 
 Deno.test("git().revert.apply() reverts from a branch", async () => {
@@ -7597,7 +7603,10 @@ Deno.test("git().revert.apply() reverts from a branch", async () => {
     { ...commit1 },
   ]);
   assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+  assertEquals(
+    await Deno.stat(repo.path("file2")).then(() => true, () => false),
+    false,
+  );
 });
 
 Deno.test("git().revert.apply() reverts from a tag", async () => {
@@ -7618,7 +7627,10 @@ Deno.test("git().revert.apply() reverts from a tag", async () => {
     { ...commit1 },
   ]);
   assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
+  assertEquals(
+    await Deno.stat(repo.path("file2")).then(() => true, () => false),
+    false,
+  );
 });
 
 Deno.test("git().revert.apply() reverts multiple commits", async () => {
@@ -7648,9 +7660,18 @@ Deno.test("git().revert.apply() reverts multiple commits", async () => {
     { ...commit1 },
   ]);
   assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.stat(repo.path("file2")).then(() => true, () => false), false);
-  assertEquals(await Deno.stat(repo.path("file3")).then(() => true, () => false), false);
-  assertEquals(await Deno.stat(repo.path("file4")).then(() => true, () => false), false);
+  assertEquals(
+    await Deno.stat(repo.path("file2")).then(() => true, () => false),
+    false,
+  );
+  assertEquals(
+    await Deno.stat(repo.path("file3")).then(() => true, () => false),
+    false,
+  );
+  assertEquals(
+    await Deno.stat(repo.path("file4")).then(() => true, () => false),
+    false,
+  );
 });
 
 Deno.test("git().revert.apply() reports conflicts", async () => {
@@ -7794,7 +7815,7 @@ Deno.test("git().revert.skip() skips conflicting commit", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content");
   await repo.index.add("file1");
-  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.commit.create({ subject: "commit1" });
   await Deno.writeTextFile(repo.path("file2"), "a");
   await repo.index.add("file2");
   const commit2 = await repo.commit.create({ subject: "commit2" });
