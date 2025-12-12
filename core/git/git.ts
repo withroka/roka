@@ -3230,9 +3230,10 @@ export function git(options?: GitOptions): Git {
         if (!headExists) return undefined;
         const todoPath = repo.path(gitDir.trim(), "sequencer/todo");
         const todoContent = await maybe(() => Deno.readTextFile(todoPath));
-        const todoLines = todoContent.value?.split("\n").filter((line) =>
-          line.trim() && !line.startsWith("#") && line.startsWith("pick")
-        ) ?? [];
+        const todoLines =
+          todoContent.value?.split("\n").filter((line) =>
+            line.trim() && !line.startsWith("#") && line.startsWith("pick")
+          ) ?? [];
         const total = todoLines.length;
         const unmerged = await run(gitOptions, [
           "ls-files",
