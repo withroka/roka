@@ -7307,7 +7307,6 @@ Deno.test("git().cherrypick.apply({ resolve }) can resolve conflicts to our vers
   await repo.index.add("file1");
   const commit3 = await repo.commit.create({ subject: "commit3" });
   const cherrypick = await repo.cherrypick.apply(commit2, { resolve: "ours" });
-  await repo.cherrypick.continue();
   assertEquals(cherrypick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
   assertArrayObjectMatch(await repo.commit.log(), [
