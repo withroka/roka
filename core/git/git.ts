@@ -36,7 +36,6 @@
  *
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
- * @todo Add `git().revert.*`
  * @todo Add `git().bisect.*`
  * @todo Add `git().submodule.*`
  * @todo Add `git().reflog.*`
@@ -107,6 +106,8 @@ export interface Git {
   rebase: RebaseOperations;
   /** Cherry-pick operations. */
   cherrypick: CherryPickOperations;
+  /** Revert operations. */
+  revert: RevertOperations;
   /** Remote operations. */
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
@@ -297,6 +298,25 @@ export interface CherryPickOperations {
   quit(): Promise<void>;
   /** Returns the current active cherry-pick operation, if any. */
   active(): Promise<CherryPick | undefined>;
+}
+
+/** Revert operations from {@linkcode Git.revert}. */
+export interface RevertOperations {
+  /** Reverts one or more commits by creating new commits that undo their changes. */
+  apply(
+    commit: Commitish | Commitish[],
+    options?: RevertOptions,
+  ): Promise<Revert | undefined>;
+  /** Continues an ongoing revert operation with resolved conflicts. */
+  continue(): Promise<Revert | undefined>;
+  /** Skips current commit and continues with the next one. */
+  skip(): Promise<Revert | undefined>;
+  /** Aborts an ongoing revert operation. */
+  abort(): Promise<void>;
+  /** Quits an ongoing revert operation, keeping the working tree as is. */
+  quit(): Promise<void>;
+  /** Returns the current active revert operation, if any. */
+  active(): Promise<Revert | undefined>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -992,6 +1012,16 @@ export interface Rebase {
 export interface CherryPick {
   /** Remaining commits to be cherry-picked. */
   remaining: number;
+  /** List of unmerged files due to conflicts. */
+  conflicts?: string[];
+}
+
+/** Result of a revert operation from {@linkcode Git.revert}. */
+export interface Revert {
+  /** Current step in the revert sequence. */
+  step: number;
+  /** Total commits being reverted. */
+  total: number;
   /** List of unmerged files due to conflicts. */
   conflicts?: string[];
 }
@@ -1814,6 +1844,15 @@ export interface CherryPickOptions extends ResolveOptions, SignOptions {
   allowEmpty?: boolean;
   /**
    * Create commit after cherry-pick.
+   * @default {true}
+   */
+  commit?: boolean;
+}
+
+/** Options for the {@linkcode RevertOperations.apply} function. */
+export interface RevertOptions extends ResolveOptions, SignOptions {
+  /**
+   * Create commit after revert.
    * @default {true}
    */
   commit?: boolean;
@@ -3248,6 +3287,111 @@ export function git(options?: GitOptions): Git {
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
         return {
           remaining,
+          ...conflicts.length > 0 && { conflicts },
+        };
+      },
+    },
+    revert: {
+      async apply(commit, options) {
+        const commits = Array.isArray(commit) ? commit : [commit];
+        const { error } = await maybe(() =>
+          run(
+            gitOptions,
+            "revert",
+            flag(["--commit", "--no-commit"], options?.commit),
+            flag("--strategy-option", options?.resolve),
+            signFlag("commit", options?.sign),
+            commitArg(commit),
+          )
+        );
+        const revert = await repo.revert.active();
+        if (revert && !error) {
+          const { value: gitDir } = await maybe(() =>
+            run(gitOptions, ["rev-parse", "--git-dir"])
+          );
+          if (gitDir) {
+            await maybe(() =>
+              Deno.writeTextFile(
+                repo.path(gitDir.trim(), "REVERT_TOTAL"),
+                commits.length.toString(),
+              )
+            );
+          }
+        }
+        if (error?.message.includes("gpg failed to sign")) {
+          if (revert) await repo.revert.abort();
+          throw error;
+        }
+        return revert;
+      },
+      async continue() {
+        const { error } = await maybe(() =>
+          run(gitOptions, "revert", "--continue")
+        );
+        const revert = await repo.revert.active();
+        if (error?.message.includes("gpg failed to sign")) {
+          if (revert) await repo.revert.abort();
+          throw error;
+        }
+        return revert;
+      },
+      async skip() {
+        await run({ ...gitOptions, allowCode: [1] }, "revert", "--skip");
+        return await repo.revert.active();
+      },
+      async abort() {
+        await run(gitOptions, "revert", "--abort");
+        const { value: gitDir } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--git-dir"])
+        );
+        if (gitDir) {
+          await maybe(() =>
+            Deno.remove(repo.path(gitDir.trim(), "REVERT_TOTAL"))
+          );
+        }
+      },
+      async quit() {
+        await run(gitOptions, "revert", "--quit");
+        const { value: gitDir } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--git-dir"])
+        );
+        if (gitDir) {
+          await maybe(() =>
+            Deno.remove(repo.path(gitDir.trim(), "REVERT_TOTAL"))
+          );
+        }
+      },
+      async active() {
+        const { error } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--verify", "REVERT_HEAD"])
+        );
+        if (error) return undefined;
+        const { value: gitDir } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--git-dir"])
+        );
+        if (!gitDir) return undefined;
+        const [todo, totalFile, unmerged] = await Promise.all([
+          maybe(() =>
+            Deno.readTextFile(repo.path(gitDir.trim(), "sequencer/todo"))
+          ),
+          maybe(() =>
+            Deno.readTextFile(repo.path(gitDir.trim(), "REVERT_TOTAL"))
+          ),
+          run(gitOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
+        ]);
+        const todoLines = todo.value
+          ? todo.value.trim().split("\n")
+            .filter((x) => x.trim().startsWith("revert"))
+          : [];
+        const remaining = todoLines.length || 1;
+        const total = totalFile.value
+          ? Number(totalFile.value.trim())
+          : remaining;
+        const step = total - remaining + 1;
+        const conflicts = distinct(unmerged.split("\0").filter((x) => x));
+        return {
+          step,
+          total,
           ...conflicts.length > 0 && { conflicts },
         };
       },
