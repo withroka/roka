@@ -7299,11 +7299,11 @@ Deno.test("git().cherrypick.apply({ resolve }) can resolve conflicts to our vers
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
   await Deno.writeTextFile(repo.path("file1"), "content2");
-  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await Deno.writeTextFile(repo.path("file2"), "content3");
   await repo.index.add(["file1", "file2"]);
   const commit2 = await repo.commit.create({ subject: "commit2" });
   await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await Deno.writeTextFile(repo.path("file1"), "content4");
   await repo.index.add("file1");
   const commit3 = await repo.commit.create({ subject: "commit3" });
   const cherrypick = await repo.cherrypick.apply(commit2, { resolve: "ours" });
@@ -7316,7 +7316,7 @@ Deno.test("git().cherrypick.apply({ resolve }) can resolve conflicts to our vers
     { ...commit1 },
   ]);
   assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.readTextFile(repo.path("file1")), "content3");
+  assertEquals(await Deno.readTextFile(repo.path("file1")), "content4");
 });
 
 Deno.test("git().cherrypick.apply({ resolve }) can resolve conflicts to their version", async () => {
@@ -7397,22 +7397,22 @@ Deno.test("git().cherrypick.continue() completes cherry-pick after resolving con
 Deno.test("git().cherrypick.continue() continues multi-commit cherry-pick", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
-  await Deno.writeTextFile(repo.path("file2"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add(["file1", "file2"]);
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file1"), "content2");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
   await repo.index.add("file1");
   const commit2 = await repo.commit.create({ subject: "commit2" });
-  await Deno.writeTextFile(repo.path("file3"), "content3");
+  await Deno.writeTextFile(repo.path("file3"), "content4");
   await repo.index.add("file3");
   const commit3 = await repo.commit.create({ subject: "commit3" });
-  await Deno.writeTextFile(repo.path("file2"), "content4");
+  await Deno.writeTextFile(repo.path("file2"), "content5");
   await repo.index.add("file2");
   const commit4 = await repo.commit.create({ subject: "commit4" });
   await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file1"), "content5");
-  await Deno.writeTextFile(repo.path("file2"), "content5");
+  await Deno.writeTextFile(repo.path("file1"), "content6");
+  await Deno.writeTextFile(repo.path("file2"), "content7");
   await repo.index.add(["file1", "file2"]);
   const commit5 = await repo.commit.create({ subject: "commit5" });
   let cherrypick = await repo.cherrypick.apply([commit2, commit4, commit3]);
@@ -7440,85 +7440,104 @@ Deno.test("git().cherrypick.continue() continues multi-commit cherry-pick", asyn
 
 Deno.test("git().cherrypick.skip() skips conflicting commit", async () => {
   await using repo = await tempRepository({ branch: "main" });
-  await Deno.writeTextFile(repo.path("file"), "content1");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file"), "content2");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await repo.index.add("file1");
   const commit2 = await repo.commit.create({ subject: "commit2" });
-  await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file"), "content3");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file2"), "content4");
+  await repo.index.add("file2");
   const commit3 = await repo.commit.create({ subject: "commit3" });
-  let cherrypick = await repo.cherrypick.apply(commit2);
-  assertEquals(cherrypick, { remaining: 1, conflicts: ["file"] });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file1"), "content5");
+  await Deno.writeTextFile(repo.path("file2"), "content6");
+  await repo.index.add(["file1", "file2"]);
+  const commit4 = await repo.commit.create({ subject: "commit3" });
+  let cherrypick = await repo.cherrypick.apply([commit2, commit3]);
+  assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
   assertEquals(await repo.cherrypick.active(), cherrypick);
+  cherrypick = await repo.cherrypick.skip();
+  assertEquals(cherrypick, { remaining: 1, conflicts: ["file2"] });
   cherrypick = await repo.cherrypick.skip();
   assertEquals(cherrypick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.commit.log(), [commit4, commit1]);
   assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+  assertEquals(await Deno.readTextFile(repo.path("file1")), "content5");
+  assertEquals(await Deno.readTextFile(repo.path("file2")), "content6");
 });
 
 Deno.test("git().cherrypick.abort() reverts cherry-pick", async () => {
   await using repo = await tempRepository({ branch: "main" });
-  await Deno.writeTextFile(repo.path("file"), "content1");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file"), "content2");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await repo.index.add("file1");
   const commit2 = await repo.commit.create({ subject: "commit2" });
-  await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file"), "content3");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file2"), "content4");
+  await repo.index.add("file2");
   const commit3 = await repo.commit.create({ subject: "commit3" });
-  let cherrypick = await repo.cherrypick.apply(commit2);
-  assertEquals(cherrypick, { remaining: 1, conflicts: ["file"] });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file1"), "content5");
+  await Deno.writeTextFile(repo.path("file2"), "content6");
+  await repo.index.add(["file1", "file2"]);
+  const commit4 = await repo.commit.create({ subject: "commit3" });
+  const cherrypick = await repo.cherrypick.apply([commit2, commit3]);
+  assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
   assertEquals(await repo.cherrypick.active(), cherrypick);
-  cherrypick = await repo.cherrypick.skip();
-  assertEquals(cherrypick, undefined);
+  await repo.cherrypick.abort();
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.commit.log(), [commit4, commit1]);
   assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+  assertEquals(await Deno.readTextFile(repo.path("file1")), "content5");
+  assertEquals(await Deno.readTextFile(repo.path("file2")), "content6");
 });
 
 Deno.test("git().cherrypick.quit() stops cherry-pick", async () => {
   await using repo = await tempRepository({ branch: "main" });
-  await Deno.writeTextFile(repo.path("file"), "content1");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add(["file1", "file2"]);
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file"), "content2");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file1"), "content3");
+  await repo.index.add("file1");
   const commit2 = await repo.commit.create({ subject: "commit2" });
-  await repo.branch.switch("main");
-  await Deno.writeTextFile(repo.path("file"), "content3");
-  await repo.index.add("file");
+  await Deno.writeTextFile(repo.path("file2"), "content4");
+  await repo.index.add("file2");
   const commit3 = await repo.commit.create({ subject: "commit3" });
-  const cherrypick = await repo.cherrypick.apply(commit2);
-  assertEquals(cherrypick, { remaining: 1, conflicts: ["file"] });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file1"), "content5");
+  await Deno.writeTextFile(repo.path("file2"), "content6");
+  await repo.index.add(["file1", "file2"]);
+  const commit4 = await repo.commit.create({ subject: "commit3" });
+  const cherrypick = await repo.cherrypick.apply([commit2, commit3]);
+  assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
   assertEquals(await repo.cherrypick.active(), cherrypick);
   await repo.cherrypick.quit();
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertEquals(await repo.commit.log(), [commit3, commit1]);
+  assertEquals(await repo.commit.log(), [commit4, commit1]);
   assertEquals(await repo.diff.status(), [
-    { path: "file", status: "modified" },
+    { path: "file1", status: "modified" },
   ]);
   assertEquals(
-    await Deno.readTextFile(repo.path("file")),
+    await Deno.readTextFile(repo.path("file1")),
     [
       "<<<<<<< HEAD",
-      "content3",
+      "content5",
       "=======",
-      "content2",
+      "content3",
       `>>>>>>> ${commit2.short} (commit2)`,
       "",
     ].join("\n"),
   );
+  assertEquals(await Deno.readTextFile(repo.path("file2")), "content6");
 });
 
 Deno.test("git().cherrypick.active() returns ongoing cherry-pick", async () => {
