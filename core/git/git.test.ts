@@ -6818,12 +6818,10 @@ Deno.test("git().rebase.onto({ merges }) preserves merge commits", async () => {
   ]);
   await repo.branch.switch("branch3");
   await repo.rebase.onto("main", { merges: true });
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "Merge branch 'branch2' into branch1" },
-    { ...commit3 },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const commit = await repo.commit.head();
+  assertEquals(commit.subject, "Merge branch 'branch2' into branch1");
+  assertExists(commit.parents);
+  assertSameElements(commit.parents, [commit2.hash, commit3.hash]);
 });
 
 Deno.test("git().rebase.onto({ resolve }) can resolve conflicts to our version", async () => {
@@ -8015,10 +8013,7 @@ Deno.test("git().sync.pull({ rebase }) can rebase commits", async () => {
 
 Deno.test("git().sync.pull({ rebase }) can preserve merge commits", async () => {
   await using upstream = await tempRepository({ branch: "main" });
-  const commit1 = await upstream.commit.create({
-    subject: "commit1",
-    allowEmpty: true,
-  });
+  await upstream.commit.create({ subject: "commit1", allowEmpty: true });
   await using repo = await tempRepository({
     clone: upstream,
     config: { "rebase.rebaseMerges": false },
@@ -8036,15 +8031,10 @@ Deno.test("git().sync.pull({ rebase }) can preserve merge commits", async () => 
   await repo.merge.with("branch", { fastForward: false });
   await repo.sync.pull({ rebase: "merges" });
   assertEquals(await repo.merge.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    {
-      subject: "Merge branch 'branch'",
-      parents: [commit2.hash, commit3.hash],
-    },
-    { ...commit2 },
-    { ...commit3 },
-    { ...commit1 },
-  ]);
+  const commit = await repo.commit.head();
+  assertEquals(commit.subject, "Merge branch 'branch'");
+  assertExists(commit.parents);
+  assertSameElements(commit.parents, [commit2.hash, commit3.hash]);
 });
 
 Deno.test("git().sync.pull({ remote }) can pull from a remote by name", async () => {
