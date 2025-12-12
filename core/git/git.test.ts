@@ -7455,7 +7455,7 @@ Deno.test("git().cherrypick.skip() skips conflicting commit", async () => {
   await Deno.writeTextFile(repo.path("file1"), "content5");
   await Deno.writeTextFile(repo.path("file2"), "content6");
   await repo.index.add(["file1", "file2"]);
-  const commit4 = await repo.commit.create({ subject: "commit3" });
+  const commit4 = await repo.commit.create({ subject: "commit4" });
   let cherrypick = await repo.cherrypick.apply([commit2, commit3]);
   assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
   assertEquals(await repo.cherrypick.active(), cherrypick);
@@ -7487,7 +7487,7 @@ Deno.test("git().cherrypick.abort() reverts cherry-pick", async () => {
   await Deno.writeTextFile(repo.path("file1"), "content5");
   await Deno.writeTextFile(repo.path("file2"), "content6");
   await repo.index.add(["file1", "file2"]);
-  const commit4 = await repo.commit.create({ subject: "commit3" });
+  const commit4 = await repo.commit.create({ subject: "commit4" });
   const cherrypick = await repo.cherrypick.apply([commit2, commit3]);
   assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
   assertEquals(await repo.cherrypick.active(), cherrypick);
@@ -7516,7 +7516,7 @@ Deno.test("git().cherrypick.quit() stops cherry-pick", async () => {
   await Deno.writeTextFile(repo.path("file1"), "content5");
   await Deno.writeTextFile(repo.path("file2"), "content6");
   await repo.index.add(["file1", "file2"]);
-  const commit4 = await repo.commit.create({ subject: "commit3" });
+  const commit4 = await repo.commit.create({ subject: "commit4" });
   const cherrypick = await repo.cherrypick.apply([commit2, commit3]);
   assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
   assertEquals(await repo.cherrypick.active(), cherrypick);
