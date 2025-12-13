@@ -1842,6 +1842,16 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
   /** Excludes commits reachable from this commit (--onto mode). */
   after?: Commitish;
   /**
+   * Control how commits that become empty after rebasing are handled.
+   *
+   * - `"drop"`: drop commits that become empty (default)
+   * - `"keep"`: keep commits even if they become empty
+   * - `"stop"`: stop the rebase when an empty commit is encountered
+   *
+   * @default {"drop"}
+   */
+  empty?: "drop" | "keep" | "stop";
+  /**
    * Fast-forward mode.
    *
    * - `true`: allow fast-forwarding (default)
@@ -1855,6 +1865,15 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    * @default {false}
    */
   merges?: boolean;
+  /**
+   * Reapply all commits, even if they are cherry-picks of upstream commits.
+   *
+   * - `true`: reapply all commits regardless of whether they're cherry-picks
+   * - `false`: scan upstream and drop detected cherry-picks (default)
+   *
+   * @default {false}
+   */
+  reapplyCherryPicks?: boolean;
 }
 
 /** Options for the {@linkcode CherryPickOperations.apply} function. */
@@ -3164,8 +3183,13 @@ export function git(options?: GitOptions): Git {
           run(
             gitOptions,
             ["rebase", "--no-stat"],
+            flag("--empty", options?.empty, { equals: true }),
             flag("--force-rebase", options?.fastForward === false),
             flag(["--rebase-merges", "--no-rebase-merges"], options?.merges),
+            flag(
+              ["--reapply-cherry-picks", "--no-reapply-cherry-picks"],
+              options?.reapplyCherryPicks,
+            ),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             flag("--onto", options?.after !== undefined),
