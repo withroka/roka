@@ -6451,6 +6451,12 @@ Deno.test("git().merge.continue() completes a merge with conflicts", async () =>
   assertEquals(await repo.merge.active(), undefined);
 });
 
+Deno.test("git().merge.continue() rejects when no merge is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.merge.continue(), GitError, "no merge");
+});
+
 Deno.test("git().merge.abort() reverts an ongoing merge", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
@@ -6471,6 +6477,12 @@ Deno.test("git().merge.abort() reverts an ongoing merge", async () => {
   assertEquals(await repo.commit.log(), [commit3, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+});
+
+Deno.test("git().merge.abort() rejects when no merge is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.merge.abort(), GitError, "no merge");
 });
 
 Deno.test("git().merge.quit() stops an ongoing merge", async () => {
@@ -6962,6 +6974,12 @@ Deno.test("git().rebase.continue() completes a rebase with conflicts", async () 
   assertEquals(await Deno.readTextFile(repo.path("file2")), "resolved");
 });
 
+Deno.test("git().rebase.continue() rejects when no rebase is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.rebase.continue(), GitError, "in progress");
+});
+
 Deno.test("git().rebase.skip() skips a commit during an ongoing rebase", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
@@ -7005,6 +7023,12 @@ Deno.test("git().rebase.skip() skips a commit during an ongoing rebase", async (
   assertEquals(await Deno.readTextFile(repo.path("file2")), "resolved");
 });
 
+Deno.test("git().rebase.skip() rejects when no rebase is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.rebase.skip(), GitError, "in progress");
+});
+
 Deno.test("git().rebase.abort() reverts an ongoing rebase", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
@@ -7028,6 +7052,12 @@ Deno.test("git().rebase.abort() reverts an ongoing rebase", async () => {
   assertEquals(await repo.commit.log(), [commit3, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+});
+
+Deno.test("git().rebase.abort() rejects when no rebase is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.rebase.abort(), GitError, "in progress");
 });
 
 Deno.test("git().rebase.quit() stops an ongoing rebase", async () => {
@@ -7065,6 +7095,12 @@ Deno.test("git().rebase.quit() stops an ongoing rebase", async () => {
       "",
     ].join("\n"),
   );
+});
+
+Deno.test("git().rebase.quit() rejects when no rebase is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.rebase.quit(), GitError, "in progress");
 });
 
 Deno.test("git().rebase.active() returns ongoing rebase", async () => {
@@ -7362,6 +7398,11 @@ Deno.test("git().cherrypick.continue() completes cherry-pick after resolving con
   ]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "resolved");
+  await assertRejects(
+    () => repo.cherrypick.continue(),
+    GitError,
+    "in progress",
+  );
 });
 
 Deno.test("git().cherrypick.continue() continues multi-commit cherry-pick", async () => {
@@ -7440,6 +7481,12 @@ Deno.test("git().cherrypick.skip() skips conflicting commit", async () => {
   assertEquals(await Deno.readTextFile(repo.path("file2")), "content6");
 });
 
+Deno.test("git().cherrypick.skip() rejects when no cherry-pick is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.cherrypick.skip(), GitError, "in progress");
+});
+
 Deno.test("git().cherrypick.abort() reverts cherry-pick", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
@@ -7467,6 +7514,12 @@ Deno.test("git().cherrypick.abort() reverts cherry-pick", async () => {
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file1")), "content5");
   assertEquals(await Deno.readTextFile(repo.path("file2")), "content6");
+});
+
+Deno.test("git().cherrypick.abort() rejects when no cherry-pick is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.cherrypick.abort(), GitError, "in progress");
 });
 
 Deno.test("git().cherrypick.quit() stops cherry-pick", async () => {
@@ -7788,6 +7841,12 @@ Deno.test("git().revert.continue() continues multi-commit revert", async () => {
   assertEquals(await Deno.readTextFile(repo.path("file")), "resolved2");
 });
 
+Deno.test("git().revert.continue() rejects when no revert is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.revert.continue(), GitError, "in progress");
+});
+
 Deno.test("git().revert.skip() skips conflicting commit", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
@@ -7813,6 +7872,12 @@ Deno.test("git().revert.skip() skips conflicting commit", async () => {
   assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
 });
 
+Deno.test("git().revert.skip() rejects when no revert is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.revert.skip(), GitError, "in progress");
+});
+
 Deno.test("git().revert.abort() reverts revert operation", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
@@ -7832,6 +7897,12 @@ Deno.test("git().revert.abort() reverts revert operation", async () => {
   assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
+});
+
+Deno.test("git().revert.abort() rejects when no revert is in progress", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await assertRejects(() => repo.revert.abort(), GitError, "in progress");
 });
 
 Deno.test("git().revert.quit() stops revert operation", async () => {
