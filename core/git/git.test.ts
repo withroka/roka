@@ -6790,7 +6790,7 @@ Deno.test("git().rebase.onto({ empty }) keeps empty commits", async () => {
   await repo.branch.switch("main");
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit4 = await repo.commit.create({ subject: "commit4" });
+  await repo.commit.create({ subject: "commit4" });
   await repo.branch.switch("feature");
   const rebase = await repo.rebase.onto("main", { empty: "keep" });
   assertEquals(rebase, undefined);
