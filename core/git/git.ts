@@ -1842,7 +1842,7 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
   /** Excludes commits reachable from this commit (--onto mode). */
   after?: Commitish;
   /**
-   * Control how Git handles commits that become empty after rebasing.
+   * Control how commits that become empty after rebasing are handled.
    *
    * - `"drop"`: drop commits that become empty (default)
    * - `"keep"`: keep commits even if they become empty
@@ -3177,7 +3177,6 @@ export function git(options?: GitOptions): Git {
             flag("--empty", options?.empty, { equals: true }),
             flag("--force-rebase", options?.fastForward === false),
             flag(["--rebase-merges", "--no-rebase-merges"], options?.merges),
-            flag("--reapply-cherry-picks", options?.empty === "keep"),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             flag("--onto", options?.after !== undefined),
