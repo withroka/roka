@@ -688,6 +688,7 @@ export const CONFIG_SCHEMA = {
   "remote.pushDefault": ["string"],
   "rerere.autoUpdate": ["boolean"],
   "rerere.enabled": ["boolean"],
+  "revert.reference": ["boolean"],
   "safe.bareRepository": ["all", "explicit"],
   "safe.directory": ["array"],
   "sequence.editor": ["string"],
