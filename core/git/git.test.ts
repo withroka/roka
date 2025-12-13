@@ -7401,14 +7401,15 @@ Deno.test("git().cherrypick.apply({ mainline }) cherry-picks a merge commit", as
   await repo.branch.switch("branch", { create: true });
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
-  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.commit.create({ subject: "commit2" });
   await repo.branch.switch("main");
   await Deno.writeTextFile(repo.path("file3"), "content3");
   await repo.index.add("file3");
-  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await repo.commit.create({ subject: "commit3" });
   const merge = await repo.merge.with("branch");
   assertEquals(merge, undefined);
   const [mergeCommit] = await repo.commit.log({ limit: 1 });
+  if (!mergeCommit) throw new Error("No merge commit found");
   await repo.branch.switch("target", { create: commit1 });
   const pick = await repo.cherrypick.apply(mergeCommit, { mainline: 1 });
   assertEquals(pick, undefined);
@@ -7853,7 +7854,7 @@ Deno.test("git().revert.apply({ mainline }) reverts a merge commit", async () =>
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
-  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
@@ -7864,10 +7865,9 @@ Deno.test("git().revert.apply({ mainline }) reverts a merge commit", async () =>
   const commit3 = await repo.commit.create({ subject: "commit3" });
   const merge = await repo.merge.with("branch");
   assertEquals(merge, undefined);
-  const revert = await repo.revert.apply(
-    (await repo.commit.log({ limit: 1 }))[0],
-    { mainline: 1 },
-  );
+  const [mergeCommit] = await repo.commit.log({ limit: 1 });
+  if (!mergeCommit) throw new Error("No merge commit found");
+  const revert = await repo.revert.apply(mergeCommit, { mainline: 1 });
   assertEquals(revert, undefined);
   assertEquals(await repo.revert.active(), undefined);
   const [reverted, ...rest] = await repo.commit.log({ limit: 5 });
