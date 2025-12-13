@@ -7667,7 +7667,9 @@ Deno.test("git().revert.apply() reports conflicts", async () => {
 });
 
 Deno.test("git().revert.apply() handles configuration overrides", async () => {
-  await using repo = await tempRepository({ config: { "revert.reference": true } });
+  await using repo = await tempRepository({
+    config: { "revert.reference": true },
+  });
   await Deno.writeTextFile(repo.path("file"), "content1");
   await repo.index.add("file");
   const commit1 = await repo.commit.create({ subject: "commit1" });
