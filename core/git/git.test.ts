@@ -3533,15 +3533,11 @@ Deno.test("git().commit.log({ author }) filters by author", async () => {
     allowEmpty: true,
   });
   assertEquals(
-    await repo.commit.log({
-      author: { name: "name1", email: "email1" },
-    }),
+    await repo.commit.log({ author: { name: "name1", email: "email1" } }),
     [commit1],
   );
   assertEquals(
-    await repo.commit.log({
-      author: { name: "name2", email: "email2" },
-    }),
+    await repo.commit.log({ author: { name: "name2", email: "email2" } }),
     [commit2],
   );
 });
@@ -3769,10 +3765,7 @@ Deno.test("git().commit.log({ symmetric }) returns symmetric commit range", asyn
   await repo.commit.create({ subject: "commit3", allowEmpty: true });
   assertEquals(
     await repo.commit.log({ from: commit3, to: commit1, symmetric: true }),
-    [
-      commit3,
-      commit2,
-    ],
+    [commit3, commit2],
   );
 });
 
@@ -3810,10 +3803,7 @@ Deno.test("git().commit.log({ to }) returns commit range", async () => {
   await repo.commit.create({ subject: "commit3", allowEmpty: true });
   assertEquals(
     await repo.commit.log({ from: commit1, to: commit3 }),
-    [
-      commit3,
-      commit2,
-    ],
+    [commit3, commit2],
   );
 });
 
@@ -3829,10 +3819,7 @@ Deno.test("git().commit.log({ to }) interprets range as asymmetric", async () =>
     allowEmpty: true,
   });
   await repo.commit.create({ subject: "commit4", allowEmpty: true });
-  assertEquals(
-    await repo.commit.log({ from: commit3, to: commit1 }),
-    [],
-  );
+  assertEquals(await repo.commit.log({ from: commit3, to: commit1 }), []);
 });
 
 Deno.test("git().commit.head() rejects empty repository", async () => {
@@ -5634,10 +5621,10 @@ Deno.test("git().branch.delete({ type }) can delete remote branch", async () => 
   });
   await upstream.branch.create("branch");
   await using repo = await tempRepository({ clone: upstream });
-  assertEquals(
-    await repo.branch.get("origin/branch"),
-    { name: "origin/branch", commit },
-  );
+  assertEquals(await repo.branch.get("origin/branch"), {
+    name: "origin/branch",
+    commit,
+  });
   await repo.branch.delete("origin/branch", { type: "remote" });
   assertEquals(await repo.branch.get("origin/branch"), undefined);
 });
@@ -6088,13 +6075,10 @@ Deno.test("git().merge.with() performs a three-way merge", async () => {
   const merge = await repo.merge.with("branch");
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log({ limit: 3 });
-  assertExists(commit);
-  assertObjectMatch(commit, {
-    subject: "Merge branch 'branch'",
-    parents: [commit3.hash, commit2.hash],
-  });
-  assertSameElements(parents, [commit3, commit2]);
+  const [merged, ...rest] = await repo.commit.log({ limit: 3 });
+  assertEquals(merged?.subject, "Merge branch 'branch'");
+  assertEquals(merged?.parents, [commit3.hash, commit2.hash]);
+  assertSameElements(rest, [commit3, commit2]);
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -6152,13 +6136,10 @@ Deno.test("git().merge.with() can merge multiple heads", async () => {
   const merge = await repo.merge.with([branch1, branch2]);
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log({ limit: 4 });
-  assertExists(commit);
-  assertObjectMatch(commit, {
-    subject: "Merge branches 'branch1' and 'branch2'",
-    parents: [commit4.hash, commit2.hash, commit3.hash],
-  });
-  assertSameElements(parents, [commit4, commit3, commit2]);
+  const [merged, ...rest] = await repo.commit.log({ limit: 4 });
+  assertEquals(merged?.subject, "Merge branches 'branch1' and 'branch2'");
+  assertEquals(merged?.parents, [commit4.hash, commit2.hash, commit3.hash]);
+  assertSameElements(rest, [commit4, commit3, commit2]);
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -6175,10 +6156,9 @@ Deno.test("git().merge.with() can customize the merge commit message", async () 
   });
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  assertObjectMatch(await repo.commit.head(), {
-    subject: "subject",
-    body: "body",
-  });
+  const merged = await repo.commit.head();
+  assertEquals(merged?.subject, "subject");
+  assertEquals(merged?.body, "body");
 });
 
 Deno.test("git().merge.with() reports conflicts", async () => {
@@ -6242,14 +6222,11 @@ Deno.test("git().merge.with() handles configuration overrides", async () => {
   const merge = await repo.merge.with("branch");
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log({ limit: 3 });
-  assertExists(commit);
-  assertObjectMatch(commit, {
-    subject: "Merge branch 'branch'",
-    body: "* branch:\n  : description\n  commit2",
-    parents: [commit3.hash, commit2.hash],
-  });
-  assertSameElements(parents, [commit3, commit2]);
+  const [merged, ...rest] = await repo.commit.log({ limit: 3 });
+  assertEquals(merged?.subject, "Merge branch 'branch'");
+  assertEquals(merged?.body, "* branch:\n  : description\n  commit2");
+  assertEquals(merged?.parents, [commit3.hash, commit2.hash]);
+  assertSameElements(rest, [commit3, commit2]);
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -6286,13 +6263,10 @@ Deno.test("git().merge.with({ fastForward }) can force a three-way merge", async
   const merge = await repo.merge.with("branch", { fastForward: false });
   assertEquals(merge, undefined);
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log();
-  assertExists(commit);
-  assertObjectMatch(commit, {
-    subject: "Merge branch 'branch'",
-    parents: [commit1.hash, commit2.hash],
-  });
-  assertSameElements(parents, [commit1, commit2]);
+  const [merged, ...rest] = await repo.commit.log();
+  assertEquals(merged?.subject, "Merge branch 'branch'");
+  assertEquals(merged?.parents, [commit1.hash, commit2.hash]);
+  assertSameElements(rest, [commit1, commit2]);
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -6417,13 +6391,10 @@ Deno.test("git().merge.continue() completes an ongoing merge", async () => {
   assertEquals(await repo.merge.active(), merge);
   merge = await repo.merge.continue();
   assertEquals(merge, undefined);
-  const [commit, ...parents] = await repo.commit.log({ limit: 3 });
-  assertExists(commit);
-  assertObjectMatch(commit, {
-    subject: "Merge branch 'branch'",
-    parents: [commit3.hash, commit2.hash],
-  });
-  assertSameElements(parents, [commit3, commit2]);
+  const [merged, ...rest] = await repo.commit.log({ limit: 3 });
+  assertEquals(merged?.subject, "Merge branch 'branch'");
+  assertEquals(merged?.parents, [commit3.hash, commit2.hash]);
+  assertSameElements(rest, [commit3, commit2]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content2");
 });
@@ -6555,11 +6526,10 @@ Deno.test("git().rebase.onto() performs a rebase", async () => {
   const rebase = await repo.rebase.onto("main");
   assertEquals(rebase, undefined);
   assertEquals(await repo.rebase.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit3");
+  assertEquals(rebased?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -6674,18 +6644,20 @@ Deno.test("git().rebase.onto() handles configuration overrides", async () => {
   await repo.index.add("file");
   const commit3 = await repo.commit.create({ subject: "commit3" });
   assertEquals(await repo.commit.log(), [commit3, commit1]);
-  assertEquals(
-    await repo.rebase.onto("main"),
-    { step: 1, remaining: 1, total: 1, conflicts: ["file"] },
-  );
+  const rebase = await repo.rebase.onto("main");
+  assertEquals(rebase, {
+    step: 1,
+    remaining: 1,
+    total: 1,
+    conflicts: ["file"],
+  });
   await Deno.writeTextFile(repo.path("file"), "resolved");
   await repo.index.add("file");
   assertEquals(await repo.rebase.continue(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit3");
+  assertEquals(rebased?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -6705,10 +6677,10 @@ Deno.test("git().rebase.onto({ after }) excludes commits from rebase", async () 
   const rebase = await repo.rebase.onto(commit1, { after: commit2 });
   assertEquals(rebase, undefined);
   assertEquals(await repo.rebase.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3", parents: [commit1.hash] },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit3");
+  assertEquals(rebased?.parents, [commit1.hash]);
+  assertEquals(rest, [commit1]);
 });
 
 Deno.test("git().rebase.onto({ branch }) can rebase a specific branch", async () => {
@@ -6733,11 +6705,10 @@ Deno.test("git().rebase.onto({ branch }) can rebase a specific branch", async ()
   assertEquals(rebase, undefined);
   assertEquals(await repo.rebase.active(), undefined);
   assertEquals(await repo.branch.current(), await repo.branch.get("branch2"));
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit3");
+  assertEquals(rebased?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   await repo.branch.switch("branch1");
   assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
@@ -6768,11 +6739,10 @@ Deno.test("git().rebase.onto({ branch }) can rebase a specific branch and exclud
   assertEquals(rebase, undefined);
   assertEquals(await repo.rebase.active(), undefined);
   assertEquals(await repo.branch.current(), await repo.branch.get("branch2"));
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit4", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit4");
+  assertEquals(rebased?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   await repo.branch.switch("branch1");
   assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
@@ -6815,23 +6785,21 @@ Deno.test("git().rebase.onto({ merges }) preserves merge commits", async () => {
   await repo.index.add("file3");
   const commit3 = await repo.commit.create({ subject: "commit3" });
   await repo.merge.with("branch2");
-  assertObjectMatch(await repo.commit.head(), {
-    subject: "Merge branch 'branch2' into branch1",
-    parents: [commit3.hash, commit2.hash],
-  });
+  const merged = await repo.commit.head();
+  assertEquals(merged.subject, "Merge branch 'branch2' into branch1");
+  assertEquals(merged.parents, [commit3.hash, commit2.hash]);
   await repo.branch.create("branch3");
   await repo.rebase.onto("main", { merges: false });
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit2", parents: [commit3.hash] },
-    { ...commit3 },
-    { ...commit1 },
-  ]);
+  const [merged1, ...rest] = await repo.commit.log();
+  assertEquals(merged1?.subject, "commit2");
+  assertEquals(merged1?.parents, [commit3.hash]);
+  assertEquals(rest, [commit3, commit1]);
   await repo.branch.switch("branch3");
   await repo.rebase.onto("main", { merges: true });
-  const commit = await repo.commit.head();
-  assertEquals(commit.subject, "Merge branch 'branch2' into branch1");
-  assertExists(commit.parents);
-  assertSameElements(commit.parents, [commit2.hash, commit3.hash]);
+  const merged2 = await repo.commit.head();
+  assertEquals(merged2.subject, "Merge branch 'branch2' into branch1");
+  assertExists(merged2.parents);
+  assertSameElements(merged2.parents, [commit2.hash, commit3.hash]);
 });
 
 Deno.test("git().rebase.onto({ resolve }) can resolve conflicts to our version", async () => {
@@ -6871,11 +6839,10 @@ Deno.test("git().rebase.onto({ resolve }) can resolve conflicts to their version
   const rebase = await repo.rebase.onto("main", { resolve: "theirs" });
   assertEquals(rebase, undefined);
   assertEquals(await repo.rebase.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit3");
+  assertEquals(rebased?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
 });
@@ -6915,10 +6882,12 @@ Deno.test("git().rebase.onto({ sign }) rejects wrong key after continue", async 
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit3" });
   await repo.rebase.onto("main", { sign: "not-a-key" });
-  assertEquals(
-    await repo.rebase.active(),
-    { step: 1, remaining: 1, total: 1, conflicts: ["file"] },
-  );
+  assertEquals(await repo.rebase.active(), {
+    step: 1,
+    remaining: 1,
+    total: 1,
+    conflicts: ["file"],
+  });
   await Deno.writeTextFile(repo.path("file"), "resolved");
   await repo.index.add("file");
   await assertRejects(
@@ -6963,12 +6932,12 @@ Deno.test("git().rebase.continue() completes a rebase with conflicts", async () 
   rebase = await repo.rebase.continue();
   assertEquals(rebase, undefined);
   assertEquals(await repo.rebase.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit4" },
-    { subject: "commit3", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased1, rebased2, ...rest] = await repo.commit.log();
+  assertEquals(rebased1?.subject, "commit4");
+  assertEquals(rebased1?.parents, [rebased2?.hash]);
+  assertEquals(rebased2?.subject, "commit3");
+  assertEquals(rebased2?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file1")), "resolved");
   assertEquals(await Deno.readTextFile(repo.path("file2")), "resolved");
@@ -7013,11 +6982,10 @@ Deno.test("git().rebase.skip() skips a commit during an ongoing rebase", async (
   rebase = await repo.rebase.continue();
   assertEquals(rebase, undefined);
   assertEquals(await repo.rebase.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit4", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit4");
+  assertEquals(rebased?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file1")), "content3");
   assertEquals(await Deno.readTextFile(repo.path("file2")), "resolved");
@@ -7132,13 +7100,13 @@ Deno.test("git().cherrypick.apply() cherry-picks a single commit", async () => {
   await repo.index.add("file2");
   const commit2 = await repo.commit.create({ subject: "commit2" });
   await repo.branch.switch("main");
-  const cherrypick = await repo.cherrypick.apply(commit2);
-  assertEquals(cherrypick, undefined);
+  const pick = await repo.cherrypick.apply(commit2);
+  assertEquals(pick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit2", parents: [commit1.hash] },
-    { ...commit1 },
-  ]);
+  const [picked, ...rest] = await repo.commit.log();
+  assertEquals(picked?.subject, "commit2");
+  assertEquals(picked?.parents, [commit1.hash]);
+  assertEquals(rest, [commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file2")), "content");
 });
@@ -7153,13 +7121,13 @@ Deno.test("git().cherrypick.apply() cherry-picks from a branch", async () => {
   await repo.index.add("file2");
   await repo.commit.create({ subject: "commit2" });
   await repo.branch.switch("main");
-  const cherrypick = await repo.cherrypick.apply("branch");
-  assertEquals(cherrypick, undefined);
+  const pick = await repo.cherrypick.apply("branch");
+  assertEquals(pick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit2", parents: [commit1.hash] },
-    { ...commit1 },
-  ]);
+  const [picked, ...rest] = await repo.commit.log();
+  assertEquals(picked?.subject, "commit2");
+  assertEquals(picked?.parents, [commit1.hash]);
+  assertEquals(rest, [commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file2")), "content");
 });
@@ -7175,13 +7143,13 @@ Deno.test("git().cherrypick.apply() cherry-picks from a tag", async () => {
   await repo.commit.create({ subject: "commit2" });
   const tag = await repo.tag.create("v1.0.0");
   await repo.branch.switch("main");
-  const cherrypick = await repo.cherrypick.apply(tag);
-  assertEquals(cherrypick, undefined);
+  const pick = await repo.cherrypick.apply(tag);
+  assertEquals(pick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit2", parents: [commit1.hash] },
-    { ...commit1 },
-  ]);
+  const [picked, ...rest] = await repo.commit.log();
+  assertEquals(picked?.subject, "commit2");
+  assertEquals(picked?.parents, [commit1.hash]);
+  assertEquals(rest, [commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file2")), "content");
 });
@@ -7202,15 +7170,17 @@ Deno.test("git().cherrypick.apply() cherry-picks multiple commits", async () => 
   await repo.index.add("file4");
   const commit4 = await repo.commit.create({ subject: "commit4" });
   await repo.branch.switch("main");
-  const cherrypick = await repo.cherrypick.apply([commit2, commit4, commit3]);
-  assertEquals(cherrypick, undefined);
+  const pick = await repo.cherrypick.apply([commit2, commit4, commit3]);
+  assertEquals(pick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3" },
-    { subject: "commit4" },
-    { subject: "commit2", parents: [commit1.hash] },
-    { ...commit1 },
-  ]);
+  const [picked1, picked2, picked3, ...rest] = await repo.commit.log();
+  assertEquals(picked1?.subject, "commit3");
+  assertEquals(picked1?.parents, [picked2?.hash]);
+  assertEquals(picked2?.subject, "commit4");
+  assertEquals(picked2?.parents, [picked3?.hash]);
+  assertEquals(picked3?.subject, "commit2");
+  assertEquals(picked3?.parents, [commit1.hash]);
+  assertEquals(rest, [commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file2")), "content");
   assertEquals(await Deno.readTextFile(repo.path("file3")), "content");
@@ -7230,9 +7200,9 @@ Deno.test("git().cherrypick.apply() reports conflicts", async () => {
   await Deno.writeTextFile(repo.path("file"), "content3");
   await repo.index.add("file");
   const commit3 = await repo.commit.create({ subject: "commit3" });
-  const cherrypick = await repo.cherrypick.apply(commit2);
-  assertEquals(cherrypick, { remaining: 1, conflicts: ["file"] });
-  assertEquals(await repo.cherrypick.active(), cherrypick);
+  const pick = await repo.cherrypick.apply(commit2);
+  assertEquals(pick, { remaining: 1, conflicts: ["file"] });
+  assertEquals(await repo.cherrypick.active(), pick);
   assertEquals(await repo.commit.log(), [commit3, commit1]);
   assertEquals(await repo.diff.status(), [
     { path: "file", status: "modified" },
@@ -7254,24 +7224,23 @@ Deno.test("git().cherrypick.apply({ allowEmpty }) allows empty commits", async (
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  await repo.commit.create({ subject: "commit1" });
+  const commit1 = await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
   const commit2 = await repo.commit.create({
     subject: "subject",
     allowEmpty: true,
   });
   await repo.branch.switch("main");
-  assertEquals(
-    await repo.cherrypick.apply(commit2, { allowEmpty: false }),
-    { remaining: 1 },
-  );
+  const pick1 = await repo.cherrypick.apply(commit2, { allowEmpty: false });
+  assertEquals(pick1, { remaining: 1 });
   await repo.cherrypick.abort();
-  assertEquals(
-    await repo.cherrypick.apply(commit2, { allowEmpty: true }),
-    undefined,
-  );
+  const pick2 = await repo.cherrypick.apply(commit2, { allowEmpty: true });
+  assertEquals(pick2, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertObjectMatch(await repo.commit.head(), { subject: "subject" });
+  const [picked, ...rest] = await repo.commit.log();
+  assertEquals(picked?.subject, "subject");
+  assertEquals(picked?.parents, [commit1.hash]);
+  assertEquals(rest, [commit1]);
 });
 
 Deno.test("git().cherrypick.apply({ commit }) stages without committing", async () => {
@@ -7284,8 +7253,8 @@ Deno.test("git().cherrypick.apply({ commit }) stages without committing", async 
   await repo.index.add("file2");
   const commit2 = await repo.commit.create({ subject: "commit2" });
   await repo.branch.switch("main");
-  const cherrypick = await repo.cherrypick.apply(commit2, { commit: false });
-  assertEquals(cherrypick, undefined);
+  const pick = await repo.cherrypick.apply(commit2, { commit: false });
+  assertEquals(pick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit1]);
   assertEquals(await repo.diff.status({ location: "index" }), [
@@ -7307,14 +7276,13 @@ Deno.test("git().cherrypick.apply({ resolve }) can resolve conflicts to our vers
   await Deno.writeTextFile(repo.path("file1"), "content4");
   await repo.index.add("file1");
   const commit3 = await repo.commit.create({ subject: "commit3" });
-  const cherrypick = await repo.cherrypick.apply(commit2, { resolve: "ours" });
-  assertEquals(cherrypick, undefined);
+  const pick = await repo.cherrypick.apply(commit2, { resolve: "ours" });
+  assertEquals(pick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit2", parents: [commit3.hash] },
-    { ...commit3 },
-    { ...commit1 },
-  ]);
+  const [picked, ...rest] = await repo.commit.log();
+  assertEquals(picked?.subject, "commit2");
+  assertEquals(picked?.parents, [commit3.hash]);
+  assertEquals(rest, [commit3, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file1")), "content4");
 });
@@ -7332,16 +7300,13 @@ Deno.test("git().cherrypick.apply({ resolve }) can resolve conflicts to their ve
   await Deno.writeTextFile(repo.path("file"), "content3");
   await repo.index.add("file");
   const commit3 = await repo.commit.create({ subject: "commit3" });
-  const cherrypick = await repo.cherrypick.apply(commit2, {
-    resolve: "theirs",
-  });
-  assertEquals(cherrypick, undefined);
+  const pick = await repo.cherrypick.apply(commit2, { resolve: "theirs" });
+  assertEquals(pick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit2", parents: [commit3.hash] },
-    { ...commit3 },
-    { ...commit1 },
-  ]);
+  const [picked, ...rest] = await repo.commit.log();
+  assertEquals(picked?.subject, "commit2");
+  assertEquals(picked?.parents, [commit3.hash]);
+  assertEquals(rest, [commit3, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content2");
 });
@@ -7359,7 +7324,7 @@ Deno.test("git().cherrypick.apply({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.cherrypick.apply(commit2, { sign: "invalid" }),
     GitError,
-    "gpg",
+    "gpg failed to sign",
   );
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
@@ -7391,11 +7356,10 @@ Deno.test("git().cherrypick.continue() completes cherry-pick after resolving con
   cherrypick = await repo.cherrypick.continue();
   assertEquals(cherrypick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit2", parents: [commit3.hash] },
-    { ...commit3 },
-    { ...commit1 },
-  ]);
+  const [picked, ...rest] = await repo.commit.log();
+  assertEquals(picked?.subject, "commit2");
+  assertEquals(picked?.parents, [commit3.hash]);
+  assertEquals(rest, [commit3, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "resolved");
   await assertRejects(
@@ -7437,13 +7401,14 @@ Deno.test("git().cherrypick.continue() continues multi-commit cherry-pick", asyn
   cherrypick = await repo.cherrypick.continue();
   assertEquals(cherrypick, undefined);
   assertEquals(await repo.cherrypick.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3" },
-    { subject: "commit4" },
-    { subject: "commit2", parents: [commit5.hash] },
-    { ...commit5 },
-    { ...commit1 },
-  ]);
+  const [picked1, picked2, picked3, ...rest] = await repo.commit.log();
+  assertEquals(picked1?.subject, "commit3");
+  assertEquals(picked1?.parents, [picked2?.hash]);
+  assertEquals(picked2?.subject, "commit4");
+  assertEquals(picked2?.parents, [picked3?.hash]);
+  assertEquals(picked3?.subject, "commit2");
+  assertEquals(picked3?.parents, [commit5.hash]);
+  assertEquals(rest, [commit5, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file1")), "resolved");
   assertEquals(await Deno.readTextFile(repo.path("file2")), "resolved");
@@ -7505,9 +7470,9 @@ Deno.test("git().cherrypick.abort() reverts cherry-pick", async () => {
   await Deno.writeTextFile(repo.path("file2"), "content6");
   await repo.index.add(["file1", "file2"]);
   const commit4 = await repo.commit.create({ subject: "commit4" });
-  const cherrypick = await repo.cherrypick.apply([commit2, commit3]);
-  assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
-  assertEquals(await repo.cherrypick.active(), cherrypick);
+  const pick = await repo.cherrypick.apply([commit2, commit3]);
+  assertEquals(pick, { remaining: 2, conflicts: ["file1"] });
+  assertEquals(await repo.cherrypick.active(), pick);
   await repo.cherrypick.abort();
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit4, commit1]);
@@ -7540,9 +7505,9 @@ Deno.test("git().cherrypick.quit() stops cherry-pick", async () => {
   await Deno.writeTextFile(repo.path("file2"), "content6");
   await repo.index.add(["file1", "file2"]);
   const commit4 = await repo.commit.create({ subject: "commit4" });
-  const cherrypick = await repo.cherrypick.apply([commit2, commit3]);
-  assertEquals(cherrypick, { remaining: 2, conflicts: ["file1"] });
-  assertEquals(await repo.cherrypick.active(), cherrypick);
+  const pick = await repo.cherrypick.apply([commit2, commit3]);
+  assertEquals(pick, { remaining: 2, conflicts: ["file1"] });
+  assertEquals(await repo.cherrypick.active(), pick);
   await repo.cherrypick.quit();
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit4, commit1]);
@@ -7577,9 +7542,9 @@ Deno.test("git().cherrypick.active() returns ongoing cherry-pick", async () => {
   await Deno.writeTextFile(repo.path("file"), "content3");
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit3" });
-  const cherrypick = await repo.cherrypick.apply(commit2);
-  assertExists(cherrypick);
-  assertEquals(await repo.cherrypick.active(), cherrypick);
+  const pick = await repo.cherrypick.apply(commit2);
+  assertExists(pick);
+  assertEquals(await repo.cherrypick.active(), pick);
 });
 
 Deno.test("git().revert.apply() reverts a single commit", async () => {
@@ -7593,11 +7558,10 @@ Deno.test("git().revert.apply() reverts a single commit", async () => {
   const revert = await repo.revert.apply(commit2);
   assertEquals(revert, undefined);
   assertEquals(await repo.revert.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: 'Revert "commit2"', parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [reverted, ...rest] = await repo.commit.log();
+  assertEquals(reverted?.subject, 'Revert "commit2"');
+  assertEquals(reverted?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
 });
@@ -7610,15 +7574,14 @@ Deno.test("git().revert.apply() reverts from a branch", async () => {
   await repo.branch.switch("branch", { create: true });
   await Deno.writeTextFile(repo.path("file"), "content2");
   await repo.index.add("file");
-  await repo.commit.create({ subject: "commit2" });
+  const commit2 = await repo.commit.create({ subject: "commit2" });
   const revert = await repo.revert.apply("branch");
   assertEquals(revert, undefined);
   assertEquals(await repo.revert.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: 'Revert "commit2"' },
-    { subject: "commit2", parents: [commit1.hash] },
-    { ...commit1 },
-  ]);
+  const [reverted, ...rest] = await repo.commit.log();
+  assertEquals(reverted?.subject, 'Revert "commit2"');
+  assertEquals(reverted?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
 });
@@ -7630,16 +7593,15 @@ Deno.test("git().revert.apply() reverts from a tag", async () => {
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await Deno.writeTextFile(repo.path("file"), "content2");
   await repo.index.add("file");
-  await repo.commit.create({ subject: "commit2" });
+  const commit2 = await repo.commit.create({ subject: "commit2" });
   const tag = await repo.tag.create("v1.0.0");
   const revert = await repo.revert.apply(tag);
   assertEquals(revert, undefined);
   assertEquals(await repo.revert.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: 'Revert "commit2"' },
-    { subject: "commit2", parents: [commit1.hash] },
-    { ...commit1 },
-  ]);
+  const [reverted, ...rest] = await repo.commit.log();
+  assertEquals(reverted?.subject, 'Revert "commit2"');
+  assertEquals(reverted?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
 });
@@ -7661,15 +7623,14 @@ Deno.test("git().revert.apply() reverts multiple commits", async () => {
   const revert = await repo.revert.apply([commit4, commit3, commit2]);
   assertEquals(revert, undefined);
   assertEquals(await repo.revert.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: 'Revert "commit2"' },
-    { subject: 'Revert "commit3"' },
-    { subject: 'Revert "commit4"' },
-    { ...commit4 },
-    { ...commit3 },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [reverted1, reverted2, reverted3, ...rest] = await repo.commit.log();
+  assertEquals(reverted1?.subject, 'Revert "commit2"');
+  assertEquals(reverted1?.parents, [reverted2?.hash]);
+  assertEquals(reverted2?.subject, 'Revert "commit3"');
+  assertEquals(reverted2?.parents, [reverted3?.hash]);
+  assertEquals(reverted3?.subject, 'Revert "commit4"');
+  assertEquals(reverted3?.parents, [commit4.hash]);
+  assertEquals(rest, [commit4, commit3, commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
 });
@@ -7756,12 +7717,10 @@ Deno.test("git().revert.apply({ resolve }) can resolve conflicts to their versio
   const revert = await repo.revert.apply(commit2, { resolve: "theirs" });
   assertEquals(revert, undefined);
   assertEquals(await repo.revert.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: 'Revert "commit2"', parents: [commit3.hash] },
-    { ...commit3 },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [reverted, ...rest] = await repo.commit.log();
+  assertEquals(reverted?.subject, 'Revert "commit2"');
+  assertEquals(reverted?.parents, [commit3.hash]);
+  assertEquals(rest, [commit3, commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
 });
@@ -7774,7 +7733,7 @@ Deno.test("git().revert.apply({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.revert.apply(commit, { sign: "invalid" }),
     GitError,
-    "gpg",
+    "gpg failed to sign",
   );
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
@@ -7795,11 +7754,10 @@ Deno.test("git().revert.continue() completes a revert with conflicts", async () 
   const continued = await repo.revert.continue();
   assertEquals(continued, undefined);
   assertEquals(await repo.revert.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: 'Revert "commit1"', parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [reverted, ...rest] = await repo.commit.log();
+  assertEquals(reverted?.subject, 'Revert "commit1"');
+  assertEquals(reverted?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "resolved");
 });
@@ -7829,14 +7787,12 @@ Deno.test("git().revert.continue() continues multi-commit revert", async () => {
   const done = await repo.revert.continue();
   assertEquals(done, undefined);
   assertEquals(await repo.revert.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: 'Revert "commit2"' },
-    { subject: 'Revert "commit3"' },
-    { ...commit4 },
-    { ...commit3 },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [reverted1, reverted2, ...rest] = await repo.commit.log();
+  assertEquals(reverted1?.subject, 'Revert "commit2"');
+  assertEquals(reverted1?.parents, [reverted2?.hash]);
+  assertEquals(reverted2?.subject, 'Revert "commit3"');
+  assertEquals(reverted2?.parents, [commit4.hash]);
+  assertEquals(rest, [commit4, commit3, commit2, commit1]);
   assertEquals(await repo.diff.status(), []);
   assertEquals(await Deno.readTextFile(repo.path("file")), "resolved2");
 });
@@ -8785,13 +8741,10 @@ Deno.test("git().sync.pull({ fastForward }) can force a three-way merge", async 
   const commit2 = await upstream.commit.create({ subject: "commit2" });
   await repo.sync.pull({ fastForward: false });
   assertEquals(await repo.merge.active(), undefined);
-  const [commit, ...parents] = await repo.commit.log();
-  assertExists(commit);
-  assertObjectMatch(commit, {
-    subject: `Merge branch 'main' of ${upstream.path()}`,
-    parents: [commit1.hash, commit2.hash],
-  });
-  assertSameElements(parents, [commit1, commit2]);
+  const [merged, ...rest] = await repo.commit.log();
+  assertEquals(merged?.subject, "Merge branch 'main' of " + upstream.path());
+  assertEquals(merged?.parents, [commit1.hash, commit2.hash]);
+  assertSameElements(rest, [commit1, commit2]);
   assertEquals(await repo.diff.status(), []);
 });
 
@@ -8842,11 +8795,10 @@ Deno.test("git().sync.pull({ rebase }) can rebase commits", async () => {
   await repo.commit.create({ subject: "commit3", allowEmpty: true });
   await repo.sync.pull({ rebase: true });
   assertEquals(await repo.merge.active(), undefined);
-  assertArrayObjectMatch(await repo.commit.log(), [
-    { subject: "commit3", parents: [commit2.hash] },
-    { ...commit2 },
-    { ...commit1 },
-  ]);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit3");
+  assertEquals(rebased?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
 });
 
 Deno.test("git().sync.pull({ rebase }) can preserve merge commits", async () => {
@@ -9326,10 +9278,10 @@ Deno.test("git().sync.push({ prune }) removes deleted remote branches", async ()
   });
   await upstream.branch.create("branch");
   await using repo = await tempRepository({ clone: upstream });
-  assertEquals(
-    await repo.branch.get("origin/branch"),
-    { name: "origin/branch", commit },
-  );
+  assertEquals(await repo.branch.get("origin/branch"), {
+    name: "origin/branch",
+    commit,
+  });
   await repo.branch.delete("origin/branch", { type: "remote" });
   await repo.sync.push({ prune: true });
   assertEquals(await repo.branch.get("origin/branch"), undefined);
