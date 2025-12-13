@@ -205,7 +205,10 @@ Deno.test("git().init({ refFormat }) can specify ref storage format", async () =
     refFormat: "reftable",
     bare: true,
   });
-  await assertRejects(() => Deno.stat(repo1.path("reftable")));
+  await assertRejects(
+    () => Deno.stat(repo1.path("reftable")),
+    Deno.errors.NotFound,
+  );
   await Deno.stat(repo2.path("reftable"));
 });
 
@@ -4367,7 +4370,7 @@ Deno.test("git().branch.list() can return branches from detached state", async (
   await repo.branch.detach();
   const branch = await repo.branch.create("branch");
   await repo.commit.create({ subject: "commit2", allowEmpty: true });
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
   assertEquals(await repo.branch.list(), [branch, main]);
 });
 
@@ -4638,11 +4641,7 @@ Deno.test("git().branch.current() rejects on detached state", async () => {
   await using repo = await tempRepository();
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   await repo.branch.detach();
-  await assertRejects(
-    () => repo.branch.current(),
-    GitError,
-    "Cannot determine HEAD branch",
-  );
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
 });
 
 Deno.test("git().branch.get() returns branch by name", async () => {
@@ -4698,7 +4697,7 @@ Deno.test("git().branch.get() can return branch from detached state", async () =
   const branch = await repo.branch.create("branch");
   await repo.branch.detach();
   assertEquals(await repo.branch.get("branch"), branch);
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
 });
 
 Deno.test("git().branch.get() returns undefined for unknown branch", async () => {
@@ -4825,7 +4824,7 @@ Deno.test("git().branch.create() can create a branch from detached state", async
   await repo.branch.detach();
   const branch = await repo.branch.create("branch");
   assertEquals(branch, { name: "branch", commit: commit2 });
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
   assertEquals(await repo.branch.list(), [branch, main]);
 });
 
@@ -4958,7 +4957,7 @@ Deno.test("git().branch.switch() can switch to branch from detached state", asyn
   });
   const branch = await repo.branch.create("branch");
   await repo.branch.detach();
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
   assertEquals(await repo.branch.switch(branch), branch);
   assertEquals(await repo.branch.current(), branch);
   assertEquals(await repo.commit.head(), commit2);
@@ -5197,7 +5196,7 @@ Deno.test("git().branch.detach() detaches", async () => {
   });
   assertExists(await repo.branch.current());
   await repo.branch.detach();
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
   assertEquals(await repo.commit.head(), commit);
 });
 
@@ -5213,7 +5212,7 @@ Deno.test("git().branch.detach() detaches to a commit", async () => {
   });
   assertEquals(await repo.commit.head(), commit2);
   await repo.branch.detach({ target: commit1 });
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
   assertEquals(await repo.commit.head(), commit1);
 });
 
@@ -5230,7 +5229,7 @@ Deno.test("git().branch.detach() detaches to a branch", async () => {
   });
   assertEquals(await repo.commit.head(), commit2);
   await repo.branch.detach({ target: branch });
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
   assertEquals(await repo.commit.head(), commit1);
 });
 
@@ -5296,7 +5295,7 @@ Deno.test("git().branch.reset() can reset from detached state", async () => {
   await repo.branch.detach();
   await repo.branch.reset({ target: commit1 });
   assertEquals(await repo.commit.head(), commit1);
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
 });
 
 Deno.test("git().branch.reset({ mode }) can reset in soft mode", async () => {
@@ -5415,7 +5414,7 @@ Deno.test("git().branch.move() can rename branch from detached state", async () 
   await repo.branch.detach();
   const renamed = await repo.branch.move(main, "renamed");
   assertEquals(await repo.branch.list(), [renamed]);
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
 });
 
 Deno.test("git().branch.move() rejects overriding existing branch", async () => {
@@ -5468,7 +5467,7 @@ Deno.test("git().branch.copy() can copy branch from detached state", async () =>
   await repo.branch.detach();
   const copy = await repo.branch.copy(main, "copy");
   assertEquals(await repo.branch.list(), [copy, main]);
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
 });
 
 Deno.test("git().branch.copy() rejects overriding existing branch", async () => {
@@ -5583,7 +5582,7 @@ Deno.test("git().branch.delete() can delete branch from detached state", async (
   await repo.branch.detach();
   await repo.branch.delete(branch);
   assertEquals(await repo.branch.list(), [main]);
-  await assertRejects(() => repo.branch.current());
+  await assertRejects(() => repo.branch.current(), GitError, "determine HEAD");
 });
 
 Deno.test("git().branch.delete() rejects unmerged branch", async () => {
@@ -8179,7 +8178,7 @@ Deno.test("git().remote.head() detects detached remote head", async () => {
   await assertRejects(
     () => repo.remote.head("origin"),
     GitError,
-    "Cannot determine remote HEAD branch",
+    "determine remote HEAD",
   );
 });
 
@@ -9392,7 +9391,11 @@ Deno.test("git().sync.push({ force }) can force push with lease", async () => {
     allowEmpty: true,
   });
   await repo1.sync.push();
-  await assertRejects(() => repo2.sync.push({ force: "with-lease" }));
+  await assertRejects(
+    () => repo2.sync.push({ force: "with-lease" }),
+    GitError,
+    "rejected",
+  );
   await repo2.sync.fetch();
   assertEquals(await upstream.commit.log(), [commit1]);
   await repo2.sync.push({ force: "with-lease" });
@@ -9409,7 +9412,11 @@ Deno.test("git().sync.push({ force }) can force push with lease if includes", as
   });
   await repo2.commit.create({ subject: "commit2", allowEmpty: true });
   await repo1.sync.push();
-  await assertRejects(() => repo2.sync.push({ force: "with-lease" }));
+  await assertRejects(
+    () => repo2.sync.push({ force: "with-lease" }),
+    GitError,
+    "rejected",
+  );
   await repo2.sync.fetch();
   await assertRejects(() =>
     repo2.sync.push({ force: "with-lease-if-includes" })
