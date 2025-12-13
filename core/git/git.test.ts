@@ -6807,7 +6807,7 @@ Deno.test("git().rebase.onto({ reapplyCherryPicks }) drops cherry-picks by defau
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
-  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.commit.create({ subject: "commit1" });
   await repo.branch.create("feature");
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
