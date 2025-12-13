@@ -3638,7 +3638,6 @@ async function sequence<T>(
   const active = await sequencer.active();
   if (error?.message?.match(/(^|\n)(fatal|gpg): /)) {
     if (active) await sequencer.abort();
-    await sequencer.quit();
     throw error;
   }
   return active;
