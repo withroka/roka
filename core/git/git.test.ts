@@ -11,6 +11,7 @@ import {
   assertObjectMatch,
   assertRejects,
 } from "@std/assert";
+import { assertStringIncludes } from "@std/assert/string-includes";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
 import { assertType, type IsExact } from "@std/testing/types";
@@ -7664,6 +7665,29 @@ Deno.test("git().revert.apply() reports conflicts", async () => {
       "",
     ].join("\n"),
   );
+});
+
+Deno.test("git().revert.apply() handles configuration overrides", async () => {
+  await using repo = await tempRepository({
+    branch: "main",
+    config: { "revert.reference": true },
+  });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  const revert = await repo.revert.apply(commit2);
+  assertEquals(revert, undefined);
+  assertEquals(await repo.revert.active(), undefined);
+  const [reverted, ...rest] = await repo.commit.log();
+  assertExists(reverted?.body);
+  assertStringIncludes(reverted.body, `This reverts commit ${commit2.short}`);
+  assertEquals(reverted?.parents, [commit2.hash]);
+  assertEquals(rest, [commit2, commit1]);
+  assertEquals(await repo.diff.status(), []);
+  assertEquals(await Deno.readTextFile(repo.path("file")), "content1");
 });
 
 Deno.test("git().revert.apply({ commit }) stages without committing", async () => {
