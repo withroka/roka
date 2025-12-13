@@ -265,7 +265,16 @@ export interface MergeOperations {
   active(): Promise<Merge | undefined>;
 }
 
-/** Rebase operations from {@linkcode Git.rebase}. */
+/**
+ * Rebase operations from {@linkcode Git.rebase}.
+ *
+ * The rebase process can be followed with the returned {@linkcode Rebase}
+ * object. The functions will return `undefined` if the rebase operation
+ * completes successfully.
+ *
+ * If an unexpected error occurs during the rebase process, a
+ * {@linkcode GitError} will be thrown, after aborting the rebase.
+ */
 export interface RebaseOperations {
   /** Rebases heads onto given base. */
   onto(base: Commitish, options?: RebaseOptions): Promise<Rebase | undefined>;
@@ -281,7 +290,16 @@ export interface RebaseOperations {
   active(): Promise<Rebase | undefined>;
 }
 
-/** Cherry-pick operations from {@linkcode Git.cherrypick}. */
+/**
+ * Cherry-pick operations from {@linkcode Git.cherrypick}.
+ *
+ * The cherry-pick process can be followed with the returned
+ * {@linkcode CherryPick} object. The functions will return `undefined` if the
+ * cherry-pick operation completes successfully.
+ *
+ * If an unexpected error occurs during the cherry-pick process, a
+ * {@linkcode GitError} will be thrown, after aborting the cherry-pick.
+ */
 export interface CherryPickOperations {
   /** Applies one or more commits to the current branch. */
   apply(
@@ -300,7 +318,16 @@ export interface CherryPickOperations {
   active(): Promise<CherryPick | undefined>;
 }
 
-/** Revert operations from {@linkcode Git.revert}. */
+/**
+ * Revert operations from {@linkcode Git.revert}.
+ *
+ * The revert process can be followed with the returned {@linkcode Revert}
+ * object. The functions will return `undefined` if the revert operation
+ * completes successfully.
+ *
+ * If an unexpected error occurs during the revert process, a
+ * {@linkcode GitError} will be thrown, after aborting the revert.
+ */
 export interface RevertOperations {
   /** Reverts one or more commits by creating revert commits. */
   apply(
@@ -3146,29 +3173,19 @@ export function git(options?: GitOptions): Git {
             commitArg(options?.branch),
           )
         );
-        const rebase = await repo.rebase.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          // signing failure leaves a rebase in progress
-          if (rebase) await repo.rebase.abort();
-          throw error;
-        }
-        return rebase;
+        return sequence(repo.rebase, error);
       },
       async continue() {
         const { error } = await maybe(() =>
           run(gitOptions, "rebase", "--continue")
         );
-        const rebase = await repo.rebase.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          // signing failure leaves a rebase in progress
-          if (rebase) await repo.rebase.abort();
-          throw error;
-        }
-        return rebase;
+        return sequence(repo.rebase, error);
       },
       async skip() {
-        await run({ ...gitOptions, allowCode: [1] }, "rebase", "--skip");
-        return await repo.rebase.active();
+        const { error } = await maybe(() =>
+          run(gitOptions, "rebase", "--skip")
+        );
+        return sequence(repo.rebase, error);
       },
       async abort() {
         await run(gitOptions, "rebase", "--abort");
@@ -3234,27 +3251,19 @@ export function git(options?: GitOptions): Git {
             commitArg(commit),
           )
         );
-        const cherrypick = await repo.cherrypick.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          if (cherrypick) await repo.cherrypick.abort();
-          throw error;
-        }
-        return cherrypick;
+        return sequence(repo.cherrypick, error);
       },
       async continue() {
         const { error } = await maybe(() =>
           run(gitOptions, "cherry-pick", "--continue")
         );
-        const cherrypick = await repo.cherrypick.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          if (cherrypick) await repo.cherrypick.abort();
-          throw error;
-        }
-        return cherrypick;
+        return sequence(repo.cherrypick, error);
       },
       async skip() {
-        await run({ ...gitOptions, allowCode: [1] }, "cherry-pick", "--skip");
-        return await repo.cherrypick.active();
+        const { error } = await maybe(() =>
+          run(gitOptions, "cherry-pick", "--skip")
+        );
+        return sequence(repo.cherrypick, error);
       },
       async abort() {
         await run(gitOptions, "cherry-pick", "--abort");
@@ -3301,49 +3310,25 @@ export function git(options?: GitOptions): Git {
             commitArg(commit),
           )
         );
-        const revert = await repo.revert.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          if (revert) await repo.revert.abort();
-          throw error;
-        }
-        return revert;
+        return sequence(repo.revert, error);
       },
       async continue() {
         const { error } = await maybe(() =>
           run(gitOptions, "revert", "--continue")
         );
-        const revert = await repo.revert.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          if (revert) await repo.revert.abort();
-          throw error;
-        }
-        return revert;
+        return sequence(repo.revert, error);
       },
       async skip() {
-        await run({ ...gitOptions, allowCode: [1] }, "revert", "--skip");
-        return await repo.revert.active();
+        const { error } = await maybe(() =>
+          run(gitOptions, "revert", "--skip")
+        );
+        return sequence(repo.revert, error);
       },
       async abort() {
         await run(gitOptions, "revert", "--abort");
-        const { value: gitDir } = await maybe(() =>
-          run(gitOptions, ["rev-parse", "--git-dir"])
-        );
-        if (gitDir) {
-          await maybe(() =>
-            Deno.remove(repo.path(gitDir.trim(), "REVERT_TOTAL"))
-          );
-        }
       },
       async quit() {
         await run(gitOptions, "revert", "--quit");
-        const { value: gitDir } = await maybe(() =>
-          run(gitOptions, ["rev-parse", "--git-dir"])
-        );
-        if (gitDir) {
-          await maybe(() =>
-            Deno.remove(repo.path(gitDir.trim(), "REVERT_TOTAL"))
-          );
-        }
       },
       async active() {
         const { error } = await maybe(() =>
@@ -3640,6 +3625,23 @@ async function run(
     }
     throw e;
   }
+}
+
+async function sequence<T>(
+  sequencer: {
+    abort(): Promise<void>;
+    quit(): Promise<void>;
+    active(): Promise<T | undefined>;
+  },
+  error: GitError | undefined,
+): Promise<T | undefined> {
+  const active = await sequencer.active();
+  if (error?.message?.match(/(^|\n)(fatal|gpg): /)) {
+    if (active) await sequencer.abort();
+    await sequencer.quit();
+    throw error;
+  }
+  return active;
 }
 
 function urlArg(url: SyncRemoteOptions["remote"]): string;

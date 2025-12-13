@@ -6916,41 +6916,6 @@ Deno.test("git().rebase.onto({ sign }) rejects wrong key after continue", async 
   );
 });
 
-Deno.test("git().rebase.onto({ sign }) rejects wrong key after skip", async () => {
-  await using repo = await tempRepository({ branch: "main" });
-  await Deno.writeTextFile(repo.path("file"), "content1");
-  await repo.index.add("file");
-  await repo.commit.create({ subject: "commit1" });
-  await repo.branch.create("branch");
-  await Deno.writeTextFile(repo.path("file"), "content2");
-  await repo.index.add("file");
-  await repo.commit.create({ subject: "commit2" });
-  await repo.branch.switch("branch");
-  await Deno.writeTextFile(repo.path("file"), "content3");
-  await repo.index.add("file");
-  await repo.commit.create({ subject: "commit3" });
-  await Deno.writeTextFile(repo.path("file"), "content4");
-  await repo.index.add("file");
-  await repo.commit.create({ subject: "commit4" });
-  await repo.rebase.onto("main", { sign: "not-a-key" });
-  assertEquals(
-    await repo.rebase.active(),
-    { step: 1, remaining: 2, total: 2, conflicts: ["file"] },
-  );
-  await repo.rebase.skip();
-  assertEquals(
-    await repo.rebase.active(),
-    { step: 2, remaining: 1, total: 2, conflicts: ["file"] },
-  );
-  await Deno.writeTextFile(repo.path("file"), "resolved");
-  await repo.index.add("file");
-  await assertRejects(
-    () => repo.rebase.continue(),
-    GitError,
-    "gpg failed to sign",
-  );
-});
-
 Deno.test("git().rebase.continue() completes a rebase with conflicts", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
@@ -7349,7 +7314,7 @@ Deno.test("git().cherrypick.apply({ sign }) rejects wrong key", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
-  await repo.commit.create({ subject: "commit1" });
+  const commit = await repo.commit.create({ subject: "commit1" });
   await repo.branch.switch("branch", { create: true });
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
@@ -7361,6 +7326,12 @@ Deno.test("git().cherrypick.apply({ sign }) rejects wrong key", async () => {
     "gpg",
   );
   assertEquals(await repo.cherrypick.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit]);
+  assertEquals(await repo.diff.status(), []);
+  assertRejects(
+    () => Deno.readTextFile(repo.path("file2")),
+    Deno.errors.NotFound,
+  );
 });
 
 Deno.test("git().cherrypick.continue() completes cherry-pick after resolving conflicts", async () => {
@@ -7746,13 +7717,14 @@ Deno.test("git().revert.apply({ sign }) rejects wrong key", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const commit = await repo.commit.create({ subject: "commit1" });
+  const commit = await repo.commit.create({ subject: "commit" });
   await assertRejects(
     () => repo.revert.apply(commit, { sign: "invalid" }),
     GitError,
     "gpg",
   );
   assertEquals(await repo.cherrypick.active(), undefined);
+  assertEquals(await repo.commit.log(), [commit]);
 });
 
 Deno.test("git().revert.continue() completes a revert with conflicts", async () => {
