@@ -2153,7 +2153,7 @@ Deno.test("git().diff.status({ from }) does not list untracked files", async () 
   assertEquals(await repo.diff.status({ from: commit }), []);
 });
 
-Deno.test("git().diff.status({ from }) can ignored staged or unstaged files", async () => {
+Deno.test("git().diff.status({ from }) can ignore staged or unstaged files", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
@@ -6230,7 +6230,7 @@ Deno.test("git().merge.with() handles configuration overrides", async () => {
   assertEquals(await repo.diff.status(), []);
 });
 
-Deno.test("git().merge.with({ commit }) skip commit creation", async () => {
+Deno.test("git().merge.with({ commit }) skips commit creation", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content");
   await repo.index.add("file1");
@@ -6428,7 +6428,7 @@ Deno.test("git().merge.continue() rejects when no merge is in progress", async (
   await assertRejects(() => repo.merge.continue(), GitError, "no merge");
 });
 
-Deno.test("git().merge.abort() reverts an ongoing merge", async () => {
+Deno.test("git().merge.abort() aborts an ongoing merge", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
   await repo.index.add("file");
@@ -6997,7 +6997,7 @@ Deno.test("git().rebase.skip() rejects when no rebase is in progress", async () 
   await assertRejects(() => repo.rebase.skip(), GitError, "in progress");
 });
 
-Deno.test("git().rebase.abort() reverts an ongoing rebase", async () => {
+Deno.test("git().rebase.abort() aborts an ongoing rebase", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
   await repo.index.add("file");
@@ -7452,7 +7452,7 @@ Deno.test("git().cherrypick.skip() rejects when no cherry-pick is in progress", 
   await assertRejects(() => repo.cherrypick.skip(), GitError, "in progress");
 });
 
-Deno.test("git().cherrypick.abort() reverts cherry-pick", async () => {
+Deno.test("git().cherrypick.abort() aborts an ongoing cherry-pick", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await Deno.writeTextFile(repo.path("file2"), "content2");
@@ -7487,7 +7487,7 @@ Deno.test("git().cherrypick.abort() rejects when no cherry-pick is in progress",
   await assertRejects(() => repo.cherrypick.abort(), GitError, "in progress");
 });
 
-Deno.test("git().cherrypick.quit() stops cherry-pick", async () => {
+Deno.test("git().cherrypick.quit() stops an ongoing cherry-pick", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await Deno.writeTextFile(repo.path("file2"), "content2");
@@ -7735,7 +7735,7 @@ Deno.test("git().revert.apply({ sign }) rejects wrong key", async () => {
     GitError,
     "gpg failed to sign",
   );
-  assertEquals(await repo.cherrypick.active(), undefined);
+  assertEquals(await repo.revert.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
 });
 
@@ -7810,7 +7810,7 @@ Deno.test("git().revert.skip() skips conflicting commit", async () => {
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await Deno.writeTextFile(repo.path("file"), "content2");
   await repo.index.add("file");
-  const commit2 = await repo.commit.create({ subject: "commit3" });
+  const commit2 = await repo.commit.create({ subject: "commit2" });
   await Deno.writeTextFile(repo.path("file"), "content3");
   await repo.index.add("file");
   const commit3 = await repo.commit.create({ subject: "commit3" });
@@ -7834,14 +7834,14 @@ Deno.test("git().revert.skip() rejects when no revert is in progress", async () 
   await assertRejects(() => repo.revert.skip(), GitError, "in progress");
 });
 
-Deno.test("git().revert.abort() reverts revert operation", async () => {
+Deno.test("git().revert.abort() aborts an ongoing revert", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
   await repo.index.add("file");
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await Deno.writeTextFile(repo.path("file"), "content2");
   await repo.index.add("file");
-  const commit2 = await repo.commit.create({ subject: "commit3" });
+  const commit2 = await repo.commit.create({ subject: "commit2" });
   await Deno.writeTextFile(repo.path("file"), "content3");
   await repo.index.add("file");
   const commit3 = await repo.commit.create({ subject: "commit3" });
@@ -7861,14 +7861,14 @@ Deno.test("git().revert.abort() rejects when no revert is in progress", async ()
   await assertRejects(() => repo.revert.abort(), GitError, "in progress");
 });
 
-Deno.test("git().revert.quit() stops revert operation", async () => {
+Deno.test("git().revert.quit() stops an ongoing revert", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
   await repo.index.add("file");
   const commit1 = await repo.commit.create({ subject: "commit1" });
   await Deno.writeTextFile(repo.path("file"), "content2");
   await repo.index.add("file");
-  const commit2 = await repo.commit.create({ subject: "commit3" });
+  const commit2 = await repo.commit.create({ subject: "commit2" });
   await Deno.writeTextFile(repo.path("file"), "content3");
   await repo.index.add("file");
   const commit3 = await repo.commit.create({ subject: "commit3" });
@@ -7888,7 +7888,7 @@ Deno.test("git().revert.quit() stops revert operation", async () => {
       "content3",
       "=======",
       "content1",
-      `>>>>>>> parent of ${commit2.short} (commit3)`,
+      `>>>>>>> parent of ${commit2.short} (commit2)`,
       "",
     ].join("\n"),
   );
