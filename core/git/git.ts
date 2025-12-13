@@ -1892,6 +1892,13 @@ export interface CherryPickOptions extends ResolveOptions, SignOptions {
    * @default {true}
    */
   commit?: boolean;
+  /**
+   * Parent number (starting from 1) to use as the mainline when cherry-picking
+   * a merge commit.
+   *
+   * Required for merge commits, ignored for regular commits.
+   */
+  mainline?: number;
 }
 
 /** Options for the {@linkcode RevertOperations.apply} function. */
@@ -1901,6 +1908,13 @@ export interface RevertOptions extends ResolveOptions, SignOptions {
    * @default {true}
    */
   commit?: boolean;
+  /**
+   * Parent number (starting from 1) to use as the mainline when reverting a
+   * merge commit.
+   *
+   * Required for merge commits, ignored for regular commits.
+   */
+  mainline?: number;
 }
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
@@ -3271,6 +3285,7 @@ export function git(options?: GitOptions): Git {
             "cherry-pick",
             flag("--allow-empty", options?.allowEmpty),
             flag(["--commit", "--no-commit"], options?.commit),
+            flag("--mainline", options?.mainline),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             commitArg(commit),
@@ -3330,6 +3345,7 @@ export function git(options?: GitOptions): Git {
             gitOptions,
             ["revert", "--no-edit"],
             flag(["--commit", "--no-commit"], options?.commit),
+            flag("--mainline", options?.mainline),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             commitArg(commit),
