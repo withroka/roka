@@ -6831,6 +6831,45 @@ Deno.test("git().rebase.onto({ merges }) preserves merge commits", async () => {
   assertSameElements(merged2.parents, [commit2.hash, commit3.hash]);
 });
 
+Deno.test("git().rebase.onto({ reapplyCherryPicks }) drops cherry-picks by default", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content1");
+  await repo.index.add("file1");
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.create("feature");
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("feature");
+  await Deno.writeTextFile(repo.path("file0"), "content0");
+  await repo.index.add("file0");
+  await repo.commit.create({ subject: "commit0" });
+  await repo.cherrypick.apply(commit2);
+  await Deno.writeTextFile(repo.path("file3"), "content3");
+  await repo.index.add("file3");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  assertEquals((await repo.commit.log()).length, 4);
+  const rebase1 = await repo.rebase.onto("main", { reapplyCherryPicks: false });
+  assertEquals(rebase1, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  const log1 = await repo.commit.log();
+  assertEquals(log1.length, 4);
+  assertEquals(log1[0]?.subject, "commit3");
+  assertEquals(log1[1]?.subject, "commit0");
+  assertEquals(log1[2]?.subject, "commit2");
+  assertEquals(log1[3]?.subject, "commit1");
+  await repo.branch.reset({ target: commit3, mode: "hard" });
+  const rebase2 = await repo.rebase.onto("main", { reapplyCherryPicks: true });
+  assertEquals(rebase2, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  const log2 = await repo.commit.log();
+  assertEquals(log2.length, 4);
+  assertEquals(log2[0]?.subject, "commit3");
+  assertEquals(log2[1]?.subject, "commit0");
+  assertEquals(log2[2]?.subject, "commit2");
+  assertEquals(log2[3]?.subject, "commit1");
+});
+
 Deno.test("git().rebase.onto({ resolve }) can resolve conflicts to our version", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
