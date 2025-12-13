@@ -6749,6 +6749,60 @@ Deno.test("git().rebase.onto({ branch }) can rebase a specific branch and exclud
   assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
 });
 
+Deno.test("git().rebase.onto({ empty }) drops empty commits", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "initial");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("feature", { create: commit1 });
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit3" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const commit4 = await repo.commit.create({ subject: "commit4" });
+  await repo.branch.switch("feature");
+  const rebase = await repo.rebase.onto("main", { empty: "drop" });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  const [rebased, ...rest] = await repo.commit.log();
+  assertEquals(rebased?.subject, "commit3");
+  assertEquals(rebased?.parents, [commit4.hash]);
+  assertEquals(rest, [commit4, commit1]);
+});
+
+Deno.test("git().rebase.onto({ empty }) keeps empty commits", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "initial");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("feature", { create: commit1 });
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit2" });
+  await Deno.writeTextFile(repo.path("file2"), "content2");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit3" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const commit4 = await repo.commit.create({ subject: "commit4" });
+  await repo.branch.switch("feature");
+  const rebase = await repo.rebase.onto("main", { empty: "keep" });
+  assertEquals(rebase, undefined);
+  assertEquals(await repo.rebase.active(), undefined);
+  const commits = await repo.commit.log();
+  assertEquals(commits.length, 4);
+  assertEquals(commits[0]?.subject, "commit3");
+  assertEquals(commits[1]?.subject, "commit2");
+  assertEquals(commits[2]?.subject, "commit4");
+  assertEquals(commits[3]?.subject, "commit1");
+});
+
 Deno.test("git().rebase.onto({ fastForward }) can disable fast-forward rebase", async () => {
   await using repo = await tempRepository({
     branch: "main",
