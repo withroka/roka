@@ -36,7 +36,6 @@
  *
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
- * @todo Add `git().revert.*`
  * @todo Add `git().bisect.*`
  * @todo Add `git().submodule.*`
  * @todo Add `git().reflog.*`
@@ -107,6 +106,8 @@ export interface Git {
   rebase: RebaseOperations;
   /** Cherry-pick operations. */
   cherrypick: CherryPickOperations;
+  /** Revert operations. */
+  revert: RevertOperations;
   /** Remote operations. */
   remote: RemoteOperations;
   /** Sync (fetch/pull/push) operations. */
@@ -264,7 +265,16 @@ export interface MergeOperations {
   active(): Promise<Merge | undefined>;
 }
 
-/** Rebase operations from {@linkcode Git.rebase}. */
+/**
+ * Rebase operations from {@linkcode Git.rebase}.
+ *
+ * The rebase process can be followed with the returned {@linkcode Rebase}
+ * object. The functions will return `undefined` if the rebase operation
+ * completes successfully.
+ *
+ * If an unexpected error occurs during the rebase process, a
+ * {@linkcode GitError} will be thrown, after aborting the rebase.
+ */
 export interface RebaseOperations {
   /** Rebases heads onto given base. */
   onto(base: Commitish, options?: RebaseOptions): Promise<Rebase | undefined>;
@@ -280,7 +290,16 @@ export interface RebaseOperations {
   active(): Promise<Rebase | undefined>;
 }
 
-/** Cherry-pick operations from {@linkcode Git.cherrypick}. */
+/**
+ * Cherry-pick operations from {@linkcode Git.cherrypick}.
+ *
+ * The cherry-pick process can be followed with the returned
+ * {@linkcode CherryPick} object. The functions will return `undefined` if the
+ * cherry-pick operation completes successfully.
+ *
+ * If an unexpected error occurs during the cherry-pick process, a
+ * {@linkcode GitError} will be thrown, after aborting the cherry-pick.
+ */
 export interface CherryPickOperations {
   /** Applies one or more commits to the current branch. */
   apply(
@@ -297,6 +316,34 @@ export interface CherryPickOperations {
   quit(): Promise<void>;
   /** Returns the current active cherry-pick operation, if any. */
   active(): Promise<CherryPick | undefined>;
+}
+
+/**
+ * Revert operations from {@linkcode Git.revert}.
+ *
+ * The revert process can be followed with the returned {@linkcode Revert}
+ * object. The functions will return `undefined` if the revert operation
+ * completes successfully.
+ *
+ * If an unexpected error occurs during the revert process, a
+ * {@linkcode GitError} will be thrown, after aborting the revert.
+ */
+export interface RevertOperations {
+  /** Reverts one or more commits by creating revert commits. */
+  apply(
+    commit: Commitish | Commitish[],
+    options?: RevertOptions,
+  ): Promise<Revert | undefined>;
+  /** Continues an ongoing revert operation with resolved conflicts. */
+  continue(): Promise<Revert | undefined>;
+  /** Skips current commit and continues with the next one. */
+  skip(): Promise<Revert | undefined>;
+  /** Aborts an ongoing revert operation. */
+  abort(): Promise<void>;
+  /** Quits an ongoing revert operation, keeping the working tree as is. */
+  quit(): Promise<void>;
+  /** Returns the current active revert operation, if any. */
+  active(): Promise<Revert | undefined>;
 }
 
 /** Remote operations from {@linkcode Git.remote}. */
@@ -991,6 +1038,14 @@ export interface Rebase {
 /** Result of a cherry-pick operation from {@linkcode Git.cherrypick}. */
 export interface CherryPick {
   /** Remaining commits to be cherry-picked. */
+  remaining: number;
+  /** List of unmerged files due to conflicts. */
+  conflicts?: string[];
+}
+
+/** Result of a revert operation from {@linkcode Git.revert}. */
+export interface Revert {
+  /** Remaining commits to be reverted. */
   remaining: number;
   /** List of unmerged files due to conflicts. */
   conflicts?: string[];
@@ -1814,6 +1869,15 @@ export interface CherryPickOptions extends ResolveOptions, SignOptions {
   allowEmpty?: boolean;
   /**
    * Create commit after cherry-pick.
+   * @default {true}
+   */
+  commit?: boolean;
+}
+
+/** Options for the {@linkcode RevertOperations.apply} function. */
+export interface RevertOptions extends ResolveOptions, SignOptions {
+  /**
+   * Create commit after revert.
    * @default {true}
    */
   commit?: boolean;
@@ -3109,29 +3173,19 @@ export function git(options?: GitOptions): Git {
             commitArg(options?.branch),
           )
         );
-        const rebase = await repo.rebase.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          // signing failure leaves a rebase in progress
-          if (rebase) await repo.rebase.abort();
-          throw error;
-        }
-        return rebase;
+        return sequence(repo.rebase, error);
       },
       async continue() {
         const { error } = await maybe(() =>
           run(gitOptions, "rebase", "--continue")
         );
-        const rebase = await repo.rebase.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          // signing failure leaves a rebase in progress
-          if (rebase) await repo.rebase.abort();
-          throw error;
-        }
-        return rebase;
+        return sequence(repo.rebase, error);
       },
       async skip() {
-        await run({ ...gitOptions, allowCode: [1] }, "rebase", "--skip");
-        return await repo.rebase.active();
+        const { error } = await maybe(() =>
+          run(gitOptions, "rebase", "--skip")
+        );
+        return sequence(repo.rebase, error);
       },
       async abort() {
         await run(gitOptions, "rebase", "--abort");
@@ -3197,27 +3251,19 @@ export function git(options?: GitOptions): Git {
             commitArg(commit),
           )
         );
-        const cherrypick = await repo.cherrypick.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          if (cherrypick) await repo.cherrypick.abort();
-          throw error;
-        }
-        return cherrypick;
+        return sequence(repo.cherrypick, error);
       },
       async continue() {
         const { error } = await maybe(() =>
           run(gitOptions, "cherry-pick", "--continue")
         );
-        const cherrypick = await repo.cherrypick.active();
-        if (error?.message.includes("gpg failed to sign")) {
-          if (cherrypick) await repo.cherrypick.abort();
-          throw error;
-        }
-        return cherrypick;
+        return sequence(repo.cherrypick, error);
       },
       async skip() {
-        await run({ ...gitOptions, allowCode: [1] }, "cherry-pick", "--skip");
-        return await repo.cherrypick.active();
+        const { error } = await maybe(() =>
+          run(gitOptions, "cherry-pick", "--skip")
+        );
+        return sequence(repo.cherrypick, error);
       },
       async abort() {
         await run(gitOptions, "cherry-pick", "--abort");
@@ -3243,6 +3289,65 @@ export function git(options?: GitOptions): Git {
         const remaining = todo.value
           ? todo.value.trim().split("\n")
             .filter((x) => x.trim().startsWith("pick"))
+            .length
+          : 1;
+        const conflicts = distinct(unmerged.split("\0").filter((x) => x));
+        return {
+          remaining,
+          ...conflicts.length > 0 && { conflicts },
+        };
+      },
+    },
+    revert: {
+      async apply(commit, options) {
+        const { error } = await maybe(() =>
+          run(
+            gitOptions,
+            ["revert", "--no-edit"],
+            flag(["--commit", "--no-commit"], options?.commit),
+            flag("--strategy-option", options?.resolve),
+            signFlag("commit", options?.sign),
+            commitArg(commit),
+          )
+        );
+        return sequence(repo.revert, error);
+      },
+      async continue() {
+        const { error } = await maybe(() =>
+          run(gitOptions, "revert", "--continue")
+        );
+        return sequence(repo.revert, error);
+      },
+      async skip() {
+        const { error } = await maybe(() =>
+          run(gitOptions, "revert", "--skip")
+        );
+        return sequence(repo.revert, error);
+      },
+      async abort() {
+        await run(gitOptions, "revert", "--abort");
+      },
+      async quit() {
+        await run(gitOptions, "revert", "--quit");
+      },
+      async active() {
+        const { error } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--verify", "REVERT_HEAD"])
+        );
+        if (error) return undefined;
+        const { value: gitDir } = await maybe(() =>
+          run(gitOptions, ["rev-parse", "--git-dir"])
+        );
+        if (!gitDir) return undefined;
+        const [todo, unmerged] = await Promise.all([
+          maybe(() =>
+            Deno.readTextFile(repo.path(gitDir.trim(), "sequencer/todo"))
+          ),
+          run(gitOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
+        ]);
+        const remaining = todo.value
+          ? todo.value.trim().split("\n")
+            .filter((x) => x.trim().startsWith("revert"))
             .length
           : 1;
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
@@ -3520,6 +3625,22 @@ async function run(
     }
     throw e;
   }
+}
+
+async function sequence<T>(
+  sequencer: {
+    abort(): Promise<void>;
+    quit(): Promise<void>;
+    active(): Promise<T | undefined>;
+  },
+  error: GitError | undefined,
+): Promise<T | undefined> {
+  const active = await sequencer.active();
+  if (error?.message?.match(/(^|\n)(fatal|gpg): /)) {
+    if (active) await sequencer.abort();
+    throw error;
+  }
+  return active;
 }
 
 function urlArg(url: SyncRemoteOptions["remote"]): string;
