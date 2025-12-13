@@ -7403,7 +7403,11 @@ Deno.test("git().cherrypick.apply({ mainline }) cherry-picks a merge commit", as
   assertEquals(await repo.merge.with("branch1"), undefined);
   const merged = await repo.commit.head();
   await repo.branch.switch("branch2", { create: commit1 });
-  await assertRejects(() => repo.cherrypick.apply(merged));
+  await assertRejects(
+    () => repo.cherrypick.apply(merged),
+    GitError,
+    "is a merge",
+  );
   await repo.cherrypick.apply(merged, { mainline: 1 });
   assertEquals(await repo.cherrypick.active(), undefined);
   const picked1 = await repo.commit.head();
@@ -7867,7 +7871,7 @@ Deno.test("git().revert.apply({ mainline }) reverts a merge commit", async () =>
   assertEquals(await repo.merge.with("branch1"), undefined);
   const merged = await repo.commit.head();
   await repo.branch.switch("branch2", { create: merged });
-  await assertRejects(() => repo.revert.apply(merged));
+  await assertRejects(() => repo.revert.apply(merged), GitError, "is a merge");
   await repo.revert.apply(merged, { mainline: 1 });
   assertEquals(await repo.revert.active(), undefined);
   const reverted1 = await repo.commit.head();
