@@ -1855,6 +1855,15 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    * @default {false}
    */
   merges?: boolean;
+  /**
+   * Reapply all commits, even if they are cherry-picks of upstream commits.
+   *
+   * - `true`: reapply all commits regardless of whether they're cherry-picks
+   * - `false`: scan upstream and drop detected cherry-picks (default)
+   *
+   * @default {false}
+   */
+  reapplyCherryPicks?: boolean;
 }
 
 /** Options for the {@linkcode CherryPickOperations.apply} function. */
@@ -3166,6 +3175,10 @@ export function git(options?: GitOptions): Git {
             ["rebase", "--no-stat"],
             flag("--force-rebase", options?.fastForward === false),
             flag(["--rebase-merges", "--no-rebase-merges"], options?.merges),
+            flag(
+              ["--reapply-cherry-picks", "--no-reapply-cherry-picks"],
+              options?.reapplyCherryPicks,
+            ),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             flag("--onto", options?.after !== undefined),
