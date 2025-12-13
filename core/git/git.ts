@@ -302,7 +302,7 @@ export interface CherryPickOperations {
 
 /** Revert operations from {@linkcode Git.revert}. */
 export interface RevertOperations {
-  /** Reverts one or more commits by creating new commits that undo their changes. */
+  /** Reverts one or more commits by creating revert commits. */
   apply(
     commit: Commitish | Commitish[],
     options?: RevertOptions,
@@ -1018,10 +1018,8 @@ export interface CherryPick {
 
 /** Result of a revert operation from {@linkcode Git.revert}. */
 export interface Revert {
-  /** Current step in the revert sequence. */
-  step: number;
-  /** Total commits being reverted. */
-  total: number;
+  /** Remaining commits to be reverted. */
+  remaining: number;
   /** List of unmerged files due to conflicts. */
   conflicts?: string[];
 }
@@ -3293,11 +3291,10 @@ export function git(options?: GitOptions): Git {
     },
     revert: {
       async apply(commit, options) {
-        const commits = Array.isArray(commit) ? commit : [commit];
         const { error } = await maybe(() =>
           run(
             gitOptions,
-            "revert",
+            ["revert", "--no-edit"],
             flag(["--commit", "--no-commit"], options?.commit),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
@@ -3305,19 +3302,6 @@ export function git(options?: GitOptions): Git {
           )
         );
         const revert = await repo.revert.active();
-        if (revert) {
-          const { value: gitDir } = await maybe(() =>
-            run(gitOptions, ["rev-parse", "--git-dir"])
-          );
-          if (gitDir) {
-            await maybe(() =>
-              Deno.writeTextFile(
-                repo.path(gitDir.trim(), "REVERT_TOTAL"),
-                commits.length.toString(),
-              )
-            );
-          }
-        }
         if (error?.message.includes("gpg failed to sign")) {
           if (revert) await repo.revert.abort();
           throw error;
@@ -3370,28 +3354,20 @@ export function git(options?: GitOptions): Git {
           run(gitOptions, ["rev-parse", "--git-dir"])
         );
         if (!gitDir) return undefined;
-        const [todo, totalFile, unmerged] = await Promise.all([
+        const [todo, unmerged] = await Promise.all([
           maybe(() =>
             Deno.readTextFile(repo.path(gitDir.trim(), "sequencer/todo"))
           ),
-          maybe(() =>
-            Deno.readTextFile(repo.path(gitDir.trim(), "REVERT_TOTAL"))
-          ),
           run(gitOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
         ]);
-        const todoLines = todo.value
+        const remaining = todo.value
           ? todo.value.trim().split("\n")
             .filter((x) => x.trim().startsWith("revert"))
-          : [];
-        const remaining = todoLines.length || 1;
-        const total = totalFile.value
-          ? Number(totalFile.value.trim())
-          : remaining;
-        const step = total - remaining + 1;
+            .length
+          : 1;
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
         return {
-          step,
-          total,
+          remaining,
           ...conflicts.length > 0 && { conflicts },
         };
       },
