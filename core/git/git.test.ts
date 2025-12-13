@@ -350,10 +350,7 @@ Deno.test("git().clone({ branch }) can clone without checkout", async () => {
     branch: null,
   });
   assertEquals(await repo.commit.head(), commit);
-  await assertRejects(
-    () => Deno.stat(repo.path("file")),
-    Deno.errors.NotFound,
-  );
+  await assertRejects(() => Deno.stat(repo.path("file")), Deno.errors.NotFound);
 });
 
 Deno.test("git().clone({ config }) applies to initialization", async () => {
@@ -7387,10 +7384,7 @@ Deno.test("git().cherrypick.apply({ sign }) rejects wrong key", async () => {
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
   assertEquals(await repo.diff.status(), []);
-  assertRejects(
-    () => Deno.readTextFile(repo.path("file2")),
-    Deno.errors.NotFound,
-  );
+  assertRejects(() => Deno.stat(repo.path("file2")), Deno.errors.NotFound);
 });
 
 Deno.test("git().cherrypick.apply({ mainline }) cherry-picks a merge commit", async () => {
@@ -7398,7 +7392,7 @@ Deno.test("git().cherrypick.apply({ mainline }) cherry-picks a merge commit", as
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
   const commit1 = await repo.commit.create({ subject: "commit1" });
-  await repo.branch.switch("branch", { create: true });
+  await repo.branch.switch("branch1", { create: true });
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
   await repo.commit.create({ subject: "commit2" });
@@ -7406,21 +7400,31 @@ Deno.test("git().cherrypick.apply({ mainline }) cherry-picks a merge commit", as
   await Deno.writeTextFile(repo.path("file3"), "content3");
   await repo.index.add("file3");
   await repo.commit.create({ subject: "commit3" });
-  const merge = await repo.merge.with("branch");
-  assertEquals(merge, undefined);
-  const [mergeCommit] = await repo.commit.log({ limit: 1 });
-  if (!mergeCommit) throw new Error("No merge commit found");
-  await repo.branch.switch("target", { create: commit1 });
-  const pick = await repo.cherrypick.apply(mergeCommit, { mainline: 1 });
-  assertEquals(pick, undefined);
+  assertEquals(await repo.merge.with("branch1"), undefined);
+  const merged = await repo.commit.head();
+  await repo.branch.switch("branch2", { create: commit1 });
+  await assertRejects(() => repo.cherrypick.apply(merged));
+  await repo.cherrypick.apply(merged, { mainline: 1 });
   assertEquals(await repo.cherrypick.active(), undefined);
-  const [picked, ...rest] = await repo.commit.log();
-  assertEquals(picked?.subject, "Merge branch 'branch'");
-  assertEquals(picked?.parents, [commit1.hash]);
-  assertEquals(rest, [commit1]);
-  assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.readTextFile(repo.path("file1")), "content1");
+  const picked1 = await repo.commit.head();
+  assertEquals(picked1?.subject, "Merge branch 'branch1'");
   assertEquals(await Deno.readTextFile(repo.path("file2")), "content2");
+  await assertRejects(
+    () => Deno.stat(repo.path("file3")),
+    Deno.errors.NotFound,
+  );
+  assertEquals(picked1?.parents, [commit1.hash]);
+  await repo.branch.switch("branch3", { create: commit1 });
+  await repo.cherrypick.apply(merged, { mainline: 2 });
+  assertEquals(await repo.cherrypick.active(), undefined);
+  const picked2 = await repo.commit.head();
+  assertEquals(picked2?.subject, "Merge branch 'branch1'");
+  assertEquals(picked2?.parents, [commit1.hash]);
+  assertEquals(await Deno.readTextFile(repo.path("file3")), "content3");
+  await assertRejects(
+    () => Deno.stat(repo.path("file2")),
+    Deno.errors.NotFound,
+  );
 });
 
 Deno.test("git().cherrypick.continue() completes cherry-pick after resolving conflicts", async () => {
@@ -7789,10 +7793,7 @@ Deno.test("git().revert.apply({ commit }) stages without committing", async () =
   assertEquals(await repo.diff.status(), [
     { path: "file", status: "deleted" },
   ]);
-  assertRejects(
-    () => Deno.readTextFile(repo.path("file")),
-    Deno.errors.NotFound,
-  );
+  assertRejects(() => Deno.stat(repo.path("file")), Deno.errors.NotFound);
 });
 
 Deno.test("git().revert.apply({ resolve }) can resolve conflicts to our version", async () => {
@@ -7855,33 +7856,37 @@ Deno.test("git().revert.apply({ mainline }) reverts a merge commit", async () =>
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await repo.index.add("file1");
   await repo.commit.create({ subject: "commit1" });
-  await repo.branch.switch("branch", { create: true });
+  await repo.branch.switch("branch1", { create: true });
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
-  const commit2 = await repo.commit.create({ subject: "commit2" });
+  await repo.commit.create({ subject: "commit2" });
   await repo.branch.switch("main");
   await Deno.writeTextFile(repo.path("file3"), "content3");
   await repo.index.add("file3");
-  const commit3 = await repo.commit.create({ subject: "commit3" });
-  const merge = await repo.merge.with("branch");
-  assertEquals(merge, undefined);
-  const [mergeCommit] = await repo.commit.log({ limit: 1 });
-  if (!mergeCommit) throw new Error("No merge commit found");
-  const revert = await repo.revert.apply(mergeCommit, { mainline: 1 });
-  assertEquals(revert, undefined);
+  await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.merge.with("branch1"), undefined);
+  const merged = await repo.commit.head();
+  await repo.branch.switch("branch2", { create: merged });
+  await assertRejects(() => repo.revert.apply(merged));
+  await repo.revert.apply(merged, { mainline: 1 });
   assertEquals(await repo.revert.active(), undefined);
-  const [reverted, ...rest] = await repo.commit.log({ limit: 5 });
-  assertEquals(reverted?.subject, "Revert \"Merge branch 'branch'\"");
-  assertSameElements(rest.slice(0, 3), [
-    (await repo.commit.log({ limit: 5 }))[1],
-    commit3,
-    commit2,
-  ]);
-  assertEquals(await repo.diff.status(), []);
-  assertEquals(await Deno.readTextFile(repo.path("file1")), "content1");
-  assertEquals(await Deno.readTextFile(repo.path("file3")), "content3");
+  const reverted1 = await repo.commit.head();
+  assertEquals(reverted1?.subject, "Revert \"Merge branch 'branch1'\"");
+  assertEquals(reverted1?.parents, [merged.hash]);
   await assertRejects(
-    () => Deno.readTextFile(repo.path("file2")),
+    () => Deno.stat(repo.path("file2")),
+    Deno.errors.NotFound,
+  );
+  assertEquals(await Deno.readTextFile(repo.path("file3")), "content3");
+  await repo.branch.switch("branch3", { create: merged });
+  await repo.revert.apply(merged, { mainline: 2 });
+  assertEquals(await repo.revert.active(), undefined);
+  const reverted2 = await repo.commit.head();
+  assertEquals(reverted2?.subject, "Revert \"Merge branch 'branch1'\"");
+  assertEquals(reverted2?.parents, [merged.hash]);
+  assertEquals(await Deno.readTextFile(repo.path("file2")), "content2");
+  await assertRejects(
+    () => Deno.stat(repo.path("file3")),
     Deno.errors.NotFound,
   );
 });

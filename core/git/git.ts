@@ -1893,10 +1893,10 @@ export interface CherryPickOptions extends ResolveOptions, SignOptions {
    */
   commit?: boolean;
   /**
-   * Parent number (starting from 1) to use as the mainline when
-   * cherry-picking a merge commit.
+   * Parent number (starting from 1) to use as the mainline when cherry-picking
+   * a merge commit.
    *
-   * Required for merge commits; ignored for regular commits.
+   * Required for merge commits, ignored for regular commits.
    */
   mainline?: number;
 }
@@ -1909,10 +1909,10 @@ export interface RevertOptions extends ResolveOptions, SignOptions {
    */
   commit?: boolean;
   /**
-   * Parent number (starting from 1) to use as the mainline when
-   * reverting a merge commit.
+   * Parent number (starting from 1) to use as the mainline when reverting a
+   * merge commit.
    *
-   * Required for merge commits; ignored for regular commits.
+   * Required for merge commits, ignored for regular commits.
    */
   mainline?: number;
 }
@@ -3283,9 +3283,9 @@ export function git(options?: GitOptions): Git {
           run(
             gitOptions,
             "cherry-pick",
-            flag("--mainline", options?.mainline),
             flag("--allow-empty", options?.allowEmpty),
             flag(["--commit", "--no-commit"], options?.commit),
+            flag("--mainline", options?.mainline),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             commitArg(commit),
@@ -3344,8 +3344,8 @@ export function git(options?: GitOptions): Git {
           run(
             gitOptions,
             ["revert", "--no-edit"],
-            flag("--mainline", options?.mainline),
             flag(["--commit", "--no-commit"], options?.commit),
+            flag("--mainline", options?.mainline),
             flag("--strategy-option", options?.resolve),
             signFlag("commit", options?.sign),
             commitArg(commit),
