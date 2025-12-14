@@ -16,6 +16,3 @@ if ! command -v deno >/dev/null; then
     echo "Installed deno"
   fi
 fi
-
-echo "Deno path: $(command -v deno)"
-echo "Deno version: $(deno --version | head -n 1)"
