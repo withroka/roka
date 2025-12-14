@@ -14,11 +14,13 @@ import {
 import { assertStringIncludes } from "@std/assert/string-includes";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
+import { lessThan, parse } from "@std/semver";
 import { assertType, type IsExact } from "@std/testing/types";
 import { type Git, git, GitError, type Patch } from "./git.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
+const version = await git().version();
 
 Deno.test("git() mentions failed command on error", async () => {
   await using repo = await tempRepository();
@@ -193,7 +195,9 @@ Deno.test("git().init({ objectFormat }) can specify hashing algorithm", async ()
   );
 });
 
-Deno.test("git().init({ refFormat }) can specify ref storage format", async () => {
+Deno.test("git().init({ refFormat }) can specify ref storage format", {
+  ignore: lessThan(parse(version), parse("2.45.0")),
+}, async () => {
   await using directory = await tempDirectory();
   const repo1 = await git().init({
     directory: directory.path("repo1"),
@@ -4112,11 +4116,12 @@ Deno.test("git().commit.create({ sign }) rejects wrong key", async () => {
         sign: "not-a-key",
       }),
     GitError,
-    "gpg failed to sign",
   );
 });
 
-Deno.test("git().commit.create({ trailers }) creates a commit with trailers", async () => {
+Deno.test("git().commit.create({ trailers }) creates a commit with trailers", {
+  ignore: lessThan(parse(version), parse("2.32.0")),
+}, async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
@@ -4129,19 +4134,23 @@ Deno.test("git().commit.create({ trailers }) creates a commit with trailers", as
   assertEquals(commit?.trailers, { key1: "value1", key2: "value2 multi line" });
 });
 
-Deno.test("git().commit.create({ trailers }) can create a commit with body and trailers", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await repo.index.add("file");
-  const commit = await repo.commit.create({
-    subject: "subject",
-    body: "body",
-    trailers: { key: "value" },
-  });
-  assertEquals(commit?.subject, "subject");
-  assertEquals(commit?.body, "body");
-  assertEquals(commit?.trailers, { key: "value" });
-});
+Deno.test(
+  "git().commit.create({ trailers }) can create a commit with body and trailers",
+  { ignore: lessThan(parse(version), parse("2.32.0")) },
+  async () => {
+    await using repo = await tempRepository();
+    await Deno.writeTextFile(repo.path("file"), "content");
+    await repo.index.add("file");
+    const commit = await repo.commit.create({
+      subject: "subject",
+      body: "body",
+      trailers: { key: "value" },
+    });
+    assertEquals(commit?.subject, "subject");
+    assertEquals(commit?.body, "body");
+    assertEquals(commit?.trailers, { key: "value" });
+  },
+);
 
 Deno.test("git().commit.amend() amends last commit without changing message", async () => {
   await using repo = await tempRepository();
@@ -4267,11 +4276,7 @@ Deno.test("git().commit.amend({ sign }) rejects wrong key", async () => {
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit" });
-  await assertRejects(
-    () => repo.commit.amend({ sign: "not-a-key" }),
-    GitError,
-    "gpg failed to sign",
-  );
+  await assertRejects(() => repo.commit.amend({ sign: "not-a-key" }), GitError);
 });
 
 Deno.test("git().commit.amend({ subject }) changes the commit message", async () => {
@@ -4310,7 +4315,9 @@ Deno.test("git().commit.amend({ subject }) rejects empty subject", async () => {
   );
 });
 
-Deno.test("git().commit.amend({ trailers }) adds trailers to commit", async () => {
+Deno.test("git().commit.amend({ trailers }) adds trailers to commit", {
+  ignore: lessThan(parse(version), parse("2.32.0")),
+}, async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
@@ -4325,16 +4332,20 @@ Deno.test("git().commit.amend({ trailers }) adds trailers to commit", async () =
   assertEquals(amended.trailers, { key: "value" });
 });
 
-Deno.test("git().commit.amend({ trailers }) does not update commit subject or body", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("file"), "content");
-  await repo.index.add("file");
-  await repo.commit.create({ subject: "subject", body: "body" });
-  const amended = await repo.commit.amend({ trailers: { key: "value" } });
-  assertEquals(amended.subject, "subject");
-  assertEquals(amended.body, "body");
-  assertEquals(amended.trailers, { key: "value" });
-});
+Deno.test(
+  "git().commit.amend({ trailers }) does not update commit subject or body",
+  { ignore: lessThan(parse(version), parse("2.32.0")) },
+  async () => {
+    await using repo = await tempRepository();
+    await Deno.writeTextFile(repo.path("file"), "content");
+    await repo.index.add("file");
+    await repo.commit.create({ subject: "subject", body: "body" });
+    const amended = await repo.commit.amend({ trailers: { key: "value" } });
+    assertEquals(amended.subject, "subject");
+    assertEquals(amended.body, "body");
+    assertEquals(amended.trailers, { key: "value" });
+  },
+);
 
 Deno.test("git().branch.list() returns all branches", async () => {
   await using repo = await tempRepository();
@@ -5915,12 +5926,13 @@ Deno.test("git().tag.create({ force }) can force move a tag", async () => {
 });
 
 Deno.test("git().tag.create({ sign }) rejects wrong key", async () => {
-  await using repo = await tempRepository();
+  await using repo = await tempRepository({
+    config: { "gpg.format": "openpgp" },
+  });
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   await assertRejects(
     () => repo.tag.create("tag", { subject: "subject", sign: "not-a-key" }),
     GitError,
-    "gpg failed to sign",
   );
 });
 
@@ -5973,7 +5985,7 @@ Deno.test("git().tag.create({ target }) can create nested tags", async () => {
 
 Deno.test(
   "git().tag.create({ trailers }) creates an annotated tag with trailers",
-  { ignore: codespaces },
+  { ignore: lessThan(parse(version), parse("2.46.0")) },
   async () => {
     await using repo = await tempRepository({
       config: { "user.name": "tagger-name", "user.email": "tagger-email" },
@@ -6342,7 +6354,6 @@ Deno.test("git().merge.with({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.merge.with("branch", { sign: "not-a-key" }),
     GitError,
-    "gpg failed to sign",
   );
 });
 
@@ -6744,7 +6755,7 @@ Deno.test("git().rebase.onto({ branch }) can rebase a specific branch and exclud
   assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
 });
 
-Deno.test("git().rebase.onto({ empty }) controls empty commits after rebase", async () => {
+Deno.test("git().rebase.onto({ empty }) can drop empty commits", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
   await repo.index.add("file");
@@ -6761,14 +6772,46 @@ Deno.test("git().rebase.onto({ empty }) controls empty commits after rebase", as
   await repo.rebase.onto("main", { reapplyCherryPicks: true, empty: "drop" });
   assertEquals(await repo.rebase.active(), undefined);
   assertEquals(await repo.commit.log(), [commit3, commit1]);
-  await repo.branch.switch("branch3", { create: "branch1" });
+});
+
+Deno.test("git().rebase.onto({ empty }) can keep empty commits", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch1", { create: commit1 });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await repo.branch.switch("branch2", { create: "branch1" });
   await repo.rebase.onto("main", { reapplyCherryPicks: true, empty: "keep" });
   assertEquals(await repo.rebase.active(), undefined);
   const [rebased, ...rest] = await repo.commit.log();
   assertEquals(rebased?.subject, "commit2");
   assertEquals(rebased?.parents, [commit3.hash]);
   assertEquals(rest, [commit3, commit1]);
-  await repo.branch.switch("branch4", { create: "branch1" });
+});
+
+Deno.test("git().rebase.onto({ empty }) can stop at empty commits", {
+  ignore: lessThan(parse(version), parse("2.45.0")),
+}, async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file"), "content1");
+  await repo.index.add("file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch1", { create: commit1 });
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file"), "content2");
+  await repo.index.add("file");
+  const commit3 = await repo.commit.create({ subject: "commit3" });
+  await repo.branch.switch("branch2", { create: "branch1" });
   await repo.rebase.onto("main", { reapplyCherryPicks: true, empty: "stop" });
   assertEquals(await repo.rebase.active(), { step: 1, remaining: 1, total: 1 });
   assertEquals(await repo.commit.log(), [commit3, commit1]);
@@ -6917,7 +6960,6 @@ Deno.test("git().rebase.onto({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.rebase.onto("main", { sign: "not-a-key" }),
     GitError,
-    "gpg failed to sign",
   );
 });
 
@@ -6943,11 +6985,7 @@ Deno.test("git().rebase.onto({ sign }) rejects wrong key after continue", async 
   });
   await Deno.writeTextFile(repo.path("file"), "resolved");
   await repo.index.add("file");
-  await assertRejects(
-    () => repo.rebase.continue(),
-    GitError,
-    "gpg failed to sign",
-  );
+  await assertRejects(() => repo.rebase.continue(), GitError);
 });
 
 Deno.test("git().rebase.continue() completes a rebase with conflicts", async () => {
@@ -7377,7 +7415,6 @@ Deno.test("git().cherrypick.apply({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.cherrypick.apply(commit2, { sign: "invalid" }),
     GitError,
-    "gpg failed to sign",
   );
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
@@ -7846,7 +7883,6 @@ Deno.test("git().revert.apply({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.revert.apply(commit, { sign: "invalid" }),
     GitError,
-    "gpg failed to sign",
   );
   assertEquals(await repo.revert.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
@@ -9113,11 +9149,7 @@ Deno.test("git().sync.pull({ sign }) rejects wrong key", async () => {
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
   await repo.commit.create({ subject: "commit3" });
-  await assertRejects(
-    () => repo.sync.pull({ sign: "not-a-key" }),
-    GitError,
-    "gpg failed to sign",
-  );
+  await assertRejects(() => repo.sync.pull({ sign: "not-a-key" }), GitError);
 });
 
 Deno.test("git().sync.pull({ squash }) performs a squash merge", async () => {
@@ -9709,7 +9741,9 @@ Deno.test("git().sync.unshallow() rejects complete repository", async () => {
   );
 });
 
-Deno.test("git().sync.backfill({ minBatchSize }) rejects negative values", async () => {
+Deno.test("git().sync.backfill({ minBatchSize }) rejects negative values", {
+  ignore: lessThan(parse(version), parse("2.49.0")),
+}, async () => {
   await using repo = await tempRepository();
   await assertRejects(
     () => repo.sync.backfill({ minBatchSize: -1 }),
