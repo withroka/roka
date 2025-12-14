@@ -1080,10 +1080,11 @@ class Runner implements AsyncDisposable {
     const process = new Deno.Command("deno", {
       cwd,
       args,
-      // passthrough for testing
       env: {
+        // passthrough for testing
         NO_COLOR: Deno.env.get("NO_COLOR") ?? "",
         FORCE_COLOR: Deno.env.get("FORCE_COLOR") ?? "",
+        RUST_BACKTRACE: "0",
       },
       stdin: "null",
       stdout: "piped",
