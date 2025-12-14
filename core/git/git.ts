@@ -63,6 +63,7 @@ import {
 } from "@std/collections";
 import { deepMerge } from "@std/collections/deep-merge";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
+import { canParse, greaterOrEqual, parse } from "@std/semver";
 
 /**
  * An error thrown by the `git` package.
@@ -82,6 +83,8 @@ export class GitError extends Error {
 export interface Git {
   /** Returns the repository directory, with optional relative children. */
   path(...parts: string[]): string;
+  /** Returns the installed git version. */
+  version(): Promise<string>;
   /** Initializes a new git repository, or reinitialize an existing one. */
   init(options?: InitOptions): Promise<Git>;
   /** Clones a remote repository. */
@@ -385,7 +388,7 @@ export interface SyncOperations {
   push(options?: SyncPushOptions): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
   unshallow(options?: SyncRemoteOptions): Promise<void>;
-  /** Fetches missing objects in a partial clone. */
+  /** Fetches missing objects in a partial clone (available since git 2.49). */
   backfill(options?: SyncBackfillOptions): Promise<void>;
 }
 
@@ -1132,7 +1135,12 @@ export interface MessageOptions {
    * unless explicitly set during the amend call.
    */
   body?: string;
-  /** Message trailers. */
+  /**
+   * Message trailers.
+   *
+   * Commit trailers are available since git 2.32. Tag trailers are available
+   * since git 2.46.
+   */
   trailers?: Record<string, string>;
 }
 
@@ -1212,7 +1220,7 @@ export interface InitOptions extends RepositoryOptions {
    */
   objectFormat?: "sha1" | "sha256";
   /**
-   * Specify ref storage format.
+   * Specify ref storage format (available since git 2.45).
    * @default {"files"}
    */
   refFormat?: "files" | "reftable";
@@ -1406,7 +1414,6 @@ export interface DiffOptions {
   location?: "index" | "worktree" | "both";
   /**
    * Include changes since the given commit.
-   *
    * @default {"HEAD"}
    */
   from?: Commitish;
@@ -1847,6 +1854,8 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    * - `"drop"`: drop commits that become empty (default)
    * - `"keep"`: keep commits even if they become empty
    * - `"stop"`: stop the rebase when an empty commit is encountered
+   *
+   * The `"stop"` value is available since git 2.45.
    *
    * @default {"drop"}
    */
@@ -2345,11 +2354,22 @@ export interface SyncBackfillOptions {
  * @returns A {@linkcode Git} instance for the given repository.
  */
 export function git(options?: GitOptions): Git {
+  let cachedVersion: string | undefined;
   const directory = resolve(options?.cwd ?? ".");
   const gitOptions = options ?? {};
   const repo: Git = {
     path(...parts: string[]) {
       return join(directory, ...parts);
+    },
+    async version() {
+      if (cachedVersion !== undefined) return cachedVersion;
+      const output = await run(gitOptions, "--version");
+      const match = output.trim().match(/git version (?<version>\S+)/);
+      cachedVersion = match?.groups?.version;
+      if (!cachedVersion || !canParse(cachedVersion)) {
+        throw new GitError("Cannot determine git version");
+      }
+      return cachedVersion;
     },
     async init(options) {
       await run(
@@ -2398,7 +2418,7 @@ export function git(options?: GitOptions): Git {
         {
           ...gitOptions,
           config: { ...gitOptions?.config, ...options?.config },
-          stderr: true,
+          outputStderr: true,
         },
         "clone",
         configFlags(options?.config, "--config"),
@@ -2440,7 +2460,11 @@ export function git(options?: GitOptions): Git {
       async list(options?: ConfigOptions) {
         const output = await run(
           gitOptions,
-          ["config", "list"],
+          versionedArgs(
+            await repo.version(),
+            ["2.46.0", ["config", "list"]],
+            [undefined, ["config", "--list"]],
+          ),
           configSourceFlag(options),
         );
         const lines = output.split("\n").filter((x) => x);
@@ -2465,8 +2489,11 @@ export function git(options?: GitOptions): Git {
         const [type] = schema?.type?.length === 1 ? schema.type : [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
-          ["config", "get"],
-          "--all",
+          versionedArgs(
+            await repo.version(),
+            ["2.46.0", ["config", "get", "--all"]],
+            [undefined, ["config", "--get-all"]],
+          ),
           ...type === "boolean" ? ["--bool"] : [],
           ...type === "number" ? ["--int"] : [],
           configSourceFlag(options),
@@ -2480,7 +2507,11 @@ export function git(options?: GitOptions): Git {
         if (!Array.isArray(value)) {
           await run(
             gitOptions,
-            ["config", "set", "--all"],
+            versionedArgs(
+              await repo.version(),
+              ["2.46.0", ["config", "set", "--all"]],
+              [undefined, ["config", "--replace-all"]],
+            ),
             configSourceFlag(options),
             key,
             `${value}`,
@@ -2488,7 +2519,11 @@ export function git(options?: GitOptions): Git {
         } else {
           await run(
             { ...gitOptions, allowCode: [5] },
-            ["config", "unset", "--all"],
+            versionedArgs(
+              await repo.version(),
+              ["2.46.0", ["config", "unset", "--all"]],
+              [undefined, ["config", "--unset-all"]],
+            ),
             configSourceFlag(options),
             key,
           );
@@ -2507,7 +2542,11 @@ export function git(options?: GitOptions): Git {
       async unset(key, options?: ConfigOptions) {
         await run(
           { ...gitOptions, allowCode: [5] },
-          ["config", "unset", "--all"],
+          versionedArgs(
+            await repo.version(),
+            ["2.46.0", ["config", "unset", "--all"]],
+            [undefined, ["config", "--unset-all"]],
+          ),
           configSourceFlag(options),
           key,
         );
@@ -2620,8 +2659,8 @@ export function git(options?: GitOptions): Git {
         function parseStatus(output: string) {
           const entries = output.split("\0").filter((x) => x);
           const result: Record<string, Status> = {};
-          let rename: string | undefined = undefined;
-          let status: Patch["status"] | undefined = undefined;
+          let rename: string | undefined;
+          let status: Patch["status"] | undefined;
           for (
             const [entry, next] of slidingWindows(entries, 2, { partial: true })
           ) {
@@ -2757,7 +2796,7 @@ export function git(options?: GitOptions): Git {
               };
             });
             const conflicts: Conflict[] = [];
-            let lastConflict: Conflict | undefined = undefined;
+            let lastConflict: Conflict | undefined;
             let contentSource: string[] | undefined;
             for (const hunk of hunks) {
               for (const line of hunk.lines) {
@@ -2880,7 +2919,9 @@ export function git(options?: GitOptions): Git {
           flag("--allow-empty", options?.allowEmpty),
           flag("--allow-empty-message", options?.allowEmptyMessage),
           flag("--author", userArg(options?.author)),
-          signFlag("commit", options?.sign),
+          flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
+            equals: true,
+          }),
           "--",
           options?.path,
         );
@@ -2912,7 +2953,9 @@ export function git(options?: GitOptions): Git {
           flag("--allow-empty", options?.allowEmpty),
           flag("--no-edit", !edited),
           flag("--author", userArg(options?.author), { equals: true }),
-          signFlag("commit", options?.sign),
+          flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
+            equals: true,
+          }),
           "--",
           options?.path,
         );
@@ -3131,6 +3174,12 @@ export function git(options?: GitOptions): Git {
         return found;
       },
       async create(name, options): Promise<Tag> {
+        const sign = typeof options?.sign === "boolean"
+          ? options.sign
+          : undefined;
+        const localUser = typeof options?.sign === "string"
+          ? options.sign
+          : undefined;
         await run(
           gitOptions,
           "tag",
@@ -3138,7 +3187,8 @@ export function git(options?: GitOptions): Git {
           flag("--message", options?.body, { equals: true }),
           trailerFlag(options?.trailers),
           flag("--force", options?.force),
-          signFlag("tag", options?.sign),
+          flag(["--sign", "--no-sign"], sign),
+          flag("--local-user", localUser, { equals: true }),
           name,
           peeledArg(commitArg(options?.target)),
         );
@@ -3162,7 +3212,9 @@ export function git(options?: GitOptions): Git {
           flag("--ff", options?.fastForward === true),
           flag("--ff-only", options?.fastForward === "only"),
           flag("--strategy-option", options?.resolve),
-          signFlag("commit", options?.sign),
+          flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
+            equals: true,
+          }),
           flag("--squash", options?.squash),
           commitArg(source),
         );
@@ -3205,7 +3257,9 @@ export function git(options?: GitOptions): Git {
               options?.reapplyCherryPicks,
             ),
             flag("--strategy-option", options?.resolve),
-            signFlag("commit", options?.sign),
+            flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
+              equals: true,
+            }),
             flag("--onto", options?.after !== undefined),
             commitArg(base),
             commitArg(options?.after),
@@ -3287,7 +3341,9 @@ export function git(options?: GitOptions): Git {
             flag(["--commit", "--no-commit"], options?.commit),
             flag("--mainline", options?.mainline),
             flag("--strategy-option", options?.resolve),
-            signFlag("commit", options?.sign),
+            flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
+              equals: true,
+            }),
             commitArg(commit),
           )
         );
@@ -3347,7 +3403,9 @@ export function git(options?: GitOptions): Git {
             flag(["--commit", "--no-commit"], options?.commit),
             flag("--mainline", options?.mainline),
             flag("--strategy-option", options?.resolve),
-            signFlag("commit", options?.sign),
+            flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
+              equals: true,
+            }),
             commitArg(commit),
           )
         );
@@ -3566,7 +3624,9 @@ export function git(options?: GitOptions): Git {
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
           }),
-          signFlag("commit", options?.sign),
+          flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
+            equals: true,
+          }),
           flag("--squash", options?.squash),
           flag("--no-tags", options?.tags === "none"),
           flag("--tags", options?.tags === "all"),
@@ -3631,14 +3691,21 @@ export function git(options?: GitOptions): Git {
   return repo;
 }
 
+interface RunOptions extends GitOptions {
+  versioned?: [...[string | undefined, string[]][]];
+  allowCode?: number[];
+  outputStderr?: boolean;
+}
+
 async function run(
-  options: GitOptions & { allowCode?: number[]; stderr?: boolean },
+  options: RunOptions,
   ...commandArgs: (string | string[] | undefined)[]
 ): Promise<string> {
+  const { cwd, config, allowCode, outputStderr } = options;
   const runArgs = commandArgs.flat().filter((x) => x !== undefined);
   const fullArgs = [
-    ...options.cwd !== undefined ? ["-C", normalize(options.cwd)] : [],
-    ...configFlags(options.config, "-c"),
+    ...cwd !== undefined ? ["-C", normalize(cwd)] : [],
+    ...configFlags(config, "-c"),
     "--no-pager",
     ...runArgs,
   ];
@@ -3650,14 +3717,14 @@ async function run(
   });
   try {
     const { code, stdout, stderr } = await command.output();
-    if (code !== 0 && !(options.allowCode?.includes(code))) {
+    if (code !== 0 && !(allowCode?.includes(code))) {
       const error = new TextDecoder().decode(stderr.length ? stderr : stdout);
       throw new GitError(
         `Error running git command: ${runArgs[0]}\n\n${error}`,
         { cause: { command: "git", args: fullArgs, code } },
       );
     }
-    return new TextDecoder().decode(options?.stderr ? stderr : stdout);
+    return new TextDecoder().decode(outputStderr ? stderr : stdout);
   } catch (e: unknown) {
     if (e instanceof Deno.errors.NotCapable) {
       throw new GitError("Permission error (use `--allow-run=git`)", {
@@ -3677,11 +3744,24 @@ async function sequence<T>(
   error: GitError | undefined,
 ): Promise<T | undefined> {
   const active = await sequencer.active();
-  if (error?.message?.match(/(^|\n)(fatal|gpg): /)) {
+  if (error?.message?.match(/(^|\n)(fatal|gpg|error: signing failed): /i)) {
     if (active) await sequencer.abort();
     throw error;
   }
   return active;
+}
+
+function versionedArgs(
+  version: string,
+  ...args: [string | undefined, string[]][]
+) {
+  const found = args.find((variant) => {
+    if (variant[0] === undefined) return true;
+    assertExists(version, "Cannot determine git version");
+    return greaterOrEqual(parse(version), parse(variant[0]));
+  });
+  assertExists(found, "No matching git version");
+  return found[1];
 }
 
 function urlArg(url: SyncRemoteOptions["remote"]): string;
@@ -3819,21 +3899,6 @@ function trailerFlag(trailers: Record<string, string> | undefined): string[] {
   return Object.entries(trailers).flatMap(([token, value]) =>
     flag("--trailer", `${token}: ${value}`)
   );
-}
-
-function signFlag(
-  type: "commit" | "tag",
-  sign: boolean | string | undefined,
-): string[] {
-  if (sign === undefined) return [];
-  if (type === "tag") {
-    if (sign === false) return ["--no-sign"];
-    if (sign === true) return ["--sign"];
-    return flag("--local-user", sign, { equals: true });
-  }
-  if (sign === false) return ["--no-gpg-sign"];
-  if (sign === true) return ["--gpg-sign"];
-  return flag("--gpg-sign", sign, { equals: true });
 }
 
 function pickaxeFlags(pickaxe: string | Pickaxe | undefined): string[] {
