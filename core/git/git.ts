@@ -63,7 +63,7 @@ import {
 } from "@std/collections";
 import { deepMerge } from "@std/collections/deep-merge";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
-import { greaterOrEqual, parse } from "@std/semver";
+import { canParse, greaterOrEqual, parse } from "@std/semver";
 
 /**
  * An error thrown by the `git` package.
@@ -2354,7 +2354,7 @@ export interface SyncBackfillOptions {
  * @returns A {@linkcode Git} instance for the given repository.
  */
 export function git(options?: GitOptions): Git {
-  let cachedVersion: string | undefined = undefined;
+  let cachedVersion: string | undefined;
   const directory = resolve(options?.cwd ?? ".");
   const gitOptions = options ?? {};
   const repo: Git = {
@@ -2364,11 +2364,11 @@ export function git(options?: GitOptions): Git {
     async version() {
       if (cachedVersion !== undefined) return cachedVersion;
       const output = await run(gitOptions, "--version");
-      const match = output.trim().match(
-        /git version (?<version>\d+\.\d+\.\d+)/,
-      );
+      const match = output.trim().match(/git version (?<version>\S+)/);
       cachedVersion = match?.groups?.version;
-      if (!cachedVersion) throw new GitError("Cannot determine git version");
+      if (!cachedVersion || !canParse(cachedVersion)) {
+        throw new GitError("Cannot determine git version");
+      }
       return cachedVersion;
     },
     async init(options) {
@@ -2659,8 +2659,8 @@ export function git(options?: GitOptions): Git {
         function parseStatus(output: string) {
           const entries = output.split("\0").filter((x) => x);
           const result: Record<string, Status> = {};
-          let rename: string | undefined = undefined;
-          let status: Patch["status"] | undefined = undefined;
+          let rename: string | undefined;
+          let status: Patch["status"] | undefined;
           for (
             const [entry, next] of slidingWindows(entries, 2, { partial: true })
           ) {
@@ -2796,7 +2796,7 @@ export function git(options?: GitOptions): Git {
               };
             });
             const conflicts: Conflict[] = [];
-            let lastConflict: Conflict | undefined = undefined;
+            let lastConflict: Conflict | undefined;
             let contentSource: string[] | undefined;
             for (const hunk of hunks) {
               for (const line of hunk.lines) {
