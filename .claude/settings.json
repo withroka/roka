@@ -1,0 +1,22 @@
+{
+  "env": {
+    "DISABLE_ERROR_REPORTING": "1",
+    "DISABLE_TELEMETRY": "1"
+  },
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "startup",
+      "hooks": [{
+        "type": "command",
+        "command": "[ -f \"$CLAUDE_PROJECT_DIR/AGENTS.md\" ] && ln -sf \"$CLAUDE_PROJECT_DIR/AGENTS.md\" \"$CLAUDE_PROJECT_DIR/CLAUDE.md\""
+      }, {
+        "type": "command",
+        "command": "[ -d \"$CLAUDE_PROJECT_DIR/.github/agents\" ] && ln -sf \"$CLAUDE_PROJECT_DIR/.github/agents\" \"$CLAUDE_PROJECT_DIR/.claude/agents\""
+      }, {
+        "type": "command",
+        "command": "command -v deno >/dev/null || (curl -fsSL https://deno.land/install.sh | sh && (echo 'export PATH=\"$PATH:$HOME/.deno/bin\"' >> \"$CLAUDE_ENV_FILE\"))"
+      }]
+    }]
+  },
+  "alwaysThinkingEnabled": true
+}
