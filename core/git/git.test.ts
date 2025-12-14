@@ -4116,6 +4116,7 @@ Deno.test("git().commit.create({ sign }) rejects wrong key", async () => {
         sign: "not-a-key",
       }),
     GitError,
+    "signing",
   );
 });
 
@@ -4276,7 +4277,11 @@ Deno.test("git().commit.amend({ sign }) rejects wrong key", async () => {
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit" });
-  await assertRejects(() => repo.commit.amend({ sign: "not-a-key" }), GitError);
+  await assertRejects(
+    () => repo.commit.amend({ sign: "not-a-key" }),
+    GitError,
+    "signing",
+  );
 });
 
 Deno.test("git().commit.amend({ subject }) changes the commit message", async () => {
@@ -5933,6 +5938,7 @@ Deno.test("git().tag.create({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.tag.create("tag", { subject: "subject", sign: "not-a-key" }),
     GitError,
+    "signing",
   );
 });
 
@@ -6354,6 +6360,7 @@ Deno.test("git().merge.with({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.merge.with("branch", { sign: "not-a-key" }),
     GitError,
+    "signing",
   );
 });
 
@@ -6960,6 +6967,7 @@ Deno.test("git().rebase.onto({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.rebase.onto("main", { sign: "not-a-key" }),
     GitError,
+    "signing",
   );
 });
 
@@ -6985,7 +6993,7 @@ Deno.test("git().rebase.onto({ sign }) rejects wrong key after continue", async 
   });
   await Deno.writeTextFile(repo.path("file"), "resolved");
   await repo.index.add("file");
-  await assertRejects(() => repo.rebase.continue(), GitError);
+  await assertRejects(() => repo.rebase.continue(), GitError, "signing");
 });
 
 Deno.test("git().rebase.continue() completes a rebase with conflicts", async () => {
@@ -7415,6 +7423,7 @@ Deno.test("git().cherrypick.apply({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.cherrypick.apply(commit2, { sign: "invalid" }),
     GitError,
+    "signing",
   );
   assertEquals(await repo.cherrypick.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
@@ -7883,6 +7892,7 @@ Deno.test("git().revert.apply({ sign }) rejects wrong key", async () => {
   await assertRejects(
     () => repo.revert.apply(commit, { sign: "invalid" }),
     GitError,
+    "signing",
   );
   assertEquals(await repo.revert.active(), undefined);
   assertEquals(await repo.commit.log(), [commit]);
@@ -9149,7 +9159,11 @@ Deno.test("git().sync.pull({ sign }) rejects wrong key", async () => {
   await Deno.writeTextFile(repo.path("file2"), "content2");
   await repo.index.add("file2");
   await repo.commit.create({ subject: "commit3" });
-  await assertRejects(() => repo.sync.pull({ sign: "not-a-key" }), GitError);
+  await assertRejects(
+    () => repo.sync.pull({ sign: "not-a-key" }),
+    GitError,
+    "signing",
+  );
 });
 
 Deno.test("git().sync.pull({ squash }) performs a squash merge", async () => {
