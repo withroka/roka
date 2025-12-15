@@ -3668,7 +3668,7 @@ Deno.test("git().commit.log({ follow }) tracks renames", async () => {
   assertEquals(await repo.commit.log({ path: "new.file" }), [commit2]);
   assertEquals(
     await repo.commit.log({ path: "new.file", follow: true }),
-    [ commit2, commit1 ],
+    [commit2, commit1],
   );
 });
 
