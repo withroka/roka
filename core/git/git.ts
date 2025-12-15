@@ -1522,6 +1522,8 @@ export interface CommitLogOptions {
    * Continue listing history across renames.
    *
    * Requires exactly one path in {@linkcode CommitLogOptions.path}.
+   *
+   * @default {false}
    */
   follow?: boolean;
   /**
