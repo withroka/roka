@@ -8,7 +8,7 @@
       "matcher": "startup|resume",
       "hooks": [{
         "type": "command",
-        "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/startup.sh\""
+        "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/startup.sh\""
       }]
     }]
   },
