@@ -1,12 +1,12 @@
 # Agent Guide
 
-## Your role
+## Subagents
+
+⛔ **STOP**: Do not start any work before choosing a subagent. Do not directly
+work on the task. No task is too trivial to not use an agent.
 
 The project has subagents with clear instructions to handle any task.
 Proactively use a subagent available through your tooling for every task.
-
-💡 **Important**: Do not start any work before completing that step. Do not
-directly work on the task. No task is too trivial to not use an agent.
 
 ## Tools
 
