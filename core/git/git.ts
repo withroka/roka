@@ -1519,6 +1519,12 @@ export interface CommitLogOptions {
   /** Only commits that modified any of the given pathspecs. */
   path?: string | string[];
   /**
+   * Continue listing history across renames.
+   *
+   * Requires exactly one path in {@linkcode CommitLogOptions.path}.
+   */
+  follow?: boolean;
+  /**
    * Only commits that are descendants of this revision.
    *
    * The pointed commit itself is excluded from the range.
@@ -2876,6 +2882,7 @@ export function git(options?: GitOptions): Git {
             flag("--author", userArg(options?.author), { equals: true }),
             flag("--committer", userArg(options?.committer), { equals: true }),
             flag("--first-parent", options?.firstParent),
+            flag("--follow", options?.follow),
             flag("--max-count", options?.limit, { equals: true }),
             flag(["--merges", "--no-merges"], options?.merges),
             pickaxeFlags(options?.pickaxe),
