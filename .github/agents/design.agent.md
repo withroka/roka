@@ -1,8 +1,6 @@
 ---
 name: Design
-description: >
-  Designs APIs, frameworks, and features. Use proactively when designing
-  systems or planning feature architecture.
+description: Designs APIs, frameworks, and features. Use proactively when creating new architectures, public interfaces, or design documents.
 handoffs:
   - label: Implement feature
     agent: Build
