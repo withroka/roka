@@ -3660,13 +3660,13 @@ Deno.test("git().commit.log({ path }) returns changes to a file", async () => {
 
 Deno.test("git().commit.log({ follow }) tracks renames", async () => {
   await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("old-name.ts"), "content");
-  await repo.index.add("old-name.ts");
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
   const commit1 = await repo.commit.create({ subject: "commit1" });
-  await repo.index.move("old-name.ts", "new-name.ts");
+  await repo.index.move("old.file", "new.file");
   const commit2 = await repo.commit.create({ subject: "commit2" });
-  assertEquals(await repo.commit.log({ path: "new-name.ts" }), [commit2]);
-  assertEquals(await repo.commit.log({ path: "new-name.ts", follow: true }), [
+  assertEquals(await repo.commit.log({ path: "new.file" }), [commit2]);
+  assertEquals(await repo.commit.log({ path: "new.file", follow: true }), [
     commit2,
     commit1,
   ]);
