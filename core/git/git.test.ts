@@ -3590,6 +3590,20 @@ Deno.test("git().commit.log({ firstParent }) follows first parent only", async (
   ]);
 });
 
+Deno.test("git().commit.log({ follow }) tracks renames", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("old.file"), "content");
+  await repo.index.add("old.file");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.index.move("old.file", "new.file");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  assertEquals(await repo.commit.log({ path: "new.file" }), [commit2]);
+  assertEquals(
+    await repo.commit.log({ path: "new.file", follow: true }),
+    [commit2, commit1],
+  );
+});
+
 Deno.test("git().commit.log({ from }) returns commit descendants", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create({
@@ -3656,20 +3670,6 @@ Deno.test("git().commit.log({ path }) returns changes to a file", async () => {
     commit2,
     commit1,
   ]);
-});
-
-Deno.test("git().commit.log({ follow }) tracks renames", async () => {
-  await using repo = await tempRepository();
-  await Deno.writeTextFile(repo.path("old.file"), "content");
-  await repo.index.add("old.file");
-  const commit1 = await repo.commit.create({ subject: "commit1" });
-  await repo.index.move("old.file", "new.file");
-  const commit2 = await repo.commit.create({ subject: "commit2" });
-  assertEquals(await repo.commit.log({ path: "new.file" }), [commit2]);
-  assertEquals(
-    await repo.commit.log({ path: "new.file", follow: true }),
-    [commit2, commit1],
-  );
 });
 
 Deno.test("git().commit.log({ pickaxe }) finds added and deleted lines", async () => {
