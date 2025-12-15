@@ -3666,10 +3666,10 @@ Deno.test("git().commit.log({ follow }) tracks renames", async () => {
   await repo.index.move("old.file", "new.file");
   const commit2 = await repo.commit.create({ subject: "commit2" });
   assertEquals(await repo.commit.log({ path: "new.file" }), [commit2]);
-  assertEquals(await repo.commit.log({ path: "new.file", follow: true }), [
-    commit2,
-    commit1,
-  ]);
+  assertEquals(
+    await repo.commit.log({ path: "new.file", follow: true }),
+    [ commit2, commit1 ],
+  );
 });
 
 Deno.test("git().commit.log({ pickaxe }) finds added and deleted lines", async () => {
