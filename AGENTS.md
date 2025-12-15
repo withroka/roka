@@ -2,11 +2,11 @@
 
 ## Your role
 
-If a role has not been specified for you, determine an agent role for yourself.
+The project has subagents with clear instructions to handle any task.
+Proactively use a subagent available through your tooling for every task.
 
-- Role selection workflow: `.github/agents/route.agent.md`
-- This should come before any other work requested by the user.
-- Keep silent when thinking about your role.
+💡 **Important**: Do not start any work before completing that step. Do not
+directly work on the task. No task is too trivial to not use an agent.
 
 ## Tools
 

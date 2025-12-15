@@ -1,8 +1,6 @@
 ---
 name: Fix
-description: >
-  Identifies and fixes bugs with regression tests. Use proactively when
-  debugging or resolving issues.
+description: Identifies and fixes bugs with regression tests. Use proactively when debugging, fixing failing tests, or optimizing slow code.
 handoffs:
   - label: Request review
     agent: Review
