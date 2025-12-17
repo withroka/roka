@@ -740,6 +740,44 @@ Deno.test("git().config.list() handles whitespace in values", async () => {
   });
 });
 
+Deno.test("git().config.list() converts integer scale suffixes", async () => {
+  const config: object = {
+    "merge.renameLimit": "1k",
+    "transfer.unpackLimit": "2M",
+    "fetch.parallel": "3G",
+  };
+  await using repo = await tempRepository({ config });
+  assertObjectMatch(await repo.config.list(), {
+    "merge.renameLimit": 1024,
+    "transfer.unpackLimit": 2 * 1024 * 1024,
+    "fetch.parallel": 3 * 1024 * 1024 * 1024,
+  });
+});
+
+Deno.test("git().config.list() rejects invalid boolean values", async () => {
+  const config: object = {
+    "commit.gpgSign": "maybe",
+  };
+  await using repo = await tempRepository({ config });
+  await assertRejects(() => repo.config.list(), GitError, "config value");
+});
+
+Deno.test("git().config.list() rejects invalid numeric values", async () => {
+  const config: object = {
+    "fetch.parallel": "not-a-number",
+  };
+  await using repo = await tempRepository({ config });
+  await assertRejects(() => repo.config.list(), GitError, "config value");
+});
+
+Deno.test("git().config.list() rejects invalid enum values", async () => {
+  const config: object = {
+    "pull.rebase": "sometimes",
+  };
+  await using repo = await tempRepository({ config });
+  await assertRejects(() => repo.config.list(), GitError, "config value");
+});
+
 Deno.test("git().config.list({ file }) can retrieve from file config", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(
@@ -806,12 +844,12 @@ Deno.test("git().config.get() rejects invalid boolean values", async () => {
   await assertRejects(
     () => repo.config.get("commit.gpgSign"),
     GitError,
-    "bad boolean config value",
+    "config value",
   );
   await assertRejects(
     () => repo.config.get("tag.gpgSign"),
     GitError,
-    "bad boolean config value",
+    "config value",
   );
 });
 
@@ -829,9 +867,15 @@ Deno.test("git().config.get() retrieves numeric variables", async () => {
 });
 
 Deno.test("git().config.get() converts integer scale suffixes", async () => {
-  const config: object = { "fetch.parallel": "1M" };
+  const config: object = {
+    "merge.renameLimit": "1k",
+    "transfer.unpackLimit": "2M",
+    "fetch.parallel": "3G",
+  };
   await using repo = await tempRepository({ config });
-  assertEquals(await repo.config.get("fetch.parallel"), 1024 * 1024);
+  assertEquals(await repo.config.get("merge.renameLimit"), 1024);
+  assertEquals(await repo.config.get("transfer.unpackLimit"), 2 * 1024 * 1024);
+  assertEquals(await repo.config.get("fetch.parallel"), 3 * 1024 * 1024 * 1024);
 });
 
 Deno.test("git().config.get() rejects invalid numeric values", async () => {
@@ -840,7 +884,7 @@ Deno.test("git().config.get() rejects invalid numeric values", async () => {
   await assertRejects(
     () => repo.config.get("fetch.parallel"),
     GitError,
-    "bad numeric config value",
+    "config value",
   );
 });
 
@@ -881,14 +925,15 @@ Deno.test("git().config.get() retrieves enum variables", async () => {
   assertEquals(await repo.config.get("pull.rebase"), "merges");
 });
 
-Deno.test("git().config.get() returns string for invalid enum value", async () => {
+Deno.test("git().config.get() rejects invalid enum values", async () => {
   const config: object = {
     "diff.renames": "copied", // not "copies", or "copy"
   };
   await using repo = await tempRepository({ config });
-  assertEquals(
-    await repo.config.get("diff.renames") as unknown as string,
-    "copied",
+  await assertRejects(
+    () => repo.config.get("diff.renames"),
+    GitError,
+    "config value",
   );
 });
 
