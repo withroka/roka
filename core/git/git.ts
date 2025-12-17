@@ -119,9 +119,9 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
-  /** Lists all git configuration values. */
+  /** Lists all git configuration values with validation. */
   list(options?: ConfigOptions): Promise<Config>;
-  /** Gets a git configuration value. */
+  /** Gets a git configuration value with validation. */
   get<K extends ConfigKey>(
     key: K,
     options?: ConfigOptions,
@@ -392,6 +392,33 @@ export interface SyncOperations {
   backfill(options?: SyncBackfillOptions): Promise<void>;
 }
 
+/** Column configuration options. */
+export const COLUMN_CONFIG = [
+  "always",
+  "never",
+  "auto",
+  "column",
+  "row",
+  "plain",
+  "dense",
+  "nodense",
+  "string",
+] as const;
+
+/** Sort configuration options. */
+export const SORT_CONFIG = [
+  "refname",
+  "objecttype",
+  "objectsize",
+  "objectname",
+  "authordate",
+  "committerdate",
+  "creatordate",
+  "taggerdate",
+  "version:refname",
+  "string",
+] as const;
+
 /** Runtime schema for known git configuration. */
 export const CONFIG_SCHEMA = {
   "add.ignoreErrors": ["boolean"],
@@ -406,7 +433,7 @@ export const CONFIG_SCHEMA = {
   "blame.showRoot": ["boolean"],
   "branch.autoSetupMerge": ["boolean", "always", "inherit", "simple"],
   "branch.autoSetupRebase": ["never", "local", "remote", "always"],
-  "branch.sort": ["string"],
+  "branch.sort": SORT_CONFIG,
   "bundle.heuristic": ["creationToken"],
   "bundle.mode": ["all", "any"],
   "bundle.version": ["number"],
@@ -418,17 +445,17 @@ export const CONFIG_SCHEMA = {
   "color.log": ["never", "auto", "always"],
   "color.status": ["never", "auto", "always"],
   "color.ui": ["never", "auto", "always"],
-  "column.branch": ["string"],
-  "column.clean": ["string"],
-  "column.status": ["string"],
-  "column.tag": ["string"],
+  "column.branch": COLUMN_CONFIG,
+  "column.clean": COLUMN_CONFIG,
+  "column.status": COLUMN_CONFIG,
+  "column.tag": COLUMN_CONFIG,
   "commit.cleanup": ["strip", "whitespace", "verbatim", "scissors", "default"],
   "commit.gpgSign": ["boolean"],
   "commit.status": ["boolean"],
   "commit.verbose": ["boolean"],
   "committer.email": ["string"],
   "committer.name": ["string"],
-  "core.abbrev": ["number"],
+  "core.abbrev": ["number", "auto", "no"],
   "core.alternateRefsCommand": ["string"],
   "core.alternateRefsPrefixes": ["string"],
   "core.askPass": ["string"],
@@ -449,15 +476,27 @@ export const CONFIG_SCHEMA = {
   "core.filesRefLockTimeout": ["number"],
   "core.fsmonitor": ["boolean", "string"],
   "core.fsmonitorHookVersion": ["number"],
-  "core.fsync": ["string"],
+  "core.fsync": [
+    "none",
+    "loose-object",
+    "pack",
+    "pack-metadata",
+    "commit-graph",
+    "objects",
+    "derived-metadata",
+    "committed",
+    "added",
+    "all",
+    "string",
+  ],
   "core.fsyncMethod": ["fsync", "writeout-only", "batch"],
   "core.fsyncObjectFiles": ["boolean"],
   "core.gitProxy": ["string"],
-  "core.hideDotFiles": ["boolean"],
+  "core.hideDotFiles": ["boolean", "dotGitOnly"],
   "core.hooksPath": ["string"],
   "core.ignoreCase": ["boolean"],
   "core.ignoreStat": ["boolean"],
-  "core.logAllRefUpdates": ["boolean"],
+  "core.logAllRefUpdates": ["boolean", "always", "warn"],
   "core.looseCompression": ["number"],
   "core.maxTreeDepth": ["number"],
   "core.multiPackIndex": ["boolean"],
@@ -473,7 +512,7 @@ export const CONFIG_SCHEMA = {
   "core.protectNTFS": ["boolean"],
   "core.quotePath": ["boolean"],
   "core.repositoryFormatVersion": ["number"],
-  "core.safecrlf": ["boolean"],
+  "core.safecrlf": ["boolean", "warn"],
   "core.sharedRepository": ["boolean", "group", "all", "umask", "string"],
   "core.sparseCheckout": ["boolean"],
   "core.sparseCheckoutCone": ["boolean"],
@@ -485,7 +524,16 @@ export const CONFIG_SCHEMA = {
   "core.untrackedCache": ["boolean", "keep"],
   "core.useReplaceRefs": ["boolean"],
   "core.warnAmbiguousRefs": ["boolean"],
-  "core.whitespace": ["string"],
+  "core.whitespace": [
+    "blank-at-eol",
+    "blank-at-eof",
+    "space-before-tab",
+    "indent-with-non-tab",
+    "tab-in-indent",
+    "cr-at-eol",
+    "trailing-space",
+    "string",
+  ],
   "core.worktree": ["string"],
   "credential.helper": ["string"],
   "credential.interactive": ["boolean"],
@@ -496,17 +544,37 @@ export const CONFIG_SCHEMA = {
   "credentialCache.ignoreSIGHUP": ["boolean"],
   "diff.algorithm": ["default", "myers", "minimal", "patience", "histogram"],
   "diff.autoRefreshIndex": ["boolean"],
-  "diff.colorMoved": ["boolean", "zebra", "dimmed-zebra", "blocks", "plain"],
-  "diff.colorMovedWs": ["string"],
+  "diff.colorMoved": [
+    "boolean",
+    "default",
+    "zebra",
+    "dimmed-zebra",
+    "blocks",
+    "plain",
+  ],
+  "diff.colorMovedWs": [
+    "ignore-space-at-eol",
+    "ignore-space-change",
+    "ignore-all-space",
+    "allow-indentation-change",
+    "string",
+  ],
   "diff.context": ["number"],
-  "diff.dirstat": ["string"],
+  "diff.dirstat": [
+    "changes",
+    "lines",
+    "files",
+    "cumulative",
+    "noncumulative",
+    "string",
+  ],
   "diff.dstPrefix": ["string"],
   "diff.external": ["string"],
   "diff.guitool": ["string"],
   "diff.indentHeuristic": ["boolean"],
   "diff.interHunkContext": ["number"],
   "diff.mnemonicPrefix": ["boolean"],
-  "diff.noPrefix": ["string"],
+  "diff.noPrefix": ["boolean"],
   "diff.orderFile": ["string"],
   "diff.relative": ["boolean"],
   "diff.renameLimit": ["number"],
@@ -518,7 +586,7 @@ export const CONFIG_SCHEMA = {
   "diff.tool": ["string"],
   "diff.trustExitCode": ["boolean"],
   "diff.wordRegex": ["string"],
-  "diff.wsErrorHighlight": ["string"],
+  "diff.wsErrorHighlight": ["context", "old", "new", "all", "none", "string"],
   "fetch.all": ["boolean"],
   "fetch.bundleCreationToken": ["string"],
   "fetch.bundleURI": ["string"],
@@ -545,7 +613,7 @@ export const CONFIG_SCHEMA = {
   "gpg.ssh.allowedSignersFile": ["string"],
   "gpg.ssh.defaultKeyCommand": ["string"],
   "gpg.ssh.revocationFile": ["string"],
-  "help.autoCorrect": ["boolean", "number"],
+  "help.autoCorrect": ["boolean", "number", "never", "prompt"],
   "http.cookieFile": ["string"],
   "http.curloptResolve": ["array"],
   "http.delegation": ["none", "policy", "always"],
@@ -572,7 +640,7 @@ export const CONFIG_SCHEMA = {
   "http.saveCookies": ["boolean"],
   "http.schannelCheckRevoke": ["boolean"],
   "http.schannelUseSSLCAInfo": ["boolean"],
-  "http.sslBackend": ["string"],
+  "http.sslBackend": ["openssl", "schannel", "secure-transport", "string"],
   "http.sslCAInfo": ["string"],
   "http.sslCAPath": ["string"],
   "http.sslCert": ["string"],
@@ -600,14 +668,14 @@ export const CONFIG_SCHEMA = {
   "index.recordOffsetTable": ["boolean"],
   "index.skipHash": ["boolean"],
   "index.sparse": ["boolean"],
-  "index.threads": ["number"],
+  "index.threads": ["boolean", "number"],
   "index.version": ["number"],
   "init.defaultBranch": ["string"],
   "init.defaultObjectFormat": ["sha1", "sha256"],
   "init.defaultRefFormat": ["files", "reftable"],
   "init.templateDir": ["string"],
   "log.abbrevCommit": ["boolean"],
-  "log.decorate": ["short", "full", "auto"],
+  "log.decorate": ["short", "full", "auto", "no"],
   "log.diffMerges": [
     "off",
     "on",
@@ -616,6 +684,7 @@ export const CONFIG_SCHEMA = {
     "combined",
     "dense-combined",
     "remerge",
+    "string",
   ],
   "log.excludeDecoration": ["string"],
   "log.follow": ["boolean"],
@@ -638,7 +707,7 @@ export const CONFIG_SCHEMA = {
   "merge.renameLimit": ["number"],
   "merge.renames": ["boolean"],
   "merge.renormalize": ["boolean"],
-  "merge.stat": ["boolean", "compact"],
+  "merge.stat": ["boolean", "compact", "string"],
   "merge.suppressDest": ["array"],
   "merge.tool": ["string"],
   "merge.verbosity": ["number"],
@@ -649,12 +718,11 @@ export const CONFIG_SCHEMA = {
   "pager.diff": ["boolean", "string"],
   "pager.log": ["boolean", "string"],
   "pager.tag": ["boolean", "string"],
-  "partialCloneFilter": ["string"],
   "promisor.acceptFromServer": ["none", "all", "knownName", "knownUrl"],
   "promisor.advertise": ["boolean"],
-  "promisor.checkFields": ["string"],
+  "promisor.checkFields": ["partialCloneFilter", "token", "string"],
   "promisor.quiet": ["boolean"],
-  "promisor.sendFields": ["string"],
+  "promisor.sendFields": ["partialCloneFilter", "token", "string"],
   "protocol.allow": ["always", "never", "user"],
   "protocol.file.allow": ["always", "never", "user"],
   "protocol.git.allow": ["always", "never", "user"],
@@ -708,9 +776,8 @@ export const CONFIG_SCHEMA = {
   "submodule.recurse": ["boolean"],
   "tag.forceSignAnnotated": ["boolean"],
   "tag.gpgSign": ["boolean"],
-  "tag.sort": ["string"],
+  "tag.sort": SORT_CONFIG,
   "tar.umask": ["string"],
-  "token": ["string"],
   "trailer.ifexists": [
     "addIfDifferentNeighbor",
     "addIfDifferent",
@@ -726,7 +793,7 @@ export const CONFIG_SCHEMA = {
   "transfer.bundleURI": ["boolean"],
   "transfer.credentialsInUrl": ["allow", "warn", "die"],
   "transfer.fsckObjects": ["boolean"],
-  "transfer.hideRefs": ["boolean"],
+  "transfer.hideRefs": ["array"],
   "transfer.unpackLimit": ["number"],
   "user.email": ["string"],
   "user.name": ["string"],
@@ -801,7 +868,8 @@ export type ConfigValue<K extends ConfigKey> = Lowercase<K> extends
 /** Extracted type from config schema. */
 export type ConfigSchemaType<T> = T extends readonly (infer U)[]
   ? U extends "array" ? string[]
-  : U extends "string" ? string
+    // deno-lint-ignore ban-types
+  : U extends "string" ? (["string"] extends T ? string : string & {})
   : U extends "number" ? number
   : U extends "boolean" ? boolean
   : U extends string ? NonNullable<U>
@@ -2493,8 +2561,6 @@ export function git(options?: GitOptions): Git {
         ) as Config;
       },
       async get<K extends ConfigKey>(key: K, options?: ConfigOptions) {
-        const schema = configSchema(key);
-        const [type] = schema?.type?.length === 1 ? schema.type : [];
         const output = await run(
           { ...gitOptions, allowCode: [1] },
           versionedArgs(
@@ -2502,8 +2568,6 @@ export function git(options?: GitOptions): Git {
             ["2.46.0", ["config", "get", "--all"]],
             [undefined, ["config", "--get-all"]],
           ),
-          ...type === "boolean" ? ["--bool"] : [],
-          ...type === "number" ? ["--int"] : [],
           configSourceFlag(options),
           key,
         );
@@ -3970,8 +4034,20 @@ function configValue(key: string, lines: string[]) {
     }
   }
   if (schema.type.includes("number")) {
-    const number = Number(value);
-    if (!isNaN(number)) return { key, value: number };
+    const match = value.toLowerCase().match(
+      /^(?<digits>[-+]?\d+)(?<suffix>[kmg])?$/,
+    );
+    const { digits, suffix } = match?.groups ?? {};
+    if (digits) {
+      let number = Number(digits);
+      if (suffix === "k") number *= 1024;
+      else if (suffix === "m") number *= 1024 * 1024;
+      else if (suffix === "g") number *= 1024 * 1024 * 1024;
+      if (!isNaN(number)) return { key, value: number };
+    }
+  }
+  if (!schema.type.includes("string") && !schema.type.includes(value)) {
+    throw new GitError(`Bad config value for config key ${key}: ${value}`);
   }
   return { key, value };
 }
