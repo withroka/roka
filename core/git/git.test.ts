@@ -6259,9 +6259,15 @@ Deno.test("git().merge.with() reports conflicts", async () => {
   assertEquals(merge, { conflicts: ["file1", "file2", "file3"] });
   assertEquals(await repo.merge.active(), merge);
   assertEquals(await repo.commit.log(), [commit3, commit1]);
-  assertEquals(await repo.diff.status(), [
+  assertEquals(await repo.diff.status({ location: "worktree" }), [
     { path: "file1", status: "modified" },
-    { path: "file3", status: "added" },
+    { path: "file2", status: "unmerged" },
+    { path: "file3", status: "unmerged" },
+  ]);
+  assertEquals(await repo.diff.status({ location: "index" }), [
+    { path: "file1", status: "unmerged" },
+    { path: "file2", status: "unmerged" },
+    { path: "file3", status: "unmerged" },
     { path: "file4", status: "added" },
   ]);
 });
@@ -6678,8 +6684,11 @@ Deno.test("git().rebase.onto() reports conflicts", async () => {
   );
   assertEquals(await repo.rebase.active(), rebase);
   assertEquals(await repo.commit.log(), [commit2, commit1]);
-  assertEquals(await repo.diff.status(), [
+  assertEquals(await repo.diff.status({ location: "worktree" }), [
     { path: "file", status: "modified" },
+  ]);
+  assertEquals(await repo.diff.status({ location: "index" }), [
+    { path: "file", status: "unmerged" },
   ]);
   assertEquals(
     await Deno.readTextFile(repo.path("file")),
@@ -7362,8 +7371,11 @@ Deno.test("git().cherrypick.apply() reports conflicts", async () => {
   assertEquals(pick, { remaining: 1, conflicts: ["file"] });
   assertEquals(await repo.cherrypick.active(), pick);
   assertEquals(await repo.commit.log(), [commit3, commit1]);
-  assertEquals(await repo.diff.status(), [
+  assertEquals(await repo.diff.status({ location: "worktree" }), [
     { path: "file", status: "modified" },
+  ]);
+  assertEquals(await repo.diff.status({ location: "index" }), [
+    { path: "file", status: "unmerged" },
   ]);
   assertEquals(
     await Deno.readTextFile(repo.path("file")),
@@ -7849,8 +7861,11 @@ Deno.test("git().revert.apply() reports conflicts", async () => {
   assertEquals(revert, { remaining: 1, conflicts: ["file"] });
   assertEquals(await repo.revert.active(), revert);
   assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
-  assertEquals(await repo.diff.status(), [
+  assertEquals(await repo.diff.status({ location: "worktree" }), [
     { path: "file", status: "modified" },
+  ]);
+  assertEquals(await repo.diff.status({ location: "index" }), [
+    { path: "file", status: "unmerged" },
   ]);
   assertEquals(
     await Deno.readTextFile(repo.path("file")),

@@ -962,6 +962,7 @@ export interface Status {
     | "type-changed"
     | "renamed"
     | "copied"
+    | "unmerged"
     | "untracked"
     | "ignored";
   /** Number of lines inserted or deleted. */
@@ -4066,8 +4067,10 @@ function statusKind(code: string) {
       return "renamed";
     case "C":
       return "copied";
+    case "U":
+      return "unmerged";
     default:
-      return "modified";
+      throw new GitError(`Unknown status kind: ${code}`);
   }
 }
 
