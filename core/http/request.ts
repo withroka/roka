@@ -4,11 +4,11 @@
  * additional functionality for handling errors and retries.
  *
  * ```ts
- * import { AGENT, request } from "@roka/http/request";
+ * import { request } from "@roka/http/request";
  * (async () => {
  *   const response = await request("https://www.example.com", {
  *     method: "GET",
- *     agent: AGENT.Browser,
+ *     agent: "Mozilla/5.0",
  *   });
  *   return { response };
  * });
