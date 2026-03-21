@@ -72,6 +72,8 @@ import {
   type SemVer,
 } from "@std/semver";
 
+const CONCURRENCY = 4;
+
 /** An error thrown by the `forge` package. */
 export class PackageError extends Error {
   /** Construct PackageError. */
@@ -282,6 +284,7 @@ export async function workspace(
         (await pool(
           rootPackage.config.workspace,
           (path) => Array.fromAsync(expandGlob(join(root, path, "deno.json"))),
+          { concurrency: CONCURRENCY },
         )).flat().map((file) => dirname(file.path)),
       ),
       (path) =>
@@ -289,6 +292,7 @@ export async function workspace(
           directory: path,
           root,
         }),
+      { concurrency: CONCURRENCY },
     );
   return packages
     .filter((pkg) =>
