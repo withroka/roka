@@ -3701,6 +3701,8 @@ Deno.test("git().commit.log() handles configuration overrides", async () => {
   assertEquals(await repo.commit.log(), [{
     hash: commit.hash,
     short: commit.short,
+    authorDate: commit.authorDate,
+    committerDate: commit.committerDate,
     author: { name: "author-name", email: "author-email" },
     committer: { name: "committer-name", email: "committer-email" },
     subject: "subject with Unicode character: ∑",
@@ -4181,6 +4183,8 @@ Deno.test("git().commit.create() handles configuration overrides", async () => {
   assertEquals(commit, {
     hash: commit.hash,
     short: commit.short,
+    authorDate: commit.authorDate,
+    committerDate: commit.committerDate,
     author: { name: "author-name", email: "author-email" },
     committer: { name: "committer-name", email: "committer-email" },
     subject: "subject with Unicode character: ∑",
@@ -6071,9 +6075,12 @@ Deno.test("git().tag.create() can create an annotated tag", {
     subject: "subject",
     body: "body",
   });
+  assertExists(tag.taggerDate);
+  const taggerDate = tag.taggerDate;
   assertEquals(tag, {
     name: "tag",
     commit,
+    taggerDate,
     tagger: { name: "name", email: "email" },
     subject: "subject",
     body: "body",
@@ -6091,9 +6098,12 @@ Deno.test("git().tag.create() ignores empty body", {
     allowEmpty: true,
   });
   const tag = await repo.tag.create("tag", { subject: "subject", body: "" });
+  assertExists(tag.taggerDate);
+  const taggerDate = tag.taggerDate;
   assertEquals(tag, {
     name: "tag",
     commit,
+    taggerDate,
     tagger: { name: "name", email: "email" },
     subject: "subject",
   });
@@ -6206,9 +6216,12 @@ Deno.test(
         "tested-by": "tester-email",
       },
     });
+    assertExists(tag.taggerDate);
+    const taggerDate = tag.taggerDate;
     assertEquals(tag, {
       name: "tag",
       commit,
+      taggerDate,
       tagger: { name: "tagger-name", email: "tagger-email" },
       subject: "subject",
       body: "body",

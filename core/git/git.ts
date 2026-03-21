@@ -42,7 +42,6 @@
  * @todo Add `git().maintenance.*`
  * @todo Add `git().hook.*`
  * @todo Add templates.
- * @todo Expose dates.
  * @todo Verify signatures.
  *
  * @module git
@@ -1082,6 +1081,10 @@ export interface Commit {
   short: string;
   /** Parent commit hashes, if any. */
   parents?: string[];
+  /** Date when the commit was authored. */
+  authorDate: Date;
+  /** Date when the commit was created. */
+  committerDate: Date;
   /** Author, who wrote the code. */
   author: User;
   /** Committer, who created the commit. */
@@ -1100,6 +1103,8 @@ export interface Tag {
   name: string;
   /** Commit that is recursively pointed to by the tag. */
   commit: Commit;
+  /** Date when the tag was created. */
+  taggerDate?: Date;
   /** Tag subject, the first line of the tag message. */
   subject?: string;
   /** Tag body, excluding the first line and trailers from the message. */
@@ -4182,6 +4187,8 @@ const BRANCH_FORMAT: FormatDescriptor<Branch> = {
           format: "%(if)%(object)%(then)%(object)%(else)%(objectname)%(end)",
         },
         short: { kind: "skip" },
+        authorDate: { kind: "skip" },
+        committerDate: { kind: "skip" },
         author: { kind: "skip" },
         committer: { kind: "skip" },
         subject: { kind: "skip" },
@@ -4277,6 +4284,16 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
         return value.split(" ");
       },
     },
+    authorDate: {
+      kind: "string",
+      format: "%aI",
+      transform: (value) => new Date(value),
+    },
+    committerDate: {
+      kind: "string",
+      format: "%cI",
+      transform: (value) => new Date(value),
+    },
     author: {
       kind: "object",
       fields: {
@@ -4323,12 +4340,20 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
           format: "%(if)%(object)%(then)%(object)%(else)%(objectname)%(end)",
         },
         short: { kind: "skip" },
+        authorDate: { kind: "skip" },
+        committerDate: { kind: "skip" },
         author: { kind: "skip" },
         committer: { kind: "skip" },
         subject: { kind: "skip" },
         body: { kind: "skip" },
         trailers: { kind: "skip" },
       },
+    },
+    taggerDate: {
+      kind: "string",
+      optional: true,
+      format: "%(if)%(object)%(then)%(taggerdate:iso-strict)%(else)%00%(end)",
+      transform: (value) => new Date(value),
     },
     tagger: {
       kind: "object",
