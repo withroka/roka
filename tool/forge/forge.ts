@@ -310,7 +310,7 @@ import { release } from "./release.ts";
 import { version } from "./version.ts";
 
 const DESCRIPTION = `
-  ${bold("🛠️ forge")}
+  ${bold("🛠️  forge")}
 
   A Deno monorepo tool that manages packages on GitHub and JSR, including
   versioning, releases, and compilation. It works on a git repository using
@@ -435,7 +435,11 @@ function changelogCommand(context: ForgeOptions | undefined) {
         ...options.markdown
           ? {}
           : { markdown: { heading: "🏷️  ", bullet: "  " } },
-        commit: { sort: "importance", emoji: options.emoji },
+        commit: {
+          sort: "importance",
+          emoji: options.emoji,
+          terminal: Deno.stdout.isTerminal(),
+        },
       };
       async function* changelogs(pkg: Package) {
         const log = await commits(pkg, {
@@ -466,10 +470,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
         }
       }
       for (const pkg of packages) {
-        for await (let log of changelogs(pkg)) {
-          if (Deno.stdout.isTerminal()) log = log.replace(/ ♻️ /g, " ♻️  ");
-          console.log(log);
-        }
+        for await (const log of changelogs(pkg)) console.log(log);
       }
     });
 }

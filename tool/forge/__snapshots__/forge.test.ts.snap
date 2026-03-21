@@ -14,7 +14,7 @@ typescript: <version>
 
 Description:
 
-  🛠️ forge
+  🛠️  forge
 
   A Deno monorepo tool that manages packages on GitHub and JSR, including
   versioning, releases, and compilation. It works on a git repository using
