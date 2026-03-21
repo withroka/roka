@@ -2,13 +2,7 @@ import { assertArrayObjectMatch } from "@roka/assert";
 import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakePullRequest, fakeRepository } from "@roka/github/testing";
-import { maybe } from "@roka/maybe";
-import {
-  assertEquals,
-  assertExists,
-  assertRejects,
-  assertStringIncludes,
-} from "@std/assert";
+import { assertEquals, assertExists, assertRejects } from "@std/assert";
 import { join } from "@std/path";
 import { bump } from "./bump.ts";
 import { tempPackage, tempWorkspace } from "./testing.ts";
@@ -124,10 +118,7 @@ Deno.test("bump() rejects package with modified config file", async () => {
     join(pkg.directory, "deno.json"),
     JSON.stringify({ name: "@scope/name" }),
   );
-  const { errors } = await maybe(() => bump([pkg]));
-  assertExists(errors);
-  assertEquals(errors.length, 1);
-  assertStringIncludes(errors[0].message, "uncommitted changes");
+  await assertRejects(() => bump([pkg]), PackageError, "uncommitted changes");
 });
 
 Deno.test("bump({ release }) bumps to release version", async () => {

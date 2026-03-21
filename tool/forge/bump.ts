@@ -120,28 +120,33 @@ export async function bump(
       }),
     }))
     .filter(({ pkg, bump }) => pkg.config.version !== bump);
-  const { value, error } = await maybe(() =>
-    pool(bumps, ({ pkg, bump }) => updateConfig(pkg, bump))
-  );
-  if (error) throw error;
-  packages = value;
+  await checkDirty(packages, options);
+  packages = await pool(bumps, ({ pkg, bump }) => updateConfig(pkg, bump));
   if (packages.length === 0) throw new PackageError("No packages to bump");
   if (options?.changelog) await updateChangelog(packages, options);
   if (!options?.pr) return undefined;
   return createPullRequest(packages, options);
 }
 
-async function updateConfig(pkg: Package, version: string) {
-  const path = join(pkg.directory, "deno.json");
-  const status = await git({ cwd: pkg.directory }).diff.status({ path });
+async function checkDirty(packages: Package[], options?: BumpOptions) {
+  const [pkg] = packages;
+  if (!pkg) return;
+  const repo = options?.repo?.git ?? git({ cwd: pkg.root });
+  const status = await repo.diff.status({
+    path: packages.map((pkg) => join(pkg.directory, "deno.json")),
+  });
   if (status.length) {
-    throw new PackageError(
-      `${path} has uncommitted changes, cannot bump version.`,
-    );
+    throw new PackageError([
+      `Cannot bump version, uncommitted changes in:`,
+      ...status.map((s) => s.path),
+    ].join("\n"));
   }
+}
+
+async function updateConfig(pkg: Package, version: string) {
   const config = { ...pkg.config, version };
   await Deno.writeTextFile(
-    path,
+    join(pkg.directory, "deno.json"),
     JSON.stringify(config, undefined, 2) + "\n",
   );
   pkg.version = version;
