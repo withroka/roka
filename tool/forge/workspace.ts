@@ -205,6 +205,11 @@ export interface WorkspaceOptions {
    * @default {[]}
    */
   filters?: string[];
+  /**
+   * Max concurrent package processing.
+   * @default {4}
+   */
+  concurrency?: number;
 }
 
 /** Options for the {@linkcode packageInfo} function. */
@@ -272,7 +277,7 @@ export interface CommitOptions {
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
-  const { root = ".", filters = [] } = options ?? {};
+  const { root = ".", filters = [], concurrency = 4 } = options ?? {};
   const patterns = filters.map((f) => globToRegExp(f));
   const rootPackage = await packageInfo({ directory: root, ...options });
   const packages = rootPackage.config.workspace === undefined
@@ -282,6 +287,7 @@ export async function workspace(
         (await pool(
           rootPackage.config.workspace,
           (path) => Array.fromAsync(expandGlob(join(root, path, "deno.json"))),
+          { concurrency },
         )).flat().map((file) => dirname(file.path)),
       ),
       (path) =>
@@ -289,6 +295,7 @@ export async function workspace(
           directory: path,
           root,
         }),
+      { concurrency },
     );
   return packages
     .filter((pkg) =>
