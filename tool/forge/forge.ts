@@ -451,23 +451,25 @@ function titleCommand(context: ForgeOptions | undefined) {
           `Allowed types: ${options.types.join(", ")}`,
         ].join("\n\n"));
       }
-      if (
-        commit.scopes &&
-        !packages.some((pkg) =>
-          scopes(pkg, commit, { strict: options.strict }).length
-        )
-      ) {
-        const scopes = distinct(
-          packages.map((pkg) =>
-            Object.keys(modules(pkg))
-              .map((m) => m ? `${pkg.name}/${m}` : pkg.name)
-          ).flat(),
-        ).toSorted();
-        throw new Error([
-          `Invalid PR scope: "${commit.scopes?.join(", ")}"`,
-          "Allowed scopes:",
-          "  " + scopes.join("\n  "),
-        ].join("\n\n"));
+      for (const scope of commit.scopes ?? []) {
+        const scoped = { ...commit, scopes: [scope] };
+        if (
+          !packages.some((pkg) =>
+            scopes(pkg, scoped, { strict: options.strict }).length
+          )
+        ) {
+          const scopes = distinct(
+            packages.map((pkg) =>
+              Object.keys(modules(pkg))
+                .map((m) => m ? `${pkg.name}/${m}` : pkg.name)
+            ).flat(),
+          ).toSorted();
+          throw new Error([
+            `Invalid PR scope: "${scope}"`,
+            "Allowed scopes:",
+            "  " + scopes.join("\n  "),
+          ].join("\n\n"));
+        }
       }
     });
 }
