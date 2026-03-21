@@ -302,24 +302,6 @@ snapshot[`forge title <unknown> 1`] = `
 Allowed scopes:
 
   name1
-  name2
-  name3
-  name4
-  name5
-  name6
-',
-}
-`;
-
-snapshot[`forge title <unknown> --strict 1`] = `
-{
-  code: 1,
-  output: '
-❌ Invalid PR scope: "unknown"
-
-Allowed scopes:
-
-  name1
   name1/main
   name2
   name3
@@ -336,16 +318,5 @@ snapshot[`forge title <scoped> --types <types> 1`] = `
   output: "
 
 ",
-}
-`;
-
-snapshot[`forge title <scoped> --strict --types unknown 1`] = `
-{
-  code: 1,
-  output: '
-❌ Invalid PR type: "fix"
-
-Allowed types: unknown
-',
 }
 `;

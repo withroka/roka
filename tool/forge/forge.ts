@@ -426,11 +426,6 @@ function titleCommand(context: ForgeOptions | undefined) {
     .example("forge title 'feat(name): description'", "Validate a PR title.")
     .arguments("<title:string>")
     .option("--types <types:string[]>", "Allowed commit types.")
-    .option(
-      "--strict",
-      "Only allow scopes that match package names or modules.",
-      { default: false },
-    )
     .action(async (options, title) => {
       const packages = await workspace({
         ...context?.repo && { root: context?.repo.git.path() },
@@ -453,18 +448,14 @@ function titleCommand(context: ForgeOptions | undefined) {
       for (const scope of commit.scopes ?? []) {
         const scoped = { ...commit, scopes: [scope] };
         if (
-          !packages.some((pkg) =>
-            scopes(pkg, scoped, { strict: options.strict }).length
-          )
+          !packages.some((pkg) => scopes(pkg, scoped, { strict: true }).length)
         ) {
           const allowed = distinct(
             packages.map((pkg) => [
               pkg.name,
-              ...options.strict
-                ? Object.keys(modules(pkg))
-                  .filter((m) => m)
-                  .map((m) => `${pkg.name}/${m}`)
-                : [],
+              ...Object.keys(modules(pkg))
+                .filter((m) => m)
+                .map((m) => `${pkg.name}/${m}`),
             ]).flat(),
           ).toSorted();
           throw new Error([
