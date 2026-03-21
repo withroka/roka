@@ -258,12 +258,26 @@ export interface CommitOptions {
    * Setting {@linkcode CommitOptions.breaking breaking} to `false` will skip
    * these commits.
    */
-  type?: string[];
+  types?: string[];
   /**
    * If `true`, returns only breaking changes. If `false`, breaking changes are
-   * subject to the {@linkcode CommitOptions.type type} filter.
+   * subject to the {@linkcode CommitOptions.types types} filter.
    */
   breaking?: boolean;
+}
+
+/** Options for the {@linkcode scopes} function. */
+export interface ScopeOptions {
+  /**
+   * If `true`, additionally matches module names in the scopes of a commit.
+   *
+   * For example, if a commit has a scope of `pkg/module`, it will match a
+   * package named `pkg` only if the package has an exported module named
+   * `module`.
+   *
+   * @default {false}
+   */
+  strict?: boolean;
 }
 
 /**
@@ -338,7 +352,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   try {
     const [latest] = await releases(pkg);
     const changes = await commits(pkg, {
-      type: ["feat", "fix"],
+      types: ["feat", "fix"],
       ...latest?.range.to && { range: { from: latest.range.to } },
     });
     if (latest !== undefined) pkg.latest = latest;
@@ -351,6 +365,27 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     if (!(e instanceof GitError)) throw e;
   }
   return pkg;
+}
+
+/**
+ * Returns the modules of a package based on its exports.
+ *
+ * @example Get modules of a package.
+ * ```ts
+ * import { modules, packageInfo } from "@roka/forge/workspace";
+ *
+ * (async () => {
+ *   const pkg = await packageInfo();
+ *   return await modules(pkg);
+ * });
+ * ```
+ */
+export function modules(pkg: Package): string[] {
+  const exports = typeof pkg.config.exports === "string"
+    ? { ".": pkg.config.exports }
+    : pkg.config.exports;
+  if (exports === undefined) return [];
+  return Object.keys(exports).map((e) => e.replace(/^\.(?=$|\/)/, pkg.name));
 }
 
 /**
@@ -418,7 +453,7 @@ export async function releases(
  * import { commits, packageInfo } from "@roka/forge/workspace";
  * (async () => {
  *   const pkg = await packageInfo();
- *   return await commits(pkg, { type: ["feat", "fix"] });
+ *   return await commits(pkg, { types: ["feat", "fix"] });
  * });
  * ```
  *
@@ -446,14 +481,50 @@ export async function commits(
   return log
     .map((c) => conventional(c))
     // match scope only on workspaces
-    .filter((c) => pkg.root === pkg.directory || matchesScope(pkg, c))
+    .filter((c) => pkg.root === pkg.directory || scopes(pkg, c).length > 0)
     .filter((c) => options?.breaking !== true || c.breaking)
     .filter((c) =>
-      options?.type !== undefined
-        ? c.type && options.type.includes(c.type) ||
+      options?.types !== undefined
+        ? c.type && options.types.includes(c.type) ||
           (options?.breaking === undefined && c.breaking)
         : true
     );
+}
+
+/**
+ * Returns matching scope strings for a commit or title against a package.
+ *
+ * If the package is not a workspace member, non-scoped titles also match.
+ *
+ * @example Get scopes for a commit.
+ * ```ts
+ * import { assertGreater } from "@std/assert";
+ * import { packageInfo, scopes } from "@roka/forge/workspace";
+ * import { conventional } from "@roka/git/conventional";
+ * import { testCommit } from "@roka/git/testing";
+ * (async () => {
+ *   const pkg = await packageInfo();
+ *   const commit = testCommit({ subject: "feat: new feature" });
+ *   assertGreater(scopes(pkg, conventional(commit)).length, 0);
+ * });
+ * ```
+ */
+export function scopes(
+  pkg: Package,
+  commit: ConventionalCommit,
+  options?: ScopeOptions,
+): string[] {
+  const { strict = false } = options ?? {};
+  const submodules = strict ? modules(pkg) : [];
+  const single = pkg.root === pkg.directory;
+  if (single && !commit.scopes) return [""];
+  return commit.scopes?.filter((s) =>
+    s === "*" ||
+    s === pkg.name ||
+    (s.startsWith("*/") || s.startsWith(`${pkg.name}/`)) &&
+      (!strict || submodules.includes(s.replace(/^\*\//, `${pkg.name}/`))) ||
+    (single && s === "unstable")
+  ) ?? [];
 }
 
 function parseTag(tag: Tag): string | undefined {
@@ -504,24 +575,9 @@ function updateType(
   return "patch";
 }
 
-function matchesScope(pkg: Package, commit: ConventionalCommit) {
-  return matchingScopes(pkg, commit).length > 0;
-}
-
 function isUnstable(pkg: Package, commit: ConventionalCommit) {
   if (!commit.scopes) return false;
-  const scopes = matchingScopes(pkg, commit);
-  return scopes.length > 0 &&
-    scopes.every((s) => (s === "unstable") || s.endsWith("/unstable"));
-}
-
-function matchingScopes(pkg: Package, commit: ConventionalCommit) {
-  const single = pkg.root === pkg.directory;
-  return commit.scopes?.filter((s) =>
-    s === "*" ||
-    s.startsWith("*/") ||
-    s === pkg.name ||
-    s.startsWith(`${pkg.name}/`) ||
-    (single && s === "unstable")
-  ) ?? [];
+  const matched = scopes(pkg, commit);
+  return matched.length > 0 &&
+    matched.every((s) => (s === "unstable") || s.endsWith("/unstable"));
 }

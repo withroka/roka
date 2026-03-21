@@ -1,16 +1,19 @@
 import { assertArrayObjectMatch } from "@roka/assert";
 import {
   commits,
+  modules,
   type Package,
   PackageError,
   packageInfo,
   releases,
+  type ScopeOptions,
+  scopes,
   workspace,
 } from "@roka/forge/workspace";
 import { tempDirectory } from "@roka/fs/temp";
 import { git, GitError } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
-import { tempRepository } from "@roka/git/testing";
+import { tempRepository, testCommit } from "@roka/git/testing";
 import {
   assertEquals,
   assertExists,
@@ -655,7 +658,7 @@ Deno.test("commits({ range }) returns from a range", async () => {
   );
 });
 
-Deno.test("commits({ type }) filters by type", async () => {
+Deno.test("commits({ types }) filters by type", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     commits: [
@@ -668,12 +671,12 @@ Deno.test("commits({ type }) filters by type", async () => {
   assertExists(fix);
   assertExists(feat);
   assertEquals(
-    await commits(pkg, { type: ["feat", "fix"] }),
+    await commits(pkg, { types: ["feat", "fix"] }),
     [conventional(fix), conventional(feat)],
   );
 });
 
-Deno.test("commits({ type }) always includes breaking changes", async () => {
+Deno.test("commits({ types }) always includes breaking changes", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     commits: [
@@ -686,7 +689,7 @@ Deno.test("commits({ type }) always includes breaking changes", async () => {
   assertExists(docs);
   assertExists(fix);
   assertEquals(
-    await commits(pkg, { type: ["docs"] }),
+    await commits(pkg, { types: ["docs"] }),
     [conventional(docs), conventional(fix)],
   );
 });
@@ -720,7 +723,96 @@ Deno.test("commits({ breaking }) can filter non-breaking changes", async () => {
   const [docs] = await git({ cwd: pkg.root }).commit.log();
   assertExists(docs);
   assertEquals(
-    await commits(pkg, { type: ["docs"], breaking: false }),
+    await commits(pkg, { types: ["docs"], breaking: false }),
     [conventional(docs)],
   );
+});
+
+Deno.test("modules() returns module names from exports", async () => {
+  await using pkg = await tempPackage({
+    config: {
+      name: "@scope/name",
+      exports: { ".": "./name.ts", "./sub": "./sub.ts" },
+    },
+  });
+  assertEquals(modules(pkg), ["name", "name/sub"]);
+});
+
+Deno.test("modules() returns package name for string export", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", exports: "./name.ts" },
+  });
+  assertEquals(modules(pkg), ["name"]);
+});
+
+Deno.test("modules() returns empty for no exports", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+  });
+  assertEquals(modules(pkg), []);
+});
+
+function assertScopes(
+  pkg: Package,
+  summary: string,
+  expected: string[],
+  options?: ScopeOptions,
+) {
+  return assertEquals(
+    scopes(pkg, conventional(testCommit({ subject: summary })), options),
+    expected,
+  );
+}
+
+Deno.test("scopes() returns matching scopes for workspace member", async () => {
+  const [pkg] = await tempWorkspace({ configs: [{ name: "@scope/name" }] });
+  assertExists(pkg);
+  assertScopes(pkg, "add feature", []);
+  assertScopes(pkg, "feat: add feature", []);
+  assertScopes(pkg, "feat(name): add feature", ["name"]);
+  assertScopes(pkg, "feat(other): add feature", []);
+  assertScopes(pkg, "feat(name/sub): add feature", ["name/sub"]);
+  assertScopes(pkg, "feat(other/sub): add feature", []);
+  assertScopes(pkg, "feat(*): add feature", ["*"]);
+  assertScopes(pkg, "feat(*/sub): add feature", ["*/sub"]);
+  assertScopes(pkg, "feat(unstable): unstable", []);
+  assertScopes(pkg, "feat(name/unstable): unstable", ["name/unstable"]);
+  assertScopes(pkg, "feat(name,other): add feature", ["name"]);
+  assertScopes(pkg, "feat(name/sub,other): add feature", ["name/sub"]);
+  assertScopes(pkg, "feat(*,other): add feature", ["*"]);
+  assertScopes(pkg, "feat(*,name): add feature", ["*", "name"]);
+});
+
+Deno.test("scopes() returns matching scopes for non-workspace package", async () => {
+  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
+  assertScopes(pkg, "add feature", [""]);
+  assertScopes(pkg, "feat: add feature", [""]);
+  assertScopes(pkg, "feat(name): add feature", ["name"]);
+  assertScopes(pkg, "feat(other): add feature", []);
+  assertScopes(pkg, "feat(name/sub): add feature", ["name/sub"]);
+  assertScopes(pkg, "feat(other/sub): add feature", []);
+  assertScopes(pkg, "feat(*): add feature", ["*"]);
+  assertScopes(pkg, "feat(*/sub): add feature", ["*/sub"]);
+  assertScopes(pkg, "feat(unstable): unstable", ["unstable"]);
+  assertScopes(pkg, "feat(name/unstable): unstable", ["name/unstable"]);
+  assertScopes(pkg, "feat(name,other): add feature", ["name"]);
+  assertScopes(pkg, "feat(name/sub,other): add feature", ["name/sub"]);
+  assertScopes(pkg, "feat(*,other): add feature", ["*"]);
+  assertScopes(pkg, "feat(*,name): add feature", ["*", "name"]);
+});
+
+Deno.test("scopes({ strict }) validates module-level scopes", async () => {
+  const [pkg] = await tempWorkspace({
+    configs: [{
+      name: "@scope/name",
+      exports: { ".": "./name.ts", "./sub": "./sub.ts" },
+    }],
+  });
+  assertExists(pkg);
+  assertScopes(pkg, "bugfix(name): bugfix", ["name"], { strict: true });
+  assertScopes(pkg, "fix(name/sub): bugfix", ["name/sub"], { strict: true });
+  assertScopes(pkg, "fix(name/other): bugfix", [], { strict: true });
+  assertScopes(pkg, "fix(other/sub): bugfix", [], { strict: true });
+  assertScopes(pkg, "fix(*/sub): bugfix", ["*/sub"], { strict: true });
+  assertScopes(pkg, "fix(*): bugfix", ["*"], { strict: true });
 });

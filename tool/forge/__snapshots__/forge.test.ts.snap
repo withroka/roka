@@ -28,6 +28,7 @@ Options:
 Commands:
 
   list       [packages...]  - List packages and versions.
+  title      <title>        - Validate pull request titles.
   changelog  [packages...]  - Generate changelogs.
   compile    [packages...]  - Compile packages into binary executables.
   bump       [packages...]  - Bump versions on package config files.
@@ -35,11 +36,13 @@ Commands:
 
 Examples:
 
-  forge                   List all packages.
-  forge list 'core/*'     List packages in the 'core' directory.
-  forge compile --install Compile and install all binaries.
-  forge bump --pr         Bump versions and create a bump PR.
-  forge release --draft   Create releases with compiled assets.
+  forge                                 List all packages.
+  forge list 'core/*'                   List packages in the 'core' directory.
+  forge title 'feat(name): description' Validate PR titles.
+  forge changelog --markdown            Generate changelog.
+  forge compile --install               Compile and install all binaries.
+  forge bump --pr                       Bump versions and create a bump PR.
+  forge release --draft                 Create releases with compiled assets.
 
 ❌ Test case attempted to exit with exit code: 0
 ",
@@ -174,10 +177,14 @@ snapshot[`forge changelog --all --emoji 1`] = `
 }
 `;
 
-snapshot[`forge changelog --type <type> 1`] = `
+snapshot[`forge changelog --types <types> 1`] = `
 {
   code: 0,
   output: "
+🏷️  name1@1.0.0
+
+  fix(name1): bug
+
 🏷️  name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
@@ -190,10 +197,14 @@ snapshot[`forge changelog --type <type> 1`] = `
 }
 `;
 
-snapshot[`forge changelog --type <type> --no-breaking --all 1`] = `
+snapshot[`forge changelog --types <types> --no-breaking --all 1`] = `
 {
   code: 0,
   output: "
+🏷️  name1@1.0.0
+
+  fix(name1): bug
+
 🏷️  name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
@@ -259,5 +270,61 @@ snapshot[`forge release --draft --emoji 1`] = `
   [<url>/releases/name1@1.0.0]
 
 ",
+}
+`;
+
+snapshot[`forge title <unscoped> 1`] = `
+{
+  code: 0,
+  output: "
+
+",
+}
+`;
+
+snapshot[`forge title <scoped> 1`] = `
+{
+  code: 0,
+  output: "
+
+",
+}
+`;
+
+snapshot[`forge title <unknown> 1`] = `
+{
+  code: 1,
+  output: '
+❌ Invalid PR scope: "unknown"
+
+Allowed scopes:
+  name1
+  name1/main
+  name2
+  name3
+  name4
+  name5
+  name6
+',
+}
+`;
+
+snapshot[`forge title <scoped> --types <types> 1`] = `
+{
+  code: 0,
+  output: "
+
+",
+}
+`;
+
+snapshot[`forge title <scoped> --types unknown 1`] = `
+{
+  code: 1,
+  output: '
+❌ Invalid PR type: "fix"
+
+Allowed types: unknown
+',
 }
 `;

@@ -66,14 +66,19 @@ async function run(context: Deno.TestContext) {
   );
   using _args = fakeArgs(
     context.name
-      .replaceAll("[package]", pkg.name)
       .replaceAll("[packages...]", packages.map((pkg) => pkg.name).join(" "))
-      .replaceAll("[pattern]", "name*")
-      .replaceAll("[directory]", root)
-      .replaceAll("<file>", join(root, "CHANGELOG.md"))
-      .replaceAll("<type>", "feat")
-      .replaceAll("<target>", "aarch64-unknown-linux-gnu")
-      .split(" ").slice(1),
+      .split(" ").slice(1)
+      .map((arg) =>
+        arg.replaceAll("[package]", pkg.name)
+          .replaceAll("[pattern]", "name*")
+          .replaceAll("[directory]", root)
+          .replaceAll("<file>", join(root, "CHANGELOG.md"))
+          .replaceAll("<types>", "fix,feat")
+          .replaceAll("<target>", "aarch64-unknown-linux-gnu")
+          .replaceAll("<unscoped>", "fix: bug")
+          .replaceAll("<scoped>", "fix(name1): bug")
+          .replaceAll("<unknown>", "fix(unknown): bug")
+      ).flat(),
   );
   using _env = fakeEnv({ GITHUB_TOKEN: "token" });
   using console = fakeConsole();
@@ -100,9 +105,14 @@ Deno.test("forge list [pattern]", test);
 Deno.test("forge list [directory]", test);
 Deno.test("forge changelog", test);
 Deno.test("forge changelog --all --emoji", test);
-Deno.test("forge changelog --type <type>", test);
-Deno.test("forge changelog --type <type> --no-breaking --all", test);
+Deno.test("forge changelog --types <types>", test);
+Deno.test("forge changelog --types <types> --no-breaking --all", test);
 Deno.test("forge changelog --breaking --markdown", test);
 Deno.test("forge compile --target <target> --bundle --install", test);
 Deno.test("forge bump --release --pr --changelog=<file> --emoji", test);
 Deno.test("forge release --draft --emoji", test);
+Deno.test("forge title <unscoped>", test);
+Deno.test("forge title <scoped>", test);
+Deno.test("forge title <unknown>", test);
+Deno.test("forge title <scoped> --types <types>", test);
+Deno.test("forge title <scoped> --types unknown", test);
