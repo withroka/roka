@@ -253,6 +253,12 @@ export interface TagOperations {
 
 /** Merge operations from {@linkcode Git.merge}. */
 export interface MergeOperations {
+  /** Returns the best common ancestor of two or more commits. */
+  base(
+    first: Commitish,
+    second: Commitish,
+    ...rest: Commitish[]
+  ): Promise<Commit | undefined>;
   /** Merges given heads into current branch, and returns incomplete merges. */
   with(
     source: Commitish | Commitish[],
@@ -3275,6 +3281,17 @@ export function git(options?: GitOptions): Git {
       },
     },
     merge: {
+      async base(first, second, ...rest) {
+        const value = await run(
+          { ...gitOptions, allowCode: [1] },
+          "merge-base",
+          commitArg(first),
+          commitArg(second),
+          ...commitArg(rest),
+        );
+        if (!value.trim()) return undefined;
+        return await repo.commit.get(value.trim());
+      },
       async with(source, options) {
         await run(
           { ...gitOptions, allowCode: [1] },

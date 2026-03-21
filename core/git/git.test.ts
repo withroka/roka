@@ -6115,6 +6115,63 @@ Deno.test("git().tag.delete() rejects unknown tag", async () => {
   );
 });
 
+Deno.test("git().merge.base() returns common ancestor", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.merge.base("main", "branch"), commit1);
+});
+
+Deno.test("git().merge.base() accepts commit objects", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  assertEquals(await repo.merge.base(commit1, commit2), commit1);
+});
+
+Deno.test("git().merge.base() accepts more than two commits", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch1", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit2" });
+  await repo.branch.switch("main");
+  await repo.branch.switch("branch2", { create: true });
+  await Deno.writeTextFile(repo.path("file3"), "content");
+  await repo.index.add("file3");
+  await repo.commit.create({ subject: "commit3" });
+  assertEquals(await repo.merge.base("main", "branch1", "branch2"), commit1);
+});
+
+Deno.test("git().merge.base() returns undefined for unrelated histories", async () => {
+  await using repo = await tempRepository({ branch: "branch1" });
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch2", { orphan: true });
+  await Deno.writeTextFile(repo.path("file2"), "other");
+  await repo.index.add("file2");
+  await repo.commit.create({ subject: "commit2" });
+  assertEquals(await repo.merge.base("branch1", "branch2"), undefined);
+});
+
 Deno.test("git().merge.with() performs a fast-forward merge", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content");
