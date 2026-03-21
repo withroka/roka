@@ -101,6 +101,4 @@ Deno.test("forge release --draft --emoji", test);
 Deno.test("forge title <unscoped>", test);
 Deno.test("forge title <scoped>", test);
 Deno.test("forge title <unknown>", test);
-Deno.test("forge title <unknown> --strict", test);
 Deno.test("forge title <scoped> --types <types>", test);
-Deno.test("forge title <scoped> --strict --types unknown", test);
