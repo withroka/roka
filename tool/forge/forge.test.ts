@@ -16,26 +16,11 @@ const WORKSPACE: TempWorkspaceOptions = {
       exports: { ".": "./name2.ts", "./main": "./main.ts" },
       forge: { main: "main.ts", target: ["aarch64-unknown-linux-gnu"] },
     },
-    {
-      name: "@scope/name2",
-      version: "2.0.0",
-      exports: "./name1",
-    },
-    {
-      name: "@scope/name3",
-      version: "3.0.0",
-    },
-    {
-      name: "@scope/name4",
-      version: "4.0.0",
-    },
-    {
-      version: "0.0.0",
-      name: "@scope/dir/name5",
-    },
-    {
-      name: "@scope/dir/name6",
-    },
+    { name: "@scope/name2", version: "2.0.0", exports: "./name1" },
+    { name: "@scope/name3", version: "3.0.0" },
+    { name: "@scope/name4", version: "4.0.0" },
+    { name: "@scope/dir/name5", version: "0.0.0" },
+    { name: "@scope/dir/name6" },
   ],
   commits: [
     { subject: "initial", tags: ["name1@1.0.0-pre.1", "name4@4.0.0"] },
@@ -71,7 +56,8 @@ async function run(context: Deno.TestContext) {
       .map((arg) =>
         arg.replaceAll("[package]", pkg.name)
           .replaceAll("[pattern]", "name*")
-          .replaceAll("[directory]", root)
+          .replaceAll("[directory]", "dir")
+          .replaceAll("[unknown]", "unknown")
           .replaceAll("<file>", join(root, "CHANGELOG.md"))
           .replaceAll("<types>", "fix,feat")
           .replaceAll("<target>", "aarch64-unknown-linux-gnu")
@@ -102,7 +88,8 @@ Deno.test("forge --help", test);
 Deno.test("forge list", test);
 Deno.test("forge list --modules [packages...]", test);
 Deno.test("forge list [pattern]", test);
-Deno.test("forge list [directory]", test);
+Deno.test("forge list [directory]/*", test);
+Deno.test("forge list [unknown]", test);
 Deno.test("forge changelog", test);
 Deno.test("forge changelog --all --emoji", test);
 Deno.test("forge changelog --types <types>", test);
