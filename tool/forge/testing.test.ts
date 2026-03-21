@@ -18,6 +18,7 @@ Deno.test("tempPackage() creates a disposable package", async () => {
       directory,
       root: directory,
       config: { name: "@scope/name", version: "1.2.3" },
+      changes: [],
     });
     await Deno.stat(directory);
   }
@@ -66,6 +67,7 @@ Deno.test("tempWorkspace() creates a disposable workspace", async () => {
       directory: join(root, "name"),
       root,
       config: { name: "@scope/name", version: "1.2.3" },
+      changes: [],
     }]);
     await Deno.stat(root);
   }

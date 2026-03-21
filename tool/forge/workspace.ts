@@ -351,14 +351,15 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     });
   }
   try {
-    const [all, head] = await Promise.all([
+    const [all, headMaybe] = await Promise.all([
       releases(pkg),
-      git({ cwd: pkg.root }).commit.head(),
+      maybe(() => git({ cwd: pkg.root }).commit.head()),
     ]);
     const [latest] = all;
+    const { value: head } = headMaybe;
     const changes = await commits(pkg, {
       types: ["feat", "fix"],
-      ...latest?.range.to &&
+      ...head && latest?.range.to &&
         { range: { from: latest.range.to, to: head.hash } },
     });
     if (latest !== undefined) pkg.latest = latest;
@@ -562,14 +563,14 @@ function calculateVersion(
   pkg: Package,
   latest: Release | undefined,
   log: ConventionalCommit[],
-  head: Commit,
+  head: Commit | undefined,
 ) {
   const current = parse(latest?.version ?? "0.0.0");
   const next = log?.length && log[0]
     ? {
       ...increment(current, updateType(current, pkg, log)),
       prerelease: ["pre", log.length],
-      build: [head.short],
+      build: [head?.short ?? log[0].short],
     }
     : current;
   const coded = parse(pkg.version);
