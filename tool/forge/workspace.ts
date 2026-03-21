@@ -377,7 +377,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
  *
  * (async () => {
  *   const pkg = await packageInfo();
- *   return modules(pkg);
+ *   return await modules(pkg);
  * });
  * ```
  */

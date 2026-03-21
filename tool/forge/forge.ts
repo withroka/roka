@@ -459,10 +459,14 @@ function titleCommand(context: ForgeOptions | undefined) {
           )
         ) {
           const scopes = distinct(
-            packages.map((pkg) =>
-              Object.keys(modules(pkg))
-                .map((m) => m ? `${pkg.name}/${m}` : pkg.name)
-            ).flat(),
+            packages.map((pkg) => [
+              pkg.name,
+              ...options.strict
+                ? Object.keys(modules(pkg))
+                  .filter((m) => m)
+                  .map((m) => `${pkg.name}/${m}`)
+                : [],
+            ]).flat(),
           ).toSorted();
           throw new Error([
             `Invalid PR scope: "${scope}"`,
