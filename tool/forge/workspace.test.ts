@@ -765,7 +765,10 @@ function assertScopes(
 }
 
 Deno.test("scopes() returns matching scopes for workspace member", async () => {
-  const [pkg] = await tempWorkspace({ configs: [{ name: "@scope/name" }] });
+  await using workspace = await tempWorkspace({
+    configs: [{ name: "@scope/name" }],
+  });
+  const [pkg] = workspace;
   assertExists(pkg);
   assertScopes(pkg, "add feature", []);
   assertScopes(pkg, "feat: add feature", []);
@@ -802,12 +805,13 @@ Deno.test("scopes() returns matching scopes for non-workspace package", async ()
 });
 
 Deno.test("scopes({ strict }) validates module-level scopes", async () => {
-  const [pkg] = await tempWorkspace({
+  await using workspace = await tempWorkspace({
     configs: [{
       name: "@scope/name",
       exports: { ".": "./name.ts", "./sub": "./sub.ts" },
     }],
   });
+  const [pkg] = workspace;
   assertExists(pkg);
   assertScopes(pkg, "bugfix(name): bugfix", ["name"], { strict: true });
   assertScopes(pkg, "fix(name/sub): bugfix", ["name/sub"], { strict: true });

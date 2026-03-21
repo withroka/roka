@@ -458,7 +458,7 @@ function titleCommand(context: ForgeOptions | undefined) {
             scopes(pkg, scoped, { strict: options.strict }).length
           )
         ) {
-          const scopes = distinct(
+          const allowed = distinct(
             packages.map((pkg) => [
               pkg.name,
               ...options.strict
@@ -471,7 +471,7 @@ function titleCommand(context: ForgeOptions | undefined) {
           throw new Error([
             `Invalid PR scope: "${scope}"`,
             "Allowed scopes:",
-            "  " + scopes.join("\n  "),
+            "  " + allowed.join("\n  "),
           ].join("\n\n"));
         }
       }
