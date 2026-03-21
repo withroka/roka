@@ -127,7 +127,7 @@ Deno.test("bump() rejects package with modified config file", async () => {
   const { errors } = await maybe(() => bump([pkg]));
   assertExists(errors);
   assertEquals(errors.length, 1);
-  assertStringIncludes(errors[0].message, "uncomitted changes");
+  assertStringIncludes(errors[0].message, "uncommitted changes");
 });
 
 Deno.test("bump({ release }) bumps to release version", async () => {
