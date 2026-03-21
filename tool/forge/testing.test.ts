@@ -18,7 +18,6 @@ Deno.test("tempPackage() creates a disposable package", async () => {
       directory,
       root: directory,
       config: { name: "@scope/name", version: "1.2.3" },
-      changes: [],
     });
     await Deno.stat(directory);
   }
@@ -67,7 +66,6 @@ Deno.test("tempWorkspace() creates a disposable workspace", async () => {
       directory: join(root, "name"),
       root,
       config: { name: "@scope/name", version: "1.2.3" },
-      changes: [],
     }]);
     await Deno.stat(root);
   }
@@ -99,14 +97,14 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
   assertExists(commit3);
   assertEquals([...packages], [{
     name: "name1",
-    version: `0.0.1-pre.1+${commit1.short}`,
+    version: `0.0.1-pre.1+${commit3.short}`,
     directory: join(root, "name1"),
     root,
     config: { name: "@scope/name1" },
     changes: [conventional(commit1)],
   }, {
     name: "name2",
-    version: `0.1.0-pre.1+${commit2.short}`,
+    version: `0.1.0-pre.1+${commit3.short}`,
     directory: join(root, "name2"),
     root,
     config: { name: "@scope/name2" },
