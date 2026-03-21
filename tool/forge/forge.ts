@@ -298,16 +298,26 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
+import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
+import { distinct } from "@std/collections";
 import { bold } from "@std/fmt/colors";
-import { join, relative } from "@std/path";
+import { join } from "@std/path";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
 import { release } from "./release.ts";
 import { version } from "./version.ts";
-import { commits, type Package, releases, workspace } from "./workspace.ts";
+import {
+  type CommitOptions,
+  commits,
+  modules,
+  type Package,
+  releases,
+  scopes,
+  workspace,
+} from "./workspace.ts";
 
 const DESCRIPTION = `
   ${bold("🛠️  forge")}
@@ -347,6 +357,8 @@ export async function forge(
     .description(DESCRIPTION)
     .example("forge", "List all packages.")
     .example("forge list 'core/*'", "List packages in the 'core' directory.")
+    .example("forge title 'feat(name): description'", "Validate PR titles.")
+    .example("forge changelog --markdown", "Generate changelog.")
     .example("forge compile --install", "Compile and install all binaries.")
     .example("forge bump --pr", "Bump versions and create a bump PR.")
     .example("forge release --draft", "Create releases with compiled assets.")
@@ -358,6 +370,7 @@ export async function forge(
     })
     .default("list")
     .command("list", listCommand(options))
+    .command("title", titleCommand(options))
     .command("changelog", changelogCommand(options))
     .command("compile", compileCommand(await targets(), options))
     .command("bump", bumpCommand(options))
@@ -381,7 +394,7 @@ function listCommand(context: ForgeOptions | undefined) {
       const packages = await filter(filters, context);
       Table.from([
         ...packages.map((pkg) => {
-          return [packageRow(pkg), ...moduleRows(pkg, options)];
+          return [packageRow(pkg), ...options.modules ? moduleRows(pkg) : []];
         }).flat(),
       ]).render();
     });
@@ -400,35 +413,88 @@ function packageRow(pkg: Package): string[] {
   ];
 }
 
-function moduleRows(pkg: Package, { modules = false }): string[][] {
-  if (!modules) return [];
-  const exports = pkg.config.exports ?? {};
-  const mapping = (typeof exports === "string") ? { ".": exports } : exports;
-  const rows = Object.entries(mapping)
-    .map(([name, path]) => [
-      `  🧩 ${relative(".", name) || "(default)"}`,
-      join(pkg.directory, path),
-    ]);
+function moduleRows(pkg: Package): string[][] {
+  const rows = Object.entries(modules(pkg)).map(([name, path]) => [
+    `  🧩 ${name || "(default)"}`,
+    join(pkg.directory, path),
+  ]);
   return [[], ...rows, []];
+}
+
+function titleCommand(context: ForgeOptions | undefined) {
+  return new Command()
+    .description("Validate pull request titles.")
+    .example("forge title 'feat(name): description'", "Validate a PR title.")
+    .arguments("<title:string>")
+    .option("--types <types:string[]>", "Allowed commit types.")
+    .option(
+      "--strict",
+      "Only allow scopes that match package names or modules.",
+      { default: false },
+    )
+    .action(async (options, title) => {
+      const packages = await workspace({
+        ...context?.repo && { root: context?.repo.git.path() },
+      });
+      const commit = conventional({
+        hash: "",
+        short: "",
+        author: { name: "", email: "" },
+        committer: { name: "", email: "" },
+        subject: title,
+      });
+      if (
+        options.types && (!commit.type || !options.types.includes(commit.type))
+      ) {
+        throw new Error([
+          `Invalid PR type: "${commit.type ?? ""}"`,
+          `Allowed types: ${options.types.join(", ")}`,
+        ].join("\n\n"));
+      }
+      for (const scope of commit.scopes ?? []) {
+        const scoped = { ...commit, scopes: [scope] };
+        if (
+          !packages.some((pkg) =>
+            scopes(pkg, scoped, { strict: options.strict }).length
+          )
+        ) {
+          const allowed = distinct(
+            packages.map((pkg) => [
+              pkg.name,
+              ...options.strict
+                ? Object.keys(modules(pkg))
+                  .filter((m) => m)
+                  .map((m) => `${pkg.name}/${m}`)
+                : [],
+            ]).flat(),
+          ).toSorted();
+          throw new Error([
+            `Invalid PR scope: "${scope}"`,
+            "Allowed scopes:",
+            "  " + allowed.join("\n  "),
+          ].join("\n\n"));
+        }
+      }
+    });
 }
 
 function changelogCommand(context: ForgeOptions | undefined) {
   return new Command()
     .description("Generate changelogs.")
     .example("forge changelog", "List unreleased changes.")
-    .example("forge changelog --type feat --no-breaking", "List new features.")
+    .example("forge changelog --types feat --no-breaking", "List new features.")
     .example("forge changelog --markdown --all", "All releases in Markdown.")
     .arguments("[packages...:file]")
     .option("--all", "Generate changelog for all releases.")
-    .option("--type=<type:string>", "Commit type.", { collect: true })
+    .option("--types <types:string[]>", "Commit types to include.")
     .option("--breaking", "Only breaking changes.")
     .option("--no-breaking", "Skip breaking changes of filtered types.")
     .option("--emoji", "Use emoji for commit subjects.", { default: false })
     .option("--markdown", "Generate Markdown.", { default: false })
     .action(async (options, ...filters) => {
       const packages = await filter(filters, context);
-      const commitOptions = {
-        ...options.type !== undefined && { type: options.type },
+      const commitOptions: CommitOptions = {
+        ...options.types !== undefined && { types: options.types },
         ...options.breaking !== undefined && { breaking: options.breaking },
       };
       const changelogOptions: ChangelogOptions = {
