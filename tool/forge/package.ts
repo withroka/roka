@@ -498,24 +498,23 @@ function updateType(
 }
 
 function matchesScope(pkg: Package, commit: ConventionalCommit) {
-  return matchingScopes(pkg, commit)?.length !== 0;
+  return matchingScopes(pkg, commit).length > 0;
 }
 
 function isUnstable(pkg: Package, commit: ConventionalCommit) {
   if (!commit.scopes) return false;
-  const single = pkg.root === pkg.directory;
   const scopes = matchingScopes(pkg, commit);
-  return scopes &&
-    scopes.every((s) =>
-      (single && s === "unstable") || s.endsWith("/unstable")
-    );
+  return scopes.length > 0 &&
+    scopes.every((s) => (s === "unstable") || s.endsWith("/unstable"));
 }
 
 function matchingScopes(pkg: Package, commit: ConventionalCommit) {
+  const single = pkg.root === pkg.directory;
   return commit.scopes?.filter((s) =>
     s === "*" ||
     s.startsWith("*/") ||
     s === pkg.name ||
-    s.startsWith(`${pkg.name}/`)
-  );
+    s.startsWith(`${pkg.name}/`) ||
+    (single && s === "unstable")
+  ) ?? [];
 }
