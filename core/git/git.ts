@@ -3282,16 +3282,14 @@ export function git(options?: GitOptions): Git {
     },
     merge: {
       async base(first, second, ...rest) {
-        const { value } = await maybe(() =>
-          run(
-            gitOptions,
-            "merge-base",
-            commitArg(first),
-            commitArg(second),
-            ...commitArg(rest),
-          )
+        const value = await run(
+          { ...gitOptions, allowCode: [1] },
+          "merge-base",
+          commitArg(first),
+          commitArg(second),
+          ...commitArg(rest),
         );
-        if (!value) return undefined;
+        if (!value.trim()) return undefined;
         return await repo.commit.get(value.trim());
       },
       async with(source, options) {
