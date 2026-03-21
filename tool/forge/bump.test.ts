@@ -2,7 +2,13 @@ import { assertArrayObjectMatch } from "@roka/assert";
 import { git, GitError } from "@roka/git";
 import { tempRepository } from "@roka/git/testing";
 import { fakePullRequest, fakeRepository } from "@roka/github/testing";
-import { assertEquals, assertExists, assertRejects } from "@std/assert";
+import { maybe } from "@roka/maybe";
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+  assertStringIncludes,
+} from "@std/assert";
 import { join } from "@std/path";
 import { bump } from "./bump.ts";
 import { tempPackage, tempWorkspace } from "./testing.ts";
@@ -100,6 +106,28 @@ Deno.test("bump() updates workspace", async () => {
     { config: { version: "2.0.0" } },
     { config: { version: "1.2.4" } },
   ]);
+});
+
+Deno.test("bump() rejects package with modified config file", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: `1.2.3` },
+    commits: [
+      { subject: "initial", tags: ["name@1.2.3"] },
+      { subject: "feat: new feature" },
+    ],
+  });
+  const path = join(pkg.directory, "deno.json");
+  const repo = git({ cwd: pkg.root });
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "chore: update deno.json" });
+  await Deno.writeTextFile(
+    join(pkg.directory, "deno.json"),
+    JSON.stringify({ name: "@scope/name" }),
+  );
+  const { errors } = await maybe(() => bump([pkg]));
+  assertExists(errors);
+  assertEquals(errors.length, 1);
+  assertStringIncludes(errors[0].message, "uncomitted changes");
 });
 
 Deno.test("bump({ release }) bumps to release version", async () => {
