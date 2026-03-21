@@ -48,7 +48,7 @@
  */
 
 import { pool } from "@roka/async/pool";
-import { git, GitError, type Tag } from "@roka/git";
+import { type Commit, git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
@@ -351,15 +351,21 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     });
   }
   try {
-    const [latest] = await releases(pkg);
+    const [all, headMaybe] = await Promise.all([
+      releases(pkg),
+      maybe(() => git({ cwd: pkg.root }).commit.head()),
+    ]);
+    const [latest] = all;
+    const { value: head } = headMaybe;
     const changes = await commits(pkg, {
       types: ["feat", "fix"],
-      ...latest?.range.to && { range: { from: latest.range.to } },
+      ...head && latest?.range.to &&
+        { range: { from: latest.range.to, to: head.hash } },
     });
     if (latest !== undefined) pkg.latest = latest;
     if (changes !== undefined) {
       pkg.changes = changes;
-      pkg.version = calculateVersion(pkg, latest, changes);
+      pkg.version = calculateVersion(pkg, latest, changes, head);
     }
   } catch (e: unknown) {
     // git will fail on non-repository
@@ -557,13 +563,14 @@ function calculateVersion(
   pkg: Package,
   latest: Release | undefined,
   log: ConventionalCommit[],
+  head: Commit | undefined,
 ) {
   const current = parse(latest?.version ?? "0.0.0");
   const next = log?.length && log[0]
     ? {
       ...increment(current, updateType(current, pkg, log)),
       prerelease: ["pre", log.length],
-      build: [log[0].short],
+      build: [head?.short ?? log[0].short],
     }
     : current;
   const coded = parse(pkg.version);

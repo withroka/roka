@@ -151,11 +151,11 @@ Deno.test("workspace() matches commit scope", async () => {
   assertExists(commit3);
   assertArrayObjectMatch(await workspace({ root }), [{
     name: "pkg1",
-    version: `0.0.1-pre.1+${commit1.short}`,
+    version: `0.0.1-pre.1+${commit3.short}`,
     changes: [conventional(commit1)],
   }, {
     name: "pkg2",
-    version: `0.0.1-pre.1+${commit2.short}`,
+    version: `0.0.1-pre.1+${commit3.short}`,
     changes: [conventional(commit2)],
   }, {
     name: "pkg3",
@@ -190,7 +190,7 @@ Deno.test("workspace() considers unstable changes", async () => {
   assertExists(commit4);
   assertArrayObjectMatch(await workspace({ root }), [{
     name: "pkg1",
-    version: `1.2.4-pre.2+${commit2.short}`,
+    version: `1.2.4-pre.2+${commit4.short}`,
     changes: [conventional(commit2), conventional(commit1)],
   }, {
     name: "pkg2",
@@ -375,11 +375,12 @@ Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [_, fix] = await repo.commit.log();
+  const [head, fix] = await repo.commit.log();
+  assertExists(head);
   assertExists(fix);
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
-    version: `0.0.1-pre.1+${fix.short}`,
+    version: `0.0.1-pre.1+${head.short}`,
     changes: [conventional(fix)],
   });
 });
