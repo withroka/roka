@@ -23,14 +23,13 @@
  * });
  * ```
  *
- * @todo Check if configuration files are dirty before modifying them.
- *
  * @module bump
  * @internal
  */
 
 import { pool } from "@roka/async/pool";
 import { deno } from "@roka/deno";
+import { git } from "@roka/git";
 import { github, type PullRequest, type Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
@@ -121,11 +120,27 @@ export async function bump(
       }),
     }))
     .filter(({ pkg, bump }) => pkg.config.version !== bump);
+  await checkDirty(packages, options);
   packages = await pool(bumps, ({ pkg, bump }) => updateConfig(pkg, bump));
   if (packages.length === 0) throw new PackageError("No packages to bump");
   if (options?.changelog) await updateChangelog(packages, options);
   if (!options?.pr) return undefined;
   return createPullRequest(packages, options);
+}
+
+async function checkDirty(packages: Package[], options?: BumpOptions) {
+  const [pkg] = packages;
+  if (!pkg) return;
+  const repo = options?.repo?.git ?? git({ cwd: pkg.root });
+  const status = await repo.diff.status({
+    path: packages.map((pkg) => join(pkg.directory, "deno.json")),
+  });
+  if (status.length) {
+    throw new PackageError([
+      `Cannot bump version, uncommitted changes in:`,
+      ...status.map((s) => s.path),
+    ].join("\n"));
+  }
 }
 
 async function updateConfig(pkg: Package, version: string) {

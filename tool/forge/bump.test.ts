@@ -102,6 +102,25 @@ Deno.test("bump() updates workspace", async () => {
   ]);
 });
 
+Deno.test("bump() rejects package with modified config file", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: `1.2.3` },
+    commits: [
+      { subject: "initial", tags: ["name@1.2.3"] },
+      { subject: "feat: new feature" },
+    ],
+  });
+  const path = join(pkg.directory, "deno.json");
+  const repo = git({ cwd: pkg.root });
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "chore: update deno.json" });
+  await Deno.writeTextFile(
+    join(pkg.directory, "deno.json"),
+    JSON.stringify({ name: "@scope/name" }),
+  );
+  await assertRejects(() => bump([pkg]), PackageError, "uncommitted changes");
+});
+
 Deno.test("bump({ release }) bumps to release version", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.2.3` },
