@@ -601,6 +601,35 @@ Deno.test("commits() enforces scope for workspace members", async () => {
   assertEquals(await commits(pkg2), [conventional(docs)]);
 });
 
+Deno.test("commits() assigns wildcard scope to all members", async () => {
+  const [pkg1, pkg2] = await tempWorkspace({
+    configs: [
+      { name: "@scope/name1" },
+      { name: "@scope/name2" },
+    ],
+    commits: [
+      { subject: "feat(name1): new feature" },
+      { subject: "fix(*)!: fix bug" },
+      { subject: "docs(*/unstable): add docs" },
+    ],
+  });
+  assertExists(pkg1);
+  assertExists(pkg2);
+  const [docs, fix, feat] = await git({ cwd: pkg1.directory }).commit.log();
+  assertExists(feat);
+  assertExists(docs);
+  assertExists(fix);
+  assertEquals(await commits(pkg1), [
+    conventional(docs),
+    conventional(fix),
+    conventional(feat),
+  ]);
+  assertEquals(await commits(pkg2), [
+    conventional(docs),
+    conventional(fix),
+  ]);
+});
+
 Deno.test("commits({ range }) returns from a range", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },

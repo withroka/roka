@@ -500,7 +500,10 @@ function updateType(
 function matchesScope(pkg: Package, commit: ConventionalCommit) {
   if (!commit.scopes) return false;
   return commit.scopes.some((s) =>
-    s === pkg.name || s.startsWith(`${pkg.name}/`)
+    s === "*" ||
+    s.startsWith("*/") ||
+    s === pkg.name ||
+    s.startsWith(`${pkg.name}/`)
   );
 }
 
