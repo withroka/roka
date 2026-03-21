@@ -303,7 +303,7 @@ import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { distinct } from "@std/collections";
 import { bold } from "@std/fmt/colors";
-import { join, relative } from "@std/path";
+import { join } from "@std/path";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
@@ -394,7 +394,7 @@ function listCommand(context: ForgeOptions | undefined) {
       const packages = await filter(filters, context);
       Table.from([
         ...packages.map((pkg) => {
-          return [packageRow(pkg), ...moduleRows(pkg, options)];
+          return [packageRow(pkg), ...options.modules ? moduleRows(pkg) : []];
         }).flat(),
       ]).render();
     });
@@ -413,15 +413,11 @@ function packageRow(pkg: Package): string[] {
   ];
 }
 
-function moduleRows(pkg: Package, { modules = false }): string[][] {
-  if (!modules) return [];
-  const exports = pkg.config.exports ?? {};
-  const mapping = (typeof exports === "string") ? { ".": exports } : exports;
-  const rows = Object.entries(mapping)
-    .map(([name, path]) => [
-      `  🧩 ${relative(".", name) || "(default)"}`,
-      join(pkg.directory, path),
-    ]);
+function moduleRows(pkg: Package): string[][] {
+  const rows = Object.entries(modules(pkg)).map(([name, path]) => [
+    `  🧩 ${name || "(default)"}`,
+    join(pkg.directory, path),
+  ]);
   return [[], ...rows, []];
 }
 
@@ -430,7 +426,7 @@ function titleCommand(context: ForgeOptions | undefined) {
     .description("Validate pull request titles.")
     .example("forge title 'feat(name): description'", "Validate a PR title.")
     .arguments("<title:string>")
-    .option("--types <type:string[]>", "Allowed commit types.")
+    .option("--types <types:string[]>", "Allowed commit types.")
     .option(
       "--strict",
       "Only allow scopes that match package names or modules.",
@@ -461,14 +457,16 @@ function titleCommand(context: ForgeOptions | undefined) {
           scopes(pkg, commit, { strict: options.strict }).length
         )
       ) {
+        const scopes = distinct(
+          packages.map((pkg) =>
+            Object.keys(modules(pkg))
+              .map((m) => m ? `${pkg.name}/${m}` : pkg.name)
+          ).flat(),
+        ).toSorted();
         throw new Error([
           `Invalid PR scope: "${commit.scopes?.join(", ")}"`,
-          [
-            "Allowed scopes:",
-            ...distinct(
-              packages.map((pkg) => [pkg.name, ...modules(pkg)]).flat(),
-            ).toSorted(),
-          ].join("\n  "),
+          "Allowed scopes:",
+          "  " + scopes.join("\n  "),
         ].join("\n\n"));
       }
     });

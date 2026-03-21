@@ -23,6 +23,212 @@ import {
 import { join } from "@std/path";
 import { tempPackage, tempWorkspace } from "./testing.ts";
 
+Deno.test("workspace() returns simple package", async () => {
+  await using temp = await tempWorkspace({
+    configs: [{ name: "pkg" }],
+  });
+  const [pkg] = temp;
+  assertExists(pkg);
+  const root = pkg.root;
+  assertEquals(await workspace({ root }), [{
+    name: "pkg",
+    version: "0.0.0",
+    directory: join(root, "pkg"),
+    root,
+    config: { name: "pkg" },
+    changes: [],
+  }]);
+});
+
+Deno.test("workspace() returns monorepo packages", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "pkg1", version: "0.1.0" },
+      { name: "pkg2" },
+      { name: "pkg2/pkg3" },
+    ],
+  });
+  const [pkg1, pkg2, pkg3] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  assertExists(pkg3);
+  const root = pkg1.root;
+  assertEquals(await workspace({ root }), [{
+    name: "pkg1",
+    version: "0.1.0",
+    directory: join(root, "pkg1"),
+    root,
+    config: { name: "pkg1", version: "0.1.0" },
+    changes: [],
+  }, {
+    name: "pkg2",
+    version: "0.0.0",
+    directory: join(root, "pkg2"),
+    root,
+    config: { name: "pkg2" },
+    changes: [],
+  }, {
+    name: "pkg3",
+    version: "0.0.0",
+    directory: join(root, "pkg2/pkg3"),
+    root,
+    config: { name: "pkg2/pkg3" },
+    changes: [],
+  }]);
+});
+
+Deno.test("workspace() does not return nested workspace packages", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "pkg1" },
+      { name: "pkg2", workspace: ["./something"] },
+    ],
+  });
+  const [pkg1, pkg2] = temp;
+  assertExists(pkg1);
+  const root = pkg1.root;
+  assertEquals(await workspace({ root }), [pkg1, pkg2]);
+});
+
+Deno.test("workspace() handles path patterns", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "dir1/pkg1" },
+      { name: "dir1/pkg2" },
+      { name: "dir2/pkg1" },
+      { name: "dir2/pkg2" },
+    ],
+    workspace: ["dir1/*", "*/pkg2"],
+  });
+  const [pkg1, pkg2, pkg3] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  assertExists(pkg3);
+  const root = pkg1.root;
+  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
+  assertEquals(pkg2.directory, join(root, "dir1/pkg2"));
+  assertEquals(pkg3.directory, join(root, "dir2/pkg2"));
+  assertEquals(await workspace({ root }), [pkg1, pkg2, pkg3]);
+});
+
+Deno.test("workspace() does not recurse path patterns", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "dir1/pkg1" },
+      { name: "dir1/subdir/pkg2" },
+    ],
+    workspace: ["dir1/*"],
+  });
+  const [pkg1] = temp;
+  assertExists(pkg1);
+  const root = pkg1.root;
+  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
+  assertEquals(await workspace({ root }), [pkg1]);
+});
+
+Deno.test("workspace() matches commit scope", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "pkg1" },
+      { name: "pkg2" },
+      { name: "pkg3" },
+    ],
+    commits: [
+      { subject: "initial" },
+      { subject: "fix(pkg1): fix" },
+      { subject: "fix(pkg2/submodule): fix" },
+      { subject: "fix(pkg3/dir/submodule): fix" },
+    ],
+  });
+  const [pkg1, pkg2, pkg3] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  assertExists(pkg3);
+  const root = pkg1.root;
+  const [commit3, commit2, commit1] = await git({ cwd: root }).commit.log();
+  assertExists(commit1);
+  assertExists(commit2);
+  assertExists(commit3);
+  assertArrayObjectMatch(await workspace({ root }), [{
+    name: "pkg1",
+    version: `0.0.1-pre.1+${commit1.short}`,
+    changes: [conventional(commit1)],
+  }, {
+    name: "pkg2",
+    version: `0.0.1-pre.1+${commit2.short}`,
+    changes: [conventional(commit2)],
+  }, {
+    name: "pkg3",
+    version: `0.0.1-pre.1+${commit3.short}`,
+    changes: [conventional(commit3)],
+  }]);
+});
+
+Deno.test("workspace() considers unstable changes", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "pkg1", version: "1.2.3" },
+      { name: "pkg2", version: "1.2.3" },
+    ],
+    commits: [
+      { subject: "initial", tags: ["pkg1@1.2.3", "pkg2@1.2.3", "pkg3@1.2.3"] },
+      { subject: "fix(*/unstable): fix all" },
+      { subject: "feat(pkg1/dir/unstable): feat" },
+      { subject: "feat(pkg2): feat" },
+      { subject: "fix(pkg2/unstable): fix" },
+    ],
+  });
+  const [pkg1, pkg2] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  const root = pkg1.root;
+  const [commit4, commit3, commit2, commit1] = await git({ cwd: root }).commit
+    .log();
+  assertExists(commit1);
+  assertExists(commit2);
+  assertExists(commit3);
+  assertExists(commit4);
+  assertArrayObjectMatch(await workspace({ root }), [{
+    name: "pkg1",
+    version: `1.2.4-pre.2+${commit2.short}`,
+    changes: [conventional(commit2), conventional(commit1)],
+  }, {
+    name: "pkg2",
+    version: `1.3.0-pre.3+${commit4.short}`,
+    changes: [
+      conventional(commit4),
+      conventional(commit3),
+      conventional(commit1),
+    ],
+  }]);
+});
+
+Deno.test("workspace({ filters }) filters packages", async () => {
+  await using temp = await tempWorkspace({
+    configs: [
+      { name: "dir1/pkg1" },
+      { name: "dir2/pkg2" },
+      { name: "dir2/pkg3" },
+    ],
+  });
+  const [pkg1, pkg2, pkg3] = temp;
+  assertExists(pkg1);
+  assertExists(pkg2);
+  assertExists(pkg3);
+  const root = pkg1.root;
+  assertEquals(await workspace({ root, filters: ["pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filters: ["*1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["pk*"] }), [pkg1, pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["dir1/pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["*1/*"] }), [pkg1]);
+  assertEquals(await workspace({ root, filters: ["*2/pkg?"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["dir2/*"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filters: ["*/pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filters: ["none*"] }), []);
+  assertEquals(await workspace({ root, filters: ["*2", "*3"] }), [pkg2, pkg3]);
+});
+
 Deno.test("packageInfo() rejects non-Deno package", async () => {
   await using repo = await tempRepository();
   const directory = repo.path();
@@ -301,210 +507,28 @@ Deno.test("packageInfo() ignores forced lower version", async () => {
   });
 });
 
-Deno.test("workspace() returns simple package", async () => {
-  await using temp = await tempWorkspace({
-    configs: [{ name: "pkg" }],
+Deno.test("modules() returns module names from exports", async () => {
+  await using pkg = await tempPackage({
+    config: {
+      name: "@scope/name",
+      exports: { ".": "./name.ts", "./sub": "./sub.ts" },
+    },
   });
-  const [pkg] = temp;
-  assertExists(pkg);
-  const root = pkg.root;
-  assertEquals(await workspace({ root }), [{
-    name: "pkg",
-    version: "0.0.0",
-    directory: join(root, "pkg"),
-    root,
-    config: { name: "pkg" },
-    changes: [],
-  }]);
+  assertEquals(modules(pkg), { "": "./name.ts", "sub": "./sub.ts" });
 });
 
-Deno.test("workspace() returns monorepo packages", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "pkg1", version: "0.1.0" },
-      { name: "pkg2" },
-      { name: "pkg2/pkg3" },
-    ],
+Deno.test("modules() returns package name for string export", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", exports: "./name.ts" },
   });
-  const [pkg1, pkg2, pkg3] = temp;
-  assertExists(pkg1);
-  assertExists(pkg2);
-  assertExists(pkg3);
-  const root = pkg1.root;
-  assertEquals(await workspace({ root }), [{
-    name: "pkg1",
-    version: "0.1.0",
-    directory: join(root, "pkg1"),
-    root,
-    config: { name: "pkg1", version: "0.1.0" },
-    changes: [],
-  }, {
-    name: "pkg2",
-    version: "0.0.0",
-    directory: join(root, "pkg2"),
-    root,
-    config: { name: "pkg2" },
-    changes: [],
-  }, {
-    name: "pkg3",
-    version: "0.0.0",
-    directory: join(root, "pkg2/pkg3"),
-    root,
-    config: { name: "pkg2/pkg3" },
-    changes: [],
-  }]);
+  assertEquals(modules(pkg), { "": "./name.ts" });
 });
 
-Deno.test("workspace() does not return nested workspace packages", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "pkg1" },
-      { name: "pkg2", workspace: ["./something"] },
-    ],
+Deno.test("modules() returns empty for no exports", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
   });
-  const [pkg1, pkg2] = temp;
-  assertExists(pkg1);
-  const root = pkg1.root;
-  assertEquals(await workspace({ root }), [pkg1, pkg2]);
-});
-
-Deno.test("workspace() handles path patterns", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "dir1/pkg1" },
-      { name: "dir1/pkg2" },
-      { name: "dir2/pkg1" },
-      { name: "dir2/pkg2" },
-    ],
-    workspace: ["dir1/*", "*/pkg2"],
-  });
-  const [pkg1, pkg2, pkg3] = temp;
-  assertExists(pkg1);
-  assertExists(pkg2);
-  assertExists(pkg3);
-  const root = pkg1.root;
-  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
-  assertEquals(pkg2.directory, join(root, "dir1/pkg2"));
-  assertEquals(pkg3.directory, join(root, "dir2/pkg2"));
-  assertEquals(await workspace({ root }), [pkg1, pkg2, pkg3]);
-});
-
-Deno.test("workspace() does not recurse path patterns", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "dir1/pkg1" },
-      { name: "dir1/subdir/pkg2" },
-    ],
-    workspace: ["dir1/*"],
-  });
-  const [pkg1] = temp;
-  assertExists(pkg1);
-  const root = pkg1.root;
-  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
-  assertEquals(await workspace({ root }), [pkg1]);
-});
-
-Deno.test("workspace() matches commit scope", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "pkg1" },
-      { name: "pkg2" },
-      { name: "pkg3" },
-    ],
-    commits: [
-      { subject: "initial" },
-      { subject: "fix(pkg1): fix" },
-      { subject: "fix(pkg2/submodule): fix" },
-      { subject: "fix(pkg3/dir/submodule): fix" },
-    ],
-  });
-  const [pkg1, pkg2, pkg3] = temp;
-  assertExists(pkg1);
-  assertExists(pkg2);
-  assertExists(pkg3);
-  const root = pkg1.root;
-  const [commit3, commit2, commit1] = await git({ cwd: root }).commit.log();
-  assertExists(commit1);
-  assertExists(commit2);
-  assertExists(commit3);
-  assertArrayObjectMatch(await workspace({ root }), [{
-    name: "pkg1",
-    version: `0.0.1-pre.1+${commit1.short}`,
-    changes: [conventional(commit1)],
-  }, {
-    name: "pkg2",
-    version: `0.0.1-pre.1+${commit2.short}`,
-    changes: [conventional(commit2)],
-  }, {
-    name: "pkg3",
-    version: `0.0.1-pre.1+${commit3.short}`,
-    changes: [conventional(commit3)],
-  }]);
-});
-
-Deno.test("workspace() considers unstable changes", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "pkg1", version: "1.2.3" },
-      { name: "pkg2", version: "1.2.3" },
-    ],
-    commits: [
-      { subject: "initial", tags: ["pkg1@1.2.3", "pkg2@1.2.3", "pkg3@1.2.3"] },
-      { subject: "fix(*/unstable): fix all" },
-      { subject: "feat(pkg1/dir/unstable): feat" },
-      { subject: "feat(pkg2): feat" },
-      { subject: "fix(pkg2/unstable): fix" },
-    ],
-  });
-  const [pkg1, pkg2] = temp;
-  assertExists(pkg1);
-  assertExists(pkg2);
-  const root = pkg1.root;
-  const [commit4, commit3, commit2, commit1] = await git({ cwd: root }).commit
-    .log();
-  assertExists(commit1);
-  assertExists(commit2);
-  assertExists(commit3);
-  assertExists(commit4);
-  assertArrayObjectMatch(await workspace({ root }), [{
-    name: "pkg1",
-    version: `1.2.4-pre.2+${commit2.short}`,
-    changes: [conventional(commit2), conventional(commit1)],
-  }, {
-    name: "pkg2",
-    version: `1.3.0-pre.3+${commit4.short}`,
-    changes: [
-      conventional(commit4),
-      conventional(commit3),
-      conventional(commit1),
-    ],
-  }]);
-});
-
-Deno.test("workspace({ filters }) filters packages", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "dir1/pkg1" },
-      { name: "dir2/pkg2" },
-      { name: "dir2/pkg3" },
-    ],
-  });
-  const [pkg1, pkg2, pkg3] = temp;
-  assertExists(pkg1);
-  assertExists(pkg2);
-  assertExists(pkg3);
-  const root = pkg1.root;
-  assertEquals(await workspace({ root, filters: ["pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ root, filters: ["*1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["pk*"] }), [pkg1, pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["dir1/pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["*1/*"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["*2/pkg?"] }), [pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["dir2/*"] }), [pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["*/pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ root, filters: ["none*"] }), []);
-  assertEquals(await workspace({ root, filters: ["*2", "*3"] }), [pkg2, pkg3]);
+  assertEquals(modules(pkg), {});
 });
 
 Deno.test("releases() returns releases for a package", async () => {
@@ -728,30 +752,6 @@ Deno.test("commits({ breaking }) can filter non-breaking changes", async () => {
   );
 });
 
-Deno.test("modules() returns module names from exports", async () => {
-  await using pkg = await tempPackage({
-    config: {
-      name: "@scope/name",
-      exports: { ".": "./name.ts", "./sub": "./sub.ts" },
-    },
-  });
-  assertEquals(modules(pkg), ["name", "name/sub"]);
-});
-
-Deno.test("modules() returns package name for string export", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name", exports: "./name.ts" },
-  });
-  assertEquals(modules(pkg), ["name"]);
-});
-
-Deno.test("modules() returns empty for no exports", async () => {
-  await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-  });
-  assertEquals(modules(pkg), []);
-});
-
 function assertScopes(
   pkg: Package,
   summary: string,
@@ -815,4 +815,7 @@ Deno.test("scopes({ strict }) validates module-level scopes", async () => {
   assertScopes(pkg, "fix(other/sub): bugfix", [], { strict: true });
   assertScopes(pkg, "fix(*/sub): bugfix", ["*/sub"], { strict: true });
   assertScopes(pkg, "fix(*): bugfix", ["*"], { strict: true });
+  assertScopes(pkg, "fix(name/unstable): bugfix", ["name/unstable"], {
+    strict: true,
+  });
 });

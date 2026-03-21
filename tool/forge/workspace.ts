@@ -53,6 +53,7 @@ import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
 import { distinct } from "@std/collections";
+import { mapKeys } from "@std/collections/map-keys";
 import { expandGlob } from "@std/fs";
 import {
   basename,
@@ -376,16 +377,16 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
  *
  * (async () => {
  *   const pkg = await packageInfo();
- *   return await modules(pkg);
+ *   return modules(pkg);
  * });
  * ```
  */
-export function modules(pkg: Package): string[] {
+export function modules(pkg: Package): Record<string, string> {
   const exports = typeof pkg.config.exports === "string"
-    ? { ".": pkg.config.exports }
+    ? { "": pkg.config.exports }
     : pkg.config.exports;
-  if (exports === undefined) return [];
-  return Object.keys(exports).map((e) => e.replace(/^\.(?=$|\/)/, pkg.name));
+  if (exports === undefined) return {};
+  return mapKeys(exports, (key) => key.replace(/^\.($|\/)/, ""));
 }
 
 /**
@@ -515,7 +516,14 @@ export function scopes(
   options?: ScopeOptions,
 ): string[] {
   const { strict = false } = options ?? {};
-  const submodules = strict ? modules(pkg) : [];
+  const submodules = strict
+    ? [
+      `${pkg.name}/unstable`,
+      ...Object.keys(modules(pkg)).filter((m) => m).map((m) =>
+        `${pkg.name}/${m}`
+      ),
+    ]
+    : [];
   const single = pkg.root === pkg.directory;
   if (single && !commit.scopes) return [""];
   return commit.scopes?.filter((s) =>

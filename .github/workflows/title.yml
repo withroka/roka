@@ -22,8 +22,7 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Check PR title
-        run: deno task forge title "$TITLE" \
-          --strict \
-          --types build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test
+        run: deno task forge title "$TITLE" --strict --types \
+          build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test
         env:
           TITLE: ${{ github.event.pull_request.title }}
