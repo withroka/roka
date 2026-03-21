@@ -19,6 +19,8 @@
 
 import type { Commit } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
+import { assertExists } from "@std/assert";
+import { unicodeWidth } from "@std/cli";
 
 /** Options for the {@linkcode changelog} function. */
 export interface ChangelogOptions {
@@ -45,8 +47,8 @@ export interface ChangelogOptions {
      *
      * If set to `importance`, the commits are sorted by their
      * {@link https://www.conventionalcommits.org Conventional Commits} details.
-     * Breaking changes are followed by features, and then fixes. Commits of other
-     * types come last and they are grouped by their type.
+     * Breaking changes are followed by features, and then fixes. Commits of
+     * other types come last and they are grouped by their type.
      */
     sort?: "importance";
     /**
@@ -55,11 +57,20 @@ export interface ChangelogOptions {
      */
     emoji?: boolean;
     /**
+     * Generate changelog lines optimized for terminal output.
+     *
+     * Pads emojis with spaces for terminal display, if emojis are enabled.
+     * This option is ignored if emojis are not enabled.
+     *
+     * @default {false}
+     */
+    terminal?: boolean;
+    /**
      * Include short commit hash in commit subjects, when a pull request number
      * is not available.
      *
-     * This is useful for generating links to commits that were not merged with a
-     * pull request.
+     * This is useful for generating links to commits that were not merged with
+     * a pull request.
      *
      * @default {false}
      */
@@ -181,11 +192,15 @@ function subject(
     subject = `${subject} (${commit.short})`;
   }
   if (options?.commit?.github) subject = subject.replace(prPattern, "$1");
-  if (options?.commit?.emoji) subject = emoji(commit, subject);
+  if (options?.commit?.emoji) subject = emoji(commit, subject, options);
   return subject;
 }
 
-function emoji(commit: ConventionalCommit, description: string): string {
+function emoji(
+  commit: ConventionalCommit,
+  description: string,
+  options: ChangelogOptions | undefined,
+): string {
   const emojis: Record<string, string> = {
     build: "🔧",
     chore: "🧹",
@@ -200,8 +215,13 @@ function emoji(commit: ConventionalCommit, description: string): string {
     test: "🧪",
     unknown: "🔖",
   };
+  const emoji = emojis[commit.type ?? "unknown"] ?? emojis["unknown"];
+  assertExists(emoji);
+  const padding = options?.commit?.terminal
+    ? "".padEnd(2 - unicodeWidth(emoji), " ")
+    : "";
   return [
-    emojis[commit.type ?? "unknown"] ?? emojis["unknown"],
+    `${emoji}${padding}`,
     description,
     ...commit.breaking ? ["💥"] : [],
   ].join(" ");
