@@ -418,7 +418,7 @@ function moduleRows(pkg: Package): string[][] {
     `  🧩 ${name || "(default)"}`,
     join(pkg.directory, path),
   ]);
-  return [[], ...rows, []];
+  return rows.length ? [[], ...rows, []] : [];
 }
 
 function titleCommand(context: ForgeOptions | undefined) {
