@@ -447,6 +447,7 @@ Deno.test("workspace() considers unstable changes", async () => {
     ],
     commits: [
       { subject: "initial", tags: ["pkg1@1.2.3", "pkg2@1.2.3", "pkg3@1.2.3"] },
+      { subject: "fix(*/unstable): fix all" },
       { subject: "feat(pkg1/dir/unstable): feat" },
       { subject: "feat(pkg2): feat" },
       { subject: "fix(pkg2/unstable): fix" },
@@ -456,19 +457,24 @@ Deno.test("workspace() considers unstable changes", async () => {
   assertExists(pkg1);
   assertExists(pkg2);
   const root = pkg1.root;
-  const [commit3, commit2, commit1] = await git({ cwd: root }).commit
+  const [commit4, commit3, commit2, commit1] = await git({ cwd: root }).commit
     .log();
   assertExists(commit1);
   assertExists(commit2);
   assertExists(commit3);
+  assertExists(commit4);
   assertArrayObjectMatch(await workspace({ root }), [{
     name: "pkg1",
-    version: `1.2.4-pre.1+${commit1.short}`,
-    changes: [conventional(commit1)],
+    version: `1.2.4-pre.2+${commit2.short}`,
+    changes: [conventional(commit2), conventional(commit1)],
   }, {
     name: "pkg2",
-    version: `1.3.0-pre.2+${commit3.short}`,
-    changes: [conventional(commit3), conventional(commit2)],
+    version: `1.3.0-pre.3+${commit4.short}`,
+    changes: [
+      conventional(commit4),
+      conventional(commit3),
+      conventional(commit1),
+    ],
   }]);
 });
 
@@ -609,23 +615,23 @@ Deno.test("commits() assigns wildcard scope to all members", async () => {
     ],
     commits: [
       { subject: "feat(name1): new feature" },
-      { subject: "fix(*)!: fix bug" },
-      { subject: "docs(*/unstable): add docs" },
+      { subject: "fix(*): fix bug" },
+      { subject: "chore(*/deps): update dependencies" },
     ],
   });
   assertExists(pkg1);
   assertExists(pkg2);
-  const [docs, fix, feat] = await git({ cwd: pkg1.directory }).commit.log();
+  const [chore, fix, feat] = await git({ cwd: pkg1.directory }).commit.log();
   assertExists(feat);
-  assertExists(docs);
+  assertExists(chore);
   assertExists(fix);
   assertEquals(await commits(pkg1), [
-    conventional(docs),
+    conventional(chore),
     conventional(fix),
     conventional(feat),
   ]);
   assertEquals(await commits(pkg2), [
-    conventional(docs),
+    conventional(chore),
     conventional(fix),
   ]);
 });
