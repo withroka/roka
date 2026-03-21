@@ -282,10 +282,10 @@
  *  -  {@link [bump]}: Bump package versions.
  *  -  {@link [changelog]}: Generate changelogs.
  *  -  {@link [compile]}: Create binary executables.
- *  -  {@link [package]}: Retrieve package information.
  *  -  {@link [release]}: Create GitHub releases.
  *  -  {@link [testing]}: Write tests for **forge**.
  *  -  {@link [version]}: Provide version from compiled binaries.
+ *  -  {@link [workspace]}: Work with workspaces and packages.
  *
  * @todo Add documentation for GitHub workflows.
  * @todo Gracefully handle errors in the CLI.
@@ -305,9 +305,9 @@ import { join, relative } from "@std/path";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
-import { commits, type Package, releases, workspace } from "./package.ts";
 import { release } from "./release.ts";
 import { version } from "./version.ts";
+import { commits, type Package, releases, workspace } from "./workspace.ts";
 
 const DESCRIPTION = `
   ${bold("🛠️  forge")}

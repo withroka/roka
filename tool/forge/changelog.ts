@@ -5,7 +5,7 @@
  *
  * ```ts
  * import { changelog } from "@roka/forge/changelog";
- * import { packageInfo } from "@roka/forge/package";
+ * import { packageInfo } from "@roka/forge/workspace";
  * (async () => {
  *   const pkg = await packageInfo();
  *   const log = changelog(pkg.changes ?? []);
@@ -114,7 +114,7 @@ export interface ChangelogOptions {
  * @example Generate a Markdown changelog.
  * ```ts
  * import { changelog } from "@roka/forge/changelog";
- * import { packageInfo } from "@roka/forge/package";
+ * import { packageInfo } from "@roka/forge/workspace";
  * import { assertExists } from "@std/assert";
  * (async () => {
  *   const pkg = await packageInfo();

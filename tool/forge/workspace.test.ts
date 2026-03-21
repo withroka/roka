@@ -6,7 +6,7 @@ import {
   packageInfo,
   releases,
   workspace,
-} from "@roka/forge/package";
+} from "@roka/forge/workspace";
 import { tempDirectory } from "@roka/fs/temp";
 import { git, GitError } from "@roka/git";
 import { conventional } from "@roka/git/conventional";

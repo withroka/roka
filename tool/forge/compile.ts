@@ -5,7 +5,7 @@
  *
  * ```ts
  * import { compile } from "@roka/forge/compile";
- * import { packageInfo } from "@roka/forge/package";
+ * import { packageInfo } from "@roka/forge/workspace";
  * (async () => {
  *   const pkg = await packageInfo();
  *   await compile(pkg, { target: ["x86_64-unknown-linux-gnu"] });
@@ -34,7 +34,7 @@ import { deno } from "@roka/deno";
 import { assertExists, assertFalse } from "@std/assert";
 import { encodeHex } from "@std/encoding";
 import { basename, join, relative } from "@std/path";
-import { type Package, PackageError } from "./package.ts";
+import { type Package, PackageError } from "./workspace.ts";
 
 /** Options for the {@linkcode compile} function. */
 export interface CompileOptions {

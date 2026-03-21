@@ -6,10 +6,10 @@
     "./bump": "./bump.ts",
     "./changelog": "./changelog.ts",
     "./compile": "./compile.ts",
-    "./package": "./package.ts",
     "./release": "./release.ts",
     "./testing": "./testing.ts",
-    "./version": "./version.ts"
+    "./version": "./version.ts",
+    "./workspace": "./workspace.ts"
   },
   "forge": {
     "main": "forge.ts"
