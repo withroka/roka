@@ -36,7 +36,6 @@ Deno.test("workspace() returns simple package", async () => {
     directory: join(root, "pkg"),
     root,
     config: { name: "pkg" },
-    changes: [],
   }]);
 });
 
@@ -59,21 +58,18 @@ Deno.test("workspace() returns monorepo packages", async () => {
     directory: join(root, "pkg1"),
     root,
     config: { name: "pkg1", version: "0.1.0" },
-    changes: [],
   }, {
     name: "pkg2",
     version: "0.0.0",
     directory: join(root, "pkg2"),
     root,
     config: { name: "pkg2" },
-    changes: [],
   }, {
     name: "pkg3",
     version: "0.0.0",
     directory: join(root, "pkg2/pkg3"),
     root,
     config: { name: "pkg2/pkg3" },
-    changes: [],
   }]);
 });
 
@@ -151,11 +147,11 @@ Deno.test("workspace() matches commit scope", async () => {
   assertExists(commit3);
   assertArrayObjectMatch(await workspace({ root }), [{
     name: "pkg1",
-    version: `0.0.1-pre.1+${commit1.short}`,
+    version: `0.0.1-pre.1+${commit3.short}`,
     changes: [conventional(commit1)],
   }, {
     name: "pkg2",
-    version: `0.0.1-pre.1+${commit2.short}`,
+    version: `0.0.1-pre.1+${commit3.short}`,
     changes: [conventional(commit2)],
   }, {
     name: "pkg3",
@@ -190,7 +186,7 @@ Deno.test("workspace() considers unstable changes", async () => {
   assertExists(commit4);
   assertArrayObjectMatch(await workspace({ root }), [{
     name: "pkg1",
-    version: `1.2.4-pre.2+${commit2.short}`,
+    version: `1.2.4-pre.2+${commit4.short}`,
     changes: [conventional(commit2), conventional(commit1)],
   }, {
     name: "pkg2",
@@ -251,7 +247,6 @@ Deno.test("packageInfo() returns package from directory", async () => {
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
-    changes: [],
   });
 });
 
@@ -375,11 +370,12 @@ Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
   });
   const directory = temp.directory;
   const repo = git({ cwd: directory });
-  const [_, fix] = await repo.commit.log();
+  const [head, fix] = await repo.commit.log();
+  assertExists(head);
   assertExists(fix);
   assertObjectMatch(await packageInfo({ directory }), {
     name: "name",
-    version: `0.0.1-pre.1+${fix.short}`,
+    version: `0.0.1-pre.1+${head.short}`,
     changes: [conventional(fix)],
   });
 });
