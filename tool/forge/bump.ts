@@ -16,7 +16,7 @@
  *
  * ```ts
  * import { bump } from "@roka/forge/bump";
- * import { workspace } from "@roka/forge/package";
+ * import { workspace } from "@roka/forge/workspace";
  * (async () => {
  *   const packages = await workspace();
  *   await bump(packages, { pr: true });
@@ -37,7 +37,7 @@ import { assertExists } from "@std/assert";
 import { common, dirname, join } from "@std/path";
 import { format, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
-import { type Package, PackageError } from "./package.ts";
+import { type Package, PackageError } from "./workspace.ts";
 
 const BUMP_BRANCH = "automated/bump";
 

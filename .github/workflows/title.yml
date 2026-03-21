@@ -49,7 +49,7 @@ jobs:
             forge/bump
             forge/changelog
             forge/compile
-            forge/package
+            forge/workspace
             forge/release
             forge/testing
             forge/version

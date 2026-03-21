@@ -10,7 +10,7 @@
  *
  * ```ts
  * import { release } from "@roka/forge/release";
- * import { packageInfo } from "@roka/forge/package";
+ * import { packageInfo } from "@roka/forge/workspace";
  * (async () => {
  *   const pkg = await packageInfo();
  *   await release(pkg, { draft: true });
@@ -32,7 +32,7 @@ import { assertExists } from "@std/assert";
 import { lessOrEqual, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
-import { type Package, PackageError } from "./package.ts";
+import { type Package, PackageError } from "./workspace.ts";
 
 /** Max concurrent calls to GitHub. */
 const GITHUB_CONCURRENCY = { concurrency: 10 };

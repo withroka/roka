@@ -1,11 +1,22 @@
 /**
- * This module provides functions and types to work with packages.
+ * This module provides functions to work with workspaces and packages.
+ *
+ * The {@linkcode workspace} function is used to fetch all the workspace
+ * packages in a monorepo.
+ *
+ * ```ts
+ * import { workspace } from "@roka/forge/workspace";
+ * (async () => {
+ *   const packages = await workspace();
+ *   return { packages };
+ * });
+ * ```
  *
  * The {@linkcode packageInfo} function returns information for a single
  * package.
  *
  * ```ts
- * import { packageInfo } from "@roka/forge/package";
+ * import { packageInfo } from "@roka/forge/workspace";
  * (async () => {
  *   const pkg = await packageInfo({
  *     directory: import.meta.dirname ?? ".",
@@ -26,24 +37,13 @@
  *    the latest release.
  *  - Calculated {@link https://semver.org semantic version}.
  *
- * Use the {@linkcode workspace} function to fetch all the workspace packages
- * in a monorepo.
- *
- * ```ts
- * import { workspace } from "@roka/forge/package";
- * (async () => {
- *   const packages = await workspace();
- *   return { packages };
- * });
- * ```
- *
  * Commits are only attributed to a workspace member if they explicitly list
  * the package name. For example, a commit with a subject of "_feat: new_" will
  * not be in included in a workspace package changelog, but "_feat(pkg): new_"
  * will be. However, both will be attributed to a simple (non-workspace)
  * package.
  *
- * @module package
+ * @module workspace
  * @internal
  */
 
@@ -184,26 +184,6 @@ export interface ForgeConfig {
   target?: string[];
 }
 
-/** Options for the {@linkcode packageInfo} function. */
-export interface PackageOptions {
-  /**
-   * Directory to return package from.
-   *
-   * If a directory is not defined, the package of the main module is used.
-   */
-  directory?: string;
-  /**
-   * Root directory of the package.
-   *
-   * If this is different than the package directory, the package is considered
-   * a workspace member.
-   *
-   * If not set, the root defaults to the value of
-   * {@linkcode Package.directory directory}.
-   */
-  root?: string;
-}
-
 /** Options for the {@linkcode workspace} function. */
 export interface WorkspaceOptions {
   /**
@@ -225,6 +205,26 @@ export interface WorkspaceOptions {
    * @default {[]}
    */
   filters?: string[];
+}
+
+/** Options for the {@linkcode packageInfo} function. */
+export interface PackageOptions {
+  /**
+   * Directory to return package from.
+   *
+   * If a directory is not defined, the package of the main module is used.
+   */
+  directory?: string;
+  /**
+   * Root directory of the package.
+   *
+   * If this is different than the package directory, the package is considered
+   * a workspace member.
+   *
+   * If not set, the root defaults to the value of
+   * {@linkcode Package.directory directory}.
+   */
+  root?: string;
 }
 
 /** Options for the {@linkcode releases} function. */
@@ -259,6 +259,44 @@ export interface CommitOptions {
    * subject to the {@linkcode CommitOptions.type type} filter.
    */
   breaking?: boolean;
+}
+
+/**
+ * Returns all packages for a workspace.
+ *
+ * If a directory is a monorepo, distinguished with the `workspace` field in
+ * its configuration, this function will return all packages in that monorepo,
+ * excluding its root. If the directory is not a monorepo, the function will
+ * return the package in the directory.
+ */
+export async function workspace(
+  options?: WorkspaceOptions,
+): Promise<Package[]> {
+  const { root = ".", filters = [] } = options ?? {};
+  const patterns = filters.map((f) => globToRegExp(f));
+  const rootPackage = await packageInfo({ directory: root, ...options });
+  const packages = rootPackage.config.workspace === undefined
+    ? [rootPackage]
+    : await pool(
+      distinct(
+        (await pool(
+          rootPackage.config.workspace,
+          (path) => Array.fromAsync(expandGlob(join(root, path, "deno.json"))),
+        )).flat().map((file) => dirname(file.path)),
+      ),
+      (path) =>
+        packageInfo({
+          directory: path,
+          root,
+        }),
+    );
+  return packages
+    .filter((pkg) =>
+      patterns.length === 0 ||
+      patterns.some((p) =>
+        pkg.name.match(p) || relative(root, pkg.directory).match(p)
+      )
+    );
 }
 
 /**
@@ -309,44 +347,6 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
 }
 
 /**
- * Returns all packages for a workspace.
- *
- * If a directory is a monorepo, distinguished with the `workspace` field in
- * its configuration, this function will return all packages in that monorepo,
- * excluding its root. If the directory is not a monorepo, the function will
- * return the package in the directory.
- */
-export async function workspace(
-  options?: WorkspaceOptions,
-): Promise<Package[]> {
-  const { root = ".", filters = [] } = options ?? {};
-  const patterns = filters.map((f) => globToRegExp(f));
-  const rootPackage = await packageInfo({ directory: root, ...options });
-  const packages = rootPackage.config.workspace === undefined
-    ? [rootPackage]
-    : await pool(
-      distinct(
-        (await pool(
-          rootPackage.config.workspace,
-          (path) => Array.fromAsync(expandGlob(join(root, path, "deno.json"))),
-        )).flat().map((file) => dirname(file.path)),
-      ),
-      (path) =>
-        packageInfo({
-          directory: path,
-          root,
-        }),
-    );
-  return packages
-    .filter((pkg) =>
-      patterns.length === 0 ||
-      patterns.some((p) =>
-        pkg.name.match(p) || relative(root, pkg.directory).match(p)
-      )
-    );
-}
-
-/**
  * Returns releases of a package based on its git tags.
  *
  * Pre-release versions are not included by default. Use the
@@ -354,7 +354,7 @@ export async function workspace(
  *
  * @example Retrieve all releases of a package.
  * ```ts
- * import { packageInfo, releases } from "@roka/forge/package";
+ * import { packageInfo, releases } from "@roka/forge/workspace";
  *
  * (async () => {
  *   const pkg = await packageInfo();
@@ -408,7 +408,7 @@ export async function releases(
  *
  * @example Get commits since the last release.
  * ```ts
- * import { commits, packageInfo } from "@roka/forge/package";
+ * import { commits, packageInfo } from "@roka/forge/workspace";
  * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, { type: ["feat", "fix"] });
@@ -417,7 +417,7 @@ export async function releases(
  *
  * @example Get commits for a specific release.
  * ```ts
- * import { commits, packageInfo } from "@roka/forge/package";
+ * import { commits, packageInfo } from "@roka/forge/workspace";
  * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, {

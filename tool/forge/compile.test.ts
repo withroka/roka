@@ -8,8 +8,8 @@ import {
 } from "@std/assert";
 import { basename, dirname, join } from "@std/path";
 import { compile } from "./compile.ts";
-import { PackageError } from "./package.ts";
 import { tempPackage, unstableTestImports } from "./testing.ts";
+import { PackageError } from "./workspace.ts";
 
 Deno.test("compile() rejects package without compile config", async () => {
   await using pkg = await tempPackage({

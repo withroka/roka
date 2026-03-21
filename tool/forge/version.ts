@@ -19,7 +19,7 @@ import { maybe } from "@roka/maybe";
 import { expandGlob } from "@std/fs";
 import { basename, dirname, fromFileUrl } from "@std/path";
 import { canParse, parse } from "@std/semver";
-import { PackageError, packageInfo } from "./package.ts";
+import { PackageError, packageInfo } from "./workspace.ts";
 
 /** Options for the {@linkcode version} function. */
 export interface VersionOptions {

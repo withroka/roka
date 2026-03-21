@@ -29,7 +29,7 @@ import {
   type Package,
   packageInfo,
   workspace,
-} from "./package.ts";
+} from "./workspace.ts";
 
 /** Options for the {@linkcode tempPackage} function. */
 export interface TempPackageOptions {

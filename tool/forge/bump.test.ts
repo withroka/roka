@@ -5,8 +5,8 @@ import { fakePullRequest, fakeRepository } from "@roka/github/testing";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
 import { join } from "@std/path";
 import { bump } from "./bump.ts";
-import { PackageError, packageInfo } from "./package.ts";
 import { tempPackage, tempWorkspace } from "./testing.ts";
+import { PackageError, packageInfo } from "./workspace.ts";
 
 Deno.test("bump() minor updates released package", async () => {
   await using pkg = await tempPackage({
