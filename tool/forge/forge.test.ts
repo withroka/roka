@@ -57,6 +57,7 @@ async function run(context: Deno.TestContext) {
         arg.replaceAll("[package]", pkg.name)
           .replaceAll("[pattern]", "name*")
           .replaceAll("[directory]", "dir")
+          .replaceAll("[unknown]", "unknown")
           .replaceAll("<file>", join(root, "CHANGELOG.md"))
           .replaceAll("<types>", "fix,feat")
           .replaceAll("<target>", "aarch64-unknown-linux-gnu")
