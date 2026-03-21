@@ -4,11 +4,11 @@
  * additional functionality for handling errors and retries.
  *
  * ```ts
- * import { AGENT, request } from "@roka/http/request";
+ * import { request } from "@roka/http/request";
  * (async () => {
  *   const response = await request("https://www.example.com", {
  *     method: "GET",
- *     agent: AGENT.Browser,
+ *     agent: "Mozilla/5.0",
  *   });
  *   return { response };
  * });
@@ -56,12 +56,6 @@ import { omit } from "@std/collections";
 import { STATUS_CODE } from "@std/http/status";
 
 export { type RetryOptions } from "@std/async/retry";
-
-/** Predefined agent strings. */
-export const AGENT = {
-  Browser:
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Safari/605.1.15",
-} as const;
 
 const RETRYABLE_STATUSES: number[] = [
   STATUS_CODE.TooManyRequests,
