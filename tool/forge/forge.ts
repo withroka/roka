@@ -656,10 +656,12 @@ async function filter(
   filters: string[],
   options: ForgeOptions | undefined,
 ): Promise<Package[]> {
-  return await workspace({
+  const packages = await workspace({
     ...options?.repo && { root: options?.repo.git.path() },
     filters,
   });
+  if (!packages.length) throw new Error("No packages found");
+  return packages;
 }
 
 if (import.meta.main) Deno.exit(await forge());

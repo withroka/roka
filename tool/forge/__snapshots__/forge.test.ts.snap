@@ -98,11 +98,21 @@ snapshot[`forge list [pattern] 1`] = `
 }
 `;
 
-snapshot[`forge list [directory] 1`] = `
+snapshot[`forge list [directory]/* 1`] = `
 {
   code: 0,
   output: "
+📦 @scope/dir/name5 0.0.0
+📦 @scope/dir/name6
+",
+}
+`;
 
+snapshot[`forge list [unknown] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No packages found
 ",
 }
 `;
