@@ -337,11 +337,11 @@ snapshot[`forge title <scoped> --types <types> 1`] = `
 }
 `;
 
-snapshot[`forge title unknown --strict --types unknown 1`] = `
+snapshot[`forge title <scoped> --strict --types unknown 1`] = `
 {
   code: 1,
   output: '
-❌ Invalid PR type: ""
+❌ Invalid PR type: "fix"
 
 Allowed types: unknown
 ',
