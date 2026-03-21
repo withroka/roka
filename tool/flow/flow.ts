@@ -356,7 +356,7 @@ async function files(
       const remote = await repo.remote.current();
       assertExists(remote);
       const from = await repo.remote.head(remote);
-      const diff = await repo.diff.status({ from });
+      const diff = await repo.diff.status({ from: `${from}...HEAD` });
       return { from, paths: distinct(diff.map((f) => dirname(f.path))) };
     });
     // run on all files if not in a Git repository
