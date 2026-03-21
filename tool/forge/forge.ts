@@ -9,8 +9,8 @@
  *
  * ## Usage
  *
- * To get started, just run **forge** with `deno run -A jsr:@roka/forge` and
- * you’re all set! Or, you can install with `deno install -gA jsr:@roka/forge`,
+ * To get started, just run **forge** with `deno run -P jsr:@roka/forge` and
+ * you’re all set! Or, you can install with `deno install -gP jsr:@roka/forge`,
  * and then run with `forge`. No need for any configuration.
  *
  * ## Packages

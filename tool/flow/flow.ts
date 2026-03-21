@@ -8,8 +8,8 @@
  *
  * ## Usage
  *
- * Run **flow** with `deno run -A jsr:@roka/flow`. You can also install with
- * `deno install -gA jsr:@roka/flow` and run with the flow.
+ * Run **flow** with `deno run -P jsr:@roka/flow`. You can also install with
+ * `deno install -gP jsr:@roka/flow` and run with the flow.
  *
  * ```sh
  * flow
