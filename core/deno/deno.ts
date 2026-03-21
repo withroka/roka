@@ -556,7 +556,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           report: "diff",
         }, {
           states: ["diff"],
-          patterns: [/^\s*(?<line>\d+)\s+\|/],
+          patterns: [/^\s*(?<line>\d+)\s+\|/, /^\s*|\s\.\.\.$/],
           first: ["line"],
         }, {
           patterns: [/^error: /],
