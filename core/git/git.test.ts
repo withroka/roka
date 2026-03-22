@@ -3479,6 +3479,145 @@ Deno.test("git().ignore.omit({ index }) considers the index", async () => {
   assertEquals(await repo.ignore.omit("file.log", { index: false }), []);
 });
 
+Deno.test("git().file.text() reads file from working tree", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  assertEquals(await repo.file.text("file.txt"), "content");
+});
+
+Deno.test("git().file.text() reads file with trailing newline from working tree", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content\n\n");
+  assertEquals(await repo.file.text("file.txt"), "content\n\n");
+});
+
+Deno.test("git().file.text() rejects missing file in working tree", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.file.text("missing.txt"),
+    Deno.errors.NotFound,
+  );
+});
+
+Deno.test("git().file.text({ source }) reads file from revision", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content1");
+  await repo.index.add("file.txt");
+  const commit = await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file.txt"), "content2");
+  assertEquals(
+    await repo.file.text("file.txt", { source: commit }),
+    "content1",
+  );
+  assertEquals(
+    await repo.file.text("file.txt", { source: "HEAD" }),
+    "content1",
+  );
+  assertEquals(await repo.file.text("file.txt"), "content2");
+});
+
+Deno.test("git().file.text({ source }) reads file with trailing newline from revision", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.txt"), "content1\n\n");
+  await repo.index.add("file.txt");
+  await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file.txt"), "content2\n\n");
+  assertEquals(
+    await repo.file.text("file.txt", { source: "HEAD" }),
+    "content1\n\n",
+  );
+  assertEquals(await repo.file.text("file.txt"), "content2\n\n");
+});
+
+Deno.test("git().file.text({ source }) rejects missing file at revision", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await Deno.writeTextFile(repo.path("file.txt"), "content");
+  await assertRejects(
+    () => repo.file.text("file.txt", { source: "HEAD" }),
+    Deno.errors.NotFound,
+  );
+});
+
+Deno.test("git().file.text({ source }) rejects bad revision", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.file.text("file.txt", { source: "bad" }),
+    GitError,
+  );
+});
+
+Deno.test("git().file.json() parses JSON from working tree", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.json"), '{"key":"value"}');
+  assertEquals(await repo.file.json("file.json"), { key: "value" });
+  assertEquals(
+    await repo.file.json<{ key: string }>("file.json"),
+    { key: "value" },
+  );
+});
+
+Deno.test("git().file.json() rejects missing file in working tree", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.file.json("missing.json"),
+    Deno.errors.NotFound,
+  );
+});
+
+Deno.test("git().file.json() rejects invalid JSON in working tree", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.json"), "invalid");
+  await assertRejects(() => repo.file.json("file.json"), SyntaxError);
+});
+
+Deno.test("git().file.json({ source }) parses JSON from revision", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.json"), '{"key":"value1"}');
+  await repo.index.add("file.json");
+  const commit = await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file.json"), '{"key":"value2"}');
+  assertEquals(
+    await repo.file.json<{ key: string }>("file.json", { source: commit }),
+    { key: "value1" },
+  );
+  assertEquals(
+    await repo.file.json("file.json", { source: "HEAD" }),
+    { key: "value1" },
+  );
+  assertEquals(await repo.file.json("file.json"), { key: "value2" });
+});
+
+Deno.test("git().file.json({ source }) rejects missing file at revision", async () => {
+  await using repo = await tempRepository();
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  await Deno.writeTextFile(repo.path("file.json"), '{"key":"value"}');
+  await assertRejects(
+    () => repo.file.json("file.json", { source: "HEAD" }),
+    Deno.errors.NotFound,
+  );
+});
+
+Deno.test("git().file.json({ source }) rejects bad revision", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.file.json("file.json", { source: "bad" }),
+    GitError,
+  );
+});
+
+Deno.test("git().file.json({ source }) rejects invalid JSON at revision", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file.json"), "invalid");
+  await repo.index.add("file.json");
+  const commit = await repo.commit.create({ subject: "commit" });
+  await Deno.writeTextFile(repo.path("file.json"), '{"key":"value"}');
+  await assertRejects(
+    () => repo.file.json("file.json", { source: commit }),
+    SyntaxError,
+  );
+});
+
 Deno.test("git().commit.log() returns empty on empty repository", async () => {
   await using repo = await tempRepository();
   assertEquals(await repo.commit.log(), []);

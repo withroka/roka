@@ -97,6 +97,8 @@ export interface Git {
   diff: DiffOperations;
   /** Ignore (exclusion) operations. */
   ignore: IgnoreOperations;
+  /** File content operations. */
+  file: FileOperations;
   /** Commit operations. */
   commit: CommitOperations;
   /** Branch operations. */
@@ -175,6 +177,21 @@ export interface IgnoreOperations {
     path: string | string[],
     options?: IgnoreFilterOptions,
   ): Promise<string[]>;
+}
+
+/** File operations from {@linkcode Git.file}. */
+export interface FileOperations {
+  /**
+   * Reads a file as text.
+   * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
+   */
+  text(path: string, options?: FileOptions): Promise<string>;
+  /**
+   * Reads a file and parses it as JSON.
+   * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
+   * @throws {@linkcode SyntaxError} If the file content is not valid JSON.
+   */
+  json<T = unknown>(path: string, options?: FileOptions): Promise<T>;
 }
 
 /** Commit operations from {@linkcode Git.commit}. */
@@ -1585,6 +1602,12 @@ export interface IgnoreFilterOptions {
   index?: boolean;
 }
 
+/** Options for {@linkcode FileOperations} functions. */
+export interface FileOptions {
+  /** Revision to read file contents from. */
+  source?: Commitish;
+}
+
 /** Options for the {@linkcode CommitOperations.log} function. */
 export interface CommitLogOptions {
   /** Only commits by an author. */
@@ -2943,6 +2966,31 @@ export function git(options?: GitOptions): Git {
           .split("\n")
           .map((l) => (l.startsWith("::") ? (l.split("\t").at(-1) ?? "") : ""))
           .filter((line) => line);
+      },
+    },
+    file: {
+      async text(path, options) {
+        if (options?.source) {
+          try {
+            return await run(
+              gitOptions,
+              ["show", `${commitArg(options.source)}:${path}`],
+            );
+          } catch (error) {
+            if (
+              error instanceof GitError &&
+              (error.message.includes("exist") ||
+                error.message.includes("pathspec"))
+            ) {
+              throw new Deno.errors.NotFound(error.message, { cause: error });
+            }
+            throw error;
+          }
+        }
+        return await Deno.readTextFile(repo.path(path));
+      },
+      async json(path, options) {
+        return JSON.parse(await repo.file.text(path, options));
       },
     },
     commit: {
