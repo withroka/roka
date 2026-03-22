@@ -560,6 +560,68 @@ Deno.test("releases() ignores unknown tag format", async () => {
   assertEquals(await releases(pkg), []);
 });
 
+Deno.test("releases() returns version from commit log for no previous tag release", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.4.0" },
+  });
+  const repo = git({ cwd: pkg.directory });
+  const path = join(pkg.directory, "deno.json");
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "1.2.3" }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "1.3.0" }),
+  );
+  await repo.index.add(path);
+  const commit2 = await repo.commit.create({ subject: "commit2" });
+  assertEquals(await releases(pkg), [{
+    version: "1.3.0",
+    range: { to: commit2.hash },
+  }]);
+});
+
+Deno.test("releases() ignores missing config", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.4.0" },
+  });
+  const repo = git({ cwd: pkg.directory });
+  const path = join(pkg.directory, "deno.json");
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "1.2.3" }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "commit1" });
+  await repo.index.remove(path);
+  await repo.commit.create({ subject: "commit2" });
+  assertEquals(await releases(pkg), []);
+});
+
+Deno.test("releases() ignores malformed config", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.4.0" },
+  });
+  const repo = git({ cwd: pkg.directory });
+  const path = join(pkg.directory, "deno.json");
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "1.2.3" }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "commit1" });
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "bad" }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "commit2" });
+  assertEquals(await releases(pkg), []);
+});
+
 Deno.test("releases() rejects non-repository", async () => {
   await using directory = await tempDirectory();
   const pkg: Package = {

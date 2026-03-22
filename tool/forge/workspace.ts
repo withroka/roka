@@ -72,6 +72,7 @@ import {
   parse,
   type SemVer,
 } from "@std/semver";
+import { lessOrEqual } from "@std/semver/less-or-equal";
 
 /** An error thrown by the `forge` package. */
 export class PackageError extends Error {
@@ -420,7 +421,7 @@ export async function releases(
   pkg: Package,
   options?: ReleaseOptions,
 ): Promise<Release[]> {
-  const versions = (await git({
+  const tags = (await git({
     cwd: pkg.directory,
     config: { "versionsort.suffix": ["-pre"] },
   }).tag
@@ -433,9 +434,9 @@ export async function releases(
       return { version: parseTag(tag), semver, tag };
     })
     .filter((v) => options?.prerelease || !v.semver.prerelease?.length);
-  return versions.map(({ version, tag }, index) => {
+  const releases = tags.map(({ version, tag }, index) => {
     assertExists(version, `Cannot parse version from tag`);
-    const previous = versions.slice(index + 1).find((v) =>
+    const previous = tags.slice(index + 1).find((v) =>
       !v.semver.prerelease?.length
     );
     return {
@@ -446,6 +447,41 @@ export async function releases(
       },
     };
   });
+  if (releases.length === 0) {
+    const release = await historical(pkg);
+    return release ? [release] : [];
+  }
+  return releases;
+}
+
+async function historical(pkg: Package): Promise<Release | undefined> {
+  const repo = git({ cwd: pkg.root });
+  const path = relative(pkg.root, join(pkg.directory, "deno.json"));
+  const log = await repo.commit.log({ path });
+  for (const commit of log) {
+    // deno-lint-ignore no-await-in-loop
+    const { value: config, error } = await maybe(() =>
+      repo.file.json<Config>(path, { source: commit.hash })
+    );
+    if (error instanceof SyntaxError || error instanceof Deno.errors.NotFound) {
+      return undefined;
+    }
+    if (error) throw error;
+    if (config.version !== pkg.version) {
+      if (
+        typeof config.version === "string" && config.version !== "0.0.0" &&
+        canParse(config.version) &&
+        lessOrEqual(parse(config.version), parse(pkg.version))
+      ) {
+        return {
+          version: config.version,
+          range: { to: commit.hash },
+        };
+      }
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 /**
