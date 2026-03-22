@@ -2974,8 +2974,7 @@ export function git(options?: GitOptions): Git {
           try {
             return await run(
               gitOptions,
-              ["show", "--text"],
-              `${commitArg(options.source)}:${path}`,
+              ["show", `${commitArg(options.source)}:${path}`],
             );
           } catch (error) {
             if (error instanceof GitError) {

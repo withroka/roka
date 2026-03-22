@@ -3585,7 +3585,7 @@ Deno.test("git().file.json({ source }) rejects missing file at revision", async 
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   await Deno.writeTextFile(repo.path("file.json"), '{"key":"value"}');
   await assertRejects(
-    () => repo.file.text("file.json", { source: "HEAD" }),
+    () => repo.file.json("file.json", { source: "HEAD" }),
     Deno.errors.NotFound,
   );
 });
