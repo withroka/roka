@@ -3539,6 +3539,14 @@ Deno.test("git().file.text({ source }) rejects missing file at revision", async 
   );
 });
 
+Deno.test("git().file.text({ source }) rejects bad revision", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.file.text("file.txt", { source: "bad" }),
+    GitError,
+  );
+});
+
 Deno.test("git().file.json() parses JSON from working tree", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file.json"), '{"key":"value"}');
@@ -3587,6 +3595,14 @@ Deno.test("git().file.json({ source }) rejects missing file at revision", async 
   await assertRejects(
     () => repo.file.json("file.json", { source: "HEAD" }),
     Deno.errors.NotFound,
+  );
+});
+
+Deno.test("git().file.json({ source }) rejects bad revision", async () => {
+  await using repo = await tempRepository();
+  await assertRejects(
+    () => repo.file.json("file.json", { source: "bad" }),
+    GitError,
   );
 });
 

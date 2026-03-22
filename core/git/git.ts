@@ -2977,7 +2977,11 @@ export function git(options?: GitOptions): Git {
               ["show", `${commitArg(options.source)}:${path}`],
             );
           } catch (error) {
-            if (error instanceof GitError) {
+            if (
+              error instanceof GitError &&
+              (error.message.includes("exist") ||
+                error.message.includes("pathspec"))
+            ) {
               throw new Deno.errors.NotFound(error.message, { cause: error });
             }
             throw error;
