@@ -602,7 +602,6 @@ function bumpCommand(context: ForgeOptions | undefined) {
         packages,
         filter: { fn: (pkg) => pkg.config.version !== undefined },
       }, context);
-      if (!found.length) console.log("📦 No packages to release");
       const pr = await bump(found, {
         ...options,
         ...context?.repo && { repo: context.repo },
@@ -641,7 +640,6 @@ function releaseCommand(context: ForgeOptions | undefined) {
           error: "Nothing to release for package(s)",
         },
       }, context);
-      if (!found.length) console.log("📦 No packages to release");
       await pool(found, async (pkg) => {
         const [rls, assets] = await release(pkg, {
           ...options,
@@ -665,21 +663,21 @@ interface Find {
 }
 
 async function find(
-  find: Find,
+  { packages, filter }: Find,
   options: ForgeOptions | undefined,
 ): Promise<Package[]> {
   let found = await workspace({
     ...options?.repo && { root: options?.repo.git.path() },
-    filters: find.packages,
+    filters: packages,
   });
-  if (find.filter?.fn) {
+  if (filter?.fn) {
     const skipped = found
-      .filter((pkg) => !find.filter?.fn(pkg))
+      .filter((pkg) => !filter.fn(pkg))
       .map((pkg) => pkg.name);
-    if (skipped.length && find.packages.length && find.filter.error) {
-      throw new Error(`${find.filter.error}: ${skipped.join(", ")}`);
+    if (skipped.length && packages.length && filter.error) {
+      throw new Error(`${filter.error}: ${skipped.join(", ")}`);
     }
-    found = found.filter(find.filter.fn);
+    found = found.filter(filter.fn);
   }
   if (!found.length) throw new Error("No packages found");
   return found;
