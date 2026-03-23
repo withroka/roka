@@ -236,6 +236,14 @@ export interface PackageOptions {
 /** Options for the {@linkcode releases} function. */
 export interface ReleaseOptions {
   /**
+   * Maximum number of releases to return.
+   *
+   * This option can be used to return only the most recent releases.
+   *
+   * If not defined, all releases are returned.
+   */
+  limit?: number;
+  /**
    * Include pre-release versions.
    * @default {false}
    */
@@ -352,7 +360,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   }
   try {
     const [all, headMaybe] = await Promise.all([
-      releases(pkg),
+      releases(pkg, { limit: 1 }),
       maybe(() => git({ cwd: pkg.root }).commit.head()),
     ]);
     const [latest] = all;
@@ -425,6 +433,7 @@ export async function releases(
   pkg: Package,
   options?: ReleaseOptions,
 ): Promise<Release[]> {
+  const { limit, prerelease } = options ?? {};
   const tags = (await git({
     cwd: pkg.directory,
     config: { "versionsort.suffix": ["-pre"] },
@@ -437,8 +446,8 @@ export async function releases(
       const semver = parse(version);
       return { version: parseTag(tag), semver, tag };
     })
-    .filter((v) => options?.prerelease || !v.semver.prerelease?.length);
-  const tagged = tags.map(({ version, tag }, index) => {
+    .filter((v) => prerelease || !v.semver.prerelease?.length);
+  const releases = tags.map(({ version, tag }, index) => {
     assertExists(version, `Cannot parse version from tag`);
     const previous = tags.slice(index + 1).find((v) =>
       !v.semver.prerelease?.length
@@ -451,55 +460,51 @@ export async function releases(
       },
     };
   });
-  const lastTagged = tagged.at(-1);
-  const untagged = await historical(pkg, lastTagged, options);
-  if (untagged[0] && lastTagged) lastTagged.range.from = untagged[0].range.to;
-  return tagged.concat(untagged);
+  let last = releases.at(-1);
+  for await (const release of historical(pkg, last?.range.to)) {
+    if (last?.version === release.version) continue;
+    if (!prerelease && parse(release.version).prerelease?.length) continue;
+    if (last) last.range.from = release.range.to;
+    releases.push(release);
+    last = release;
+    if (limit !== undefined && releases.length >= limit + 1) break;
+  }
+  return releases.slice(0, limit);
 }
 
-async function historical(
+async function* historical(
   pkg: Package,
-  before: Release | undefined,
-  options: ReleaseOptions | undefined,
-): Promise<Release[]> {
+  before: string | undefined,
+): AsyncIterable<Release> {
   const repo = git({ cwd: pkg.root });
   const path = relative(pkg.root, join(pkg.directory, "deno.json"));
-  const log = await repo.commit.log({
-    ...before && { to: before.range.to },
-    path,
-    pickaxe: { pattern: "version", updated: true },
-  });
-  const commits = (await pool(
-    log,
-    async (commit) => {
+  while (true) {
+    // deno-lint-ignore no-await-in-loop
+    const log = (await repo.commit.log({
+      ...before && { to: before },
+      path,
+      pickaxe: { pattern: "version", updated: true },
+      limit: 4,
+    })).filter((commit) => commit.hash !== before);
+    if (log.length === 0) return;
+    before = log.at(-1)?.hash;
+    // deno-lint-ignore no-await-in-loop
+    const releases = await pool(log, async (commit) => {
       const { value: config, error } = await maybe(() =>
         repo.file.json<Config>(path, { source: commit.hash })
       );
-      if (
-        error &&
-        !(error instanceof Deno.errors.NotFound || error instanceof SyntaxError)
-      ) throw error;
-      const version =
-        typeof config?.version === "string" && config.version !== "0.0.0" &&
-          canParse(config.version)
-          ? config.version
-          : "";
-      return { version, hash: commit.hash };
-    },
-  )).filter((commit) =>
-    commit.version &&
-    (!before || commit.version !== before.version) &&
-    (options?.prerelease || !parse(commit.version).prerelease?.length)
-  );
-  return commits
-    .map((commit, index) => ({ ...commit, previous: commits.at(index + 1) }))
-    .map((commit) => ({
-      version: commit.version,
-      range: {
-        ...commit?.previous && { from: commit.previous.hash },
-        to: commit.hash,
-      },
-    }));
+      if (error instanceof Deno.errors.NotFound) return;
+      if (error instanceof SyntaxError) return;
+      if (error) throw error;
+      if (typeof config.version !== "string") return;
+      if (config.version === "0.0.0") return;
+      if (!canParse(config.version)) return;
+      return { version: config.version, range: { to: commit.hash } };
+    });
+    for (const release of releases) {
+      if (release) yield release;
+    }
+  }
 }
 
 /**
