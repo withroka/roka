@@ -300,7 +300,7 @@ import { pool, pooled } from "@roka/async/pool";
 import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
-import { distinct } from "@std/collections";
+import { distinct, partition } from "@std/collections";
 import { bold } from "@std/fmt/colors";
 import { join } from "@std/path";
 import { bump } from "./bump.ts";
@@ -600,7 +600,10 @@ function bumpCommand(context: ForgeOptions | undefined) {
     .action(async (options, ...packages) => {
       const found = await find({
         packages,
-        filter: { fn: (pkg) => pkg.config.version !== undefined },
+        filter: {
+          fn: (pkg) => pkg.config.version !== undefined,
+          error: 'Package(s) missing "version" configuration',
+        },
       }, context);
       const pr = await bump(found, {
         ...options,
@@ -659,7 +662,7 @@ function releaseCommand(context: ForgeOptions | undefined) {
 
 interface Find {
   packages: string[];
-  filter?: { fn: (pkg: Package) => boolean; error?: string };
+  filter?: { fn: (pkg: Package) => boolean; error: string };
 }
 
 async function find(
@@ -671,13 +674,13 @@ async function find(
     filters: packages,
   });
   if (filter?.fn) {
-    const skipped = found
-      .filter((pkg) => !filter.fn(pkg))
-      .map((pkg) => pkg.name);
-    if (skipped.length && packages.length && filter.error) {
-      throw new Error(`${filter.error}: ${skipped.join(", ")}`);
+    const [filtered, skipped] = partition(found, filter.fn);
+    if (skipped.length && packages.length) {
+      throw new Error(
+        `${filter.error}: ${skipped.map((pkg) => pkg.name).join(", ")}`,
+      );
     }
-    found = found.filter(filter.fn);
+    found = filtered;
   }
   if (!found.length) throw new Error("No packages found");
   return found;
