@@ -72,7 +72,6 @@ import {
   parse,
   type SemVer,
 } from "@std/semver";
-import { lessOrEqual } from "@std/semver/less-or-equal";
 
 /** An error thrown by the `forge` package. */
 export class PackageError extends Error {
@@ -434,7 +433,7 @@ export async function releases(
       return { version: parseTag(tag), semver, tag };
     })
     .filter((v) => options?.prerelease || !v.semver.prerelease?.length);
-  const releases = tags.map(({ version, tag }, index) => {
+  const tagged = tags.map(({ version, tag }, index) => {
     assertExists(version, `Cannot parse version from tag`);
     const previous = tags.slice(index + 1).find((v) =>
       !v.semver.prerelease?.length
@@ -447,42 +446,51 @@ export async function releases(
       },
     };
   });
-  return releases.concat(await historical(pkg));
+  const lastTagged = tagged.at(-1);
+  const untagged = await historical(pkg, lastTagged);
+  if (untagged[0] && lastTagged) lastTagged.range.from = untagged[0].range.to;
+  return tagged.concat(untagged);
 }
 
-async function historical(pkg: Package): Promise<Release[]> {
+async function historical(
+  pkg: Package,
+  before: Release | undefined,
+): Promise<Release[]> {
   const repo = git({ cwd: pkg.root });
   const path = relative(pkg.root, join(pkg.directory, "deno.json"));
   const log = await repo.commit.log({
+    ...before && { to: before.range.to },
     path,
     pickaxe: { pattern: "version", updated: true },
   });
-  let last = pkg.version;
-  const releases: Release[] = [];
-  for (const commit of log) {
-    // deno-lint-ignore no-await-in-loop
-    const { value: config, error } = await maybe(() =>
-      repo.file.json<Config>(path, { source: commit.hash })
-    );
-    if (error instanceof SyntaxError || error instanceof Deno.errors.NotFound) {
-      return [];
-    }
-    if (error) throw error;
-    if (config.version !== pkg.version) {
-      if (
-        typeof config.version === "string" && config.version !== "0.0.0" &&
-        canParse(config.version) &&
-        lessOrEqual(parse(config.version), parse(last))
-      ) {
-        releases.push({
-          version: config.version,
-          range: { to: commit.hash },
-        });
-        last = config.version;
-      }
-    }
-  }
-  return releases;
+  const commits = (await pool(
+    log,
+    async (commit) => {
+      const { value: config, error } = await maybe(() =>
+        repo.file.json<Config>(path, { source: commit.hash })
+      );
+      if (error && !(error instanceof Deno.errors.NotFound)) throw error;
+      const version =
+        typeof config?.version === "string" && config.version !== "0.0.0" &&
+          canParse(config.version)
+          ? config.version
+          : "";
+      return { version, hash: commit.hash };
+    },
+  )).filter((commit) =>
+    commit.version &&
+    (!before || commit.version !== before.version) &&
+    !parse(commit.version).prerelease?.length
+  );
+  return commits
+    .map((commit, index) => ({ ...commit, previous: commits.at(index + 1) }))
+    .map((commit) => ({
+      version: commit.version,
+      range: {
+        ...commit?.previous && { from: commit.previous.hash },
+        to: commit.hash,
+      },
+    }));
 }
 
 /**
