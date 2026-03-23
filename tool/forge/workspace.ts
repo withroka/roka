@@ -396,7 +396,12 @@ export function modules(pkg: Package): Record<string, string> {
 }
 
 /**
- * Returns releases of a package based on its git tags.
+ * Returns releases of a package.
+ *
+ * Releases are found first by using git tags in the "name@version" format,
+ * then by searching git history beyond the first tag for config file changes.
+ * This captures all releases, regardless of when tagging started as a release
+ * practice.
  *
  * Pre-release versions are not included by default. Use the
  * {@linkcode ReleaseOptions.prerelease prerelease} option to include them.
@@ -413,14 +418,14 @@ export function modules(pkg: Package): Record<string, string> {
  *
  * @param pkg Package to search releases for.
  * @param options Options for fetching releases.
- * @returns All releases for this package from git tags.
+ * @returns All releases for this package.
  * @throws {GitError} If git history is not available.
  */
 export async function releases(
   pkg: Package,
   options?: ReleaseOptions,
 ): Promise<Release[]> {
-  const versions = (await git({
+  const tags = (await git({
     cwd: pkg.directory,
     config: { "versionsort.suffix": ["-pre"] },
   }).tag
@@ -433,9 +438,9 @@ export async function releases(
       return { version: parseTag(tag), semver, tag };
     })
     .filter((v) => options?.prerelease || !v.semver.prerelease?.length);
-  return versions.map(({ version, tag }, index) => {
+  const tagged = tags.map(({ version, tag }, index) => {
     assertExists(version, `Cannot parse version from tag`);
-    const previous = versions.slice(index + 1).find((v) =>
+    const previous = tags.slice(index + 1).find((v) =>
       !v.semver.prerelease?.length
     );
     return {
@@ -446,6 +451,55 @@ export async function releases(
       },
     };
   });
+  const lastTagged = tagged.at(-1);
+  const untagged = await historical(pkg, lastTagged, options);
+  if (untagged[0] && lastTagged) lastTagged.range.from = untagged[0].range.to;
+  return tagged.concat(untagged);
+}
+
+async function historical(
+  pkg: Package,
+  before: Release | undefined,
+  options: ReleaseOptions | undefined,
+): Promise<Release[]> {
+  const repo = git({ cwd: pkg.root });
+  const path = relative(pkg.root, join(pkg.directory, "deno.json"));
+  const log = await repo.commit.log({
+    ...before && { to: before.range.to },
+    path,
+    pickaxe: { pattern: "version", updated: true },
+  });
+  const commits = (await pool(
+    log,
+    async (commit) => {
+      const { value: config, error } = await maybe(() =>
+        repo.file.json<Config>(path, { source: commit.hash })
+      );
+      if (
+        error &&
+        !(error instanceof Deno.errors.NotFound || error instanceof SyntaxError)
+      ) throw error;
+      const version =
+        typeof config?.version === "string" && config.version !== "0.0.0" &&
+          canParse(config.version)
+          ? config.version
+          : "";
+      return { version, hash: commit.hash };
+    },
+  )).filter((commit) =>
+    commit.version &&
+    (!before || commit.version !== before.version) &&
+    (options?.prerelease || !parse(commit.version).prerelease?.length)
+  );
+  return commits
+    .map((commit, index) => ({ ...commit, previous: commits.at(index + 1) }))
+    .map((commit) => ({
+      version: commit.version,
+      range: {
+        ...commit?.previous && { from: commit.previous.hash },
+        to: commit.hash,
+      },
+    }));
 }
 
 /**
