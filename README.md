@@ -1,45 +1,41 @@
-# 🌱 Roka
+# roka
 
 [![JSR @roka](https://jsr.io/badges/@roka)](https://jsr.io/@roka)
 [![codecov](https://codecov.io/gh/withroka/roka/branch/main/graph/badge.svg)](https://codecov.io/gh/withroka/roka)
 [![ci](https://github.com/withroka/roka/actions/workflows/ci.yml/badge.svg)](https://github.com/withroka/roka/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/withroka/roka/blob/main/LICENSE)
 
-Hey! 👋
-
-Welcome to our development repository! It’s a collection of tools and libraries
-that help streamline product development. It is built with
-[Deno](https://deno.com) and [TypeScript](https://www.typescriptlang.org).
+Roka is a [Deno](https://deno.com)/[TypeScript](https://www.typescriptlang.org)
+toolkit for building and shipping packages. It includes standard libraries that
+augment [std](https://jsr.io/@std), a quality-check runner, and a release
+manager built on [Conventional Commits](https://www.conventionalcommits.org).
 
 > [!WARNING]
-> This is still in an early stage, so everything is subject to change. 🚀
+> This is still in an early stage. Expect breaking changes.
 
 ## Components
 
-### 🧩 core
+### core
 
-This is a collection of libraries for common tasks like network requests and
-testing. It’s the backbone of the **Roka** project. You can use the published
-packages independently with Deno. Take a look at the
-[documentation](https://jsr.io/@roka) on JSR for more details.
+Shared libraries for common tasks like network requests and testing. Each
+package can be used on its own. See the [documentation](https://jsr.io/@roka)
+for more details.
 
-### 🍃 flow
+### flow
 
-This is a command-line application for running quality checks and unit tests for
-Deno projects. Running without any arguments will verify that all checks and
-tests are passing in the code and documentation. See the
-[documentation](https://jsr.io/@roka/flow) for more details.
+A CLI that runs quality checks and unit tests for Deno projects. Running it
+without arguments verifies that checks and tests affected by unmerged changes
+pass across code and documentation blocks. See the package
+[documentation](https://jsr.io/@roka/flow) for details.
 
-### ⚒️ forge
+### forge
 
-This is a command-line application for managing Deno packages hosted on GitHub.
-It can compile binaries, calculate versions, and create GitHub releases from
-[Conventional Commits](https://www.conventionalcommits.org). It supports both
-single package repositories and monorepos using
+A CLI for managing Deno packages hosted on GitHub. It compiles binaries,
+calculates versions, and creates GitHub releases from Conventional Commits. It
+supports both single-package repositories and monorepos using
 [workspaces](https://docs.deno.com/runtime/fundamentals/workspaces/). See the
-[documentation](https://jsr.io/@roka/forge) for more details.
+package [documentation](https://jsr.io/@roka/forge) for details.
 
 ## Contributing
 
-Would you like to contribute? That’s wonderful! Please take a look at the
-[contribution guide](./CONTRIBUTING.md).
+Want to contribute? See the [contribution guide](./CONTRIBUTING.md).
