@@ -895,6 +895,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           "--quiet",
           "--no-check",
           "--permission-set",
+          "--no-prompt",
           ...target ? ["--target", target] : [],
           ...include ? include.flatMap((i) => ["--include", i]) : [],
           ...output ? ["--output", output] : [],
