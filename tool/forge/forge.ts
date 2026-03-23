@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-console
 /**
  * A monorepo tool for Deno workspaces.
  *
@@ -296,7 +295,17 @@ import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { distinct, partition } from "@std/collections";
-import { bold, cyan, green, red, yellow } from "@std/fmt/colors";
+import {
+  bold,
+  cyan,
+  dim,
+  gray,
+  green,
+  red,
+  stripAnsiCode,
+  white,
+  yellow,
+} from "@std/fmt/colors";
 import { join } from "@std/path";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
@@ -326,6 +335,27 @@ const ERROR = red("✘");
 const PACKAGE = cyan("  ■");
 const ARTIFACT = cyan("  ◆");
 
+const console = {
+  verbose: false,
+  ttyAware(fn: (...data: unknown[]) => unknown, data: unknown[]) {
+    return fn(
+      ...Deno.stdout.isTerminal()
+        ? data
+        : data.map((x) => typeof x === "string" ? stripAnsiCode(x) : x),
+    );
+  },
+  debug: (...data: unknown[]) =>
+    console.verbose
+      ? console.ttyAware(globalThis.console.debug, data)
+      : undefined,
+  log: (...data: unknown[]) => console.ttyAware(globalThis.console.log, data),
+  warn: (...data: unknown[]) => console.ttyAware(globalThis.console.warn, data),
+  error: (...data: unknown[]) =>
+    console.ttyAware(globalThis.console.error, data),
+  row: (color: (data: string) => string, data: string[]) =>
+    Deno.stdout.isTerminal() ? data.map((x) => color(x)) : data,
+};
+
 /**
  * Options for the {@link forge} function.
  *
@@ -346,7 +376,6 @@ export interface ForgeOptions {
 export async function forge(
   options?: ForgeOptions,
 ): Promise<number> {
-  let verbose = false;
   const cmd = new Command()
     .name("forge")
     .version(await version({ release: true, target: true }))
@@ -365,7 +394,7 @@ export async function forge(
     .option("--verbose", "Print additional information.", {
       hidden: true,
       global: true,
-      action: () => verbose = true,
+      action: () => console.verbose = true,
     })
     .default("list")
     .command("list", listCommand(options))
@@ -376,8 +405,8 @@ export async function forge(
     .command("release", releaseCommand(options));
   const { errors } = await maybe(() => cmd.parse());
   for (const error of errors ?? []) {
-    console.error(ERROR, error.message);
-    if (verbose) console.error(error);
+    console.error(ERROR, red(error.message));
+    console.debug(error);
   }
   return errors ? 1 : 0;
 }
@@ -407,22 +436,21 @@ function packageRow(pkg: Package): string[] {
   const name = pkg.config.name ?? pkg.name;
   if (pkg.config.version === undefined) return [name];
   if (pkg.version !== (pkg.config.version)) { // modified
-    return [yellow(name), yellow(pkg.version)];
+    return console.row(yellow, [name, pkg.version]);
   }
   if (pkg.config.version !== (pkg.latest?.version ?? "0.0.0")) { // releasing
-    return [
-      red(name),
-      red(`${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`),
-    ];
+    return console.row(red, [
+      name,
+      `${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`,
+    ]);
   }
-  return [cyan(name), cyan(pkg.version)];
+  return console.row(cyan, [name, pkg.version]);
 }
 
 function moduleRows(pkg: Package): string[][] {
-  const rows = Object.entries(modules(pkg)).map(([name, path]) => [
-    name || "(default)",
-    join(pkg.directory, path),
-  ]);
+  const rows = Object.entries(modules(pkg)).map(([name, path]) =>
+    console.row(dim, [name || "(default)", join(pkg.directory, path)])
+  );
   return rows.length ? [...rows, []] : [];
 }
 
@@ -515,11 +543,9 @@ function changelogCommand(context: ForgeOptions | undefined) {
           yield changelog(log, {
             ...changelogOptions,
             content: {
-              title: bold(
-                unreleased
-                  ? yellow(`${pkg.name}@${pkg.version} (unreleased)`)
-                  : `${pkg.name}@${pkg.version}`,
-              ),
+              title: unreleased
+                ? `${pkg.name}@${pkg.version} (unreleased)`
+                : `${pkg.name}@${pkg.version}`,
             },
           });
         }
@@ -577,10 +603,10 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
           console.log(SUCCESS, `Compiled ${pkg.name}`);
           console.log();
           for (const artifact of artifacts) {
-            console.log(ARTIFACT, artifact);
+            console.log(ARTIFACT, gray(artifact));
           }
           if (options.install) {
-            console.log(PACKAGE, `Installed ${pkg.name}`);
+            console.log(PACKAGE, gray(`Installed ${white(pkg.name)}`));
           }
           console.log();
         },
@@ -673,7 +699,7 @@ function releaseCommand(context: ForgeOptions | undefined) {
         console.log(`  [${rls.url}]`);
         console.log();
         if (assets.length) {
-          assets.forEach((asset) => console.log(ARTIFACT, asset.name));
+          assets.forEach((asset) => console.log(ARTIFACT, gray(asset.name)));
           console.log();
         }
       }, { concurrency: 1 });
@@ -704,10 +730,7 @@ async function find(
     found = filtered;
   }
   if (!found.length) {
-    const message = packages.length
-      ? `${empty}: ${packages.join(", ")}`
-      : empty;
-    console.log(yellow(message));
+    console.warn(packages.length ? `${empty}: ${packages.join(", ")}` : empty);
   }
   return found;
 }

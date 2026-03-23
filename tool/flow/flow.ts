@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-console
 /**
  * A fast feedback development tool.
  *
@@ -87,7 +86,7 @@ import {
   intersect,
   sumOf,
 } from "@std/collections";
-import { bold, dim, green, red, yellow } from "@std/fmt/colors";
+import { bold, gray, green, red, stripAnsiCode, yellow } from "@std/fmt/colors";
 import { basename, dirname, toFileUrl } from "@std/path";
 import { toText } from "@std/streams";
 
@@ -101,7 +100,24 @@ const DESCRIPTION = `
 const SUCCESS = green(bold("✓"));
 const ERROR = red("✘");
 
-let verbose = false;
+const console = {
+  verbose: false,
+  ttyAware(fn: (...data: unknown[]) => unknown, data: unknown[]) {
+    return fn(
+      ...Deno.stdout.isTerminal()
+        ? data
+        : data.map((x) => typeof x === "string" ? stripAnsiCode(x) : x),
+    );
+  },
+  debug: (...data: unknown[]) =>
+    console.verbose
+      ? console.ttyAware(globalThis.console.debug, data)
+      : undefined,
+  log: (...data: unknown[]) => console.ttyAware(globalThis.console.log, data),
+  warn: (...data: unknown[]) => console.ttyAware(globalThis.console.warn, data),
+  error: (...data: unknown[]) =>
+    console.ttyAware(globalThis.console.error, data),
+};
 
 /**
  * Run the `flow` CLI tool.
@@ -132,7 +148,7 @@ export async function flow(): Promise<number> {
     .option("--verbose", "Print additional information.", {
       hidden: true,
       global: true,
-      action: () => verbose = true,
+      action: () => console.verbose = true,
     })
     .action(async ({ check, doc }, ...paths) => {
       const fix = !check;
@@ -160,7 +176,7 @@ export async function flow(): Promise<number> {
   const { errors } = await maybe(() => cmd.parse());
   for (const error of errors ?? []) {
     console.error(ERROR, error.message);
-    if (verbose) console.error(error);
+    console.debug(error);
   }
   return errors ? 1 : 0;
 }
@@ -294,7 +310,7 @@ function denoOptions(): DenoOptions {
         ? yellow
         : red;
       line += ` ${color(report.status)}`;
-      if (report.time !== undefined) line += ` ${dim(`(${report.time})`)}`;
+      if (report.time !== undefined) line += ` ${gray(`(${report.time})`)}`;
     }
     return line;
   }
@@ -304,7 +320,7 @@ function denoOptions(): DenoOptions {
       console.error(`\n${message}\n`);
     },
     onDebug({ message }) {
-      if (!verbose) return;
+      if (!console.verbose) return;
       reported = true;
       console.debug(`\n${message}\n`);
     },
@@ -336,7 +352,7 @@ function denoOptions(): DenoOptions {
           }`,
         );
       }
-      put(SAVE_CURSOR);
+      if (Deno.stdout.isTerminal()) put(SAVE_CURSOR);
       saved = true;
     },
   };
@@ -463,7 +479,7 @@ function message(
     const passingTests = tests.filter((t) => t.success === true).length;
     const failingTests = tests.filter((t) => t.success === false).length;
     message = `${message} ${
-      dim(`(${passingTests} passed, ` + `${failingTests} failed)`)
+      gray(`(${passingTests} passed, ` + `${failingTests} failed)`)
     }`;
   }
   if (problemCount === 0) return message;
