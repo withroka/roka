@@ -503,9 +503,14 @@ function changelogCommand(context: ForgeOptions | undefined) {
           ...pkg.latest?.range.to && { range: { from: pkg.latest.range.to } },
         });
         if (log.length) {
+          const unreleased = pkg.version === pkg.latest?.version;
           yield changelog(log, {
             ...changelogOptions,
-            content: { title: `${pkg.name}@${pkg.version}` },
+            content: {
+              title: `${pkg.name}@${pkg.version}${
+                unreleased ? " (unreleased)" : ""
+              }`,
+            },
           });
         }
         if (!options.all) return;
