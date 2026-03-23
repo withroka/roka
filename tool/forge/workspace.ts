@@ -344,7 +344,10 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     }
   }
   directory = normalize(directory);
-  const config = await readConfig(directory);
+  const [config, permission] = await Promise.all([
+    readConfig(directory),
+    Deno.permissions.query({ name: "run", command: "git" }),
+  ]);
   const name = basename(config.name ?? directory);
   const pkg: Package = {
     name,
@@ -358,6 +361,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
       cause: pkg,
     });
   }
+  if (permission.state !== "granted") return pkg;
   try {
     const [all, headMaybe] = await Promise.all([
       releases(pkg, { limit: 1 }),
