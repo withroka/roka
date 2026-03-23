@@ -372,7 +372,7 @@ _"url"_, or _"cwd"_).
 ✅️ **Good**: Clear and appropriately scoped
 
 ```ts
-export function parse(subject: string, delimiter: string = ": ") {
+export function parse(subject: string, delimiter = ": ") {
   const [type, description] = subject.split(delimiter, 2);
   return { type, description };
 }
@@ -381,7 +381,7 @@ export function parse(subject: string, delimiter: string = ": ") {
 ❌ **Bad**: Unnecessarily verbose
 
 ```ts
-export function parse(commitSubject: string, splitDelimiter: string = ": ") {
+export function parse(commitSubject: string, splitDelimiter = ": ") {
   const commitTypeAndDescription = commitSubject.split(splitDelimiter, 2);
   return {
     type: commitTypeAndDescription[0],
@@ -393,7 +393,7 @@ export function parse(commitSubject: string, splitDelimiter: string = ": ") {
 ❌ **Bad**: Unclear abbreviations
 
 ```ts
-export function parse(sub: string, delim: string = ": ") {
+export function parse(sub: string, delim = ": ") {
   const [type, desc] = sub.split(delim, 2);
   return { type, desc };
 }
@@ -737,7 +737,7 @@ names and descriptions.
  * @param delimiter Delimiter string separating type and description.
  * @throws {Error} If the subject format is invalid.
  */
-export function parse(subject: string, delimiter: string = ": ") {
+export function parse(subject: string, delimiter = ": ") {
   const [type, description] = subject.split(delimiter, 2);
   if (!type || !description) throw new Error("Invalid commit subject format");
   return { type, description };
@@ -754,7 +754,7 @@ export function parse(subject: string, delimiter: string = ": ") {
  * @param {string} delimiter - The delimiter.
  * @returns The parsed string.
  */
-export function parse(subject: string, delimiter: string = ": ") {
+export function parse(subject: string, delimiter = ": ") {
   const [type, description] = subject.split(delimiter, 2);
   if (!type || !description) throw new Error("Invalid commit subject format");
   return { type, description };
