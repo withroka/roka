@@ -676,6 +676,57 @@ Deno.test("releases() rejects non-repository", async () => {
   await assertRejects(() => releases(pkg), GitError);
 });
 
+Deno.test("releases({ limit }) caps tagged releases", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commits: [
+      { subject: "first", tags: ["name@1.2.1"] },
+      { subject: "second", tags: ["name@1.2.2"] },
+      { subject: "third", tags: ["name@1.2.3"] },
+    ],
+  });
+  assertEquals(await releases(pkg, { limit: 10 }), [
+    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
+    { version: "1.2.2", range: { from: "name@1.2.1", to: "name@1.2.2" } },
+    { version: "1.2.1", range: { to: "name@1.2.1" } },
+  ]);
+  assertEquals(await releases(pkg, { limit: 2 }), [
+    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
+    { version: "1.2.2", range: { from: "name@1.2.1", to: "name@1.2.2" } },
+  ]);
+  assertEquals(await releases(pkg, { limit: 1 }), [
+    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
+  ]);
+  assertEquals(await releases(pkg, { limit: 0 }), []);
+});
+
+Deno.test("releases({ limit }) caps untagged releases", async () => {
+  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
+  const commit1 = await bump(pkg, "1.2.1");
+  const commit2 = await bump(pkg, "1.2.2");
+  const repo = git({ cwd: pkg.directory });
+  await bump(pkg, "1.2.3");
+  await repo.tag.create("name@1.2.3");
+  assertEquals(await releases(pkg, { limit: 10 }), [
+    { version: "1.2.3", range: { from: commit2.hash, to: "name@1.2.3" } },
+    { version: "1.2.2", range: { from: commit1.hash, to: commit2.hash } },
+    { version: "1.2.1", range: { to: commit1.hash } },
+  ]);
+  assertEquals(await releases(pkg, { limit: 2 }), [
+    { version: "1.2.3", range: { from: commit2.hash, to: "name@1.2.3" } },
+    { version: "1.2.2", range: { from: commit1.hash, to: commit2.hash } },
+  ]);
+  assertEquals(await releases(pkg, { limit: 1 }), [
+    { version: "1.2.3", range: { from: commit2.hash, to: "name@1.2.3" } },
+  ]);
+  assertEquals(await releases(pkg, { limit: 0 }), []);
+});
+
+Deno.test("releases({ limit }) rejects negative values", async () => {
+  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
+  await assertRejects(() => releases(pkg, { limit: -1 }), RangeError);
+});
+
 Deno.test("releases({ prerelease }) includes tagged pre-releases", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
