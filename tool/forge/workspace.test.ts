@@ -661,7 +661,7 @@ Deno.test("releases() rejects non-repository", async () => {
   await assertRejects(() => releases(pkg), GitError);
 });
 
-Deno.test("releases({ prerelease }) include pre-releases", async () => {
+Deno.test("releases({ prerelease }) includes tagged pre-releases", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     commits: [
@@ -681,6 +681,19 @@ Deno.test("releases({ prerelease }) include pre-releases", async () => {
       range: { from: "name@1.2.3", to: "name@2.0.0-pre.42+fedcba9" },
     },
     { version: "1.2.3", range: { to: "name@1.2.3" } },
+  ]);
+});
+
+Deno.test("releases({ prerelease }) includes untagged pre-releases", async () => {
+  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
+  const commit1 = await bump(pkg, "1.2.3");
+  const commit2 = await bump(pkg, "1.2.4-pre.42+fedcba9");
+  assertEquals(await releases(pkg, { prerelease: true }), [
+    {
+      version: "1.2.4-pre.42+fedcba9",
+      range: { from: commit1.hash, to: commit2.hash },
+    },
+    { version: "1.2.3", range: { to: commit1.hash } },
   ]);
 });
 

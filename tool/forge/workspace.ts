@@ -447,7 +447,7 @@ export async function releases(
     };
   });
   const lastTagged = tagged.at(-1);
-  const untagged = await historical(pkg, lastTagged);
+  const untagged = await historical(pkg, lastTagged, options);
   if (untagged[0] && lastTagged) lastTagged.range.from = untagged[0].range.to;
   return tagged.concat(untagged);
 }
@@ -455,6 +455,7 @@ export async function releases(
 async function historical(
   pkg: Package,
   before: Release | undefined,
+  options: ReleaseOptions | undefined,
 ): Promise<Release[]> {
   const repo = git({ cwd: pkg.root });
   const path = relative(pkg.root, join(pkg.directory, "deno.json"));
@@ -480,7 +481,7 @@ async function historical(
   )).filter((commit) =>
     commit.version &&
     (!before || commit.version !== before.version) &&
-    !parse(commit.version).prerelease?.length
+    (options?.prerelease || !parse(commit.version).prerelease?.length)
   );
   return commits
     .map((commit, index) => ({ ...commit, previous: commits.at(index + 1) }))
