@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-console
 /**
  * A fast feedback development tool.
  *
@@ -87,18 +86,17 @@ import {
   intersect,
   sumOf,
 } from "@std/collections";
-import { bold, dim, green, red, yellow } from "@std/fmt/colors";
+import { bold, gray, green, red, yellow } from "@std/fmt/colors";
 import { basename, dirname, toFileUrl } from "@std/path";
 import { toText } from "@std/streams";
+import { console, ERROR, SUCCESS } from "../console.ts";
 
 const DESCRIPTION = `
-  ${bold("🍃 flow")}
+  ${bold("flow")}
 
   An assistant tool for Deno projects that formats, type-checks,
   lints, and tests code.
 `;
-
-let verbose = false;
 
 /**
  * Run the `flow` CLI tool.
@@ -129,7 +127,7 @@ export async function flow(): Promise<number> {
     .option("--verbose", "Print additional information.", {
       hidden: true,
       global: true,
-      action: () => verbose = true,
+      action: () => console.verbose = true,
     })
     .action(async ({ check, doc }, ...paths) => {
       const fix = !check;
@@ -156,8 +154,8 @@ export async function flow(): Promise<number> {
     .command("test", testCommand());
   const { errors } = await maybe(() => cmd.parse());
   for (const error of errors ?? []) {
-    console.error(`❌`, error.message);
-    if (verbose) console.error(error);
+    console.error(ERROR, error.message);
+    console.debug(error);
   }
   return errors ? 1 : 0;
 }
@@ -291,7 +289,7 @@ function denoOptions(): DenoOptions {
         ? yellow
         : red;
       line += ` ${color(report.status)}`;
-      if (report.time !== undefined) line += ` ${dim(`(${report.time})`)}`;
+      if (report.time !== undefined) line += ` ${gray(`(${report.time})`)}`;
     }
     return line;
   }
@@ -301,7 +299,7 @@ function denoOptions(): DenoOptions {
       console.error(`\n${message}\n`);
     },
     onDebug({ message }) {
-      if (!verbose) return;
+      if (!console.verbose) return;
       reported = true;
       console.debug(`\n${message}\n`);
     },
@@ -362,12 +360,12 @@ async function files(
     });
     // run on all files if not in a Git repository
     if (!changes) {
-      console.warn("🧽 Not in a Git repository, checking all files");
+      console.warn(yellow("Not in a Git repository, checking all files"));
       paths = ["."];
     } else {
       paths = changes.paths;
       if (paths.length === 0) {
-        console.warn(`🧽 No changes since '${changes.main}'`);
+        console.warn(yellow(`No changes since '${changes.main}'`));
         return [];
       }
     }
@@ -406,7 +404,7 @@ async function run(
       const content = await Deno.readTextFile(stdinFile.path());
       console.log(content.trimEnd());
     } else {
-      console.log("✅", output);
+      console.log(SUCCESS, output);
     }
   });
   if (stdinFile && errors) {
@@ -460,7 +458,7 @@ function message(
     const passingTests = tests.filter((t) => t.success === true).length;
     const failingTests = tests.filter((t) => t.success === false).length;
     message = `${message} ${
-      dim(`(${passingTests} passed, ` + `${failingTests} failed)`)
+      gray(`(${passingTests} passed, ` + `${failingTests} failed)`)
     }`;
   }
   if (problemCount === 0) return message;

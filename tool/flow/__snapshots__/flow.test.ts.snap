@@ -14,7 +14,7 @@ typescript: <version>
 
 Description:
 
-  🍃 flow
+  flow
 
   An assistant tool for Deno projects that formats, type-checks,
   lints, and tests code.
@@ -45,7 +45,7 @@ Examples:
   flow test               Run tests.
   flow test --filter name Only run tests with 'name'.
 
-❌ Test case attempted to exit with exit code: 0
+✘ Test case attempted to exit with exit code: 0
 ",
 }
 `;
@@ -54,7 +54,7 @@ snapshot[`flow 1`] = `
 {
   code: 0,
   output: "
-🧽 No changes since 'main'
+No changes since 'main'
 ",
 }
 `;
@@ -63,11 +63,11 @@ snapshot[`flow [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Checked 1 file
+✓ Checked 1 file
 
 example test ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -76,11 +76,11 @@ snapshot[`flow [valid-doc] 1`] = `
 {
   code: 0,
   output: "
-✅ Checked 1 file
+✓ Checked 1 file
 
 file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -89,7 +89,7 @@ snapshot[`flow [empty-directory] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: empty-directory
+✘ No files found: empty-directory
 ",
 }
 `;
@@ -98,7 +98,7 @@ snapshot[`flow [missing-file] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: missing-file.ts
+✘ No files found: missing-file.ts
 ",
 }
 `;
@@ -107,7 +107,7 @@ snapshot[`flow --check 1`] = `
 {
   code: 0,
   output: "
-🧽 No changes since 'main'
+No changes since 'main'
 ",
 }
 `;
@@ -116,11 +116,11 @@ snapshot[`flow --check [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Checked 1 file
+✓ Checked 1 file
 
 example test ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -129,11 +129,11 @@ snapshot[`flow --check [valid-doc] 1`] = `
 {
   code: 0,
   output: "
-✅ Checked 1 file
+✓ Checked 1 file
 
 file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -142,11 +142,11 @@ snapshot[`flow --doc [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Checked 1 file
+✓ Checked 1 file
 
 example test ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -200,7 +200,7 @@ error[missing-jsdoc]: exported symbol is missing JSDoc documentation
 7 | export function example(): number {
   | ^
 
-❌ Checked 1 file, found 6 problems
+✘ Checked 1 file, found 6 problems
 ",
 }
 `;
@@ -209,7 +209,7 @@ snapshot[`flow fmt [invalid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Formatted 1 file
+✓ Formatted 1 file
 ",
 }
 `;
@@ -218,7 +218,7 @@ snapshot[`flow fmt [invalid-comment] 1`] = `
 {
   code: 0,
   output: "
-✅ Formatted 1 file
+✓ Formatted 1 file
 ",
 }
 `;
@@ -227,7 +227,7 @@ snapshot[`flow fmt [invalid-doc] 1`] = `
 {
   code: 0,
   output: "
-✅ Formatted 1 file
+✓ Formatted 1 file
 ",
 }
 `;
@@ -236,7 +236,7 @@ snapshot[`flow fmt [empty-directory] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: empty-directory
+✘ No files found: empty-directory
 ",
 }
 `;
@@ -245,7 +245,7 @@ snapshot[`flow fmt [missing-file] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: missing-file.ts
+✘ No files found: missing-file.ts
 ",
 }
 `;
@@ -254,7 +254,7 @@ snapshot[`flow fmt --check [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Checked formatting in 1 file
+✓ Checked formatting in 1 file
 ",
 }
 `;
@@ -263,7 +263,7 @@ snapshot[`flow fmt --check [valid-doc] 1`] = `
 {
   code: 0,
   output: "
-✅ Checked formatting in 1 file
+✓ Checked formatting in 1 file
 ",
 }
 `;
@@ -281,7 +281,7 @@ from <directory>/invalid-code.ts:
  9 | -   return "42";
  9 | +  return "42";
 
-❌ Checked formatting in 1 file, found 1 problem
+✘ Checked formatting in 1 file, found 1 problem
 ',
 }
 `;
@@ -299,7 +299,7 @@ from <directory>/invalid-comment.ts:4:4:
 5 | -   return "42";
 5 | +  return "42";
 
-❌ Checked formatting in 1 file, found 1 problem
+✘ Checked formatting in 1 file, found 1 problem
 ',
 }
 `;
@@ -317,7 +317,7 @@ from <directory>/invalid-doc.md:
  8 | -   return "42";
  8 | +  return "42";
 
-❌ Checked formatting in 1 file, found 1 problem
+✘ Checked formatting in 1 file, found 1 problem
 ',
 }
 `;
@@ -378,7 +378,7 @@ Error formatting: stdin.invalid.json
   {a:}
      ~
 
-❌ Formatted 1 file, found 1 problem
+✘ Formatted 1 file, found 1 problem
 ",
 }
 `;
@@ -387,7 +387,7 @@ snapshot[`flow fmt --stdin=unknown 1`] = `
 {
   code: 1,
   output: "
-❌ No target files found
+✘ No target files found
 ",
 }
 `;
@@ -396,7 +396,7 @@ snapshot[`flow fmt [valid-code] --stdin 1`] = `
 {
   code: 1,
   output: "
-❌ Cannot specify paths when reading from stdin
+✘ Cannot specify paths when reading from stdin
 ",
 }
 `;
@@ -405,7 +405,7 @@ snapshot[`flow check [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Type-checked 1 file
+✓ Type-checked 1 file
 ",
 }
 `;
@@ -414,7 +414,7 @@ snapshot[`flow check [valid-doc] 1`] = `
 {
   code: 0,
   output: "
-✅ Type-checked 1 file
+✓ Type-checked 1 file
 ",
 }
 `;
@@ -441,7 +441,7 @@ TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
    ~~~~~~
     at file://<directory>/invalid-code.ts:9:4
 
-❌ Type-checked 1 file, found 3 problems
+✘ Type-checked 1 file, found 3 problems
 \`,
 }
 `;
@@ -468,7 +468,7 @@ TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
    ~~~~~~
     at file://<directory>/invalid-comment.ts:9:7
 
-❌ Type-checked 1 file, found 3 problems
+✘ Type-checked 1 file, found 3 problems
 \`,
 }
 `;
@@ -495,7 +495,7 @@ TS2322 [ERROR]: Type 'string' is not assignable to type 'number'.
    ~~~~~~
     at file://<directory>/invalid-doc.md:8:4
 
-❌ Type-checked 1 file, found 3 problems
+✘ Type-checked 1 file, found 3 problems
 \`,
 }
 `;
@@ -504,7 +504,7 @@ snapshot[`flow check [empty-directory] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: empty-directory
+✘ No files found: empty-directory
 ",
 }
 `;
@@ -513,7 +513,7 @@ snapshot[`flow check [missing-file] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: missing-file.ts
+✘ No files found: missing-file.ts
 ",
 }
 `;
@@ -522,7 +522,7 @@ snapshot[`flow lint [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Linted 1 file
+✓ Linted 1 file
 ",
 }
 `;
@@ -531,7 +531,7 @@ snapshot[`flow lint [valid-doc] 1`] = `
 {
   code: 0,
   output: "
-✅ Linted 1 file
+✓ Linted 1 file
 ",
 }
 `;
@@ -570,7 +570,7 @@ error[no-window]: Window is no longer available in Deno
 
   docs: https://docs.deno.com/lint/rules/no-window
 
-❌ Linted 1 file, found 3 problems
+✘ Linted 1 file, found 3 problems
 ',
 }
 `;
@@ -619,7 +619,7 @@ error[no-window]: Window is no longer available in Deno
 
   docs: https://docs.deno.com/lint/rules/no-window
 
-❌ Linted 1 file, found 4 problems
+✘ Linted 1 file, found 4 problems
 ',
 }
 `;
@@ -668,7 +668,7 @@ error[no-window]: Window is no longer available in Deno
 
   docs: https://docs.deno.com/lint/rules/no-window
 
-❌ Linted 1 file, found 4 problems
+✘ Linted 1 file, found 4 problems
 ',
 }
 `;
@@ -677,7 +677,7 @@ snapshot[`flow lint [empty-directory] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: empty-directory
+✘ No files found: empty-directory
 ",
 }
 `;
@@ -686,7 +686,7 @@ snapshot[`flow lint [missing-file] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: missing-file.ts
+✘ No files found: missing-file.ts
 ",
 }
 `;
@@ -695,7 +695,7 @@ snapshot[`flow lint --doc [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Linted 1 file
+✓ Linted 1 file
 ",
 }
 `;
@@ -741,7 +741,7 @@ error[no-window]: Window is no longer available in Deno
 
   docs: https://docs.deno.com/lint/rules/no-window
 
-❌ Linted 1 file, found 4 problems
+✘ Linted 1 file, found 4 problems
 ',
 }
 `;
@@ -750,7 +750,7 @@ snapshot[`flow lint --fix [valid-code] 1`] = `
 {
   code: 0,
   output: "
-✅ Linted 1 file
+✓ Linted 1 file
 ",
 }
 `;
@@ -759,7 +759,7 @@ snapshot[`flow lint --fix [valid-doc] 1`] = `
 {
   code: 0,
   output: "
-✅ Linted 1 file
+✓ Linted 1 file
 ",
 }
 `;
@@ -788,7 +788,7 @@ error[no-unused-vars]: \`a\` is never used
 
   docs: https://docs.deno.com/lint/rules/no-unused-vars
 
-❌ Linted 1 file, found 2 problems
+✘ Linted 1 file, found 2 problems
 ',
 }
 `;
@@ -827,7 +827,7 @@ error[no-unused-vars]: \`a\` is never used
 
   docs: https://docs.deno.com/lint/rules/no-unused-vars
 
-❌ Linted 1 file, found 3 problems
+✘ Linted 1 file, found 3 problems
 ',
 }
 `;
@@ -866,7 +866,7 @@ error[no-unused-vars]: \`a\` is never used
 
   docs: https://docs.deno.com/lint/rules/no-unused-vars
 
-❌ Linted 1 file, found 3 problems
+✘ Linted 1 file, found 3 problems
 ',
 }
 `;
@@ -878,7 +878,7 @@ snapshot[`flow test [valid-code] 1`] = `
 
 example test ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -890,7 +890,7 @@ snapshot[`flow test [valid-doc] 1`] = `
 
 file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -913,7 +913,7 @@ test3 ... ok (?ms)
 post-test output
 ----- non-test output end -----
 
-✅ Ran 3 tests from 1 file (3 passed, 0 failed)
+✓ Ran 3 tests from 1 file (3 passed, 0 failed)
 ",
 }
 `;
@@ -932,7 +932,7 @@ error: Error: fail
     at file://<directory>/invalid-code.ts:4:24
 
 
-❌ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
+✘ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
 ',
 }
 `;
@@ -951,7 +951,7 @@ error: Error: fail
     at file://<directory>/invalid-comment.ts:5:25
 
 
-❌ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
+✘ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
 ',
 }
 `;
@@ -970,7 +970,7 @@ error: Error: fail
     at file://<directory>/invalid-doc.md:4:22
 
 
-❌ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
+✘ Ran 1 test from 1 file, found 1 problem (0 passed, 1 failed)
 ',
 }
 `;
@@ -979,7 +979,7 @@ snapshot[`flow test [empty-directory] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: empty-directory
+✘ No files found: empty-directory
 ",
 }
 `;
@@ -988,7 +988,7 @@ snapshot[`flow test [missing-file] 1`] = `
 {
   code: 1,
   output: "
-❌ No files found: missing-file.ts
+✘ No files found: missing-file.ts
 ",
 }
 `;
@@ -1000,7 +1000,7 @@ snapshot[`flow test --filter [test-filter] [valid-code] 1`] = `
 
 example test ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -1012,7 +1012,7 @@ snapshot[`flow test --filter /[test-filter]/ [valid-code] 1`] = `
 
 example test ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -1024,7 +1024,7 @@ snapshot[`flow test --update [valid-code] 1`] = `
 
 example test ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;
@@ -1036,7 +1036,7 @@ snapshot[`flow test --update [valid-doc] 1`] = `
 
 file://<directory>/valid-doc.md\$3-10.ts ... ok (?ms)
 
-✅ Ran 1 test from 1 file (1 passed, 0 failed)
+✓ Ran 1 test from 1 file (1 passed, 0 failed)
 ",
 }
 `;

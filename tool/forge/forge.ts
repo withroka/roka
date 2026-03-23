@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-console
 /**
  * A monorepo tool for Deno workspaces.
  *
@@ -37,8 +36,8 @@
  * forge list
  * ```
  * ```
- * 📦 example @roka/example 1.2.3
- * 📦 testing @roka/testing 0.1.0
+ * @roka/example 1.2.3
+ * @roka/testing 0.1.0
  * ```
  *
  * By default, every **forge** command applies to all packages in the
@@ -65,7 +64,7 @@
  * forge changelog
  * ```
  * ```
- * 🏷️ example@2.0.0-pre.3+fedcba9
+ * example@2.0.0-pre.3+fedcba9
  *
  *   test(example): forgot unit-testing (#6)
  *   style(example): nicer code style (#5)
@@ -87,9 +86,7 @@
  *
  * All packages can be updated with a single commit with the special wildcard
  * (“*”) scope. You can also update multiple packages with a single commit by
- * listing their names with a comma in between. But before you do that, maybe
- * it’s time to think about whether your pull requests can be smaller. 🤓
-
+ * listing their names with a comma in between.
  *
  * ## Releases
  *
@@ -121,7 +118,7 @@
  *
  * Check out an [example pull request](https://github.com/withroka/roka/pull/181)
  * that updates multiple packages. Emojis are optional and enabled with the
- * `--emoji` flag to add some extra flair. 💅
+ * `--emoji` flag.
  *
  * At this point, we are ready to publish the packages to JSR. However, before
  * that, let’s proceed to create a release on GitHub, which is the second step.
@@ -181,8 +178,7 @@
  * preferable to create a bot account and use its personal access token instead.
  *
  * Check out the workflows in the [roka](https://github.com/withroka/roka)
- * repository to see how we can automate all steps. With **forge** taking care
- * of most of the work, we can either chill or find more time for coding. 💆‍♀️
+ * repository to see how we can automate all steps.
  *
  * ## Unstable features
  *
@@ -191,7 +187,7 @@
  * scenario with the `unstable` modifier on commit messages.
  *
  * ```
- * 🏷️ example@0.0.1-pre.3+fedcba9
+ * example@0.0.1-pre.3+fedcba9
  *
  *   feat(example/unstable): introduce unstable feature (#1)
  *   fix(example/unstable) fix unstable feature (#2)
@@ -203,7 +199,7 @@
  * request a minor update.
  *
  * ```
- * 🏷️ example@0.1.0-pre.1+fedcba9
+ * example@0.1.0-pre.1+fedcba9
  *
  *   feat(example): introduce stable feature (#4)
  * ```
@@ -214,7 +210,7 @@
  * the changes to the package, applying the special rule to `unstable` only.
  *
  * ```
- * 🏷️ example@0.0.1-pre.3+fedcba9
+ * example@0.0.1-pre.3+fedcba9
  *
  *   feat(example/client/unstable): add an unstable feature to the client (#3)
  *   fix(example/server) fix bug in the server module (#2)
@@ -260,19 +256,17 @@
  * forge release example
  * ```
  * ```
- * 🚀 Created release example@2.0.0
+ * ✓ Created release example@2.0.0
  *
  *   [https://github.com/withroka/example/releases/tag/example@2.0.0]
  *
- *   🏺 x86_64-unknown-linux-gnu.tar.gz
- *   🏺 aarch64-unknown-linux-gnu.tar.gz
- *   🏺 x86_64-pc-windows-msvc.zip
- *   🏺 x86_64-apple-darwin.tar.gz
- *   🏺 aarch64-apple-darwin.tar.gz
- *   🏺 sha256.txt
+ *   ◆ x86_64-unknown-linux-gnu.tar.gz
+ *   ◆ aarch64-unknown-linux-gnu.tar.gz
+ *   ◆ x86_64-pc-windows-msvc.zip
+ *   ◆ x86_64-apple-darwin.tar.gz
+ *   ◆ aarch64-apple-darwin.tar.gz
+ *   ◆ sha256.txt
  * ```
- *
- * Magic! 🔮
  *
  * ## Modules
  *
@@ -301,8 +295,9 @@ import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { distinct, partition } from "@std/collections";
-import { bold } from "@std/fmt/colors";
+import { bold, cyan, dim, gray, red, white, yellow } from "@std/fmt/colors";
 import { join } from "@std/path";
+import { console, ERROR, SUCCESS } from "../console.ts";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
@@ -319,12 +314,15 @@ import {
 } from "./workspace.ts";
 
 const DESCRIPTION = `
-  ${bold("🛠️  forge")}
+  ${bold("forge")}
 
   A Deno monorepo tool that manages packages on GitHub and JSR, including
   versioning, releases, and compilation. It works on a git repository using
   Conventional Commits.
 `;
+
+const PACKAGE = cyan("  ■");
+const ARTIFACT = cyan("  ◆");
 
 /**
  * Options for the {@link forge} function.
@@ -346,7 +344,6 @@ export interface ForgeOptions {
 export async function forge(
   options?: ForgeOptions,
 ): Promise<number> {
-  let verbose = false;
   const cmd = new Command()
     .name("forge")
     .version(await version({ release: true, target: true }))
@@ -365,7 +362,7 @@ export async function forge(
     .option("--verbose", "Print additional information.", {
       hidden: true,
       global: true,
-      action: () => verbose = true,
+      action: () => console.verbose = true,
     })
     .default("list")
     .command("list", listCommand(options))
@@ -376,8 +373,8 @@ export async function forge(
     .command("release", releaseCommand(options));
   const { errors } = await maybe(() => cmd.parse());
   for (const error of errors ?? []) {
-    console.error(`❌ ${error.message}`);
-    if (verbose) console.error(error);
+    console.error(ERROR, red(error.message));
+    console.debug(error);
   }
   return errors ? 1 : 0;
 }
@@ -404,24 +401,25 @@ function listCommand(context: ForgeOptions | undefined) {
 }
 
 function packageRow(pkg: Package): string[] {
-  const releasing = pkg.config.version !== undefined &&
-    pkg.config.version !== (pkg.latest?.version ?? "0.0.0");
-  return [
-    `${releasing ? "🚨" : "📦"} ${pkg.config.name ?? pkg.name}`,
-    pkg.config.version !== undefined
-      ? (releasing
-        ? `${pkg.latest?.version ?? "0.0.0"} 👉 ${pkg.config.version}`
-        : pkg.version)
-      : "",
-  ];
+  const name = pkg.config.name ?? pkg.name;
+  if (pkg.config.version === undefined) return [name];
+  if (pkg.version !== (pkg.config.version)) { // modified
+    return console.row(yellow, [name, pkg.version]);
+  }
+  if (pkg.config.version !== (pkg.latest?.version ?? "0.0.0")) { // releasing
+    return console.row(red, [
+      name,
+      `${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`,
+    ]);
+  }
+  return console.row(cyan, [name, pkg.version]);
 }
 
 function moduleRows(pkg: Package): string[][] {
-  const rows = Object.entries(modules(pkg)).map(([name, path]) => [
-    `  🧩 ${name || "(default)"}`,
-    join(pkg.directory, path),
-  ]);
-  return rows.length ? [[], ...rows, []] : [];
+  const rows = Object.entries(modules(pkg)).map(([name, path]) =>
+    console.row(dim, [name || "(default)", join(pkg.directory, path)])
+  );
+  return rows.length ? [...rows, []] : [];
 }
 
 function titleCommand(context: ForgeOptions | undefined) {
@@ -496,9 +494,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
         ...options.breaking !== undefined && { breaking: options.breaking },
       };
       const changelogOptions: ChangelogOptions = {
-        ...options.markdown
-          ? {}
-          : { markdown: { heading: "🏷️  ", bullet: "  " } },
+        ...options.markdown ? {} : { markdown: { heading: "", bullet: "  " } },
         commit: {
           sort: "importance",
           emoji: options.emoji,
@@ -515,9 +511,9 @@ function changelogCommand(context: ForgeOptions | undefined) {
           yield changelog(log, {
             ...changelogOptions,
             content: {
-              title: `${pkg.name}@${pkg.version}${
-                unreleased ? " (unreleased)" : ""
-              }`,
+              title: unreleased
+                ? `${pkg.name}@${pkg.version} (unreleased)`
+                : `${pkg.name}@${pkg.version}`,
             },
           });
         }
@@ -572,10 +568,14 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
         found,
         async (pkg) => {
           const artifacts = await compile(pkg, options);
-          console.log(`📦 Compiled ${pkg.name}`);
+          console.log(SUCCESS, `Compiled ${pkg.name}`);
           console.log();
-          for (const artifact of artifacts) console.log(`  🏺 ${artifact}`);
-          if (options.install) console.log(`  💾 Installed ${pkg.name}`);
+          for (const artifact of artifacts) {
+            console.log(ARTIFACT, gray(artifact));
+          }
+          if (options.install) {
+            console.log(PACKAGE, gray(`Installed ${white(pkg.name)}`));
+          }
           console.log();
         },
         options,
@@ -622,12 +622,12 @@ function bumpCommand(context: ForgeOptions | undefined) {
         ...context?.repo && { repo: context.repo },
       });
       if (pr) {
-        console.log(`🚀 Created bump pull request`);
+        console.log(SUCCESS, "Created bump pull request");
         console.log();
         console.log(`  [${pr.url}]`);
         console.log();
       } else {
-        console.log("📦 Bumped package versions");
+        console.log(SUCCESS, "Bumped package versions");
       }
     });
 }
@@ -662,12 +662,12 @@ function releaseCommand(context: ForgeOptions | undefined) {
           ...options,
           ...context?.repo && { repo: context.repo },
         });
-        console.log(`🚀 Created release ${pkg.name}@${pkg.version}`);
+        console.log(SUCCESS, `Created release ${pkg.name}@${pkg.version}`);
         console.log();
         console.log(`  [${rls.url}]`);
         console.log();
         if (assets.length) {
-          assets.forEach((x) => console.log(`  🏺 ${x.name}`));
+          assets.forEach((asset) => console.log(ARTIFACT, gray(asset.name)));
           console.log();
         }
       }, { concurrency: 1 });
@@ -698,8 +698,7 @@ async function find(
     found = filtered;
   }
   if (!found.length) {
-    if (packages.length) console.log(`📦 ${empty}: ${packages.join(", ")}`);
-    else console.log(`📦 ${empty}`);
+    console.warn(packages.length ? `${empty}: ${packages.join(", ")}` : empty);
   }
   return found;
 }
