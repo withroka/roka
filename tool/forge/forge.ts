@@ -391,9 +391,10 @@ function listCommand(context: ForgeOptions | undefined) {
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...packages) => {
       const found = await find(
-        { packages, empty: "📦 No packages found" },
+        { packages, empty: "No packages found" },
         context,
       );
+      if (!found.length) return;
       Table.from([
         ...found.map((pkg) => {
           return [packageRow(pkg), ...options.modules ? moduleRows(pkg) : []];
@@ -486,7 +487,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
     .option("--markdown", "Generate Markdown.", { default: false })
     .action(async (options, ...packages) => {
       const found = await find(
-        { packages, empty: "📦 No packages found" },
+        { packages, empty: "No packages found" },
         context,
       );
       const commitOptions: CommitOptions = {
@@ -559,7 +560,7 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
     .action(async (options, ...packages) => {
       const found = await find({
         packages,
-        empty: "📦 No packages to compile",
+        empty: "No packages to compile",
         filter: {
           fn: (pkg) => pkg.config.forge !== undefined,
           error: 'Missing "forge" configuration for compile',
@@ -607,7 +608,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
     .action(async (options, ...packages) => {
       const found = await find({
         packages,
-        empty: "📦 No packages to bump",
+        empty: "No packages to bump",
         filter: {
           fn: (pkg) => pkg.config.version !== undefined,
           error: 'Package(s) missing "version" configuration',
@@ -644,7 +645,7 @@ function releaseCommand(context: ForgeOptions | undefined) {
     .action(async (options, ...packages) => {
       const found = await find({
         packages,
-        empty: "📦 No packages to release",
+        empty: "No packages to release",
         filter: {
           fn: (pkg) =>
             pkg.config.version !== undefined &&
@@ -692,7 +693,11 @@ async function find(
     }
     found = filtered;
   }
-  if (!found.length) console.log(empty);
+  if (!found.length) {
+    const message = empty + (packages.length ? `: ${packages.join(", ")}` : "");
+    if (filter) throw new Error(message);
+    else console.log(`📦 ${message}`);
+  }
   return found;
 }
 

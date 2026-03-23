@@ -110,9 +110,9 @@ snapshot[`forge list [directory]/* 1`] = `
 
 snapshot[`forge list [unknown] 1`] = `
 {
-  code: 1,
+  code: 0,
   output: "
-❌ No packages found
+📦 No packages found: unknown
 ",
 }
 `;
@@ -231,6 +231,15 @@ snapshot[`forge changelog --breaking --markdown 1`] = `
 }
 `;
 
+snapshot[`forge changelog [unknown] 1`] = `
+{
+  code: 0,
+  output: "
+📦 No packages found: unknown
+",
+}
+`;
+
 snapshot[`forge compile --target <target> --bundle --install 1`] = `
 {
   code: 0,
@@ -244,6 +253,15 @@ snapshot[`forge compile --target <target> --bundle --install 1`] = `
 }
 `;
 
+snapshot[`forge compile [unknown] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No packages to compile: unknown
+",
+}
+`;
+
 snapshot[`forge bump --release --pr --changelog=<file> --emoji 1`] = `
 {
   code: 0,
@@ -252,6 +270,15 @@ snapshot[`forge bump --release --pr --changelog=<file> --emoji 1`] = `
 
   [<url>/pulls/1]
 
+",
+}
+`;
+
+snapshot[`forge bump [unknown] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No packages to bump: unknown
 ",
 }
 `;
@@ -271,6 +298,15 @@ snapshot[`forge release --draft --emoji 1`] = `
 
   [<url>/releases/name1@1.0.0]
 
+",
+}
+`;
+
+snapshot[`forge release [unknown] 1`] = `
+{
+  code: 1,
+  output: "
+❌ No packages to release: unknown
 ",
 }
 `;
