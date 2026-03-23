@@ -673,7 +673,7 @@ async function find(
     ...options?.repo && { root: options?.repo.git.path() },
     filters: packages,
   });
-  if (filter?.fn) {
+  if (filter) {
     const [filtered, skipped] = partition(found, filter.fn);
     if (skipped.length && packages.length) {
       throw new Error(
