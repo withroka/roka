@@ -14,7 +14,7 @@ typescript: <version>
 
 Description:
 
-  🛠️  forge
+  forge
 
   A Deno monorepo tool that manages packages on GitHub and JSR, including
   versioning, releases, and compilation. It works on a git repository using
@@ -44,7 +44,7 @@ Examples:
   forge bump --pr                       Bump versions and create a bump PR.
   forge release --draft                 Create releases with compiled assets.
 
-❌ Test case attempted to exit with exit code: 0
+✘ Test case attempted to exit with exit code: 0
 ",
 }
 `;
@@ -53,12 +53,12 @@ snapshot[`forge list 1`] = `
 {
   code: 0,
   output: "
-🚨 @scope/name1     0.0.0 👉 1.0.0
-📦 @scope/name2     2.1.0-pre.1+<hash>
-🚨 @scope/name3     2.0.0 👉 3.0.0
-📦 @scope/name4     5.0.0-pre.1+<hash>
-📦 @scope/dir/name5 0.0.0
-📦 @scope/dir/name6
+@scope/name1     0.0.0 → 1.0.0
+@scope/name2     2.1.0-pre.1+<hash>
+@scope/name3     2.0.0 → 3.0.0
+@scope/name4     5.0.0-pre.1+<hash>
+@scope/dir/name5 0.0.0
+@scope/dir/name6
 ",
 }
 `;
@@ -67,19 +67,17 @@ snapshot[`forge list --modules [packages...] 1`] = `
 {
   code: 0,
   output: "
-🚨 @scope/name1     0.0.0 👉 1.0.0
+@scope/name1     0.0.0 → 1.0.0
+(default)        <directory>/name1/name2.ts
+main             <directory>/name1/main.ts
 
-  🧩 (default)      <directory>/name1/name2.ts
-  🧩 main           <directory>/name1/main.ts
+@scope/name2     2.1.0-pre.1+<hash>
+(default)        <directory>/name2/name1
 
-📦 @scope/name2     2.1.0-pre.1+<hash>
-
-  🧩 (default)      <directory>/name2/name1
-
-🚨 @scope/name3     2.0.0 👉 3.0.0
-📦 @scope/name4     5.0.0-pre.1+<hash>
-📦 @scope/dir/name5 0.0.0
-📦 @scope/dir/name6
+@scope/name3     2.0.0 → 3.0.0
+@scope/name4     5.0.0-pre.1+<hash>
+@scope/dir/name5 0.0.0
+@scope/dir/name6
 ",
 }
 `;
@@ -88,12 +86,12 @@ snapshot[`forge list [pattern] 1`] = `
 {
   code: 0,
   output: "
-🚨 @scope/name1     0.0.0 👉 1.0.0
-📦 @scope/name2     2.1.0-pre.1+<hash>
-🚨 @scope/name3     2.0.0 👉 3.0.0
-📦 @scope/name4     5.0.0-pre.1+<hash>
-📦 @scope/dir/name5 0.0.0
-📦 @scope/dir/name6
+@scope/name1     0.0.0 → 1.0.0
+@scope/name2     2.1.0-pre.1+<hash>
+@scope/name3     2.0.0 → 3.0.0
+@scope/name4     5.0.0-pre.1+<hash>
+@scope/dir/name5 0.0.0
+@scope/dir/name6
 ",
 }
 `;
@@ -102,8 +100,8 @@ snapshot[`forge list [directory]/* 1`] = `
 {
   code: 0,
   output: "
-📦 @scope/dir/name5 0.0.0
-📦 @scope/dir/name6
+@scope/dir/name5 0.0.0
+@scope/dir/name6
 ",
 }
 `;
@@ -112,7 +110,7 @@ snapshot[`forge list [unknown] 1`] = `
 {
   code: 0,
   output: "
-📦 No packages found: unknown
+No packages found: unknown
 ",
 }
 `;
@@ -121,24 +119,24 @@ snapshot[`forge changelog 1`] = `
 {
   code: 0,
   output: "
-🏷️  name1@1.0.0
+name1@1.0.0
 
   fix(name1): bug
 
-🏷️  name2@2.1.0-pre.1+<hash>
+name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
   refactor(name2): rewrite
 
-🏷️  name3@3.0.0
+name3@3.0.0
 
   docs(name3): fix typo
 
-🏷️  name4@5.0.0-pre.1+<hash>
+name4@5.0.0-pre.1+<hash>
 
   refactor(name4)!: redesign api
 
-🏷️  name5@0.0.0
+name5@0.0.0
 
   style(name5): tabs over spaces
 
@@ -150,28 +148,28 @@ snapshot[`forge changelog --all --emoji 1`] = `
 {
   code: 0,
   output: "
-🏷️  name1@1.0.0
+name1@1.0.0
 
   🐛 bug
 
-🏷️  name2@2.1.0-pre.1+<hash>
+name2@2.1.0-pre.1+<hash>
 
   ✨ feature
   ♻️ rewrite
 
-🏷️  name2@1.0.0
+name2@1.0.0
 
   ✨ name2
 
-🏷️  name3@3.0.0
+name3@3.0.0
 
   📝 fix typo
 
-🏷️  name4@5.0.0-pre.1+<hash>
+name4@5.0.0-pre.1+<hash>
 
   ♻️ redesign api 💥
 
-🏷️  name5@0.0.0
+name5@0.0.0
 
   🎨 tabs over spaces
 
@@ -183,15 +181,15 @@ snapshot[`forge changelog --types <types> 1`] = `
 {
   code: 0,
   output: "
-🏷️  name1@1.0.0
+name1@1.0.0
 
   fix(name1): bug
 
-🏷️  name2@2.1.0-pre.1+<hash>
+name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
 
-🏷️  name4@5.0.0-pre.1+<hash>
+name4@5.0.0-pre.1+<hash>
 
   refactor(name4)!: redesign api
 
@@ -203,15 +201,15 @@ snapshot[`forge changelog --types <types> --no-breaking --all 1`] = `
 {
   code: 0,
   output: "
-🏷️  name1@1.0.0
+name1@1.0.0
 
   fix(name1): bug
 
-🏷️  name2@2.1.0-pre.1+<hash>
+name2@2.1.0-pre.1+<hash>
 
   feat(name2): feature
 
-🏷️  name2@1.0.0
+name2@1.0.0
 
   feat(name2): name2
 
@@ -235,7 +233,7 @@ snapshot[`forge changelog [unknown] 1`] = `
 {
   code: 0,
   output: "
-📦 No packages found: unknown
+No packages found: unknown
 ",
 }
 `;
@@ -244,10 +242,10 @@ snapshot[`forge compile --target <target> --bundle --install 1`] = `
 {
   code: 0,
   output: "
-📦 Compiled name1
+✓ Compiled name1
 
-  🏺 <directory>/dist/name1/1.0.0/aarch64-unknown-linux-gnu.tar.gz
-  💾 Installed name1
+  ◆ <directory>/dist/name1/1.0.0/aarch64-unknown-linux-gnu.tar.gz
+  ■ Installed name1
 
 ",
 }
@@ -257,7 +255,7 @@ snapshot[`forge compile [unknown] 1`] = `
 {
   code: 0,
   output: "
-📦 No packages to compile: unknown
+No packages to compile: unknown
 ",
 }
 `;
@@ -266,7 +264,7 @@ snapshot[`forge bump --release --pr --changelog=<file> --emoji 1`] = `
 {
   code: 0,
   output: "
-🚀 Created bump pull request
+✓ Created bump pull request
 
   [<url>/pulls/1]
 
@@ -278,7 +276,7 @@ snapshot[`forge bump [unknown] 1`] = `
 {
   code: 0,
   output: "
-📦 No packages to bump: unknown
+No packages to bump: unknown
 ",
 }
 `;
@@ -287,14 +285,14 @@ snapshot[`forge release --draft --emoji 1`] = `
 {
   code: 0,
   output: "
-🚀 Created release name1@1.0.0
+✓ Created release name1@1.0.0
 
   [<url>/releases/name1@1.0.0]
 
-  🏺 aarch64-unknown-linux-gnu.tar.gz
-  🏺 sha256.txt
+  ◆ aarch64-unknown-linux-gnu.tar.gz
+  ◆ sha256.txt
 
-🚀 Created release name3@3.0.0
+✓ Created release name3@3.0.0
 
   [<url>/releases/name1@1.0.0]
 
@@ -306,7 +304,7 @@ snapshot[`forge release [unknown] 1`] = `
 {
   code: 0,
   output: "
-📦 No packages to release: unknown
+No packages to release: unknown
 ",
 }
 `;
@@ -333,7 +331,7 @@ snapshot[`forge title <unknown> 1`] = `
 {
   code: 1,
   output: '
-❌ Invalid PR scope: "unknown"
+✘ Invalid PR scope: "unknown"
 
 Allowed scopes:
 
