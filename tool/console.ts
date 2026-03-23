@@ -23,7 +23,7 @@ export const console = {
   log: (...data: unknown[]) =>
     console.ttyAware(globalThis.console.log, Deno.stdout, data),
   warn: (...data: unknown[]) =>
-    console.ttyAware(globalThis.console.warn, Deno.stdout, data),
+    console.ttyAware(globalThis.console.warn, Deno.stderr, data),
   error: (...data: unknown[]) =>
     console.ttyAware(globalThis.console.error, Deno.stderr, data),
   row: (color: (data: string) => string, data: string[]) =>
