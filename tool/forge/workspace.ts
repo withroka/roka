@@ -434,6 +434,7 @@ export async function releases(
   options?: ReleaseOptions,
 ): Promise<Release[]> {
   const { limit, prerelease } = options ?? {};
+  if (limit && limit < 0) throw RangeError("limit must be non-negative");
   const tags = (await git({
     cwd: pkg.directory,
     config: { "versionsort.suffix": ["-pre"] },

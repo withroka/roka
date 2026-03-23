@@ -697,6 +697,7 @@ Deno.test("releases({ limit }) caps tagged releases", async () => {
   assertEquals(await releases(pkg, { limit: 1 }), [
     { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
   ]);
+  assertEquals(await releases(pkg, { limit: 0 }), []);
 });
 
 Deno.test("releases({ limit }) caps untagged releases", async () => {
@@ -718,6 +719,12 @@ Deno.test("releases({ limit }) caps untagged releases", async () => {
   assertEquals(await releases(pkg, { limit: 1 }), [
     { version: "1.2.3", range: { from: commit2.hash, to: "name@1.2.3" } },
   ]);
+  assertEquals(await releases(pkg, { limit: 0 }), []);
+});
+
+Deno.test("releases({ limit }) rejects negative values", async () => {
+  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
+  await assertRejects(() => releases(pkg, { limit: -1 }), RangeError);
 });
 
 Deno.test("releases({ prerelease }) includes tagged pre-releases", async () => {
