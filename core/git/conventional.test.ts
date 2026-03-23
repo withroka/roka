@@ -188,6 +188,29 @@ Deno.test("conventional() can create breaking commit with scope", () => {
   });
 });
 
+Deno.test("conventional() can create breaking commit from type", () => {
+  const commit = testCommit({ subject: "BREAKING: description" });
+  assertEquals(conventional(commit), {
+    ...commit,
+    type: "breaking",
+    description: "description",
+    breaking: true,
+    ...commit.trailers && { footers: { ...commit.trailers } },
+  });
+});
+
+Deno.test("conventional() can create breaking commit from type with scope", () => {
+  const commit = testCommit({ subject: "BREAKING(scope): description" });
+  assertEquals(conventional(commit), {
+    ...commit,
+    type: "breaking",
+    description: "description",
+    breaking: true,
+    scopes: ["scope"],
+    ...commit.trailers && { footers: { ...commit.trailers } },
+  });
+});
+
 Deno.test("conventional() commits must have a description", () => {
   const commit = testCommit({ subject: "feat(scope): " });
   assertEquals(conventional(commit), {
