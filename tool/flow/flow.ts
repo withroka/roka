@@ -92,11 +92,14 @@ import { basename, dirname, toFileUrl } from "@std/path";
 import { toText } from "@std/streams";
 
 const DESCRIPTION = `
-  ${bold("🍃 flow")}
+  ${bold("flow")}
 
   An assistant tool for Deno projects that formats, type-checks,
   lints, and tests code.
 `;
+
+const SUCCESS = green(bold("✓"));
+const ERROR = red("✘");
 
 let verbose = false;
 
@@ -156,7 +159,7 @@ export async function flow(): Promise<number> {
     .command("test", testCommand());
   const { errors } = await maybe(() => cmd.parse());
   for (const error of errors ?? []) {
-    console.error(`❌`, error.message);
+    console.error(ERROR, error.message);
     if (verbose) console.error(error);
   }
   return errors ? 1 : 0;
@@ -362,12 +365,12 @@ async function files(
     });
     // run on all files if not in a Git repository
     if (!changes) {
-      console.warn("🧽 Not in a Git repository, checking all files");
+      console.warn(yellow("Not in a Git repository, checking all files"));
       paths = ["."];
     } else {
       paths = changes.paths;
       if (paths.length === 0) {
-        console.warn(`🧽 No changes since '${changes.main}'`);
+        console.warn(yellow(`No changes since '${changes.main}'`));
         return [];
       }
     }
@@ -406,7 +409,7 @@ async function run(
       const content = await Deno.readTextFile(stdinFile.path());
       console.log(content.trimEnd());
     } else {
-      console.log("✅", output);
+      console.log(SUCCESS, output);
     }
   });
   if (stdinFile && errors) {
