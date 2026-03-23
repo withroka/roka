@@ -390,7 +390,10 @@ function listCommand(context: ForgeOptions | undefined) {
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...packages) => {
-      const found = await find({ packages }, context);
+      const found = await find(
+        { packages, empty: "📦 No packages found" },
+        context,
+      );
       Table.from([
         ...found.map((pkg) => {
           return [packageRow(pkg), ...options.modules ? moduleRows(pkg) : []];
@@ -482,7 +485,10 @@ function changelogCommand(context: ForgeOptions | undefined) {
     .option("--emoji", "Use emoji for commit subjects.", { default: false })
     .option("--markdown", "Generate Markdown.", { default: false })
     .action(async (options, ...packages) => {
-      const found = await find({ packages }, context);
+      const found = await find(
+        { packages, empty: "📦 No packages found" },
+        context,
+      );
       const commitOptions: CommitOptions = {
         ...options.types !== undefined && { types: options.types },
         ...options.breaking !== undefined && { breaking: options.breaking },
@@ -553,6 +559,7 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
     .action(async (options, ...packages) => {
       const found = await find({
         packages,
+        empty: "📦 No packages to compile",
         filter: {
           fn: (pkg) => pkg.config.forge !== undefined,
           error: 'Missing "forge" configuration for compile',
@@ -600,6 +607,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
     .action(async (options, ...packages) => {
       const found = await find({
         packages,
+        empty: "📦 No packages to bump",
         filter: {
           fn: (pkg) => pkg.config.version !== undefined,
           error: 'Package(s) missing "version" configuration',
@@ -636,6 +644,7 @@ function releaseCommand(context: ForgeOptions | undefined) {
     .action(async (options, ...packages) => {
       const found = await find({
         packages,
+        empty: "📦 No packages to release",
         filter: {
           fn: (pkg) =>
             pkg.config.version !== undefined &&
@@ -662,11 +671,12 @@ function releaseCommand(context: ForgeOptions | undefined) {
 
 interface Find {
   packages: string[];
+  empty: string;
   filter?: { fn: (pkg: Package) => boolean; error: string };
 }
 
 async function find(
-  { packages, filter }: Find,
+  { packages, empty, filter }: Find,
   options: ForgeOptions | undefined,
 ): Promise<Package[]> {
   let found = await workspace({
@@ -682,7 +692,7 @@ async function find(
     }
     found = filtered;
   }
-  if (!found.length) throw new Error("No packages found");
+  if (!found.length) console.log(empty);
   return found;
 }
 
