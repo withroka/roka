@@ -490,6 +490,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
         { packages, empty: "No packages found" },
         context,
       );
+      if (!found.length) return;
       const commitOptions: CommitOptions = {
         ...options.types !== undefined && { types: options.types },
         ...options.breaking !== undefined && { breaking: options.breaking },
@@ -566,6 +567,7 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
           error: 'Missing "forge" configuration for compile',
         },
       }, context);
+      if (!found.length) return;
       await pool(
         found,
         async (pkg) => {
@@ -614,6 +616,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
           error: 'Package(s) missing "version" configuration',
         },
       }, context);
+      if (!found.length) return;
       const pr = await bump(found, {
         ...options,
         ...context?.repo && { repo: context.repo },
@@ -653,6 +656,7 @@ function releaseCommand(context: ForgeOptions | undefined) {
           error: "Nothing to release for package(s)",
         },
       }, context);
+      if (!found.length) return;
       await pool(found, async (pkg) => {
         const [rls, assets] = await release(pkg, {
           ...options,
@@ -694,9 +698,8 @@ async function find(
     found = filtered;
   }
   if (!found.length) {
-    const message = empty + (packages.length ? `: ${packages.join(", ")}` : "");
-    if (filter) throw new Error(message);
-    else console.log(`📦 ${message}`);
+    if (packages.length) console.log(`📦 ${empty}: ${packages.join(", ")}`);
+    else console.log(`📦 ${empty}`);
   }
   return found;
 }
