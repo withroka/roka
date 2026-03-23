@@ -66,8 +66,8 @@ export interface VersionOptions {
  */
 export async function version(options?: VersionOptions): Promise<string> {
   const version = jsrVersion() ||
-    await localVersion() ||
     await standaloneVersion() ||
+    await localVersion() ||
     "(unknown)";
   const meta = [
     ...options?.release && canParse(version)
