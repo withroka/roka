@@ -86,9 +86,10 @@ import {
   intersect,
   sumOf,
 } from "@std/collections";
-import { bold, gray, green, red, stripAnsiCode, yellow } from "@std/fmt/colors";
+import { bold, gray, green, red, yellow } from "@std/fmt/colors";
 import { basename, dirname, toFileUrl } from "@std/path";
 import { toText } from "@std/streams";
+import { console, ERROR, SUCCESS } from "../console.ts";
 
 const DESCRIPTION = `
   ${bold("flow")}
@@ -96,28 +97,6 @@ const DESCRIPTION = `
   An assistant tool for Deno projects that formats, type-checks,
   lints, and tests code.
 `;
-
-const SUCCESS = green(bold("✓"));
-const ERROR = red("✘");
-
-const console = {
-  verbose: false,
-  ttyAware(fn: (...data: unknown[]) => unknown, data: unknown[]) {
-    return fn(
-      ...Deno.stdout.isTerminal()
-        ? data
-        : data.map((x) => typeof x === "string" ? stripAnsiCode(x) : x),
-    );
-  },
-  debug: (...data: unknown[]) =>
-    console.verbose
-      ? console.ttyAware(globalThis.console.debug, data)
-      : undefined,
-  log: (...data: unknown[]) => console.ttyAware(globalThis.console.log, data),
-  warn: (...data: unknown[]) => console.ttyAware(globalThis.console.warn, data),
-  error: (...data: unknown[]) =>
-    console.ttyAware(globalThis.console.error, data),
-};
 
 /**
  * Run the `flow` CLI tool.
@@ -352,7 +331,7 @@ function denoOptions(): DenoOptions {
           }`,
         );
       }
-      if (Deno.stdout.isTerminal()) put(SAVE_CURSOR);
+      put(SAVE_CURSOR);
       saved = true;
     },
   };
