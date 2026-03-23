@@ -676,7 +676,7 @@ async function find(
     const skipped = found
       .filter((pkg) => !find.filter?.fn(pkg))
       .map((pkg) => pkg.name);
-    if (skipped.length && find.filter.error) {
+    if (skipped.length && find.packages.length && find.filter.error) {
       throw new Error(`${find.filter.error}: ${skipped.join(", ")}`);
     }
     found = found.filter(find.filter.fn);
