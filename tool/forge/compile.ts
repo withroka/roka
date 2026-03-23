@@ -84,16 +84,17 @@ export async function compile(
   pkg: Package,
   options?: CompileOptions,
 ): Promise<string[]> {
-  if (!pkg.config.forge) {
-    throw new PackageError("Compile configuration is required");
-  }
   const {
     dist = join(pkg.root, "dist"),
     target = [Deno.build.target],
     concurrency = navigator.hardwareConcurrency,
   } = options ?? {};
   const { main, include = [] } = pkg.config.forge ?? {};
-  assertExists(main, "Compile entrypoint is required");
+  if (!main) {
+    throw new PackageError(
+      `Package needs "forge" configuration for compile: ${pkg.name}`,
+    );
+  }
   const directory = join(dist, pkg.name, pkg.version);
   try {
     await Deno.remove(directory, { recursive: true });
