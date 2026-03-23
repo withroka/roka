@@ -133,7 +133,7 @@ function body(
   const title = pkg.latest ? "Changes" : "Initial release";
   const currentTag = `${pkg.name}@${pkg.config.version}`;
   const latestTag = pkg.latest && `${pkg.name}@${pkg.latest?.version}`;
-  const fullChangelogUrl = latestTag
+  const changelogUrl = latestTag
     ? `compare/${latestTag}...${currentTag}`
     : `commits/${currentTag}/${pkg.directory}`;
   return changelog(pkg.changes ?? [], {
@@ -142,7 +142,7 @@ function body(
       footer: {
         title: "Details",
         items: [
-          `- [Full changelog](${repo.url}/${fullChangelogUrl})`,
+          `- [Full changelog](${repo.url}/${changelogUrl})`,
           `- [Documentation](https://jsr.io/${pkg.config.name}@${pkg.config.version})`,
         ],
       },

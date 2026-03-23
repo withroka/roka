@@ -51,7 +51,10 @@ Deno.test("release() creates initial release", async () => {
       { subject: "feat: new feature (#1)" },
     ],
   });
-  const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({
+    url: new URL("https://host/repo"),
+    git: git({ cwd: pkg.root }),
+  });
   const [rls, assets] = await release(pkg, { repo });
   assertObjectMatch(rls, {
     tag: "name@0.1.0",
@@ -64,7 +67,7 @@ Deno.test("release() creates initial release", async () => {
       "",
       "### Details",
       "",
-      `- [Full changelog](url/commits/name@0.1.0/${pkg.directory})`,
+      `- [Full changelog](https://host/repo/commits/name@0.1.0/${pkg.directory})`,
       "- [Documentation](https://jsr.io/@scope/name@0.1.0)",
       "",
     ].join("\n"),
@@ -82,7 +85,10 @@ Deno.test("release() creates update release", async () => {
       { subject: "feat: new feature (#1)" },
     ],
   });
-  const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({
+    url: new URL("https://host/repo"),
+    git: git({ cwd: pkg.root }),
+  });
   const [rls, assets] = await release(pkg, { repo });
   assertObjectMatch(rls, {
     tag: "name@1.3.0",
@@ -94,7 +100,7 @@ Deno.test("release() creates update release", async () => {
       "",
       "### Details",
       "",
-      `- [Full changelog](url/compare/name@1.2.3...name@1.3.0)`,
+      `- [Full changelog](https://host/repo/compare/name@1.2.3...name@1.3.0)`,
       "- [Documentation](https://jsr.io/@scope/name@1.3.0)",
       "",
     ].join("\n"),
@@ -126,7 +132,10 @@ Deno.test("release() can update an existing release", async () => {
       { subject: "feat: new feature (#1)" },
     ],
   });
-  const repo = fakeRepository({ url: "url", git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({
+    url: new URL("https://host/repo"),
+    git: git({ cwd: pkg.root }),
+  });
   const existing = fakeRelease({ repo, id: 42, tag: "name@1.2.3" });
   repo.releases.list = async () => await Promise.resolve([existing]);
   const [rls] = await release(pkg, { repo });
@@ -139,7 +148,7 @@ Deno.test("release() can update an existing release", async () => {
       "",
       "### Details",
       "",
-      `- [Full changelog](url/compare/name@1.2.3...name@1.3.0)`,
+      `- [Full changelog](https://host/repo/compare/name@1.2.3...name@1.3.0)`,
       "- [Documentation](https://jsr.io/@scope/name@1.3.0)",
       "",
     ].join("\n"),

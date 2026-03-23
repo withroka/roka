@@ -30,6 +30,7 @@ Deno.test("github().repos.get({ directory }) uses a local repository", async () 
 Deno.test("github().repos.get().pulls", async (t) => {
   using _fetch = mockFetch(t, { ignore: { headers: true } });
   const repo = github({ token: token(_fetch) }).repos.get("withroka", "test");
+  assertEquals(repo.url, new URL("https://github.com/withroka/test"));
   let pull: PullRequest;
 
   await t.step("create pull request", async () => {
@@ -39,6 +40,7 @@ Deno.test("github().repos.get().pulls", async (t) => {
       title: "Test PR",
       body: "Initial body",
     });
+    assertEquals(pull.url, new URL(`${repo.url}/pull/${pull.number}`));
     assertObjectMatch(pull, {
       head: "test-branch",
       base: "main",
@@ -81,20 +83,22 @@ Deno.test("github().repos.get().pulls", async (t) => {
 Deno.test("github().repos.get().releases", async (t) => {
   using _fetch = mockFetch(t, { ignore: { headers: true } });
   const repo = github({ token: token(_fetch) }).repos.get("withroka", "test");
+  assertEquals(repo.url, new URL("https://github.com/withroka/test"));
   let release: Release;
 
   await t.step("create release", async () => {
     release = await repo.releases.create("test-tag", {
       name: "Test release",
       body: "Initial body",
-      draft: true,
+      draft: false,
       prerelease: false,
     });
+    assertEquals(release.url, new URL(`${repo.url}/releases/tag/test-tag`));
     assertObjectMatch(release, {
       tag: "test-tag",
       name: "Test release",
       body: "Initial body",
-      draft: true,
+      draft: false,
       prerelease: false,
     });
   });
@@ -114,24 +118,8 @@ Deno.test("github().repos.get().releases", async (t) => {
       tag: "test-tag",
       name: "Test release",
       body: "Initial body",
-      draft: true,
+      draft: false,
       prerelease: false,
-    });
-  });
-
-  await t.step("update release", async () => {
-    release = await release.update({
-      name: "Updated release",
-      body: "Updated body",
-      draft: false,
-      prerelease: true,
-    });
-    assertObjectMatch(release, {
-      tag: "test-tag",
-      name: "Updated release",
-      body: "Updated body",
-      draft: false,
-      prerelease: true,
     });
   });
 
@@ -139,10 +127,30 @@ Deno.test("github().repos.get().releases", async (t) => {
     await using directory = await tempDirectory();
     await Deno.writeTextFile(directory.path("file.txt"), "content");
     const asset = await release.assets.upload(directory.path("file.txt"));
+    assertEquals(
+      asset.url,
+      new URL(`${repo.url}/releases/download/test-tag/file.txt`),
+    );
     assertObjectMatch(asset, {
       release,
       name: "file.txt",
       size: "content".length,
+    });
+  });
+
+  await t.step("update release", async () => {
+    release = await release.update({
+      name: "Updated release",
+      body: "Updated body",
+      draft: true,
+      prerelease: true,
+    });
+    assertObjectMatch(release, {
+      tag: "test-tag",
+      name: "Updated release",
+      body: "Updated body",
+      draft: true,
+      prerelease: true,
     });
   });
 

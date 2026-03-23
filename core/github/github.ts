@@ -43,6 +43,8 @@ import { type Git, git as gitRepo } from "@roka/git";
 import { assertExists } from "@std/assert";
 import { basename } from "@std/path";
 
+const HOST = "https://github.com";
+
 /**
  * A GitHub API client returned by the {@linkcode github} function.
  *
@@ -64,7 +66,7 @@ export interface Repositories {
 /** A GitHub repository with API operations. */
 export interface Repository {
   /** Repository URL. */
-  url: string;
+  url: URL;
   /** Repository owner. */
   owner: string;
   /** Repository name. */
@@ -90,7 +92,7 @@ export interface PullRequest {
   /** Pull request repo. */
   repo: Repository;
   /** Pull request URL. */
-  url: string;
+  url: URL;
   /** Pull request number. */
   number: number;
   /** Pull request title. */
@@ -124,7 +126,7 @@ export interface Release {
   /** Release repo. */
   repo: Repository;
   /** Release URL. */
-  url: string;
+  url: URL;
   /** Release ID. */
   id: number;
   /** Release name. */
@@ -160,7 +162,7 @@ export interface ReleaseAsset {
   /** Release of the asset. */
   release: Release;
   /** Release asset download URL. */
-  url: string;
+  url: URL;
   /** Release asset ID. */
   id: number;
   /** Release asset name. */
@@ -310,7 +312,7 @@ function repository(
   repo: string,
 ): Repository {
   const result: Repository = {
-    url: `https://github.com/${owner}/${repo}`,
+    url: new URL(`/${owner}/${repo}`, HOST),
     owner,
     repo,
     git,
@@ -417,7 +419,7 @@ function pullRequest(
   const state = data.state;
   const result: PullRequest = {
     repo,
-    url: data.html_url,
+    url: new URL(data.html_url),
     number: data.number,
     title: data.title ?? "",
     body: data.body ?? "",
@@ -454,7 +456,7 @@ function release(
   assertExists(data.target_commitish, "Missing release target commit");
   const result: Release = {
     repo,
-    url: data.html_url,
+    url: new URL(data.html_url),
     id: data.id,
     name: data.name ?? "",
     tag: data.tag_name,
@@ -522,7 +524,7 @@ function releaseAsset(
   assertExists(data.size, "Missing release asset size");
   const result: ReleaseAsset = {
     release,
-    url: data.browser_download_url,
+    url: new URL(data.browser_download_url),
     id: data.id,
     name: data.name ?? "",
     size: data.size,

@@ -52,7 +52,7 @@ export function fakeRepository(data?: Partial<Repository>): Repository {
   const pulls: PullRequest[] = [];
   const releases: Release[] = [];
   const repo: Repository = {
-    url: "repo-url",
+    url: new URL("https://github.com/owner/repo"),
     owner: "owner",
     repo: "repo",
     git: git(),
@@ -109,7 +109,7 @@ export function fakePullRequest(data?: Partial<PullRequest>): PullRequest {
   const number = data?.number ?? 1;
   const pull: PullRequest = {
     repo,
-    url: `${repo.url}/pulls/${number}`,
+    url: new URL(`${repo.url}/pulls/${number}`),
     number,
     title: "title",
     body: "body",
@@ -152,7 +152,7 @@ export function fakeRelease(data?: Partial<Release>): Release {
   const assets: ReleaseAsset[] = [];
   const release: Release = {
     repo,
-    url: `${repo.url}/releases/${tag}`,
+    url: new URL(`${repo.url}/releases/${tag}`),
     id: 1,
     name: "name",
     tag,
@@ -204,7 +204,7 @@ export function fakeReleaseAsset(data?: Partial<ReleaseAsset>): ReleaseAsset {
   const name = data?.name ?? "name";
   return {
     release: fakeRelease(),
-    url: `${repo.url}/releases/download/${release.tag}/${name}`,
+    url: new URL(`${repo.url}/releases/download/${release.tag}/${name}`),
     id: 2,
     name: "name",
     size: 3,
