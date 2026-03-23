@@ -390,7 +390,7 @@ function listCommand(context: ForgeOptions | undefined) {
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
     .action(async (options, ...filters) => {
-      const packages = await filter(filters, context);
+      const packages = await filter(filters, undefined, context);
       Table.from([
         ...packages.map((pkg) => {
           return [packageRow(pkg), ...options.modules ? moduleRows(pkg) : []];
@@ -482,7 +482,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
     .option("--emoji", "Use emoji for commit subjects.", { default: false })
     .option("--markdown", "Generate Markdown.", { default: false })
     .action(async (options, ...filters) => {
-      const packages = await filter(filters, context);
+      const packages = await filter(filters, undefined, context);
       const commitOptions: CommitOptions = {
         ...options.types !== undefined && { types: options.types },
         ...options.breaking !== undefined && { breaking: options.breaking },
@@ -551,10 +551,11 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
     .action(async (options, ...filters) => {
-      let packages = await filter(filters, context);
-      if (!filters.length) {
-        packages = packages.filter((pkg) => pkg.config.forge);
-      }
+      const packages = await filter(
+        filters,
+        (pkg) => pkg.config.forge !== undefined,
+        context,
+      );
       await pool(
         packages,
         async (pkg) => {
@@ -595,8 +596,11 @@ function bumpCommand(context: ForgeOptions | undefined) {
       { prefix: "GITHUB_" },
     )
     .action(async (options, ...filters) => {
-      const packages = (await filter(filters, context))
-        .filter((pkg) => pkg.config.version !== undefined);
+      const packages = await filter(
+        filters,
+        (pkg) => pkg.config.version !== undefined,
+        context,
+      );
       if (!packages.length) console.log("📦 No packages to release");
       const pr = await bump(packages, {
         ...options,
@@ -627,9 +631,12 @@ function releaseCommand(context: ForgeOptions | undefined) {
       { prefix: "GITHUB_", required: true },
     )
     .action(async (options, ...filters) => {
-      const packages = (await filter(filters, context)).filter((pkg) =>
-        pkg.config.version !== undefined &&
-        pkg.config.version !== (pkg.latest?.version ?? "0.0.0")
+      const packages = await filter(
+        filters,
+        (pkg) =>
+          pkg.config.version !== undefined &&
+          pkg.config.version !== (pkg.latest?.version ?? "0.0.0"),
+        context,
       );
       if (!packages.length) console.log("📦 No packages to release");
       await pool(packages, async (pkg) => {
@@ -651,12 +658,14 @@ function releaseCommand(context: ForgeOptions | undefined) {
 
 async function filter(
   filters: string[],
+  fn: undefined | ((pkg: Package) => boolean),
   options: ForgeOptions | undefined,
 ): Promise<Package[]> {
-  const packages = await workspace({
+  let packages = await workspace({
     ...options?.repo && { root: options?.repo.git.path() },
     filters,
   });
+  if (!filters.length && fn) packages = packages.filter(fn);
   if (!packages.length) throw new Error("No packages found");
   return packages;
 }
