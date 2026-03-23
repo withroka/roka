@@ -551,8 +551,10 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
     .action(async (options, ...filters) => {
-      const packages = (await filter(filters, context))
-        .filter((pkg) => pkg.config.forge);
+      let packages = await filter(filters, context);
+      if (!filters.length) {
+        packages = packages.filter((pkg) => pkg.config.forge);
+      }
       await pool(
         packages,
         async (pkg) => {
