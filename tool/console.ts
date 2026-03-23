@@ -1,8 +1,11 @@
 import { bold, green, red, stripAnsiCode } from "@std/fmt/colors";
 
-export const SUCCESS = green(bold("✓"));
-export const ERROR = red("✘");
+/** Success log icon. */
+export const SUCCESS: string = green(bold("✓"));
+/** Error log icon. */
+export const ERROR: string = red("✘");
 
+/** TTY and verbose aware console, shared among the CLI tools. */
 export const console = {
   verbose: false,
   ttyAware(
