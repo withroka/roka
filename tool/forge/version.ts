@@ -17,7 +17,7 @@
 
 import { maybe } from "@roka/maybe";
 import { expandGlob } from "@std/fs";
-import { basename, dirname, fromFileUrl } from "@std/path";
+import { basename, dirname, fromFileUrl, join } from "@std/path";
 import { canParse, parse } from "@std/semver";
 import { PackageError, packageInfo } from "./workspace.ts";
 
@@ -44,11 +44,10 @@ export interface VersionOptions {
  * The version is determined from whichever is available first:
  *
  *  - JSR version, if running as a JSR module
+ *  - config version from `deno.json` in the dist directory (deno compile)
  *  - release tags and
  *    {@link https://www.conventionalcommits.org Conventional Commits}
- *    (local development)
- *  - config version from `deno.json` (deno run)
- *  - config version from `deno.json` in the dist directory (deno compile)
+ *    (local development) config version from `deno.json` (deno run)
  *  - `"(unknown)"` if none of the above are available
  *
  * @example Retrieve the version of the current package.
@@ -66,7 +65,10 @@ export interface VersionOptions {
  * ```
  */
 export async function version(options?: VersionOptions): Promise<string> {
-  const version = await versionString();
+  const version = jsrVersion() ||
+    await localVersion() ||
+    await standaloneVersion() ||
+    "(unknown)";
   const meta = [
     ...options?.release && canParse(version)
       ? [parse(version).prerelease?.length ? "pre-release" : "release"]
@@ -76,17 +78,23 @@ export async function version(options?: VersionOptions): Promise<string> {
   return `${version}${meta.length ? ` (${meta.join(", ")})` : ""}`;
 }
 
-async function versionString(): Promise<string> {
-  const version = jsrVersion();
+function jsrVersion(): string | undefined {
+  let version = Deno.mainModule.match(/jsr:@.+?@(.+)$/)?.[1];
   if (version) return version;
-  try {
-    const pkg = await packageInfo();
-    return pkg.version;
-  } catch (e: unknown) {
-    if (!(e instanceof PackageError)) throw e;
-  }
+  const stack = new Error().stack;
+  // Error
+  //  at jsrVersion (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at version (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at caller (https://jsr.io/@caller/caller/VERSION/dir/caller.js:R:C)
+  const caller = stack?.split("\n")?.[3];
+  version = caller?.match(/https:\/\/jsr.io\/@[^/]+\/[^/]+\/([^/]+)\//)?.[1];
+  return version;
+}
+
+async function standaloneVersion(): Promise<string | undefined> {
+  if (!Deno.build.standalone) return undefined;
   let { value: directory } = maybe(() => fromFileUrl(Deno.mainModule));
-  if (!directory) return "(unknown)";
+  if (!directory) return undefined;
   while (!basename(directory).match(/^deno-compile-.+$/)) {
     directory = dirname(directory);
     if (directory === dirname(directory)) break;
@@ -104,19 +112,20 @@ async function versionString(): Promise<string> {
       if (!(e instanceof PackageError)) throw e;
     }
   }
-  return "(unknown)";
+  return undefined;
 }
 
-function jsrVersion(): string | undefined {
-  let version = Deno.mainModule.match(/jsr:@.+?@(.+)$/)?.[1];
-  if (version) return version;
-  const stack = new Error().stack;
-  // Error
-  //  at jsrVersion (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
-  //    at versionString (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
-  //    at version (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
-  //    at caller (https://jsr.io/@caller/caller/VERSION/dir/caller.js:R:C)
-  const caller = stack?.split("\n")?.[4];
-  version = caller?.match(/https:\/\/jsr.io\/@[^/]+\/[^/]+\/([^/]+)\//)?.[1];
-  return version;
+async function localVersion(): Promise<string | undefined> {
+  const { value: directory } = maybe(() => fromFileUrl(Deno.mainModule));
+  if (!directory) return undefined;
+  const path = join(dirname(directory), "deno.json");
+  const permission = await Deno.permissions.query({ name: "read", path });
+  if (permission.state !== "granted") return undefined;
+  try {
+    const pkg = await packageInfo();
+    return pkg.version;
+  } catch (e: unknown) {
+    if (!(e instanceof PackageError)) throw e;
+  }
+  return undefined;
 }
