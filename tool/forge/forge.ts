@@ -406,13 +406,10 @@ function listCommand(context: ForgeOptions | undefined) {
 function packageRow(pkg: Package): string[] {
   const name = pkg.config.name ?? pkg.name;
   if (pkg.config.version === undefined) return [name];
-  if (pkg.version !== (pkg.config?.version)) { // modified
+  if (pkg.version !== (pkg.config.version)) { // modified
     return [yellow(name), yellow(pkg.version)];
   }
-  if (
-    pkg.config.version !== undefined &&
-    pkg.config.version !== (pkg.latest?.version ?? "0.0.0")
-  ) { // releasing
+  if (pkg.config.version !== (pkg.latest?.version ?? "0.0.0")) { // releasing
     return [
       red(name),
       red(`${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`),
@@ -707,9 +704,10 @@ async function find(
     found = filtered;
   }
   if (!found.length) {
-    if (packages.length) {
-      console.log(yellow(`${empty}: ${packages.join(", ")}`));
-    } else console.log(yellow(empty));
+    const message = packages.length
+      ? `${empty}: ${packages.join(", ")}`
+      : empty;
+    console.log(yellow(message));
   }
   return found;
 }
