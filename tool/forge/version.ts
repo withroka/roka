@@ -66,7 +66,7 @@ export interface VersionOptions {
  * ```
  */
 export async function version(options?: VersionOptions): Promise<string> {
-  const version = await versionString();
+  const version = jsrVersion() || await configVersion() || "(unknown)";
   const meta = [
     ...options?.release && canParse(version)
       ? [parse(version).prerelease?.length ? "pre-release" : "release"]
@@ -76,17 +76,34 @@ export async function version(options?: VersionOptions): Promise<string> {
   return `${version}${meta.length ? ` (${meta.join(", ")})` : ""}`;
 }
 
-async function versionString(): Promise<string> {
-  const version = jsrVersion();
+function jsrVersion(): string | undefined {
+  let version = Deno.mainModule.match(/jsr:@.+?@(.+)$/)?.[1];
   if (version) return version;
+  const stack = new Error().stack;
+  // Error
+  //  at jsrVersion (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at versionString (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at version (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
+  //    at caller (https://jsr.io/@caller/caller/VERSION/dir/caller.js:R:C)
+  const caller = stack?.split("\n")?.[4];
+  version = caller?.match(/https:\/\/jsr.io\/@[^/]+\/[^/]+\/([^/]+)\//)?.[1];
+  return version;
+}
+
+async function configVersion(): Promise<string | undefined> {
+  let { value: directory } = maybe(() => fromFileUrl(Deno.mainModule));
+  if (!directory) return undefined;
+  const permission = await Deno.permissions.query({
+    name: "read",
+    path: directory,
+  });
+  if (permission.state !== "granted") return undefined;
   try {
     const pkg = await packageInfo();
     return pkg.version;
   } catch (e: unknown) {
     if (!(e instanceof PackageError)) throw e;
   }
-  let { value: directory } = maybe(() => fromFileUrl(Deno.mainModule));
-  if (!directory) return "(unknown)";
   while (!basename(directory).match(/^deno-compile-.+$/)) {
     directory = dirname(directory);
     if (directory === dirname(directory)) break;
@@ -104,19 +121,5 @@ async function versionString(): Promise<string> {
       if (!(e instanceof PackageError)) throw e;
     }
   }
-  return "(unknown)";
-}
-
-function jsrVersion(): string | undefined {
-  let version = Deno.mainModule.match(/jsr:@.+?@(.+)$/)?.[1];
-  if (version) return version;
-  const stack = new Error().stack;
-  // Error
-  //  at jsrVersion (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
-  //    at versionString (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
-  //    at version (https://jsr.io/@roka/forge/VERSION/version.ts:R:C)
-  //    at caller (https://jsr.io/@caller/caller/VERSION/dir/caller.js:R:C)
-  const caller = stack?.split("\n")?.[4];
-  version = caller?.match(/https:\/\/jsr.io\/@[^/]+\/[^/]+\/([^/]+)\//)?.[1];
-  return version;
+  return undefined;
 }
