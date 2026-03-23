@@ -213,6 +213,7 @@ function emoji(
     revert: "⏪",
     style: "🎨",
     test: "🧪",
+    breaking: "💥",
     unknown: "🔖",
   };
   const emoji = emojis[commit.type ?? "unknown"] ?? emojis["unknown"];
