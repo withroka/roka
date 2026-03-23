@@ -29,12 +29,14 @@
         "no-await-in-loop",
         "no-console",
         "no-eval",
+        "no-inferrable-types",
         "no-non-null-assertion",
         "no-self-compare",
         "no-sync-fn-in-async-fn",
         "no-throw-literal",
         "no-useless-rename",
-        "single-var-declarator"
+        "single-var-declarator",
+        "triple-slash-reference"
       ]
     }
   },

@@ -1220,7 +1220,7 @@ class Runner implements AsyncDisposable {
 
   flush(
     controller: TransformStreamDefaultController<string>,
-    done: boolean = true,
+    done = true,
   ) {
     const result = (report: Info | Problem) => {
       const { file } = report;
