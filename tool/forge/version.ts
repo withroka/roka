@@ -44,11 +44,10 @@ export interface VersionOptions {
  * The version is determined from whichever is available first:
  *
  *  - JSR version, if running as a JSR module
+ *  - config version from `deno.json` in the dist directory (deno compile)
  *  - release tags and
  *    {@link https://www.conventionalcommits.org Conventional Commits}
- *    (local development)
- *  - config version from `deno.json` (deno run)
- *  - config version from `deno.json` in the dist directory (deno compile)
+ *    (local development) config version from `deno.json` (deno run)
  *  - `"(unknown)"` if none of the above are available
  *
  * @example Retrieve the version of the current package.
