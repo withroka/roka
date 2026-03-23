@@ -447,41 +447,42 @@ export async function releases(
       },
     };
   });
-  if (releases.length === 0) {
-    const release = await historical(pkg);
-    return release ? [release] : [];
-  }
-  return releases;
+  return releases.concat(await historical(pkg));
 }
 
-async function historical(pkg: Package): Promise<Release | undefined> {
+async function historical(pkg: Package): Promise<Release[]> {
   const repo = git({ cwd: pkg.root });
   const path = relative(pkg.root, join(pkg.directory, "deno.json"));
-  const log = await repo.commit.log({ path });
+  const log = await repo.commit.log({
+    path,
+    pickaxe: { pattern: "version", updated: true },
+  });
+  let last = pkg.version;
+  const releases: Release[] = [];
   for (const commit of log) {
     // deno-lint-ignore no-await-in-loop
     const { value: config, error } = await maybe(() =>
       repo.file.json<Config>(path, { source: commit.hash })
     );
     if (error instanceof SyntaxError || error instanceof Deno.errors.NotFound) {
-      return undefined;
+      return [];
     }
     if (error) throw error;
     if (config.version !== pkg.version) {
       if (
         typeof config.version === "string" && config.version !== "0.0.0" &&
         canParse(config.version) &&
-        lessOrEqual(parse(config.version), parse(pkg.version))
+        lessOrEqual(parse(config.version), parse(last))
       ) {
-        return {
+        releases.push({
           version: config.version,
           range: { to: commit.hash },
-        };
+        });
+        last = config.version;
       }
-      return undefined;
     }
   }
-  return undefined;
+  return releases;
 }
 
 /**
