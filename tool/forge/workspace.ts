@@ -396,7 +396,12 @@ export function modules(pkg: Package): Record<string, string> {
 }
 
 /**
- * Returns releases of a package based on its git tags.
+ * Returns releases of a package.
+ *
+ * Releases are found first by using git tags in the "name@version" format,
+ * then by searching git history beyond the first tag for config file changes.
+ * This captures all releases, regardless of when tagging started as a release
+ * practice.
  *
  * Pre-release versions are not included by default. Use the
  * {@linkcode ReleaseOptions.prerelease prerelease} option to include them.
