@@ -389,10 +389,10 @@ function listCommand(context: ForgeOptions | undefined) {
     .example("forge list --modules", "List all modules.")
     .arguments("[packages...:file]")
     .option("--modules", "Print exported package modules.", { default: false })
-    .action(async (options, ...filters) => {
-      const packages = await filter(filters, undefined, context);
+    .action(async (options, ...packages) => {
+      const found = await find({ packages }, context);
       Table.from([
-        ...packages.map((pkg) => {
+        ...found.map((pkg) => {
           return [packageRow(pkg), ...options.modules ? moduleRows(pkg) : []];
         }).flat(),
       ]).render();
@@ -481,8 +481,8 @@ function changelogCommand(context: ForgeOptions | undefined) {
     .option("--no-breaking", "Skip breaking changes of filtered types.")
     .option("--emoji", "Use emoji for commit subjects.", { default: false })
     .option("--markdown", "Generate Markdown.", { default: false })
-    .action(async (options, ...filters) => {
-      const packages = await filter(filters, undefined, context);
+    .action(async (options, ...packages) => {
+      const found = await find({ packages }, context);
       const commitOptions: CommitOptions = {
         ...options.types !== undefined && { types: options.types },
         ...options.breaking !== undefined && { breaking: options.breaking },
@@ -530,7 +530,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
           }
         }
       }
-      for (const pkg of packages) {
+      for (const pkg of found) {
         for await (const log of changelogs(pkg)) console.log(log);
       }
     });
@@ -550,14 +550,16 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
     .option("--checksum", "Create a checksum file.", { default: false })
     .option("--install=[directory:file]", "Install for local user.")
     .option("--concurrency=<number:number>", "Max concurrent compilations.")
-    .action(async (options, ...filters) => {
-      const packages = await filter(
-        filters,
-        (pkg) => pkg.config.forge !== undefined,
-        context,
-      );
-      await pool(
+    .action(async (options, ...packages) => {
+      const found = await find({
         packages,
+        filter: {
+          fn: (pkg) => pkg.config.forge !== undefined,
+          error: 'Missing "forge" configuration for compile',
+        },
+      }, context);
+      await pool(
+        found,
         async (pkg) => {
           const artifacts = await compile(pkg, options);
           console.log(`📦 Compiled ${pkg.name}`);
@@ -595,14 +597,13 @@ function bumpCommand(context: ForgeOptions | undefined) {
       "GitHub personal token for GitHub actions.",
       { prefix: "GITHUB_" },
     )
-    .action(async (options, ...filters) => {
-      const packages = await filter(
-        filters,
-        (pkg) => pkg.config.version !== undefined,
-        context,
-      );
-      if (!packages.length) console.log("📦 No packages to release");
-      const pr = await bump(packages, {
+    .action(async (options, ...packages) => {
+      const found = await find({
+        packages,
+        filter: { fn: (pkg) => pkg.config.version !== undefined },
+      }, context);
+      if (!found.length) console.log("📦 No packages to release");
+      const pr = await bump(found, {
         ...options,
         ...context?.repo && { repo: context.repo },
       });
@@ -630,16 +631,18 @@ function releaseCommand(context: ForgeOptions | undefined) {
       "GitHub personal token for GitHub actions.",
       { prefix: "GITHUB_", required: true },
     )
-    .action(async (options, ...filters) => {
-      const packages = await filter(
-        filters,
-        (pkg) =>
-          pkg.config.version !== undefined &&
-          pkg.config.version !== (pkg.latest?.version ?? "0.0.0"),
-        context,
-      );
-      if (!packages.length) console.log("📦 No packages to release");
-      await pool(packages, async (pkg) => {
+    .action(async (options, ...packages) => {
+      const found = await find({
+        packages,
+        filter: {
+          fn: (pkg) =>
+            pkg.config.version !== undefined &&
+            pkg.config.version !== (pkg.latest?.version ?? "0.0.0"),
+          error: "Nothing to release for package(s)",
+        },
+      }, context);
+      if (!found.length) console.log("📦 No packages to release");
+      await pool(found, async (pkg) => {
         const [rls, assets] = await release(pkg, {
           ...options,
           ...context?.repo && { repo: context.repo },
@@ -656,18 +659,30 @@ function releaseCommand(context: ForgeOptions | undefined) {
     });
 }
 
-async function filter(
-  filters: string[],
-  fn: undefined | ((pkg: Package) => boolean),
+interface Find {
+  packages: string[];
+  filter?: { fn: (pkg: Package) => boolean; error?: string };
+}
+
+async function find(
+  find: Find,
   options: ForgeOptions | undefined,
 ): Promise<Package[]> {
-  let packages = await workspace({
+  let found = await workspace({
     ...options?.repo && { root: options?.repo.git.path() },
-    filters,
+    filters: find.packages,
   });
-  if (!filters.length && fn) packages = packages.filter(fn);
-  if (!packages.length) throw new Error("No packages found");
-  return packages;
+  if (find.filter?.fn) {
+    const skipped = found
+      .filter((pkg) => !find.filter?.fn(pkg))
+      .map((pkg) => pkg.name);
+    if (skipped.length && find.filter.error) {
+      throw new Error(`${find.filter.error}: ${skipped.join(", ")}`);
+    }
+    found = found.filter(find.filter.fn);
+  }
+  if (!found.length) throw new Error("No packages found");
+  return found;
 }
 
 if (import.meta.main) Deno.exit(await forge());
