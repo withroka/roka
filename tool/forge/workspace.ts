@@ -418,7 +418,7 @@ export function modules(pkg: Package): Record<string, string> {
  *
  * @param pkg Package to search releases for.
  * @param options Options for fetching releases.
- * @returns All releases for this package from git tags.
+ * @returns All releases for this package.
  * @throws {GitError} If git history is not available.
  */
 export async function releases(
