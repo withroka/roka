@@ -255,9 +255,9 @@ snapshot[`forge compile --target <target> --bundle --install 1`] = `
 
 snapshot[`forge compile [unknown] 1`] = `
 {
-  code: 1,
+  code: 0,
   output: "
-❌ No packages to compile: unknown
+📦 No packages to compile: unknown
 ",
 }
 `;
@@ -276,9 +276,9 @@ snapshot[`forge bump --release --pr --changelog=<file> --emoji 1`] = `
 
 snapshot[`forge bump [unknown] 1`] = `
 {
-  code: 1,
+  code: 0,
   output: "
-❌ No packages to bump: unknown
+📦 No packages to bump: unknown
 ",
 }
 `;
@@ -304,9 +304,9 @@ snapshot[`forge release --draft --emoji 1`] = `
 
 snapshot[`forge release [unknown] 1`] = `
 {
-  code: 1,
+  code: 0,
   output: "
-❌ No packages to release: unknown
+📦 No packages to release: unknown
 ",
 }
 `;
