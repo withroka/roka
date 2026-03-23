@@ -8,7 +8,7 @@ export const ERROR: string = red("✘");
 /** TTY and verbose aware console, shared among the CLI tools. */
 export const console = {
   verbose: false,
-  ttyAware(
+  print(
     fn: typeof globalThis.console.log,
     pipe: typeof Deno.stdout,
     data: unknown[],
@@ -18,14 +18,14 @@ export const console = {
   },
   debug: (...data: unknown[]) =>
     console.verbose
-      ? console.ttyAware(globalThis.console.debug, Deno.stdout, data)
+      ? console.print(globalThis.console.debug, Deno.stdout, data)
       : undefined,
   log: (...data: unknown[]) =>
-    console.ttyAware(globalThis.console.log, Deno.stdout, data),
+    console.print(globalThis.console.log, Deno.stdout, data),
   warn: (...data: unknown[]) =>
-    console.ttyAware(globalThis.console.warn, Deno.stderr, data),
+    console.print(globalThis.console.warn, Deno.stderr, data),
   error: (...data: unknown[]) =>
-    console.ttyAware(globalThis.console.error, Deno.stderr, data),
+    console.print(globalThis.console.error, Deno.stderr, data),
   row: (color: (data: string) => string, data: string[]) =>
     Deno.stdout.isTerminal() ? data.map((x) => color(x)) : data,
 };
