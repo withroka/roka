@@ -17,7 +17,7 @@
 
 import { maybe } from "@roka/maybe";
 import { expandGlob } from "@std/fs";
-import { basename, dirname, fromFileUrl } from "@std/path";
+import { basename, dirname, fromFileUrl, join } from "@std/path";
 import { canParse, parse } from "@std/semver";
 import { PackageError, packageInfo } from "./workspace.ts";
 
@@ -66,7 +66,10 @@ export interface VersionOptions {
  * ```
  */
 export async function version(options?: VersionOptions): Promise<string> {
-  const version = jsrVersion() || await configVersion() || "(unknown)";
+  const version = jsrVersion() ||
+    await localVersion() ||
+    await standaloneVersion() ||
+    "(unknown)";
   const meta = [
     ...options?.release && canParse(version)
       ? [parse(version).prerelease?.length ? "pre-release" : "release"]
@@ -90,20 +93,10 @@ function jsrVersion(): string | undefined {
   return version;
 }
 
-async function configVersion(): Promise<string | undefined> {
+async function standaloneVersion(): Promise<string | undefined> {
+  if (!Deno.build.standalone) return undefined;
   let { value: directory } = maybe(() => fromFileUrl(Deno.mainModule));
   if (!directory) return undefined;
-  const permission = await Deno.permissions.query({
-    name: "read",
-    path: directory,
-  });
-  if (permission.state !== "granted") return undefined;
-  try {
-    const pkg = await packageInfo();
-    return pkg.version;
-  } catch (e: unknown) {
-    if (!(e instanceof PackageError)) throw e;
-  }
   while (!basename(directory).match(/^deno-compile-.+$/)) {
     directory = dirname(directory);
     if (directory === dirname(directory)) break;
@@ -120,6 +113,21 @@ async function configVersion(): Promise<string | undefined> {
     } catch (e: unknown) {
       if (!(e instanceof PackageError)) throw e;
     }
+  }
+  return undefined;
+}
+
+async function localVersion(): Promise<string | undefined> {
+  const { value: directory } = maybe(() => fromFileUrl(Deno.mainModule));
+  if (!directory) return undefined;
+  const path = join(dirname(directory), "deno.json");
+  const permission = await Deno.permissions.query({ name: "read", path });
+  if (permission.state !== "granted") return undefined;
+  try {
+    const pkg = await packageInfo();
+    return pkg.version;
+  } catch (e: unknown) {
+    if (!(e instanceof PackageError)) throw e;
   }
   return undefined;
 }
