@@ -74,7 +74,8 @@ export function conventional(commit: Commit): ConventionalCommit {
   );
   const { type, scopes, exclamation, description } = { ...match?.groups };
   assertExists(description, "Commit must have description");
-  const breaking = !!exclamation || footers?.["BREAKING-CHANGE"] !== undefined;
+  const breaking = !!exclamation ||
+    footers?.["BREAKING-CHANGE"] !== undefined || type === "BREAKING";
   if (!type) {
     return { ...commit, breaking, description, ...footers && { footers } };
   }
