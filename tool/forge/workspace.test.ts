@@ -627,7 +627,7 @@ Deno.test("releases() ignores missing config", async () => {
   ]);
 });
 
-Deno.test("releases() ignores malformed config", async () => {
+Deno.test("releases() ignores malformed version", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.4.0" },
   });
@@ -638,12 +638,27 @@ Deno.test("releases() ignores malformed config", async () => {
   ]);
 });
 
-Deno.test("releases() ignores malformed version", async () => {
+Deno.test("releases() ignores invalid version", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.4.0" },
   });
   const commit1 = await bump(pkg, "1.2.3");
   await bump(pkg, "bad");
+  assertEquals(await releases(pkg), [
+    { version: "1.2.3", range: { to: commit1.hash } },
+  ]);
+});
+
+Deno.test("releases() ignores malformed config", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.4.0" },
+  });
+  const commit1 = await bump(pkg, "1.2.3");
+  const repo = git({ cwd: pkg.directory });
+  const path = join(pkg.directory, "deno.json");
+  await Deno.writeTextFile(path, "invalid");
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "commit" });
   assertEquals(await releases(pkg), [
     { version: "1.2.3", range: { to: commit1.hash } },
   ]);

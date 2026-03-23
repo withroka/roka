@@ -475,7 +475,10 @@ async function historical(
       const { value: config, error } = await maybe(() =>
         repo.file.json<Config>(path, { source: commit.hash })
       );
-      if (error && !(error instanceof Deno.errors.NotFound)) throw error;
+      if (
+        error &&
+        !(error instanceof Deno.errors.NotFound || error instanceof SyntaxError)
+      ) throw error;
       const version =
         typeof config?.version === "string" && config.version !== "0.0.0" &&
           canParse(config.version)
