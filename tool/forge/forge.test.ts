@@ -44,7 +44,7 @@ async function run(context: Deno.TestContext) {
   assertExists(packages[0]);
   const pkg = packages[0];
   const root = common(packages.map((pkg) => pkg.root));
-  const repo = fakeRepository({ git: git({ cwd: root }) });
+  const repo = fakeRepository({ git: git({ directory: root }) });
   await Deno.writeTextFile(
     join(pkg.directory, "main.ts"),
     "console.log('Hello, World!');",

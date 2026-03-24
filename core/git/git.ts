@@ -1179,10 +1179,10 @@ export interface Pickaxe {
 /** Options for the {@linkcode git} function. */
 export interface GitOptions {
   /**
-   * Change the working directory for git commands.
+   * Run the commands under a specific directory.
    * @default {"."}
    */
-  cwd?: string;
+  directory?: string;
   /**
    * Configuration options for each executed git command.
    *
@@ -1879,7 +1879,7 @@ export interface TagListOptions extends RefListOptions {
    *
    * const directory = await tempRepository();
    * const repo = git({
-   *   cwd: directory.path(),
+   *   directory: directory.path(),
    *   config: { "versionsort.suffix": ["-pre", "-rc"] },
    * });
    *
@@ -2441,7 +2441,7 @@ export interface SyncBackfillOptions {
  * import { git } from "@roka/git";
  * import { pool } from "@roka/async/pool";
  * (async () => {
- *   const repo = git({ cwd: "/path/to/repo" });
+ *   const repo = git({ directory: "/path/to/repo" });
  *   await repo.sync.fetch({ prune: true });
  *   await pool(await repo.branch.list({ type: "local" }), async (branch) => {
  *     if (branch.fetch?.remote && !branch.fetch.branch) {
@@ -2455,7 +2455,7 @@ export interface SyncBackfillOptions {
  * ```ts
  * import { git } from "@roka/git";
  * (async () => {
- *   const repo = git({ cwd: "/path/to/repo" });
+ *   const repo = git({ directory: "/path/to/repo" });
  *   await repo.config.set("fetch.prune", true);
  *   await repo.config.set("remote.origin.prune", false);
  * });
@@ -2466,15 +2466,18 @@ export interface SyncBackfillOptions {
  */
 export function git(options?: GitOptions): Git {
   let cachedVersion: string | undefined;
-  const directory = resolve(options?.cwd ?? ".");
-  const gitOptions = options ?? {};
+  const directory = resolve(options?.directory ?? ".");
+  const runOptions = {
+    directory,
+    ...options?.config && { config: options.config },
+  };
   const repo: Git = {
     path(...parts: string[]) {
       return join(directory, ...parts);
     },
     async version() {
       if (cachedVersion !== undefined) return cachedVersion;
-      const output = await run(gitOptions, "--version");
+      const output = await run(runOptions, "--version");
       const match = output.trim().match(/git version (?<version>\S+)/);
       cachedVersion = match?.groups?.version;
       if (!cachedVersion || !canParse(cachedVersion)) {
@@ -2485,8 +2488,8 @@ export function git(options?: GitOptions): Git {
     async init(options) {
       await run(
         {
-          ...gitOptions,
-          config: { ...gitOptions?.config, ...options?.config },
+          ...runOptions,
+          config: { ...runOptions?.config, ...options?.config },
         },
         "init",
         flag("--bare", options?.bare),
@@ -2505,7 +2508,7 @@ export function git(options?: GitOptions): Git {
         options?.directory,
       );
       const repo = git({
-        cwd: resolve(directory, options?.directory ?? directory),
+        directory: resolve(directory, options?.directory ?? directory),
       });
       if (options?.config) {
         for (const [key, value] of Object.entries(options.config)) {
@@ -2527,8 +2530,8 @@ export function git(options?: GitOptions): Git {
         : undefined;
       const output = await run(
         {
-          ...gitOptions,
-          config: { ...gitOptions?.config, ...options?.config },
+          ...runOptions,
+          config: { ...runOptions?.config, ...options?.config },
           outputStderr: true,
         },
         "clone",
@@ -2564,13 +2567,12 @@ export function git(options?: GitOptions): Git {
       const match = output.match(/Cloning into '(?<directory>.+?)'\.\.\./);
       const cloned = options?.directory ?? match?.groups?.directory;
       assertExists(cloned, "Cannot determine cloned directory");
-      const cwd = resolve(directory, cloned);
-      return git({ ...gitOptions, cwd });
+      return git({ ...runOptions, directory: resolve(directory, cloned) });
     },
     config: {
       async list(options?: ConfigOptions) {
         const output = await run(
-          gitOptions,
+          runOptions,
           versionedArgs(
             await repo.version(),
             ["2.46.0", ["config", "list"]],
@@ -2597,7 +2599,7 @@ export function git(options?: GitOptions): Git {
       },
       async get<K extends ConfigKey>(key: K, options?: ConfigOptions) {
         const output = await run(
-          { ...gitOptions, allowCode: [1] },
+          { ...runOptions, allowCode: [1] },
           versionedArgs(
             await repo.version(),
             ["2.46.0", ["config", "get", "--all"]],
@@ -2613,7 +2615,7 @@ export function git(options?: GitOptions): Git {
       async set(key, value, options?: ConfigOptions) {
         if (!Array.isArray(value)) {
           await run(
-            gitOptions,
+            runOptions,
             versionedArgs(
               await repo.version(),
               ["2.46.0", ["config", "set", "--all"]],
@@ -2625,7 +2627,7 @@ export function git(options?: GitOptions): Git {
           );
         } else {
           await run(
-            { ...gitOptions, allowCode: [5] },
+            { ...runOptions, allowCode: [5] },
             versionedArgs(
               await repo.version(),
               ["2.46.0", ["config", "unset", "--all"]],
@@ -2637,7 +2639,7 @@ export function git(options?: GitOptions): Git {
           for (const element of value) {
             // deno-lint-ignore no-await-in-loop
             await run(
-              gitOptions,
+              runOptions,
               ["config", "--add"],
               configSourceFlag(options),
               key,
@@ -2648,7 +2650,7 @@ export function git(options?: GitOptions): Git {
       },
       async unset(key, options?: ConfigOptions) {
         await run(
-          { ...gitOptions, allowCode: [5] },
+          { ...runOptions, allowCode: [5] },
           versionedArgs(
             await repo.version(),
             ["2.46.0", ["config", "unset", "--all"]],
@@ -2662,7 +2664,7 @@ export function git(options?: GitOptions): Git {
     index: {
       async add(path, options?: IndexAddOptions) {
         await run(
-          gitOptions,
+          runOptions,
           "add",
           flag("--force", options?.force),
           flag(["--chmod=+x", "--chmod=-x"], options?.executable),
@@ -2672,7 +2674,7 @@ export function git(options?: GitOptions): Git {
       },
       async move(source, destination, options?: IndexMoveOptions) {
         await run(
-          gitOptions,
+          runOptions,
           "mv",
           flag("--force", options?.force),
           source,
@@ -2686,7 +2688,7 @@ export function git(options?: GitOptions): Git {
             ? [undefined, options.source.merge]
             : [options?.source, undefined];
         await run(
-          gitOptions,
+          runOptions,
           "restore",
           flag("--source", commitArg(commitSource), { equals: true }),
           flag("--merge", mergeSource === true),
@@ -2706,7 +2708,7 @@ export function git(options?: GitOptions): Git {
       },
       async remove(path, options?: IndexRemoveOptions) {
         await run(
-          gitOptions,
+          runOptions,
           "rm",
           flag("--force", options?.force),
           path,
@@ -2721,7 +2723,7 @@ export function git(options?: GitOptions): Git {
         ) {
           const { value: output, error } = await maybe(() =>
             run(
-              gitOptions,
+              runOptions,
               ["diff", "--no-color", format, "-z"],
               flag("--find-copies", options?.copies),
               pickaxeFlags(options?.pickaxe),
@@ -2747,7 +2749,7 @@ export function git(options?: GitOptions): Git {
         }
         async function untracked(ignored: boolean) {
           const output = await run(
-            gitOptions,
+            runOptions,
             ["ls-files", "--others", "--exclude-standard", "-z"],
             flag("--directory", options?.untracked === true),
             flag("--ignored", ignored),
@@ -2822,7 +2824,7 @@ export function git(options?: GitOptions): Git {
         async function tracked(location: "index" | "worktree" | "both") {
           const { value: output, error } = await maybe(() =>
             run(
-              gitOptions,
+              runOptions,
               ["diff", "--no-color", "--no-prefix", "--no-ext-diff"],
               flag("--diff-algorithm", options?.algorithm, { equals: true }),
               flag("--unified", options?.context, { equals: true }),
@@ -2950,7 +2952,7 @@ export function git(options?: GitOptions): Git {
         if (typeof path === "string") path = [path];
         if (path.length === 0) return [];
         const output = await run(
-          { ...gitOptions, allowCode: [1] },
+          { ...runOptions, allowCode: [1] },
           "check-ignore",
           flag("--no-index", options?.index === false),
           "--",
@@ -2962,7 +2964,7 @@ export function git(options?: GitOptions): Git {
         if (typeof path === "string") path = [path];
         if (path.length === 0) return [];
         const output = await run(
-          { ...gitOptions, allowCode: [1] },
+          { ...runOptions, allowCode: [1] },
           ["check-ignore", "--verbose", "--non-matching"],
           flag("--no-index", options?.index === false),
           path,
@@ -2978,7 +2980,7 @@ export function git(options?: GitOptions): Git {
         if (options?.source) {
           try {
             return await run(
-              gitOptions,
+              runOptions,
               ["show", `${commitArg(options.source)}:${path}`],
             );
           } catch (error) {
@@ -3002,7 +3004,7 @@ export function git(options?: GitOptions): Git {
       async log(options) {
         const { value: output, error } = await maybe(() =>
           run(
-            gitOptions,
+            runOptions,
             ["log", "--no-color"],
             flag("--format", formatArg(COMMIT_FORMAT), { equals: true }),
             flag("--author", userArg(options?.author), { equals: true }),
@@ -3020,7 +3022,7 @@ export function git(options?: GitOptions): Git {
         );
         if (error) {
           const { value: head } = await maybe(() =>
-            run(gitOptions, "rev-parse", "HEAD")
+            run(runOptions, "rev-parse", "HEAD")
           );
           if (!head) return [];
           throw error;
@@ -3043,7 +3045,7 @@ export function git(options?: GitOptions): Git {
       },
       async create(options) {
         const output = await run(
-          gitOptions,
+          runOptions,
           "commit",
           flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
@@ -3077,7 +3079,7 @@ export function git(options?: GitOptions): Git {
           if (commit && subject === undefined) subject = commit.subject;
         }
         const output = await run(
-          gitOptions,
+          runOptions,
           ["commit", "--amend"],
           flag("--message", subject, { equals: true }),
           flag("--message", body, { equals: true }),
@@ -3102,7 +3104,7 @@ export function git(options?: GitOptions): Git {
     branch: {
       async list(options) {
         const output = await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color", "--no-column", "--list"],
           flag("--format", formatArg(BRANCH_FORMAT), { equals: true }),
           flag("--all", options?.type === "all"),
@@ -3152,7 +3154,7 @@ export function git(options?: GitOptions): Git {
       },
       async current() {
         const output = await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color", "--show-current"],
         );
         const name = output.trim();
@@ -3176,7 +3178,7 @@ export function git(options?: GitOptions): Git {
       },
       async create(name, options) {
         await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color"],
           flag("--force", options?.force),
           flag(["--track", "--no-track"], options?.track, { equals: true }),
@@ -3188,7 +3190,7 @@ export function git(options?: GitOptions): Git {
       },
       async switch(branch, options) {
         await run(
-          gitOptions,
+          runOptions,
           "switch",
           flag("--force", options?.force),
           flag(["--track", "--no-track"], options?.track, { equals: true }),
@@ -3206,14 +3208,14 @@ export function git(options?: GitOptions): Git {
       },
       async detach(options) {
         await run(
-          gitOptions,
+          runOptions,
           ["switch", "--detach"],
           commitArg(options?.target),
         );
       },
       async reset(options) {
         await run(
-          gitOptions,
+          runOptions,
           "reset",
           flag("--soft", options?.mode === "soft"),
           flag("--hard", options?.mode === "hard"),
@@ -3225,7 +3227,7 @@ export function git(options?: GitOptions): Git {
       },
       async move(branch, name, options) {
         await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color", "--move"],
           flag("--force", options?.force),
           nameArg(branch),
@@ -3236,7 +3238,7 @@ export function git(options?: GitOptions): Git {
       },
       async copy(branch, name, options) {
         await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color", "--copy"],
           flag("--force", options?.force),
           nameArg(branch),
@@ -3248,7 +3250,7 @@ export function git(options?: GitOptions): Git {
       async track(branch, upstream) {
         const name = nameArg(branch);
         await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color"],
           flag("--set-upstream-to", upstream, { equals: true }),
           name,
@@ -3259,7 +3261,7 @@ export function git(options?: GitOptions): Git {
       async untrack(branch) {
         const name = nameArg(branch);
         await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color", "--unset-upstream"],
           name,
         );
@@ -3268,7 +3270,7 @@ export function git(options?: GitOptions): Git {
       },
       async delete(branch, options) {
         await run(
-          gitOptions,
+          runOptions,
           ["branch", "--no-color", "--delete"],
           flag("--force", options?.force),
           flag("--remotes", options?.type === "remote"),
@@ -3279,7 +3281,7 @@ export function git(options?: GitOptions): Git {
     tag: {
       async list(options) {
         const output = await run(
-          gitOptions,
+          runOptions,
           ["tag", "--no-color", "--no-column", "--list"],
           flag("--format", formatArg(TAG_FORMAT), { equals: true }),
           flag("--contains", commitArg(options?.contains)),
@@ -3314,7 +3316,7 @@ export function git(options?: GitOptions): Git {
           ? options.sign
           : undefined;
         await run(
-          gitOptions,
+          runOptions,
           "tag",
           flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
@@ -3330,13 +3332,13 @@ export function git(options?: GitOptions): Git {
         return tag;
       },
       async delete(tag) {
-        await run(gitOptions, ["tag", "--delete"], nameArg(tag));
+        await run(runOptions, ["tag", "--delete"], nameArg(tag));
       },
     },
     merge: {
       async base(first, second, ...rest) {
         const value = await run(
-          { ...gitOptions, allowCode: [1] },
+          { ...runOptions, allowCode: [1] },
           "merge-base",
           commitArg(first),
           commitArg(second),
@@ -3347,7 +3349,7 @@ export function git(options?: GitOptions): Git {
       },
       async with(source, options) {
         await run(
-          { ...gitOptions, allowCode: [1] },
+          { ...runOptions, allowCode: [1] },
           ["merge", "--no-edit", "--no-stat"],
           flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
@@ -3365,22 +3367,22 @@ export function git(options?: GitOptions): Git {
         return await repo.merge.active();
       },
       async continue() {
-        await run(gitOptions, "merge", "--continue");
+        await run(runOptions, "merge", "--continue");
         return await repo.merge.active();
       },
       async abort() {
-        await run(gitOptions, "merge", "--abort");
+        await run(runOptions, "merge", "--abort");
       },
       async quit() {
-        await run(gitOptions, "merge", "--quit");
+        await run(runOptions, "merge", "--quit");
       },
       async active() {
         const { error } = await maybe(() =>
-          run(gitOptions, ["rev-parse", "--verify", "MERGE_HEAD"])
+          run(runOptions, ["rev-parse", "--verify", "MERGE_HEAD"])
         );
         if (error) return undefined;
         const unmerged = await run(
-          gitOptions,
+          runOptions,
           ["ls-files", "-z", "--unmerged", "--format=%(path)"],
         );
         const conflicts = distinct(unmerged.split("\0").filter((x) => x));
@@ -3391,7 +3393,7 @@ export function git(options?: GitOptions): Git {
       async onto(base, options) {
         const { error } = await maybe(() =>
           run(
-            gitOptions,
+            runOptions,
             ["rebase", "--no-stat"],
             flag("--empty", options?.empty, { equals: true }),
             flag("--force-rebase", options?.fastForward === false),
@@ -3414,21 +3416,21 @@ export function git(options?: GitOptions): Git {
       },
       async continue() {
         const { error } = await maybe(() =>
-          run(gitOptions, "rebase", "--continue")
+          run(runOptions, "rebase", "--continue")
         );
         return sequence(repo.rebase, error);
       },
       async skip() {
         const { error } = await maybe(() =>
-          run(gitOptions, "rebase", "--skip")
+          run(runOptions, "rebase", "--skip")
         );
         return sequence(repo.rebase, error);
       },
       async abort() {
-        await run(gitOptions, "rebase", "--abort");
+        await run(runOptions, "rebase", "--abort");
       },
       async quit() {
-        await run(gitOptions, "rebase", "--quit");
+        await run(runOptions, "rebase", "--quit");
       },
       async active() {
         async function stateNumber(gitDir: string, file: string) {
@@ -3441,12 +3443,12 @@ export function git(options?: GitOptions): Git {
           return state;
         }
         const { error } = await maybe(() =>
-          run(gitOptions, ["rebase", "--show-current-patch"])
+          run(runOptions, ["rebase", "--show-current-patch"])
         );
         if (error) return undefined;
         const [gitDir, unmerged] = await Promise.all([
-          run(gitOptions, ["rev-parse", "--git-dir"]),
-          run(gitOptions, [
+          run(runOptions, ["rev-parse", "--git-dir"]),
+          run(runOptions, [
             "ls-files",
             "-z",
             "--unmerged",
@@ -3479,7 +3481,7 @@ export function git(options?: GitOptions): Git {
       async apply(commit, options) {
         const { error } = await maybe(() =>
           run(
-            gitOptions,
+            runOptions,
             "cherry-pick",
             flag("--allow-empty", options?.allowEmpty),
             flag(["--commit", "--no-commit"], options?.commit),
@@ -3495,36 +3497,36 @@ export function git(options?: GitOptions): Git {
       },
       async continue() {
         const { error } = await maybe(() =>
-          run(gitOptions, "cherry-pick", "--continue")
+          run(runOptions, "cherry-pick", "--continue")
         );
         return sequence(repo.cherrypick, error);
       },
       async skip() {
         const { error } = await maybe(() =>
-          run(gitOptions, "cherry-pick", "--skip")
+          run(runOptions, "cherry-pick", "--skip")
         );
         return sequence(repo.cherrypick, error);
       },
       async abort() {
-        await run(gitOptions, "cherry-pick", "--abort");
+        await run(runOptions, "cherry-pick", "--abort");
       },
       async quit() {
-        await run(gitOptions, "cherry-pick", "--quit");
+        await run(runOptions, "cherry-pick", "--quit");
       },
       async active() {
         const { error } = await maybe(() =>
-          run(gitOptions, ["rev-parse", "--verify", "CHERRY_PICK_HEAD"])
+          run(runOptions, ["rev-parse", "--verify", "CHERRY_PICK_HEAD"])
         );
         if (error) return undefined;
         const { value: gitDir } = await maybe(() =>
-          run(gitOptions, ["rev-parse", "--git-dir"])
+          run(runOptions, ["rev-parse", "--git-dir"])
         );
         if (!gitDir) return undefined;
         const [todo, unmerged] = await Promise.all([
           maybe(() =>
             Deno.readTextFile(repo.path(gitDir.trim(), "sequencer/todo"))
           ),
-          run(gitOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
+          run(runOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
         ]);
         const remaining = todo.value
           ? todo.value.trim().split("\n")
@@ -3542,7 +3544,7 @@ export function git(options?: GitOptions): Git {
       async apply(commit, options) {
         const { error } = await maybe(() =>
           run(
-            gitOptions,
+            runOptions,
             ["revert", "--no-edit"],
             flag(["--commit", "--no-commit"], options?.commit),
             flag("--mainline", options?.mainline),
@@ -3557,36 +3559,36 @@ export function git(options?: GitOptions): Git {
       },
       async continue() {
         const { error } = await maybe(() =>
-          run(gitOptions, "revert", "--continue")
+          run(runOptions, "revert", "--continue")
         );
         return sequence(repo.revert, error);
       },
       async skip() {
         const { error } = await maybe(() =>
-          run(gitOptions, "revert", "--skip")
+          run(runOptions, "revert", "--skip")
         );
         return sequence(repo.revert, error);
       },
       async abort() {
-        await run(gitOptions, "revert", "--abort");
+        await run(runOptions, "revert", "--abort");
       },
       async quit() {
-        await run(gitOptions, "revert", "--quit");
+        await run(runOptions, "revert", "--quit");
       },
       async active() {
         const { error } = await maybe(() =>
-          run(gitOptions, ["rev-parse", "--verify", "REVERT_HEAD"])
+          run(runOptions, ["rev-parse", "--verify", "REVERT_HEAD"])
         );
         if (error) return undefined;
         const { value: gitDir } = await maybe(() =>
-          run(gitOptions, ["rev-parse", "--git-dir"])
+          run(runOptions, ["rev-parse", "--git-dir"])
         );
         if (!gitDir) return undefined;
         const [todo, unmerged] = await Promise.all([
           maybe(() =>
             Deno.readTextFile(repo.path(gitDir.trim(), "sequencer/todo"))
           ),
-          run(gitOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
+          run(runOptions, ["ls-files", "-z", "--unmerged", "--format=%(path)"]),
         ]);
         const remaining = todo.value
           ? todo.value.trim().split("\n")
@@ -3606,7 +3608,7 @@ export function git(options?: GitOptions): Git {
           const { value: url } = maybe(() => new URL(str));
           return url ?? toFileUrl(str);
         }
-        const output = await run(gitOptions, "remote", "--verbose");
+        const output = await run(runOptions, "remote", "--verbose");
         const lines = output.trimEnd().split("\n").filter((x) => x);
         const remotes: Record<string, Partial<Remote>> = {};
         for (const line of lines) {
@@ -3644,7 +3646,7 @@ export function git(options?: GitOptions): Git {
       },
       async head(remote) {
         const output = await run(
-          gitOptions,
+          runOptions,
           ["ls-remote", "--symref", remoteArg(remote), "HEAD"],
         );
         const match = output.match(/^ref: refs\/heads\/(?<head>.+?)\s+HEAD$/m);
@@ -3656,7 +3658,7 @@ export function git(options?: GitOptions): Git {
         url = url ?? (typeof remote === "string" ? undefined : remote.fetch);
         const push = typeof remote === "string" ? [] : remote.push;
         await run(
-          gitOptions,
+          runOptions,
           ["remote", "add"],
           remoteArg(remote),
           urlArg(url),
@@ -3664,7 +3666,7 @@ export function git(options?: GitOptions): Git {
         for (const url of push) {
           // deno-lint-ignore no-await-in-loop
           await run(
-            gitOptions,
+            runOptions,
             ["remote", "set-url", "--add", "--push"],
             remoteArg(remote),
             url.href,
@@ -3676,7 +3678,7 @@ export function git(options?: GitOptions): Git {
       },
       async rename(remote, name) {
         await run(
-          gitOptions,
+          runOptions,
           ["remote", "rename"],
           remoteArg(remote),
           name,
@@ -3690,14 +3692,14 @@ export function git(options?: GitOptions): Git {
         assertExists(fetch);
         const push = typeof remote === "string" ? [] : remote.push;
         await run(
-          gitOptions,
+          runOptions,
           ["remote", "set-url"],
           remoteArg(remote),
           urlArg(fetch),
         );
         await maybe(() =>
           run(
-            gitOptions,
+            runOptions,
             ["remote", "set-url", "--delete", "--push"],
             remoteArg(remote),
             ".*",
@@ -3706,7 +3708,7 @@ export function git(options?: GitOptions): Git {
         for (const url of push) {
           // deno-lint-ignore no-await-in-loop
           await run(
-            gitOptions,
+            runOptions,
             ["remote", "set-url", "--add", "--push"],
             remoteArg(remote),
             url.href,
@@ -3718,19 +3720,19 @@ export function git(options?: GitOptions): Git {
       },
       async prune(remote) {
         await run(
-          gitOptions,
+          runOptions,
           ["remote", "prune"],
           remoteArg(remote),
         );
       },
       async remove(remote) {
-        await run(gitOptions, ["remote", "remove"], remoteArg(remote));
+        await run(runOptions, ["remote", "remove"], remoteArg(remote));
       },
     },
     sync: {
       async fetch(options) {
         await run(
-          gitOptions,
+          runOptions,
           "fetch",
           flag("--atomic", options?.atomic),
           flag("--filter", options?.filter, { equals: true }),
@@ -3754,7 +3756,7 @@ export function git(options?: GitOptions): Git {
       },
       async pull(options) {
         await run(
-          gitOptions,
+          runOptions,
           ["pull", "--no-edit", "--no-stat"],
           flag("--atomic", options?.atomic),
           flag(["--commit", "--no-commit"], options?.commit),
@@ -3789,7 +3791,7 @@ export function git(options?: GitOptions): Git {
         const remote = options?.remote ?? await repo.remote.current();
         if (remote === undefined) throw new GitError("No remote configured");
         await run(
-          gitOptions,
+          runOptions,
           "push",
           flag(["--atomic", "--no-atomic"], options?.atomic),
           flag("--delete", options?.delete),
@@ -3818,14 +3820,14 @@ export function git(options?: GitOptions): Git {
       async unshallow(options) {
         const remote = options?.remote ?? await repo.remote.current();
         await run(
-          gitOptions,
+          runOptions,
           ["fetch", "--unshallow"],
           remoteArg(remote),
         );
       },
       async backfill(options) {
         await run(
-          gitOptions,
+          runOptions,
           "backfill",
           flag("--min-batch-size", options?.minBatchSize),
         );
@@ -3835,7 +3837,9 @@ export function git(options?: GitOptions): Git {
   return repo;
 }
 
-interface RunOptions extends GitOptions {
+interface RunOptions {
+  directory: string;
+  config?: Config;
   versioned?: [...[string | undefined, string[]][]];
   allowCode?: number[];
   outputStderr?: boolean;
@@ -3845,10 +3849,10 @@ async function run(
   options: RunOptions,
   ...commandArgs: (string | string[] | undefined)[]
 ): Promise<string> {
-  const { cwd, config, allowCode, outputStderr } = options;
+  const { directory, config, allowCode, outputStderr } = options;
   const runArgs = commandArgs.flat().filter((x) => x !== undefined);
   const fullArgs = [
-    ...cwd !== undefined ? ["-C", normalize(cwd)] : [],
+    ...["-C", normalize(directory)],
     ...configFlags(config, "-c"),
     "--no-pager",
     ...runArgs,

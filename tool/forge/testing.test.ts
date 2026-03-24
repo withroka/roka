@@ -33,8 +33,8 @@ Deno.test("tempPackage() creates package in a repository", async () => {
       { subject: "fix: bug" },
     ],
   });
-  const repo = git({ cwd: pkg.root });
-  const commit = await git({ cwd: pkg.root }).commit.head();
+  const repo = git({ directory: pkg.root });
+  const commit = await git({ directory: pkg.root }).commit.head();
   assertEquals(omit(pkg, [Symbol.asyncDispose]), {
     name: "name",
     version: `1.2.4-pre.1+${commit.short}`,
@@ -92,7 +92,7 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
   assertExists(pkg2);
   assertExists(pkg3);
   const root = pkg1.root;
-  const repo = git({ cwd: pkg1.root });
+  const repo = git({ directory: pkg1.root });
   const [commit3, commit2, commit1] = await repo.commit.log();
   assertExists(commit1);
   assertExists(commit2);
