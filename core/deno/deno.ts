@@ -222,10 +222,10 @@ export interface OutputInfo extends Report {
 /** Callback options for `deno` commands. */
 export interface DenoOptions {
   /**
-   * Change the working directory for deno commands.
+   * Run the commands under a specific directory.
    * @default {"."}
    */
-  cwd?: string;
+  directory?: string;
   /** A function that is called for each problem message. */
   onProblem?: (problem: Problem) => unknown;
   /** A function that is called for each informational message. */
@@ -415,7 +415,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     onDebug,
     onPartialDebug,
   } = options ?? {};
-  const directory = resolve(options?.cwd ?? Deno.cwd());
+  const directory = resolve(options?.directory ?? Deno.cwd());
   function reportFrom<Kind extends string>(
     kind: Kind,
     data: ReportData,

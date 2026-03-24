@@ -41,7 +41,7 @@ function assertResults(
 
 Deno.test("deno().path() is persistent with absolute path", async () => {
   await using directory = await tempDirectory();
-  const repo = deno({ cwd: directory.path() });
+  const repo = deno({ directory: directory.path() });
   assertEquals(repo.path(), directory.path());
   {
     await using _ = await tempDirectory({ chdir: true });
@@ -51,7 +51,7 @@ Deno.test("deno().path() is persistent with absolute path", async () => {
 
 Deno.test("deno().path() is persistent with relative path", async () => {
   await using directory = await tempDirectory({ chdir: true });
-  const repo = deno({ cwd: "." });
+  const repo = deno({ directory: "." });
   assertEquals(
     await Deno.realPath(repo.path()),
     await Deno.realPath(directory.path()),
