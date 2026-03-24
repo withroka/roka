@@ -159,9 +159,7 @@ Deno.test("git().init({ config }) persists configuration", async () => {
     subject: "commit",
     allowEmpty: true,
   });
-  assertExists(commit);
   assertObjectMatch(commit.author, { name: "name", email: "email" });
-  assertEquals(commit.author.date instanceof Temporal.Instant, true);
 });
 
 Deno.test("git().init({ directory }) initializes at specified directory", async () => {
@@ -413,9 +411,7 @@ Deno.test("git().clone({ config }) persists configuration", async () => {
     subject: "commit2",
     allowEmpty: true,
   });
-  assertExists(commit);
   assertObjectMatch(commit.author, { name: "name", email: "email" });
-  assertEquals(commit.author.date instanceof Temporal.Instant, true);
 });
 
 Deno.test("git().clone({ directory }) clones into specified directory", async () => {
@@ -3685,16 +3681,28 @@ Deno.test("git().commit.log() returns multiple commits", async () => {
   assertEquals(await repo.commit.log(), [commit2, commit1]);
 });
 
-Deno.test("git().commit.log() returns commit dates", async () => {
+Deno.test("git().commit.log() can parse author and committer", async () => {
   await using repo = await tempRepository();
+  const date1 = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const date2 = Temporal.Instant.from("2002-02-02T02:02:02Z");
   await repo.commit.create({
     subject: "commit",
     allowEmpty: true,
+    author: { name: "name1", email: "email1", date: date1 },
+    committer: { name: "name2", email: "email2", date: date2 },
   });
   const [commit] = await repo.commit.log();
   assertExists(commit);
-  assertEquals(commit.author.date instanceof Temporal.Instant, true);
-  assertEquals(commit.committer.date instanceof Temporal.Instant, true);
+  assertEquals(commit.author, {
+    name: "name1",
+    email: "email1",
+    date: date1,
+  });
+  assertEquals(commit.committer, {
+    name: "name2",
+    email: "email2",
+    date: date2,
+  });
 });
 
 Deno.test("git().commit.log() can parse message body", async () => {
@@ -3742,11 +3750,15 @@ Deno.test("git().commit.log() handles configuration overrides", async () => {
       "committer.name": "committer-name",
     },
   });
+  const date1 = Temporal.Instant.fromEpochMilliseconds(1000);
+  const date2 = Temporal.Instant.fromEpochMilliseconds(2000);
   const commit = await repo.commit.create({
     subject: "subject with Unicode character: ∑",
     body: "body",
     trailers: { key: "value" },
     allowEmpty: true,
+    author: { date: date1 },
+    committer: { date: date2 },
   });
   assertEquals(await repo.commit.log(), [{
     hash: commit.hash,
@@ -3754,12 +3766,12 @@ Deno.test("git().commit.log() handles configuration overrides", async () => {
     author: {
       name: "author-name",
       email: "author-email",
-      date: commit.author.date,
+      date: date1,
     },
     committer: {
       name: "committer-name",
       email: "committer-email",
-      date: commit.committer.date,
+      date: date2,
     },
     subject: "subject with Unicode character: ∑",
     body: "body",
@@ -4300,33 +4312,26 @@ Deno.test("git().commit.create({ author }) sets author", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
+  const date = Temporal.Instant.fromEpochMilliseconds(1000);
   const commit = await repo.commit.create({
     subject: "commit",
-    author: { name: "name", email: "email" },
+    author: { name: "name", email: "email", date },
   });
-  assertExists(commit);
-  assertObjectMatch(commit.author, { name: "name", email: "email" });
-  assertEquals(commit.author.date instanceof Temporal.Instant, true);
+  assertEquals(commit.author, { name: "name", email: "email", date });
 });
 
-Deno.test("git().commit.create({ author }) sets committer", {
+Deno.test("git().commit.create({ committer }) sets committer", {
   ignore: codespaces,
 }, async () => {
-  await using repo = await tempRepository({
-    config: { "user.name": "name", "user.email": "email" },
-  });
+  await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
+  const date = Temporal.Instant.fromEpochMilliseconds(1000);
   const commit = await repo.commit.create({
     subject: "commit",
-    author: { name: "upstream", email: "email" },
+    committer: { name: "name", email: "email", date },
   });
-  assertExists(commit);
-  assertObjectMatch(commit.committer, {
-    name: "name",
-    email: "email",
-  });
-  assertEquals(commit.committer.date instanceof Temporal.Instant, true);
+  assertEquals(commit.committer, { name: "name", email: "email", date });
 });
 
 Deno.test("git().commit.create({ body }) creates a commit with body", async () => {
@@ -4469,19 +4474,36 @@ Deno.test("git().commit.amend({ all }) can automatically remove files", async ()
   assertEquals(await repo.diff.status(), []);
 });
 
-Deno.test("git().commit.amend({ author }) changes the author", async () => {
+Deno.test("git().commit.amend({ author }) can update the author", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit" });
+  const date = Temporal.Instant.fromEpochMilliseconds(1000);
   const amended = await repo.commit.amend({
-    author: { name: "new-name", email: "new-email" },
+    author: { name: "new-name", email: "new-email", date },
   });
-  assertObjectMatch(amended.author, {
+  assertEquals(amended.author, {
     name: "new-name",
     email: "new-email",
+    date,
   });
-  assertEquals(amended.author.date instanceof Temporal.Instant, true);
+});
+
+Deno.test("git().commit.amend({ author }) can update the committer", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  await repo.commit.create({ subject: "commit" });
+  const date = Temporal.Instant.fromEpochMilliseconds(1000);
+  const amended = await repo.commit.amend({
+    committer: { name: "new-name", email: "new-email", date },
+  });
+  assertEquals(amended.committer, {
+    name: "new-name",
+    email: "new-email",
+    date,
+  });
 });
 
 Deno.test("git().commit.amend({ body }) changes the commit body", async () => {
@@ -6132,49 +6154,46 @@ Deno.test("git().tag.create() creates a lightweight tag", async () => {
 Deno.test("git().tag.create() can create an annotated tag", {
   ignore: codespaces,
 }, async () => {
-  await using repo = await tempRepository({
-    config: { "user.name": "name", "user.email": "email" },
-  });
+  await using repo = await tempRepository();
   const commit = await repo.commit.create({
     subject: "commit",
     allowEmpty: true,
   });
+  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
   const tag = await repo.tag.create("tag", {
     subject: "subject",
     body: "body",
+    tagger: { name: "name", email: "email", date },
   });
-  assertExists(tag.tagger);
-  const taggerDate = tag.tagger.date;
   assertEquals(tag, {
     name: "tag",
     commit,
-    tagger: { name: "name", email: "email", date: taggerDate },
+    tagger: { name: "name", email: "email", date },
     subject: "subject",
     body: "body",
   });
-  assertEquals(tag.tagger.date instanceof Temporal.Instant, true);
 });
 
 Deno.test("git().tag.create() ignores empty body", {
   ignore: codespaces,
 }, async () => {
-  await using repo = await tempRepository({
-    config: { "user.name": "name", "user.email": "email" },
-  });
+  await using repo = await tempRepository();
   const commit = await repo.commit.create({
     subject: "commit",
     allowEmpty: true,
   });
-  const tag = await repo.tag.create("tag", { subject: "subject", body: "" });
-  assertExists(tag.tagger);
-  const taggerDate = tag.tagger.date;
+  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const tag = await repo.tag.create("tag", {
+    subject: "subject",
+    body: "",
+    tagger: { name: "name", email: "email", date },
+  });
   assertEquals(tag, {
     name: "tag",
     commit,
-    tagger: { name: "name", email: "email", date: taggerDate },
+    tagger: { name: "name", email: "email", date },
     subject: "subject",
   });
-  assertEquals(tag.tagger.date instanceof Temporal.Instant, true);
 });
 
 Deno.test("git().tag.create() cannot create annotated tag without subject", async () => {
@@ -6269,27 +6288,25 @@ Deno.test(
   "git().tag.create({ trailers }) creates an annotated tag with trailers",
   { ignore: lessThan(parse(version), parse("2.46.0")) },
   async () => {
-    await using repo = await tempRepository({
-      config: { "user.name": "tagger-name", "user.email": "tagger-email" },
-    });
+    await using repo = await tempRepository();
     const commit = await repo.commit.create({
       subject: "commit",
       allowEmpty: true,
     });
+    const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
     const tag = await repo.tag.create("tag", {
       subject: "subject",
       body: "body",
+      tagger: { name: "name", email: "email", date },
       trailers: {
         "reviewed-by": "reviewer-email",
         "tested-by": "tester-email",
       },
     });
-    assertExists(tag.tagger);
-    const taggerDate = tag.tagger.date;
     assertEquals(tag, {
       name: "tag",
       commit,
-      tagger: { name: "tagger-name", email: "tagger-email", date: taggerDate },
+      tagger: { name: "name", email: "email", date },
       subject: "subject",
       body: "body",
       trailers: {
@@ -6297,7 +6314,6 @@ Deno.test(
         "tested-by": "tester-email",
       },
     });
-    assertEquals(tag.tagger.date instanceof Temporal.Instant, true);
   },
 );
 

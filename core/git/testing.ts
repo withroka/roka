@@ -38,12 +38,12 @@ export function testCommit(data?: Partial<Commit>): Commit {
     author: {
       name: "author-name",
       email: "author-email",
-      date: Temporal.Instant.from("2026-01-01T00:00:00.000Z"),
+      date: Temporal.Instant.fromEpochMilliseconds(10000),
     },
     committer: {
       name: "committer-name",
       email: "committer-email",
-      date: Temporal.Instant.from("2026-01-01T00:00:00.000Z"),
+      date: Temporal.Instant.fromEpochMilliseconds(20000),
     },
     subject: "subject",
     body: "body",
