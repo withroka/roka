@@ -28,6 +28,7 @@ Deno.test("testCommit() creates a commit with custom data", () => {
     author: {
       name: "custom-author-name",
       email: "custom-author-email",
+      date: Temporal.Instant.from("2026-01-01T00:00:00.000Z"),
     },
   });
   assertEquals(commit.subject, "custom-subject");

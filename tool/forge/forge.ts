@@ -435,10 +435,16 @@ function titleCommand(context: ForgeOptions | undefined) {
       const commit = conventional({
         hash: "",
         short: "",
-        authorDate: Temporal.Instant.fromEpochMilliseconds(0),
-        committerDate: Temporal.Instant.fromEpochMilliseconds(0),
-        author: { name: "", email: "" },
-        committer: { name: "", email: "" },
+        author: {
+          name: "",
+          email: "",
+          date: Temporal.Instant.fromEpochMilliseconds(0),
+        },
+        committer: {
+          name: "",
+          email: "",
+          date: Temporal.Instant.fromEpochMilliseconds(0),
+        },
         subject: title,
       });
       if (
