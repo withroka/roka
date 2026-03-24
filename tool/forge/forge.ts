@@ -435,6 +435,8 @@ function titleCommand(context: ForgeOptions | undefined) {
       const commit = conventional({
         hash: "",
         short: "",
+        authorDate: new Date(0),
+        committerDate: new Date(0),
         author: { name: "", email: "" },
         committer: { name: "", email: "" },
         subject: title,
