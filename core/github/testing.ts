@@ -203,10 +203,10 @@ export function fakeReleaseAsset(data?: Partial<ReleaseAsset>): ReleaseAsset {
   const repo = data?.release?.repo ?? fakeRepository();
   const name = data?.name ?? "name";
   return {
-    release: fakeRelease(),
+    release,
     url: new URL(`${repo.url}/releases/download/${release.tag}/${name}`),
     id: 2,
-    name: "name",
+    name,
     size: 3,
     downloadCount: 4,
     delete: () => Promise.resolve(),
