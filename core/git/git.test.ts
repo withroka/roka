@@ -3655,8 +3655,8 @@ Deno.test("git().commit.log() returns commit dates", async () => {
   });
   const [commit] = await repo.commit.log();
   assertExists(commit);
-  assertEquals(commit.authorDate instanceof Date, true);
-  assertEquals(commit.committerDate instanceof Date, true);
+  assertEquals(commit.authorDate instanceof Temporal.Instant, true);
+  assertEquals(commit.committerDate instanceof Temporal.Instant, true);
 });
 
 Deno.test("git().commit.log() can parse message body", async () => {
@@ -6098,7 +6098,7 @@ Deno.test("git().tag.create() can create an annotated tag", {
     subject: "subject",
     body: "body",
   });
-  assertEquals(tag.taggerDate instanceof Date, true);
+  assertEquals(tag.taggerDate instanceof Temporal.Instant, true);
 });
 
 Deno.test("git().tag.create() ignores empty body", {
@@ -6121,7 +6121,7 @@ Deno.test("git().tag.create() ignores empty body", {
     tagger: { name: "name", email: "email" },
     subject: "subject",
   });
-  assertEquals(tag.taggerDate instanceof Date, true);
+  assertEquals(tag.taggerDate instanceof Temporal.Instant, true);
 });
 
 Deno.test("git().tag.create() cannot create annotated tag without subject", async () => {
@@ -6245,7 +6245,7 @@ Deno.test(
         "tested-by": "tester-email",
       },
     });
-    assertEquals(tag.taggerDate instanceof Date, true);
+    assertEquals(tag.taggerDate instanceof Temporal.Instant, true);
   },
 );
 

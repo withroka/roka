@@ -1082,9 +1082,9 @@ export interface Commit {
   /** Parent commit hashes, if any. */
   parents?: string[];
   /** Date when the commit was authored. */
-  authorDate: Date;
+  authorDate: Temporal.Instant;
   /** Date when the commit was created. */
-  committerDate: Date;
+  committerDate: Temporal.Instant;
   /** Author, who wrote the code. */
   author: User;
   /** Committer, who created the commit. */
@@ -1104,7 +1104,7 @@ export interface Tag {
   /** Commit that is recursively pointed to by the tag. */
   commit: Commit;
   /** Date when the tag was created. */
-  taggerDate?: Date;
+  taggerDate?: Temporal.Instant;
   /** Tag subject, the first line of the tag message. */
   subject?: string;
   /** Tag body, excluding the first line and trailers from the message. */
@@ -4287,12 +4287,12 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
     authorDate: {
       kind: "string",
       format: "%aI",
-      transform: (value) => new Date(value),
+      transform: (value) => Temporal.Instant.from(value),
     },
     committerDate: {
       kind: "string",
       format: "%cI",
-      transform: (value) => new Date(value),
+      transform: (value) => Temporal.Instant.from(value),
     },
     author: {
       kind: "object",
@@ -4353,7 +4353,7 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
       kind: "string",
       optional: true,
       format: "%(if)%(object)%(then)%(taggerdate:iso-strict)%(else)%00%(end)",
-      transform: (value) => new Date(value),
+      transform: (value) => Temporal.Instant.from(value),
     },
     tagger: {
       kind: "object",
