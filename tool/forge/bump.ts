@@ -33,7 +33,7 @@ import { git } from "@roka/git";
 import { github, type PullRequest, type Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { common, dirname, join } from "@std/path";
+import { common, join } from "@std/path";
 import { format, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
 import { type Package, PackageError } from "./workspace.ts";
@@ -177,7 +177,7 @@ async function updateChangelog(
     [prepend, ...existing && [existing]].join("\n"),
   );
   // best effort formatting for the changelog file
-  await maybe(() => deno({ directory: dirname(file) }).fmt([file]));
+  await maybe(() => deno().fmt([file]));
 }
 
 async function createPullRequest(
