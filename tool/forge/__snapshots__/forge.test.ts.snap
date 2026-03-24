@@ -266,7 +266,7 @@ snapshot[`forge bump --release --pr --changelog=<file> --emoji 1`] = `
   output: "
 ✓ Created bump pull request
 
-  [<url>/pulls/1]
+  [https://github.com/owner/repo/pulls/1]
 
 ",
 }
@@ -287,14 +287,14 @@ snapshot[`forge release --draft --emoji 1`] = `
   output: "
 ✓ Created release name1@1.0.0
 
-  [<url>/releases/name1@1.0.0]
+  [https://github.com/owner/repo/releases/name1@1.0.0]
 
   ◆ aarch64-unknown-linux-gnu.tar.gz
   ◆ sha256.txt
 
 ✓ Created release name3@3.0.0
 
-  [<url>/releases/name1@1.0.0]
+  [https://github.com/owner/repo/releases/name1@1.0.0]
 
 ",
 }

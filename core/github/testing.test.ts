@@ -15,11 +15,11 @@ Deno.test("fakeRepository() creates a repository with default data", () => {
 
 Deno.test("fakeRepository() creates a repository with custom data", () => {
   const repo = fakeRepository({
-    url: "custom-url",
+    url: new URL("https://custom-url"),
     owner: "custom-owner",
     repo: "custom-repo",
   });
-  assertEquals(repo.url, "custom-url");
+  assertEquals(repo.url, new URL("https://custom-url"));
   assertEquals(repo.owner, "custom-owner");
   assertEquals(repo.repo, "custom-repo");
 });
@@ -63,11 +63,17 @@ Deno.test("fakePullRequest() creates a pull request with default data", () => {
   assertExists(pull.base);
 });
 
+Deno.test("fakePullRequest() constructs url from repo url", () => {
+  const repo = fakeRepository({ url: new URL("https://github.com/repo") });
+  const pull = fakePullRequest({ repo, number: 5 });
+  assertEquals(pull.url, new URL("https://github.com/repo/pulls/5"));
+});
+
 Deno.test("fakePullRequest() creates a pull request with custom data", () => {
   const repo = fakeRepository();
   const pull = fakePullRequest({
     repo,
-    url: "custom-url",
+    url: new URL("https://custom-url"),
     number: 42,
     title: "custom-title",
     body: "custom-body",
@@ -78,7 +84,7 @@ Deno.test("fakePullRequest() creates a pull request with custom data", () => {
     locked: true,
   });
   assertEquals(pull.repo, repo);
-  assertEquals(pull.url, "custom-url");
+  assertEquals(pull.url, new URL("https://custom-url"));
   assertEquals(pull.number, 42);
   assertEquals(pull.title, "custom-title");
   assertEquals(pull.body, "custom-body");
@@ -111,11 +117,17 @@ Deno.test("fakeRelease() creates a release with default data", () => {
   assertExists(release.body);
 });
 
+Deno.test("fakeRelease() constructs url from repo url", () => {
+  const repo = fakeRepository({ url: new URL("https://github.com/repo") });
+  const release = fakeRelease({ repo, tag: "v1.0.0" });
+  assertEquals(release.url, new URL("https://github.com/repo/releases/v1.0.0"));
+});
+
 Deno.test("fakeRelease() creates a release with custom data", () => {
   const repo = fakeRepository();
   const release = fakeRelease({
     repo,
-    url: "custom-url",
+    url: new URL("https://custom-url"),
     id: 42,
     name: "custom-name",
     tag: "custom-tag",
@@ -125,7 +137,7 @@ Deno.test("fakeRelease() creates a release with custom data", () => {
     prerelease: true,
   });
   assertEquals(release.repo, repo);
-  assertEquals(release.url, "custom-url");
+  assertEquals(release.url, new URL("https://custom-url"));
   assertEquals(release.id, 42);
   assertEquals(release.name, "custom-name");
   assertEquals(release.tag, "custom-tag");
@@ -172,18 +184,30 @@ Deno.test("fakeReleaseAsset() creates asset with default values", () => {
   assertExists(asset.downloadCount);
 });
 
+Deno.test("fakeReleaseAsset() constructs url from repo url", () => {
+  const repo = fakeRepository({ url: new URL("https://github.com/repo") });
+  const release = fakeRelease({ repo, tag: "v1.0.0" });
+  const asset = fakeReleaseAsset({ release, name: "file.txt" });
+  assertEquals(
+    asset.url,
+    new URL(
+      "https://github.com/repo/releases/download/v1.0.0/file.txt",
+    ),
+  );
+});
+
 Deno.test("fakeReleaseAsset() creates asset with custom values", () => {
   const release = fakeRelease({ tag: "custom-tag" });
   const asset = fakeReleaseAsset({
     release,
-    url: "custom-url",
+    url: new URL("https://custom-url"),
     id: 42,
     name: "custom-name",
     size: 1024,
     downloadCount: 100,
   });
   assertEquals(asset.release, release);
-  assertEquals(asset.url, "custom-url");
+  assertEquals(asset.url, new URL("https://custom-url"));
   assertEquals(asset.id, 42);
   assertEquals(asset.name, "custom-name");
   assertEquals(asset.size, 1024);
