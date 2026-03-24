@@ -15,3 +15,11 @@ mock[`mock({ path }) can record in absolute custom path > func 1`] =
     output: 42,
   },
 ];
+
+mock[`mock({ path }) handles file URL > func 1`] =
+[
+  {
+    input: [],
+    output: 42,
+  },
+];

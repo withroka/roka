@@ -189,9 +189,12 @@ export interface ForgeConfig {
 export interface WorkspaceOptions {
   /**
    * Directory to return packages from.
+   *
+   * This can be a string path or a file URL.
+   *
    * @default {["."]}
    */
-  root?: string;
+  root?: string | URL;
   /**
    * Filter packages by name or directory.
    *
@@ -218,11 +221,15 @@ export interface PackageOptions {
   /**
    * Directory to return package from.
    *
+   * This can be a string path or a file URL.
+   *
    * If a directory is not defined, the package of the main module is used.
    */
-  directory?: string;
+  directory?: string | URL;
   /**
    * Root directory of the package.
+   *
+   * This can be a string path or a file URL.
    *
    * If this is different than the package directory, the package is considered
    * a workspace member.
@@ -230,7 +237,7 @@ export interface PackageOptions {
    * If not set, the root defaults to the value of
    * {@linkcode Package.directory directory}.
    */
-  root?: string;
+  root?: string | URL;
 }
 
 /** Options for the {@linkcode releases} function. */
@@ -324,7 +331,8 @@ export async function workspace(
     .filter((pkg) =>
       patterns.length === 0 ||
       patterns.some((p) =>
-        pkg.name.match(p) || relative(root, pkg.directory).match(p)
+        pkg.name.match(p) ||
+        relative(normalize(root), normalize(pkg.directory)).match(p)
       )
     );
 }
@@ -353,7 +361,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
     name,
     version: config.version ?? "0.0.0",
     directory,
-    root: options?.root ?? directory,
+    root: normalize(options?.root ?? directory),
     config,
   };
   if (!canParse(pkg.version)) {

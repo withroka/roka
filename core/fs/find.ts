@@ -19,7 +19,7 @@
  */
 
 import { maybe } from "@roka/maybe";
-import { basename, globToRegExp, join } from "@std/path";
+import { basename, globToRegExp, join, normalize } from "@std/path";
 
 /** Options for the {@linkcode find} function. */
 export interface FindOptions {
@@ -192,7 +192,7 @@ export interface FindOptions {
  * and any of the given paths do not exist.
  */
 export async function* find(
-  paths: string[],
+  paths: (string | URL)[],
   options?: FindOptions,
 ): AsyncIterableIterator<string> {
   interface Stat {
@@ -261,6 +261,6 @@ export async function* find(
     }
   }
   for (const path of paths) {
-    yield* internal(0, options?.validate ?? false, path);
+    yield* internal(0, options?.validate ?? false, normalize(path));
   }
 }

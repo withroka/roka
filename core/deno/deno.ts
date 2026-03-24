@@ -22,7 +22,7 @@ import { maybe } from "@roka/maybe";
 import { assert, assertExists } from "@std/assert";
 import { firstNotNullishOf, omit, pick } from "@std/collections";
 import { stripAnsiCode } from "@std/fmt/colors";
-import { extname, fromFileUrl, join, resolve } from "@std/path";
+import { extname, fromFileUrl, join, normalize, resolve } from "@std/path";
 import { parse } from "@std/semver";
 import { mergeReadableStreams, toTransformStream } from "@std/streams";
 
@@ -225,7 +225,7 @@ export interface DenoOptions {
    * Run the commands under a specific directory.
    * @default {"."}
    */
-  directory?: string;
+  directory?: string | URL;
   /** A function that is called for each problem message. */
   onProblem?: (problem: Problem) => unknown;
   /** A function that is called for each informational message. */
@@ -415,7 +415,7 @@ export function deno(options?: DenoOptions): DenoCommands {
     onDebug,
     onPartialDebug,
   } = options ?? {};
-  const directory = resolve(options?.directory ?? Deno.cwd());
+  const directory = resolve(normalize(options?.directory ?? "."));
   function reportFrom<Kind extends string>(
     kind: Kind,
     data: ReportData,
@@ -1246,11 +1246,10 @@ class Runner implements AsyncDisposable {
       }
       const block = this.resolveBlock(data);
       if (block === undefined) this.resolveLocation(data);
-      data.file = data.file.replace(/\$\d+-\d+(\.\w+)?$/, "");
+      data.file = resolve(data.file.replace(/\$\d+-\d+(\.\w+)?$/, ""));
       this.resolveShifts(data, block);
-      if (this.filesByPath?.has(resolve(data.file))) {
-        data.file = this.filesByPath?.get(resolve(data.file)) ??
-          data.file;
+      if (this.filesByPath?.has(data.file)) {
+        data.file = this.filesByPath?.get(data.file) ?? data.file;
       }
     }
     const type = REPORT_TYPES[data.kind];

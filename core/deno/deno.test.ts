@@ -2,7 +2,7 @@ import { assertArrayObjectMatch } from "@roka/assert";
 import { tempDirectory } from "@roka/fs/temp";
 import { assertEquals, assertRejects } from "@std/assert";
 import { stripAnsiCode } from "@std/fmt/colors";
-import { resolve } from "@std/path";
+import { toFileUrl } from "@std/path";
 import { deno, DenoError, type FileResult } from "./deno.ts";
 
 function assertResults(
@@ -39,13 +39,19 @@ function assertResults(
   );
 }
 
+Deno.test("deno({ directory }) handles file URL", async () => {
+  await using directory = await tempDirectory();
+  const repo = deno({ directory: toFileUrl(directory.path()) });
+  assertEquals(repo.path(), directory.path());
+});
+
 Deno.test("deno().path() is persistent with absolute path", async () => {
   await using directory = await tempDirectory();
   const repo = deno({ directory: directory.path() });
   assertEquals(repo.path(), directory.path());
   {
     await using _ = await tempDirectory({ chdir: true });
-    assertEquals(resolve(repo.path()), directory.path());
+    assertEquals(repo.path(), directory.path());
   }
 });
 

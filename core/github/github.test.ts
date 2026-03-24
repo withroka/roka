@@ -4,6 +4,7 @@ import { tempRepository } from "@roka/git/testing";
 import { mockFetch } from "@roka/http/testing";
 import type { Mock } from "@roka/testing/mock";
 import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
+import { toFileUrl } from "@std/path";
 import { github, type PullRequest, type Release } from "./github.ts";
 
 function token(mock?: Mock<typeof fetch>) {
@@ -23,6 +24,18 @@ Deno.test("github().repos.get({ directory }) uses a local repository", async () 
   );
   const repo = await github({ token: token() }).repos.get({
     directory: git.path(),
+  });
+  assertObjectMatch(repo, { owner: "withroka", repo: "test" });
+});
+
+Deno.test("github().repos.get({ directory }) handles file URL", async () => {
+  await using git = await tempRepository();
+  await git.remote.add(
+    "origin",
+    new URL("https://github.com/withroka/test.git"),
+  );
+  const repo = await github({ token: token() }).repos.get({
+    directory: toFileUrl(git.path()),
   });
   assertObjectMatch(repo, { owner: "withroka", repo: "test" });
 });
