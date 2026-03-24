@@ -290,7 +290,9 @@ function repositories(api: Octokit): Repositories {
   ): Repository | Promise<Repository> {
     if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
     const local = git({
-      ...options?.directory && { directory: options.directory },
+      ...options?.directory !== undefined
+        ? { directory: options.directory }
+        : {},
     });
     if (typeof ownerOrOptions === "string") {
       assertExists(repo, "Missing repository name");
