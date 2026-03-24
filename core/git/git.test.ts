@@ -102,6 +102,12 @@ Deno.test("git().path() is persistent with relative path", async () => {
   }
 });
 
+Deno.test("git({ directory }) handles file URL", async () => {
+  await using directory = await tempDirectory();
+  const repo = git({ directory: toFileUrl(directory.path()) });
+  assertEquals(repo.path(), directory.path());
+});
+
 Deno.test("git().init() initializes a repository", async () => {
   await using directory = await tempDirectory();
   const repo = await git({ directory: directory.path() }).init();
@@ -161,6 +167,15 @@ Deno.test("git().init({ config }) persists configuration", async () => {
 Deno.test("git().init({ directory }) initializes at specified directory", async () => {
   await using directory = await tempDirectory();
   const repo = await git().init({ directory: directory.path("directory") });
+  assertEquals(repo.path(), directory.path("directory"));
+  assertEquals((await Deno.stat(repo.path(".git"))).isDirectory, true);
+});
+
+Deno.test("git().init({ directory }) handles file URL", async () => {
+  await using directory = await tempDirectory();
+  const repo = await git().init({
+    directory: toFileUrl(directory.path("directory")),
+  });
   assertEquals(repo.path(), directory.path("directory"));
   assertEquals((await Deno.stat(repo.path(".git"))).isDirectory, true);
 });
@@ -796,6 +811,21 @@ Deno.test("git().config.list({ file }) can retrieve from file config", async () 
     "user.name": "user-name",
     "user.email": "user-email",
   });
+});
+
+Deno.test("git().config.list({ file }) handles file URL", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(
+    repo.path("config"),
+    ["[user]", "name = user-name", "email = user-email"].join("\n"),
+  );
+  assertEquals(
+    await repo.config.list({ file: toFileUrl(repo.path("config")) }),
+    {
+      "user.name": "user-name",
+      "user.email": "user-email",
+    },
+  );
 });
 
 Deno.test("git().config.get() retrieves boolean variables", async () => {

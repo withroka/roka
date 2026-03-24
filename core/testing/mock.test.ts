@@ -226,6 +226,14 @@ Deno.test("mock({ dir }) records in custom directory", async (t) => {
   assertEquals(await mocked(), 42);
 });
 
+Deno.test("mock({ dir }) handles file URL", async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  using mocked = mock(t, self, "func", {
+    dir: new URL(join(dirname(t.origin), "__mocks__/custom")),
+  });
+  assertEquals(await mocked(), 42);
+});
+
 Deno.test("mock({ path }) can record in relative custom path", async (t) => {
   const self = { func: async () => await Promise.resolve(42) };
   using mocked = mock(t, self, "func", {
@@ -237,10 +245,21 @@ Deno.test("mock({ path }) can record in relative custom path", async (t) => {
 Deno.test("mock({ path }) can record in absolute custom path", async (t) => {
   const self = { func: async () => await Promise.resolve(42) };
   using mocked = mock(t, self, "func", {
-    path: join(
-      dirname(fromFileUrl(t.origin)),
+    path: fromFileUrl(join(
+      dirname(t.origin),
       "__mocks__/custom/mock.test.path.ts.mock",
-    ),
+    )),
+  });
+  assertEquals(await mocked(), 42);
+});
+
+Deno.test("mock({ path }) handles file URL", async (t) => {
+  const self = { func: async () => await Promise.resolve(42) };
+  using mocked = mock(t, self, "func", {
+    path: new URL(join(
+      dirname(t.origin),
+      "__mocks__/custom/mock.test.path.ts.mock",
+    )),
   });
   assertEquals(await mocked(), 42);
 });

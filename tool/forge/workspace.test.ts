@@ -20,8 +20,19 @@ import {
   assertObjectMatch,
   assertRejects,
 } from "@std/assert";
-import { join } from "@std/path";
+import { dirname, join, toFileUrl } from "@std/path";
 import { tempPackage, tempWorkspace } from "./testing.ts";
+
+async function bump(pkg: Package, version: string) {
+  const repo = git({ directory: pkg.directory });
+  const path = join(pkg.directory, "deno.json");
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version }),
+  );
+  await repo.index.add(path);
+  return await repo.commit.create({ subject: "bump" });
+}
 
 Deno.test("workspace() returns simple package", async () => {
   await using temp = await tempWorkspace({
@@ -77,16 +88,22 @@ Deno.test("workspace() returns monorepo packages", async () => {
   }]);
 });
 
-async function bump(pkg: Package, version: string) {
-  const repo = git({ directory: pkg.directory });
-  const path = join(pkg.directory, "deno.json");
-  await Deno.writeTextFile(
-    path,
-    JSON.stringify({ ...pkg.config, version }),
-  );
-  await repo.index.add(path);
-  return await repo.commit.create({ subject: "bump" });
-}
+Deno.test("workspace() handles file URL", async () => {
+  await using temp = await tempWorkspace({
+    configs: [{ name: "pkg" }],
+  });
+  const [pkg] = temp;
+  assertExists(pkg);
+  const root = pkg.root;
+  assertEquals(await workspace({ root: toFileUrl(root) }), [{
+    name: "pkg",
+    version: "0.0.0",
+    directory: join(pkg.root, "pkg"),
+    root,
+    config: { name: "pkg" },
+    changes: [],
+  }]);
+});
 
 Deno.test("workspace() does not return nested workspace packages", async () => {
   await using temp = await tempWorkspace({
@@ -250,6 +267,11 @@ Deno.test("packageInfo() rejects non-Deno package", async () => {
 
 Deno.test("packageInfo() returns current package", async () => {
   const pkg = await packageInfo();
+  assertEquals(pkg.config.name, "@roka/forge");
+});
+
+Deno.test("packageInfo() handles file URL", async (t) => {
+  const pkg = await packageInfo({ directory: new URL(dirname(t.origin)) });
   assertEquals(pkg.config.name, "@roka/forge");
 });
 

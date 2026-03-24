@@ -1180,9 +1180,12 @@ export interface Pickaxe {
 export interface GitOptions {
   /**
    * Run the commands under a specific directory.
+   *
+   * This can be a string path or a file URL.
+   *
    * @default {"."}
    */
-  directory?: string;
+  directory?: string | URL;
   /**
    * Configuration options for each executed git command.
    *
@@ -1285,8 +1288,10 @@ export interface RepositoryOptions {
    * The name of a new directory to initialize into.
    *
    * If not set, initializes in the current directory.
+   *
+   * This can be a string path or a file URL.
    */
-  directory?: string;
+  directory?: string | URL;
   /**
    * Create a bare repository.
    * @default {false}
@@ -1299,8 +1304,12 @@ export interface RepositoryOptions {
    * will persist in the local repository afterwards.
    */
   config?: Config;
-  /** Create the git directory at given path. */
-  separateGitDir?: string;
+  /**
+   * Create the git directory at given path.
+   *
+   * This can be a string path or a file URL.
+   */
+  separateGitDir?: string | URL;
 }
 
 /** Options for the {@linkcode Git.init} function. */
@@ -1344,8 +1353,10 @@ export interface CloneOptions
    *
    * Cloning into an existing directory is only allowed if the directory is
    * empty.
+   *
+   * This can be a string path or a file URL.
    */
-  directory?: string;
+  directory?: string | URL;
   /**
    * Name of the initial branch to checkout after cloning.
    *
@@ -1423,8 +1434,12 @@ export interface ConfigLevelOptions {
 
 /** Options for reading from or writing to a custom configuration file. */
 export interface ConfigFileOptions {
-  /** Path to a custom configuration file. */
-  file: string;
+  /**
+   * Path to a custom configuration file.
+   *
+   * This can be a string path or a file URL.
+   */
+  file: string | URL;
 }
 
 /** Options for the {@linkcode IndexOperations.add} function. */
@@ -2466,7 +2481,7 @@ export interface SyncBackfillOptions {
  */
 export function git(options?: GitOptions): Git {
   let cachedVersion: string | undefined;
-  const directory = resolve(options?.directory ?? ".");
+  const directory = resolve(normalize(options?.directory ?? "."));
   const runOptions = {
     directory,
     ...options?.config && { config: options.config },
@@ -2503,12 +2518,19 @@ export function git(options?: GitOptions): Git {
             : options?.shared,
           { equals: true },
         ),
-        flag("--separate-git-dir", options?.separateGitDir, { equals: true }),
+        flag(
+          "--separate-git-dir",
+          pathArg(options?.separateGitDir),
+          { equals: true },
+        ),
         "--",
-        options?.directory,
+        pathArg(options?.directory),
       );
       const repo = git({
-        directory: resolve(directory, options?.directory ?? directory),
+        directory: resolve(
+          directory,
+          normalize(options?.directory ?? directory),
+        ),
       });
       if (options?.config) {
         for (const [key, value] of Object.entries(options.config)) {
@@ -2559,15 +2581,22 @@ export function git(options?: GitOptions): Git {
           options?.singleBranch,
         ),
         flag(["--tags", "--no-tags"], options?.tags),
-        flag("--separate-git-dir", options?.separateGitDir, { equals: true }),
+        flag(
+          "--separate-git-dir",
+          pathArg(options?.separateGitDir),
+          { equals: true },
+        ),
         urlArg(remote),
         "--",
-        options?.directory,
+        pathArg(options?.directory),
       );
       const match = output.match(/Cloning into '(?<directory>.+?)'\.\.\./);
       const cloned = options?.directory ?? match?.groups?.directory;
       assertExists(cloned, "Cannot determine cloned directory");
-      return git({ ...runOptions, directory: resolve(directory, cloned) });
+      return git({
+        ...runOptions,
+        directory: resolve(directory, normalize(cloned)),
+      });
     },
     config: {
       async list(options?: ConfigOptions) {
@@ -3912,6 +3941,11 @@ function versionedArgs(
   return found[1];
 }
 
+function pathArg(path: string | URL | undefined): string | undefined {
+  if (path === undefined) return undefined;
+  return normalize(path);
+}
+
 function urlArg(url: SyncRemoteOptions["remote"]): string;
 function urlArg(
   url: SyncRemoteOptions["remote"] | undefined,
@@ -4035,7 +4069,7 @@ function configFlags(config: Config | undefined, flag?: string): string[] {
 
 function configSourceFlag(options: ConfigOptions | undefined) {
   if (options === undefined) return undefined;
-  if ("file" in options) return flag("--file", options.file);
+  if ("file" in options) return flag("--file", pathArg(options.file));
   if (options.level === "global") return "--global";
   if (options.level === "system") return "--system";
   if (options.level === "local") return "--local";

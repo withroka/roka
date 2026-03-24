@@ -29,7 +29,7 @@
  * @module config
  */
 
-import { basename, dirname, join } from "@std/path";
+import { basename, dirname, join, normalize } from "@std/path";
 
 /**
  * A key-value store returned by the {@linkcode config} function.
@@ -52,10 +52,10 @@ export interface ConfigOptions {
    * user's home directory, in a directory whose name is derived from the
    * running application.
    *
-   * The configuration can be made in-memory by setting this value to
-   * `":memory:"`.
+   * This can be a string path, a file URL, or `":memory:"` for an in-memory
+   * configuration.
    */
-  path?: string;
+  path?: string | URL;
 }
 
 /**
@@ -115,7 +115,7 @@ export function config<T extends Record<string, unknown>>(
     if (path !== ":memory:") {
       await Deno.mkdir(dirname(path), { recursive: true });
     }
-    kv = await Deno.openKv(path);
+    kv = await Deno.openKv(normalize(path));
     return kv;
   }
   const config = {

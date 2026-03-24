@@ -154,7 +154,7 @@ export interface ReleaseAssets {
   /** List release assets. */
   list(): Promise<ReleaseAsset[]>;
   /** Upload an asset to the release. */
-  upload(file: string): Promise<ReleaseAsset>;
+  upload(file: string | URL): Promise<ReleaseAsset>;
 }
 
 /** A GitHub release asset with API operations. */
@@ -193,9 +193,11 @@ export interface RepositoryGetOptions {
    * The client will deduce the owner and repository name from the remote URL.
    * Pull requests will also use the local state, such as the current branch.
    *
+   * This can be a string path or a file URL.
+   *
    * @default {"."}
    */
-  directory?: string;
+  directory?: string | URL;
 }
 
 /** Options for the {@linkcode PullRequests.list} function. */

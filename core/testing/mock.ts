@@ -77,7 +77,14 @@
 
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { dirname, fromFileUrl, parse, resolve, toFileUrl } from "@std/path";
+import {
+  dirname,
+  fromFileUrl,
+  normalize,
+  parse,
+  resolve,
+  toFileUrl,
+} from "@std/path";
 import { type GetParametersFromProp, MockError, stub } from "@std/testing/mock";
 
 /**
@@ -110,9 +117,12 @@ export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>> {
 export interface MockOptions {
   /**
    * Mock output directory.
+   *
+   * This can be a string path or a file URL.
+   *
    * @default {"__mocks__"}
    */
-  dir?: string;
+  dir?: string | URL;
   /**
    * Mock mode. It defaults to `"replay"`, unless the `-u` or `--update` flag
    * is passed, in which case this will be set to `"update"`. This option
@@ -127,8 +137,10 @@ export interface MockOptions {
    * If both {@linkcode MockOptions.dir dir} and `path` are specified, the
    * `dir` option will be ignored, and the `path` option will be handled as
    * normal.
+   *
+   * This can be a string path or a file URL.
    */
-  path?: string;
+  path?: string | URL;
 }
 
 /**
@@ -380,9 +392,9 @@ function mockPath(
   const testFile = fromFileUrl(context.origin);
   const { dir, base } = parse(testFile);
   if (options?.path) {
-    return resolve(dir, options.path);
+    return resolve(dir, normalize(options.path));
   } else if (options?.dir) {
-    return resolve(dir, options.dir, `${base}.mock`);
+    return resolve(dir, normalize(options.dir), `${base}.mock`);
   } else {
     return resolve(dir, "__mocks__", `${base}.mock`);
   }
