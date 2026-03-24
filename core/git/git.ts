@@ -61,6 +61,7 @@ import {
   slidingWindows,
 } from "@std/collections";
 import { deepMerge } from "@std/collections/deep-merge";
+import { filterValues } from "@std/collections/filter-values";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
 import { canParse, greaterOrEqual, parse } from "@std/semver";
 
@@ -920,7 +921,7 @@ export interface User {
   email: string;
 }
 
-/** A user with attribution date. */
+/** An author or committer with date attribution. */
 export interface Attribution extends User {
   /** Date of the attribution. */
   date: Temporal.Instant;
@@ -1701,8 +1702,10 @@ export interface CommitCreateOptions extends MessageOptions, SignOptions {
    * @default {false}
    */
   allowEmptyMessage?: boolean;
-  /** Author who wrote the code. */
-  author?: User | undefined;
+  /** Author attribution. */
+  author?: User | Attribution | { date?: Temporal.Instant };
+  /** Committer attribution. */
+  committer?: User | Attribution | { date?: Temporal.Instant };
   /**
    * Commit the contents of the listed file or files instead of the staged
    * changes on index.
@@ -1930,6 +1933,8 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
   target?: Commitish;
   /** Replace existing tags instead of failing. */
   force?: boolean;
+  /** Tagger attribution. */
+  tagger?: User | Attribution | { date?: Temporal.Instant };
 }
 
 /**
@@ -3074,7 +3079,18 @@ export function git(options?: GitOptions): Git {
       },
       async create(options) {
         const output = await run(
-          runOptions,
+          {
+            ...runOptions,
+            env: {
+              ...options?.committer && "name" in options.committer &&
+                {
+                  GIT_COMMITTER_NAME: options?.committer?.name,
+                  GIT_COMMITTER_EMAIL: options?.committer?.email,
+                },
+              ...options?.committer && "date" in options.committer &&
+                { GIT_COMMITTER_DATE: dateArg(options?.committer) },
+            },
+          },
           "commit",
           flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
@@ -3083,6 +3099,7 @@ export function git(options?: GitOptions): Git {
           flag("--allow-empty", options?.allowEmpty),
           flag("--allow-empty-message", options?.allowEmptyMessage),
           flag("--author", userArg(options?.author)),
+          flag("--date", dateArg(options?.author)),
           flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
             equals: true,
           }),
@@ -3108,7 +3125,18 @@ export function git(options?: GitOptions): Git {
           if (commit && subject === undefined) subject = commit.subject;
         }
         const output = await run(
-          runOptions,
+          {
+            ...runOptions,
+            env: {
+              ...options?.committer && "name" in options.committer &&
+                {
+                  GIT_COMMITTER_NAME: options?.committer?.name,
+                  GIT_COMMITTER_EMAIL: options?.committer?.email,
+                },
+              ...options?.committer && "date" in options.committer &&
+                { GIT_COMMITTER_DATE: dateArg(options?.committer) },
+            },
+          },
           ["commit", "--amend"],
           flag("--message", subject, { equals: true }),
           flag("--message", body, { equals: true }),
@@ -3117,6 +3145,7 @@ export function git(options?: GitOptions): Git {
           flag("--allow-empty", options?.allowEmpty),
           flag("--no-edit", !edited),
           flag("--author", userArg(options?.author), { equals: true }),
+          flag("--date", dateArg(options?.author)),
           flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
             equals: true,
           }),
@@ -3345,7 +3374,18 @@ export function git(options?: GitOptions): Git {
           ? options.sign
           : undefined;
         await run(
-          runOptions,
+          {
+            ...runOptions,
+            env: {
+              ...options?.tagger && "name" in options.tagger &&
+                {
+                  GIT_COMMITTER_NAME: options?.tagger?.name,
+                  GIT_COMMITTER_EMAIL: options?.tagger?.email,
+                },
+              ...options?.tagger && "date" in options.tagger &&
+                { GIT_COMMITTER_DATE: dateArg(options?.tagger) },
+            },
+          },
           "tag",
           flag("--message", options?.subject, { equals: true }),
           flag("--message", options?.body, { equals: true }),
@@ -3869,6 +3909,7 @@ export function git(options?: GitOptions): Git {
 interface RunOptions {
   directory: string;
   config?: Config;
+  env?: Record<string, string | undefined>;
   versioned?: [...[string | undefined, string[]][]];
   allowCode?: number[];
   outputStderr?: boolean;
@@ -3878,7 +3919,7 @@ async function run(
   options: RunOptions,
   ...commandArgs: (string | string[] | undefined)[]
 ): Promise<string> {
-  const { directory, config, allowCode, outputStderr } = options;
+  const { directory, config, env, allowCode, outputStderr } = options;
   const runArgs = commandArgs.flat().filter((x) => x !== undefined);
   const fullArgs = [
     ...["-C", normalize(directory)],
@@ -3886,11 +3927,12 @@ async function run(
     "--no-pager",
     ...runArgs,
   ];
+  const filteredEnv = env && filterValues(env ?? {}, (x) => x !== undefined);
   const command = new Deno.Command("git", {
     args: fullArgs,
     stdin: "null",
     stdout: "piped",
-    env: { GIT_EDITOR: "true" },
+    env: { ...filteredEnv, GIT_EDITOR: "true" },
   });
   try {
     const { code, stdout, stderr } = await command.output();
@@ -3975,10 +4017,16 @@ function remoteArg(
 }
 
 function userArg(user: User): string;
-function userArg(user: User | undefined): string | undefined;
-function userArg(user: User | undefined): string | undefined {
-  if (user === undefined) return undefined;
+function userArg(user: Partial<Attribution> | undefined): string | undefined;
+function userArg(user: Partial<Attribution> | undefined): string | undefined {
+  if (user?.name === undefined) return undefined;
+  assertExists(user.email, "Email is required if name is provided");
   return `${user.name} <${user.email}>`;
+}
+
+function dateArg(user: Partial<Attribution> | undefined): string | undefined {
+  if (user?.date === undefined) return undefined;
+  return user.date.toString();
 }
 
 type Named = string | Remote | Branch | Tag;

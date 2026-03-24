@@ -14,27 +14,40 @@ Deno.test("testCommit() creates a commit with default data", () => {
   assertGreater(commit.short.length, 0);
   assertGreater(commit.author.name.length, 0);
   assertGreater(commit.author.email.length, 0);
+  assertGreater(commit.author.date.epochMilliseconds, 0);
   assertGreater(commit.committer.name.length, 0);
   assertGreater(commit.committer.email.length, 0);
+  assertGreater(commit.committer.date.epochMilliseconds, 0);
   assertGreater(commit.subject.length, 0);
   assertGreater(commit.body?.length, 0);
   assertExists(commit.trailers);
 });
 
 Deno.test("testCommit() creates a commit with custom data", () => {
+  const date1 = Temporal.Instant.fromEpochMilliseconds(111000);
+  const date2 = Temporal.Instant.fromEpochMilliseconds(222000);
   const commit = testCommit({
     subject: "custom-subject",
     body: "custom-body",
     author: {
       name: "custom-author-name",
       email: "custom-author-email",
-      date: Temporal.Instant.from("2026-01-01T00:00:00.000Z"),
+      date: date1,
+    },
+    committer: {
+      name: "custom-committer-name",
+      email: "custom-committer-email",
+      date: date2,
     },
   });
   assertEquals(commit.subject, "custom-subject");
   assertEquals(commit.body, "custom-body");
   assertEquals(commit.author.name, "custom-author-name");
   assertEquals(commit.author.email, "custom-author-email");
+  assertEquals(commit.author.date, date1);
+  assertEquals(commit.committer.name, "custom-committer-name");
+  assertEquals(commit.committer.email, "custom-committer-email");
+  assertEquals(commit.committer.date, date2);
 });
 
 Deno.test("tempRepository() creates a disposable repo", async () => {
