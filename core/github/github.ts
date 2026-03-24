@@ -39,7 +39,7 @@
 
 import type { components } from "@octokit/openapi-types/types";
 import { Octokit } from "@octokit/rest";
-import { type Git, git as gitRepo } from "@roka/git";
+import { type Git, git } from "@roka/git";
 import { assertExists } from "@std/assert";
 import { basename } from "@std/path";
 
@@ -189,10 +189,11 @@ export interface GitHubOptions {
 export interface RepositoryGetOptions {
   /**
    * Local directory for the repository.
-   * @default {"."}
    *
    * The client will deduce the owner and repository name from the remote URL.
    * Pull requests will also use the local state, such as the current branch.
+   *
+   * @default {"."}
    */
   directory?: string;
 }
@@ -288,18 +289,20 @@ function repositories(api: Octokit): Repositories {
     options?: RepositoryGetOptions,
   ): Repository | Promise<Repository> {
     if (typeof ownerOrOptions !== "string") options = ownerOrOptions;
-    const git = gitRepo(
-      options?.directory !== undefined ? { cwd: options.directory } : {},
-    );
+    const local = git({
+      ...options?.directory !== undefined
+        ? { directory: options.directory }
+        : {},
+    });
     if (typeof ownerOrOptions === "string") {
       assertExists(repo, "Missing repository name");
-      return repository(git, api, ownerOrOptions, repo);
+      return repository(local, api, ownerOrOptions, repo);
     }
     return (async () => {
-      const remote = await git.remote.current();
+      const remote = await local.remote.current();
       assertExists(remote, "Missing remote");
       const { owner, repo } = parseRemote(remote.fetch);
-      return repository(git, api, owner, repo);
+      return repository(local, api, owner, repo);
     })();
   }
   return { get };

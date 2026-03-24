@@ -365,7 +365,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
   try {
     const [all, headMaybe] = await Promise.all([
       releases(pkg, { limit: 1 }),
-      maybe(() => git({ cwd: pkg.root }).commit.head()),
+      maybe(() => git({ directory: pkg.root }).commit.head()),
     ]);
     const [latest] = all;
     const { value: head } = headMaybe;
@@ -440,7 +440,7 @@ export async function releases(
   const { limit, prerelease } = options ?? {};
   if (limit && limit < 0) throw RangeError("limit must be non-negative");
   const tags = (await git({
-    cwd: pkg.directory,
+    directory: pkg.directory,
     config: { "versionsort.suffix": ["-pre"] },
   }).tag
     .list({ name: `${pkg.name}@*`, sort: "version" }))
@@ -481,7 +481,7 @@ async function* historical(
   pkg: Package,
   before: string | undefined,
 ): AsyncIterable<Release> {
-  const repo = git({ cwd: pkg.root });
+  const repo = git({ directory: pkg.root });
   const path = relative(pkg.root, join(pkg.directory, "deno.json"));
   while (true) {
     // deno-lint-ignore no-await-in-loop
@@ -548,7 +548,7 @@ export async function commits(
   pkg: Package,
   options?: CommitOptions,
 ): Promise<ConventionalCommit[]> {
-  const log = await git({ cwd: pkg.root }).commit.log(options?.range);
+  const log = await git({ directory: pkg.root }).commit.log(options?.range);
   return log
     .map((c) => conventional(c))
     // match scope only on workspaces

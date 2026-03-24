@@ -131,7 +131,7 @@ export async function bump(
 async function checkDirty(packages: Package[], options?: BumpOptions) {
   const [pkg] = packages;
   if (!pkg) return;
-  const repo = options?.repo?.git ?? git({ cwd: pkg.root });
+  const repo = options?.repo?.git ?? git({ directory: pkg.root });
   const status = await repo.diff.status({
     path: packages.map((pkg) => join(pkg.directory, "deno.json")),
   });

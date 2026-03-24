@@ -16,7 +16,7 @@ Deno.test("bump() minor updates released package", async () => {
       { subject: "feat: new feature" },
     ],
   });
-  const repo = git({ cwd: pkg.root });
+  const repo = git({ directory: pkg.root });
   const commit = await repo.commit.head();
   const pr = await bump([pkg]);
   assertEquals(pr, undefined);
@@ -32,7 +32,7 @@ Deno.test("bump() minor updates unreleased package", async () => {
     config: { name: "@scope/name" },
     commits: [{ subject: "feat: new feature" }],
   });
-  const repo = git({ cwd: pkg.root });
+  const repo = git({ directory: pkg.root });
   const commit = await repo.commit.head();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.1.0-pre.1+${commit.short}`);
@@ -43,7 +43,7 @@ Deno.test("bump() patch updates unreleased package", async () => {
     config: { name: "@scope/name" },
     commits: [{ subject: "fix: bug fix" }],
   });
-  const repo = git({ cwd: pkg.root });
+  const repo = git({ directory: pkg.root });
   const commit = await repo.commit.head();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
@@ -54,7 +54,7 @@ Deno.test("bump() patch updates package with unstable changes", async () => {
     config: { name: "@scope/name" },
     commits: [{ subject: "feat(unstable): new unstable feature" }],
   });
-  const repo = git({ cwd: pkg.root });
+  const repo = git({ directory: pkg.root });
   const commit = await repo.commit.head();
   await bump([pkg]);
   assertEquals(pkg.config.version, `0.0.1-pre.1+${commit.short}`);
@@ -111,7 +111,7 @@ Deno.test("bump() rejects package with modified config file", async () => {
     ],
   });
   const path = join(pkg.directory, "deno.json");
-  const repo = git({ cwd: pkg.root });
+  const repo = git({ directory: pkg.root });
   await repo.index.add(path);
   await repo.commit.create({ subject: "chore: update deno.json" });
   await Deno.writeTextFile(
@@ -215,7 +215,7 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
       { subject: "fix: force pushed" },
     ],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   const short = (await repo.git.commit.head()).short;
   const current = await repo.git.branch.current();
   const pr = await bump([pkg], {
@@ -268,7 +268,7 @@ Deno.test("bump({ pr }) can update a pull request", async () => {
       { subject: "feat: new feature (#42)" },
     ],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   const existing = fakePullRequest({
     repo,
     number: 42,
@@ -304,7 +304,7 @@ Deno.test("bump({ pr }) creates a pull request against the current branch", asyn
     repo: { clone: remote },
     commits: [{ subject: "feat: new feature" }],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   const pr = await bump([pkg], {
     release: true,
     pr: true,
@@ -335,7 +335,7 @@ Deno.test("bump({ pr }) rejects if pull request branch exists locally", async ()
       { subject: "fix: force pushed" },
     ],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   await repo.git.branch.create(`automated/bump-${pkg.name}`);
   await assertRejects(() => bump([pkg], { repo, pr: true }), GitError);
 });
@@ -348,7 +348,7 @@ Deno.test("bump({ draft }) can create a draft pull request", async () => {
     repo: { clone: remote },
     commits: [{ subject: "feat: new feature" }],
   });
-  const repo = fakeRepository({ git: git({ cwd: pkg.root }) });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   const pr = await bump([pkg], {
     release: true,
     pr: true,
