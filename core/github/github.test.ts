@@ -4,7 +4,7 @@ import { tempRepository } from "@roka/git/testing";
 import { mockFetch } from "@roka/http/testing";
 import type { Mock } from "@roka/testing/mock";
 import { assertEquals, assertExists, assertObjectMatch } from "@std/assert";
-import { toFileUrl } from "@std/path/to-file-url";
+import { toFileUrl } from "@std/path";
 import { github, type PullRequest, type Release } from "./github.ts";
 
 function token(mock?: Mock<typeof fetch>) {
