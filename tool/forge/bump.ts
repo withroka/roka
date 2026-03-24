@@ -177,7 +177,7 @@ async function updateChangelog(
     [prepend, ...existing && [existing]].join("\n"),
   );
   // best effort formatting for the changelog file
-  await maybe(() => deno({ cwd: dirname(file) }).fmt([file]));
+  await maybe(() => deno({ directory: dirname(file) }).fmt([file]));
 }
 
 async function createPullRequest(
