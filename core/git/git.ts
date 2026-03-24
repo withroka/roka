@@ -42,7 +42,6 @@
  * @todo Add `git().maintenance.*`
  * @todo Add `git().hook.*`
  * @todo Add templates.
- * @todo Expose dates.
  * @todo Verify signatures.
  *
  * @module git
@@ -921,6 +920,12 @@ export interface User {
   email: string;
 }
 
+/** A user with attribution date. */
+export interface Attribution extends User {
+  /** Date of the attribution. */
+  date: Temporal.Instant;
+}
+
 /** A remote repository configured in a git repository. */
 export interface Remote {
   /** Remote name. */
@@ -1083,9 +1088,9 @@ export interface Commit {
   /** Parent commit hashes, if any. */
   parents?: string[];
   /** Author, who wrote the code. */
-  author: User;
+  author: Attribution;
   /** Committer, who created the commit. */
-  committer: User;
+  committer: Attribution;
   /** Commit subject, the first line of the commit message. */
   subject: string;
   /** Commit body, excluding the first line and trailers from the message. */
@@ -1107,7 +1112,7 @@ export interface Tag {
   /** Trailer values at the end of the tag message. */
   trailers?: Record<string, string>;
   /** Tagger, who created the tag. */
-  tagger?: User;
+  tagger?: Attribution;
 }
 
 /** A reference that recursively points to a commit object. */
@@ -4282,6 +4287,11 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
       fields: {
         name: { kind: "string", format: "%an" },
         email: { kind: "string", format: "%ae" },
+        date: {
+          kind: "string",
+          format: "%aI",
+          transform: (value) => Temporal.Instant.from(value),
+        },
       },
     },
     committer: {
@@ -4289,6 +4299,11 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
       fields: {
         name: { kind: "string", format: "%cn" },
         email: { kind: "string", format: "%ce" },
+        date: {
+          kind: "string",
+          format: "%cI",
+          transform: (value) => Temporal.Instant.from(value),
+        },
       },
     },
     subject: { kind: "string", format: "%s" },
@@ -4341,6 +4356,12 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
         email: {
           kind: "string",
           format: "%(if)%(object)%(then)%(taggeremail:trim)%(else)%00%(end)",
+        },
+        date: {
+          kind: "string",
+          format:
+            "%(if)%(object)%(then)%(taggerdate:iso-strict)%(else)%00%(end)",
+          transform: (value) => Temporal.Instant.from(value),
         },
       },
     },

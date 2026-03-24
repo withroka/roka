@@ -35,8 +35,16 @@ export function testCommit(data?: Partial<Commit>): Commit {
   return {
     hash: "hash",
     short: "short",
-    author: { name: "author-name", email: "author-email" },
-    committer: { name: "committer-name", email: "committer-email" },
+    author: {
+      name: "author-name",
+      email: "author-email",
+      date: Temporal.Instant.from("2026-01-01T00:00:00.000Z"),
+    },
+    committer: {
+      name: "committer-name",
+      email: "committer-email",
+      date: Temporal.Instant.from("2026-01-01T00:00:00.000Z"),
+    },
     subject: "subject",
     body: "body",
     trailers: { "co-authored-by:": "coauthor-name <coauthor-email>" },
