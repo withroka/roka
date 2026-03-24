@@ -61,6 +61,7 @@ import {
   slidingWindows,
 } from "@std/collections";
 import { deepMerge } from "@std/collections/deep-merge";
+import { filterValues } from "@std/collections/filter-values";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
 import { canParse, greaterOrEqual, parse } from "@std/semver";
 
@@ -3926,11 +3927,12 @@ async function run(
     "--no-pager",
     ...runArgs,
   ];
+  const filteredEnv = env && filterValues(env ?? {}, (x) => x !== undefined);
   const command = new Deno.Command("git", {
     args: fullArgs,
     stdin: "null",
     stdout: "piped",
-    env: { ...env, GIT_EDITOR: "true" },
+    env: { ...filteredEnv, GIT_EDITOR: "true" },
   });
   try {
     const { code, stdout, stderr } = await command.output();
@@ -4015,7 +4017,7 @@ function remoteArg(
 }
 
 function userArg(user: User): string;
-function userArg(user: Partial<Attribution> | undefined): undefined;
+function userArg(user: Partial<Attribution> | undefined): string | undefined;
 function userArg(user: Partial<Attribution> | undefined): string | undefined {
   if (user?.name === undefined) return undefined;
   assertExists(user.email, "Email is required if name is provided");
