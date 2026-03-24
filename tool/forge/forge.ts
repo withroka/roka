@@ -432,19 +432,17 @@ function titleCommand(context: ForgeOptions | undefined) {
       const packages = await workspace({
         ...context?.repo && { root: context?.repo.git.path() },
       });
+      const attribution = {
+        name: "",
+        email: "",
+        date: Temporal.Instant.fromEpochMilliseconds(0)
+          .toZonedDateTimeISO("UTC"),
+      };
       const commit = conventional({
         hash: "",
         short: "",
-        author: {
-          name: "",
-          email: "",
-          date: Temporal.Instant.fromEpochMilliseconds(0),
-        },
-        committer: {
-          name: "",
-          email: "",
-          date: Temporal.Instant.fromEpochMilliseconds(0),
-        },
+        author: attribution,
+        committer: attribution,
         subject: title,
       });
       if (

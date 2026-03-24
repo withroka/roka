@@ -921,11 +921,19 @@ export interface User {
   email: string;
 }
 
-/** An author or committer with date attribution. */
-export interface Attribution extends User {
-  /** Date of the attribution. */
-  date: Temporal.Instant;
+/** An author or committer with date. */
+export interface UserAndDate extends User {
+  /** Date of the commit or tag. */
+  date: Temporal.ZonedDateTime;
 }
+
+/** Different ways to set user and date on a commit or tag. */
+export type UserLike =
+  | User & { date?: InstantLike }
+  | { date?: InstantLike; name?: never; email?: never };
+
+/** An instant in time for commit and tag attribution. */
+export type InstantLike = Temporal.Instant | Temporal.ZonedDateTime;
 
 /** A remote repository configured in a git repository. */
 export interface Remote {
@@ -1089,9 +1097,9 @@ export interface Commit {
   /** Parent commit hashes, if any. */
   parents?: string[];
   /** Author, who wrote the code. */
-  author: Attribution;
+  author: UserAndDate;
   /** Committer, who created the commit. */
-  committer: Attribution;
+  committer: UserAndDate;
   /** Commit subject, the first line of the commit message. */
   subject: string;
   /** Commit body, excluding the first line and trailers from the message. */
@@ -1113,7 +1121,7 @@ export interface Tag {
   /** Trailer values at the end of the tag message. */
   trailers?: Record<string, string>;
   /** Tagger, who created the tag. */
-  tagger?: Attribution;
+  tagger?: UserAndDate;
 }
 
 /** A reference that recursively points to a commit object. */
@@ -1703,9 +1711,9 @@ export interface CommitCreateOptions extends MessageOptions, SignOptions {
    */
   allowEmptyMessage?: boolean;
   /** Author attribution. */
-  author?: User | Attribution | { date?: Temporal.Instant };
+  author?: UserLike;
   /** Committer attribution. */
-  committer?: User | Attribution | { date?: Temporal.Instant };
+  committer?: UserLike;
   /**
    * Commit the contents of the listed file or files instead of the staged
    * changes on index.
@@ -1934,7 +1942,7 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
   /** Replace existing tags instead of failing. */
   force?: boolean;
   /** Tagger attribution. */
-  tagger?: User | Attribution | { date?: Temporal.Instant };
+  tagger?: UserLike;
 }
 
 /**
@@ -3088,7 +3096,7 @@ export function git(options?: GitOptions): Git {
                   GIT_COMMITTER_EMAIL: options?.committer?.email,
                 },
               ...options?.committer && "date" in options.committer &&
-                { GIT_COMMITTER_DATE: dateArg(options?.committer) },
+                { GIT_COMMITTER_DATE: dateArg(options.committer.date) },
             },
           },
           "commit",
@@ -3130,11 +3138,11 @@ export function git(options?: GitOptions): Git {
             env: {
               ...options?.committer && "name" in options.committer &&
                 {
-                  GIT_COMMITTER_NAME: options?.committer?.name,
-                  GIT_COMMITTER_EMAIL: options?.committer?.email,
+                  GIT_COMMITTER_NAME: options.committer.name,
+                  GIT_COMMITTER_EMAIL: options.committer.email,
                 },
               ...options?.committer && "date" in options.committer &&
-                { GIT_COMMITTER_DATE: dateArg(options?.committer) },
+                { GIT_COMMITTER_DATE: dateArg(options.committer.date) },
             },
           },
           ["commit", "--amend"],
@@ -4017,16 +4025,28 @@ function remoteArg(
 }
 
 function userArg(user: User): string;
-function userArg(user: Partial<Attribution> | undefined): string | undefined;
-function userArg(user: Partial<Attribution> | undefined): string | undefined {
+function userArg(
+  user: Partial<UserLike> | { date?: InstantLike } | undefined,
+): string | undefined;
+function userArg(
+  user: Partial<UserLike> | { date?: InstantLike } | undefined,
+): string | undefined {
+  if (!user) return undefined;
+  if (!("name" in user)) return undefined;
   if (user?.name === undefined) return undefined;
   assertExists(user.email, "Email is required if name is provided");
   return `${user.name} <${user.email}>`;
 }
 
-function dateArg(user: Partial<Attribution> | undefined): string | undefined {
-  if (user?.date === undefined) return undefined;
-  return user.date.toString();
+function dateArg(
+  date: InstantLike | UserLike | undefined,
+): string | undefined {
+  if (date === undefined) return undefined;
+  if (date instanceof Temporal.Instant) return date.toString();
+  if (date instanceof Temporal.ZonedDateTime) {
+    return date.toString({ timeZoneName: "never" });
+  }
+  return dateArg(date.date);
 }
 
 type Named = string | Remote | Branch | Tag;
@@ -4256,6 +4276,8 @@ type FormatFieldDescriptor<T> =
 
 type FormatDescriptor<T> = { delimiter: string } & FormatFieldDescriptor<T>;
 
+const TIMEZONE_PATTERN = /[+-]\d\d:\d\d$/;
+
 const BRANCH_FORMAT: FormatDescriptor<Branch> = {
   delimiter: "<%(objectname)>",
   kind: "object",
@@ -4376,7 +4398,10 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
         date: {
           kind: "string",
           format: "%aI",
-          transform: (value) => Temporal.Instant.from(value),
+          transform: (value) =>
+            Temporal.Instant.from(value).toZonedDateTimeISO(
+              value.match(TIMEZONE_PATTERN)?.[0] || "UTC",
+            ),
         },
       },
     },
@@ -4388,7 +4413,10 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
         date: {
           kind: "string",
           format: "%cI",
-          transform: (value) => Temporal.Instant.from(value),
+          transform: (value) =>
+            Temporal.Instant.from(value).toZonedDateTimeISO(
+              value.match(TIMEZONE_PATTERN)?.[0] || "UTC",
+            ),
         },
       },
     },
@@ -4447,7 +4475,10 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
           kind: "string",
           format:
             "%(if)%(object)%(then)%(taggerdate:iso-strict)%(else)%00%(end)",
-          transform: (value) => Temporal.Instant.from(value),
+          transform: (value) =>
+            Temporal.Instant.from(value).toZonedDateTimeISO(
+              value.match(TIMEZONE_PATTERN)?.[0] || "UTC",
+            ),
         },
       },
     },
