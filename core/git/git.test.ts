@@ -4054,6 +4054,35 @@ Deno.test("git().commit.log({ skip }) skips a number of commits", async () => {
   assertEquals(await repo.commit.log({ skip: 1, limit: 1 }), [commit]);
 });
 
+Deno.test("git().commit.log({ since }) returns commits more recent than given date", async () => {
+  await using repo = await tempRepository();
+  const date = Temporal.Now.instant();
+  await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+    committer: { date: date.subtract({ hours: 2 }) },
+  });
+  await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+    committer: { date: date.subtract({ hours: 1 }) },
+  });
+  const commit3 = await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+    committer: { date: date.add({ hours: 1 }) },
+  });
+  const commit4 = await repo.commit.create({
+    subject: "commit4",
+    allowEmpty: true,
+    committer: { date: date.add({ hours: 2 }) },
+  });
+  assertEquals(
+    await repo.commit.log({ since: date }),
+    [commit4, commit3],
+  );
+});
+
 Deno.test("git().commit.log({ symmetric }) returns symmetric commit range", async () => {
   await using repo = await tempRepository();
   const commit1 = await repo.commit.create({
@@ -4068,7 +4097,10 @@ Deno.test("git().commit.log({ symmetric }) returns symmetric commit range", asyn
     subject: "commit3",
     allowEmpty: true,
   });
-  await repo.commit.create({ subject: "commit3", allowEmpty: true });
+  await repo.commit.create({
+    subject: "commit4",
+    allowEmpty: true,
+  });
   assertEquals(
     await repo.commit.log({ from: commit3, to: commit1, symmetric: true }),
     [commit3, commit2],
@@ -4126,6 +4158,35 @@ Deno.test("git().commit.log({ to }) interprets range as asymmetric", async () =>
   });
   await repo.commit.create({ subject: "commit4", allowEmpty: true });
   assertEquals(await repo.commit.log({ from: commit3, to: commit1 }), []);
+});
+
+Deno.test("git().commit.log({ until }) returns commits older than given date", async () => {
+  await using repo = await tempRepository();
+  const date = Temporal.Now.instant();
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+    committer: { date: date.subtract({ hours: 2 }) },
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+    committer: { date: date.subtract({ hours: 1 }) },
+  });
+  await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+    committer: { date: date.add({ hours: 1 }) },
+  });
+  await repo.commit.create({
+    subject: "commit4",
+    allowEmpty: true,
+    committer: { date: date.add({ hours: 2 }) },
+  });
+  assertEquals(
+    await repo.commit.log({ until: date }),
+    [commit2, commit1],
+  );
 });
 
 Deno.test("git().commit.head() rejects empty repository", async () => {
