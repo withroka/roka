@@ -77,6 +77,31 @@ export interface CompileOptions {
 /**
  * Compiles a package using the given options.
  *
+ * @example Compile a package for the current platform.
+ * ```ts
+ * import { compile } from "@roka/forge/compile";
+ * import { packageInfo } from "@roka/forge/workspace";
+ * (async () => {
+ *   const pkg = await packageInfo();
+ *   await compile(pkg, { install: true });
+ * });
+ * ```
+ *
+ * @example Compile with bundling and checksums.
+ * ```ts
+ * import { compile } from "@roka/forge/compile";
+ * import { packageInfo } from "@roka/forge/workspace";
+ * (async () => {
+ *   const pkg = await packageInfo();
+ *   const artifacts = await compile(pkg, {
+ *     target: ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin"],
+ *     bundle: true,
+ *     checksum: true,
+ *   });
+ *   return { artifacts };
+ * });
+ * ```
+ *
  * @param pkg Package to compile.
  * @throws {PackageError} If the package does not have a compile configuration.
  */
@@ -143,7 +168,18 @@ export async function compile(
   return artifacts;
 }
 
-/** Returns all compile targets supported by `deno compile`. */
+/**
+ * Returns all compile targets supported by `deno compile`.
+ *
+ * @example List available compile targets.
+ * ```ts
+ * import { targets } from "@roka/forge/compile";
+ * (async () => {
+ *   const available = await targets();
+ *   return { available };
+ * });
+ * ```
+ */
 export async function targets(): Promise<string[]> {
   const command = new Deno.Command("deno", { args: ["compile", "--target"] });
   const { success, stderr } = await command.output();

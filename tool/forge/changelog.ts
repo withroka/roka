@@ -127,6 +127,22 @@ export interface ChangelogOptions {
  * });
  * ```
  *
+ * @example Generate a changelog with commit formatting options.
+ * ```ts
+ * import { changelog } from "@roka/forge/changelog";
+ * import { packageInfo } from "@roka/forge/workspace";
+ * import { assertExists } from "@std/assert";
+ * (async () => {
+ *   const pkg = await packageInfo();
+ *   assertExists(pkg.changes);
+ *   const log = changelog(pkg.changes, {
+ *     content: { title: `${pkg.name}@${pkg.version}` },
+ *     commit: { sort: "importance", emoji: true, hash: true },
+ *   });
+ *   return { log };
+ * });
+ * ```
+ *
  * @param commits Commits that are used to generate the changelog.
  * @param options Options for generating the changelog.
  * @returns Markdown text.
