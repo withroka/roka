@@ -75,7 +75,7 @@ export interface CompileOptions {
 }
 
 /**
- * Compile a package using the given options.
+ * Compiles a package using the given options.
  *
  * @param pkg Package to compile.
  * @throws {PackageError} If the package does not have a compile configuration.

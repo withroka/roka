@@ -109,7 +109,7 @@ export interface ChangelogOptions {
 }
 
 /**
- * Generate Markdown text for a package changelog.
+ * Generates Markdown text for a package changelog.
  *
  * @example Generate a Markdown changelog.
  * ```ts
