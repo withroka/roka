@@ -952,10 +952,8 @@ function assertScopes(
   expected: string[],
   options?: ScopeOptions,
 ) {
-  return assertEquals(
-    scopes(pkg, conventional(testCommit({ subject: summary })), options),
-    expected,
-  );
+  const commit = conventional(testCommit({ subject: summary }));
+  return assertEquals(scopes(pkg, commit.scopes, options), expected);
 }
 
 Deno.test("scopes() returns matching scopes for workspace member", async () => {

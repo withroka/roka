@@ -2,7 +2,7 @@ import { testCommit } from "@roka/git/testing";
 import { assertEquals, assertExists } from "@std/assert";
 import { conventional } from "./conventional.ts";
 
-Deno.test("conventional() creates conventional commits", () => {
+Deno.test("conventional() creates conventional commits from full commit", () => {
   const commit = testCommit({ subject: "feat(scope): description" });
   assertExists(commit.trailers);
   assertEquals(conventional(commit), {
@@ -15,83 +15,79 @@ Deno.test("conventional() creates conventional commits", () => {
   });
 });
 
-Deno.test("conventional() accepts simple commits", () => {
-  const commit = testCommit({ subject: "description" });
-  assertEquals(conventional(commit), {
-    ...commit,
-    description: "description",
-    breaking: false,
-    ...commit.trailers && { footers: { ...commit.trailers } },
-  });
-});
-
-Deno.test("conventional() accepts commits without scope", () => {
-  const commit = testCommit({ subject: "feat: description" });
-  assertEquals(conventional(commit), {
-    ...commit,
-    type: "feat",
-    description: "description",
-    breaking: false,
-    ...commit.trailers && { footers: { ...commit.trailers } },
-  });
-});
-
-Deno.test("conventional() accepts empty scope", () => {
-  const commit = testCommit({ subject: "feat(): description" });
-  assertEquals(conventional(commit), {
-    ...commit,
-    type: "feat",
-    description: "description",
-    breaking: false,
-    scopes: [],
-    ...commit.trailers && { footers: { ...commit.trailers } },
-  });
-});
-
-Deno.test("conventional() accepts empty scopes", () => {
-  const commit = testCommit({ subject: "feat(,): description" });
-  assertEquals(conventional(commit), {
-    ...commit,
-    type: "feat",
-    description: "description",
-    breaking: false,
-    scopes: [],
-    ...commit.trailers && { footers: { ...commit.trailers } },
-  });
-});
-
-Deno.test("conventional() can create multiple scopes", () => {
-  const commit = testCommit({ subject: "feat(scope1,scope2): description" });
-  assertEquals(conventional(commit), {
-    ...commit,
-    type: "feat",
-    description: "description",
-    breaking: false,
-    scopes: ["scope1", "scope2"],
-    ...commit.trailers && { footers: { ...commit.trailers } },
-  });
-});
-
-Deno.test("conventional() accepts uppercase type and scopes", () => {
-  const commit = testCommit({ subject: "FEAT(SCOPE): description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+Deno.test("conventional() creates conventional commits from commit message", () => {
+  assertEquals(conventional({ subject: "feat(scope): description" }), {
+    subject: "feat(scope): description",
     type: "feat",
     description: "description",
     breaking: false,
     scopes: ["scope"],
-    ...commit.trailers && { footers: { ...commit.trailers } },
+  });
+});
+
+Deno.test("conventional() accepts simple commits", () => {
+  assertEquals(conventional({ subject: "description" }), {
+    subject: "description",
+    description: "description",
+    breaking: false,
+  });
+});
+
+Deno.test("conventional() accepts commits without scope", () => {
+  assertEquals(conventional({ subject: "feat: description" }), {
+    subject: "feat: description",
+    type: "feat",
+    description: "description",
+    breaking: false,
+  });
+});
+
+Deno.test("conventional() accepts empty scope", () => {
+  assertEquals(conventional({ subject: "feat(): description" }), {
+    subject: "feat(): description",
+    type: "feat",
+    description: "description",
+    breaking: false,
+    scopes: [],
+  });
+});
+
+Deno.test("conventional() accepts empty scopes", () => {
+  assertEquals(conventional({ subject: "feat(,): description" }), {
+    subject: "feat(,): description",
+    type: "feat",
+    description: "description",
+    breaking: false,
+    scopes: [],
+  });
+});
+
+Deno.test("conventional() can create multiple scopes", () => {
+  assertEquals(conventional({ subject: "feat(scope1,scope2): description" }), {
+    subject: "feat(scope1,scope2): description",
+    type: "feat",
+    description: "description",
+    breaking: false,
+    scopes: ["scope1", "scope2"],
+  });
+});
+
+Deno.test("conventional() accepts uppercase type and scopes", () => {
+  assertEquals(conventional({ subject: "FEAT(SCOPE): description" }), {
+    subject: "FEAT(SCOPE): description",
+    type: "feat",
+    description: "description",
+    breaking: false,
+    scopes: ["scope"],
   });
 });
 
 Deno.test("conventional() accepts no space after scope", () => {
-  const commit = testCommit({ subject: "feat:description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "feat:description" }), {
+    subject: "feat:description",
     type: "feat",
     description: "description",
     breaking: false,
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
@@ -110,25 +106,21 @@ Deno.test("conventional() accepts wild subject formatting", () => {
 });
 
 Deno.test("conventional() accepts scope with backticks", () => {
-  const commit = testCommit({ subject: "feat(`scope`): description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "feat(`scope`): description" }), {
+    subject: "feat(`scope`): description",
     type: "feat",
     description: "description",
     breaking: false,
     scopes: ["`scope`"],
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
 Deno.test("conventional() can create breaking commits", () => {
-  const commit = testCommit({ subject: "feat!: description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "feat!: description" }), {
+    subject: "feat!: description",
     type: "feat",
     description: "description",
     breaking: true,
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
@@ -177,93 +169,88 @@ Deno.test("conventional() breaking footer can contain whitespace", () => {
 });
 
 Deno.test("conventional() can create breaking commit with scope", () => {
-  const commit = testCommit({ subject: "feat(scope)!: description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "feat(scope)!: description" }), {
+    subject: "feat(scope)!: description",
     type: "feat",
     description: "description",
     breaking: true,
     scopes: ["scope"],
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
 Deno.test("conventional() can create breaking commit from type", () => {
-  const commit = testCommit({ subject: "BREAKING: description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "BREAKING: description" }), {
+    subject: "BREAKING: description",
     type: "breaking",
     description: "description",
     breaking: true,
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
 Deno.test("conventional() can create breaking commit from type with scope", () => {
-  const commit = testCommit({ subject: "BREAKING(scope): description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "BREAKING(scope): description" }), {
+    subject: "BREAKING(scope): description",
     type: "breaking",
     description: "description",
     breaking: true,
     scopes: ["scope"],
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
 Deno.test("conventional() does not accept lowercase breaking type", () => {
-  const commit = testCommit({ subject: "breaking: description" });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "breaking: description" }), {
+    subject: "breaking: description",
     type: "breaking",
     description: "description",
     breaking: false,
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
 Deno.test("conventional() commits must have a description", () => {
-  const commit = testCommit({ subject: "feat(scope): " });
-  assertEquals(conventional(commit), {
-    ...commit,
+  assertEquals(conventional({ subject: "feat(scope): " }), {
+    subject: "feat(scope): ",
     description: "feat(scope): ",
     breaking: false,
-    ...commit.trailers && { footers: { ...commit.trailers } },
   });
 });
 
 Deno.test("conventional() can parse footers", () => {
-  const commit = testCommit({
-    subject: "feat(scope): description",
-    body: "Detailed commit explanation.\n\nFixes #123\nCloses #456",
-    trailers: {},
-  });
-  assertEquals(conventional(commit), {
-    ...commit,
-    type: "feat",
-    description: "description",
-    breaking: false,
-    scopes: ["scope"],
-    footers: {
-      fixes: "123",
-      closes: "456",
+  assertEquals(
+    conventional({
+      subject: "feat(scope): description",
+      body: "Detailed commit explanation.\n\nFixes #123\nCloses #456",
+    }),
+    {
+      subject: "feat(scope): description",
+      body: "Detailed commit explanation.\n\nFixes #123\nCloses #456",
+      type: "feat",
+      description: "description",
+      breaking: false,
+      scopes: ["scope"],
+      footers: {
+        fixes: "123",
+        closes: "456",
+      },
     },
-  });
+  );
 });
 
 Deno.test("conventional() treats trailers as footers", () => {
-  const commit = testCommit({
-    subject: "feat(scope): description",
-    trailers: { "Signed-off-by": "author-name <author-email>" },
-  });
-  assertEquals(conventional(commit), {
-    ...commit,
-    type: "feat",
-    description: "description",
-    breaking: false,
-    scopes: ["scope"],
-    footers: {
-      "Signed-off-by": "author-name <author-email>",
+  assertEquals(
+    conventional({
+      subject: "feat(scope): description",
+      trailers: { "Signed-off-by": "author-name <author-email>" },
+    }),
+    {
+      subject: "feat(scope): description",
+      trailers: { "Signed-off-by": "author-name <author-email>" },
+      type: "feat",
+      description: "description",
+      breaking: false,
+      scopes: ["scope"],
+      footers: {
+        "Signed-off-by": "author-name <author-email>",
+      },
     },
-  });
+  );
 });

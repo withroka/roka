@@ -560,7 +560,9 @@ export async function commits(
   return log
     .map((c) => conventional(c))
     // match scope only on workspaces
-    .filter((c) => pkg.root === pkg.directory || scopes(pkg, c).length > 0)
+    .filter((c) =>
+      pkg.root === pkg.directory || scopes(pkg, c.scopes).length > 0
+    )
     .filter((c) => options?.breaking !== true || c.breaking)
     .filter((c) =>
       options?.types !== undefined
@@ -571,26 +573,25 @@ export async function commits(
 }
 
 /**
- * Returns matching scope strings for a commit or title against a package.
+ * Returns matching scope strings against a package.
  *
  * If the package is not a workspace member, non-scoped titles also match.
  *
  * @example Get scopes for a commit.
  * ```ts
- * import { assertGreater } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  * import { packageInfo, scopes } from "@roka/forge/workspace";
  * import { conventional } from "@roka/git/conventional";
- * import { testCommit } from "@roka/git/testing";
  * (async () => {
  *   const pkg = await packageInfo();
- *   const commit = testCommit({ subject: "feat: new feature" });
- *   assertGreater(scopes(pkg, conventional(commit)).length, 0);
+ *   const commit = conventional({ subject: "fix(name,other,*): bugfix" });
+ *   assertEquals(scopes(pkg, commit.scopes), ["name", "*"]);
  * });
  * ```
  */
 export function scopes(
   pkg: Package,
-  commit: ConventionalCommit,
+  scopes: string[] | undefined,
   options?: ScopeOptions,
 ): string[] {
   const { strict = false } = options ?? {};
@@ -603,8 +604,8 @@ export function scopes(
     ]
     : [];
   const single = pkg.root === pkg.directory;
-  if (single && !commit.scopes) return [""];
-  return commit.scopes?.filter((s) =>
+  if (single && !scopes?.length) return [""];
+  return scopes?.filter((s) =>
     s === "*" ||
     s === pkg.name ||
     (s.startsWith("*/") || s.startsWith(`${pkg.name}/`)) &&
@@ -664,7 +665,7 @@ function updateType(
 
 function isUnstable(pkg: Package, commit: ConventionalCommit) {
   if (!commit.scopes) return false;
-  const matched = scopes(pkg, commit);
+  const matched = scopes(pkg, commit.scopes);
   return matched.length > 0 &&
     matched.every((s) => (s === "unstable") || s.endsWith("/unstable"));
 }

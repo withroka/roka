@@ -43,6 +43,15 @@ export interface ConventionalCommit extends Commit {
   footers?: Record<string, string>;
 }
 
+/** Message fields of a {@linkcode Commit} object. */
+export type CommitMessage = Pick<Commit, "subject" | "body" | "trailers">;
+
+/** Message fields of a {@linkcode ConventionalCommit} object. */
+export type ConventionalCommitMessage = Pick<
+  ConventionalCommit,
+  keyof CommitMessage | Exclude<keyof ConventionalCommit, keyof Commit>
+>;
+
 /**
  * Creates a commit object with
  * {@link https://www.conventionalcommits.org Conventional Commit} details.
@@ -67,7 +76,29 @@ export interface ConventionalCommit extends Commit {
  * @param commit The commit object to convert, retrieved with {@linkcode git}.
  * @returns The commit object with conventional commit details.
  */
-export function conventional(commit: Commit): ConventionalCommit {
+export function conventional(commit: Commit): ConventionalCommit;
+
+/**
+ * Returns conventional commit details from commit message information.
+ *
+ * @example Retrieve conventional commit details from commit message.
+ * ```ts
+ * import { conventional } from "@roka/git/conventional";
+ * import { assertEquals, assertFalse } from "@std/assert";
+ * const commit = conventional({ subject: "feat(cli): add new command" });
+ * assertEquals(commit.type, "feat");
+ * assertEquals(commit.scopes, ["cli"]);
+ * assertFalse(commit.breaking);
+ * ```
+ *
+ * @param commit The commit message to convert.
+ * @returns The commit object with conventional commit details.
+ */
+export function conventional(commit: CommitMessage): ConventionalCommitMessage;
+
+export function conventional(
+  commit: Commit | CommitMessage,
+): ConventionalCommit | ConventionalCommitMessage {
   const footers = extractFooters(commit);
   const match = commit.subject?.match(
     /^(?:\s*?(?<type>[a-zA-Z]+)(?:\((?<scopes>[^()]*)\s*?\))?(?<exclamation>!?):\s*)?\s*?(?<description>[^\s].*)$/,
@@ -93,7 +124,9 @@ export function conventional(commit: Commit): ConventionalCommit {
   };
 }
 
-function extractFooters(commit: Commit): Record<string, string> | undefined {
+function extractFooters(
+  commit: CommitMessage,
+): Record<string, string> | undefined {
   const bodyLastParagraph = commit.body?.split("\n\n").pop();
   const bodyFooters = bodyLastParagraph?.split("\n")?.map((line) => {
     const match = line.match(/^\s*(?<key>.*?)(?<sep>:| #)\s*(?<value>.*)\s*$/);
