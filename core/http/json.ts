@@ -37,17 +37,17 @@ export interface Client {
     path: string,
     options?: JsonRequestOptions,
   ): Promise<Partial<T>>;
-  /** Sends a PATCH request with a JSON body and returns the parsed JSON response. */
+  /** Sends a PATCH request and returns the parsed JSON response. */
   patch<T>(
     path: string,
     options?: JsonRequestOptions & { body?: object },
   ): Promise<Partial<T>>;
-  /** Sends a POST request with a JSON body and returns the parsed JSON response. */
+  /** Sends a POST request and returns the parsed JSON response. */
   post<T>(
     path: string,
     options?: JsonRequestOptions & { body?: object },
   ): Promise<Partial<T>>;
-  /** Sends a PUT request with a JSON body and returns the parsed JSON response. */
+  /** Sends a PUT request and returns the parsed JSON response. */
   put<T>(
     path: string,
     options?: JsonRequestOptions & { body?: object },
