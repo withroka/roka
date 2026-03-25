@@ -105,7 +105,7 @@ export interface DenoCommands {
    */
   test(files: string[], options?: TestOptions): Promise<FileResult[]>;
   /**
-   * Compiles the given script into a self contained executable.
+   * Compiles the given script into a self-contained executable.
    *
    * Runtime permissions need to be specified in the `deno.json` configuration
    * file, as they are not passed through from this function.
@@ -392,7 +392,7 @@ export interface CompileOptions {
  * });
  * ```
  *
- * @example Compile a script into a self contained executable.
+ * @example Compile a script into a self-contained executable.
  * ```ts
  * import { deno } from "@roka/deno";
  * (async () => {
