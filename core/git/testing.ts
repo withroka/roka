@@ -56,10 +56,10 @@ export function testCommit(data?: Partial<Commit>): Commit {
 
 /** Options for the {@linkcode tempRepository} function. */
 export interface TempRepositoryOptions {
-  /** Clone the given repo instead of creating an empty one. */
+  /** Clones the given repo instead of creating an empty one. */
   clone?: string | URL | Git;
   /**
-   * Create a bare repository.
+   * Creates a bare repository.
    * @default {false}
    */
   bare?: boolean;

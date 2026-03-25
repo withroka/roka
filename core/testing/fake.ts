@@ -239,12 +239,12 @@ export interface FakeConsoleOutputOptions {
    * @default {false}
    */
   trimEnd?: boolean;
-  /** Wrap output with a string on both sides before returning it. */
+  /** Wraps output with a string on both sides before returning it. */
   wrap?: string;
 }
 
 /**
- * Create a fake replacement for the global `console` by overriding calls to
+ * Creates a fake replacement for the global `console` by overriding calls to
  * its log methods.
  *
  * Useful for verifying output from command-line tools.

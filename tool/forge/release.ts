@@ -47,14 +47,14 @@ export interface ReleaseOptions {
    * If not defined, the repository is determined from the package directories.
    */
   repo?: Repository;
-  /** Create a draft release. */
+  /** Creates a draft release. */
   draft?: boolean;
-  /** Use emoji in commit subjects. */
+  /** Uses emoji in commit subjects. */
   emoji?: boolean;
 }
 
 /**
- * Create a GitHub release from a package.
+ * Creates a GitHub release from a package.
  *
  * If a release already exists for the same package and version, it will be
  * updated.
