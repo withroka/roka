@@ -883,6 +883,9 @@ export function deno(options?: DenoOptions): DenoCommands {
           report: "debug",
           next: "coverage",
         }, {
+          patterns: [/^Missing transpiled source code for:/],
+          report: "debug",
+        }, {
           patterns: [/^$/],
         }],
       });
