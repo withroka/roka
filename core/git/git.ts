@@ -85,9 +85,33 @@ export interface Git {
   path(...parts: string[]): string;
   /** Returns the installed git version. */
   version(): Promise<string>;
-  /** Initializes a new git repository, or reinitialize an existing one. */
+  /**
+   * Initializes a new git repository, or reinitialize an existing one.
+   *
+   * @example Initialize a bare repository.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const repo = await git().init({ directory: "/path/to/repo", bare: true });
+   *   return { repo };
+   * });
+   * ```
+   */
   init(options?: InitOptions): Promise<Git>;
-  /** Clones a remote repository. */
+  /**
+   * Clones a remote repository.
+   *
+   * @example Clone a repository into a directory.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const repo = await git().clone("https://github.com/withroka/roka.git", {
+   *     directory: "/path/to/clone",
+   *   });
+   *   return { repo };
+   * });
+   * ```
+   */
   clone(remote: string | URL | Remote, options?: CloneOptions): Promise<Git>;
   /** Config operations. */
   config: ConfigOperations;
