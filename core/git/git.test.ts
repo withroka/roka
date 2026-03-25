@@ -4045,6 +4045,27 @@ Deno.test("git().commit.log({ pickaxe }) can match extended regular expressions"
   assertEquals(await repo.commit.log({ pickaxe: ".+\d?" }), [commit2, commit1]);
 });
 
+Deno.test("git().commit.log({ reverse }) returns commits in reverse order", async () => {
+  await using repo = await tempRepository();
+  const commit1 = await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+  });
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+  });
+  const commit3 = await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+  });
+  assertEquals(await repo.commit.log({ reverse: true }), [
+    commit1,
+    commit2,
+    commit3,
+  ]);
+});
+
 Deno.test("git().commit.log({ skip }) skips a number of commits", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create({
@@ -4106,6 +4127,68 @@ Deno.test("git().commit.log({ symmetric }) returns symmetric commit range", asyn
     await repo.commit.log({ from: commit3, to: commit1, symmetric: true }),
     [commit3, commit2],
   );
+});
+
+Deno.test("git().commit.log({ sort }) controls commit order", async () => {
+  await using repo = await tempRepository({ branch: "main" });
+  const date = Temporal.Now.instant();
+  await repo.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+    author: { date: date.subtract({ hours: 5 }) },
+    committer: { date: date.subtract({ hours: 5 }) },
+  });
+  await repo.branch.create("branch");
+  await repo.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+    author: { date: date.subtract({ hours: 2 }) },
+    committer: { date: date.subtract({ hours: 4 }) },
+  });
+  await repo.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+    author: { date: date.subtract({ hours: 1 }) },
+    committer: { date: date.subtract({ hours: 3 }) },
+  });
+  await repo.branch.switch("branch");
+  await repo.commit.create({
+    subject: "commit4",
+    allowEmpty: true,
+    author: { date: date.subtract({ hours: 4 }) },
+    committer: { date: date.subtract({ hours: 2 }) },
+  });
+  await repo.commit.create({
+    subject: "commit5",
+    allowEmpty: true,
+    author: { date: date.subtract({ hours: 3 }) },
+    committer: { date: date.subtract({ hours: 1 }) },
+  });
+  await repo.merge.with("main", { subject: "commit6" });
+  assertArrayObjectMatch(await repo.commit.log({ sort: "committer-date" }), [
+    { subject: "commit6" },
+    { subject: "commit5" },
+    { subject: "commit4" },
+    { subject: "commit3" },
+    { subject: "commit2" },
+    { subject: "commit1" },
+  ]);
+  assertArrayObjectMatch(await repo.commit.log({ sort: "author-date" }), [
+    { subject: "commit6" },
+    { subject: "commit3" },
+    { subject: "commit2" },
+    { subject: "commit5" },
+    { subject: "commit4" },
+    { subject: "commit1" },
+  ]);
+  assertArrayObjectMatch(await repo.commit.log({ sort: "topo" }), [
+    { subject: "commit6" },
+    { subject: "commit3" },
+    { subject: "commit2" },
+    { subject: "commit5" },
+    { subject: "commit4" },
+    { subject: "commit1" },
+  ]);
 });
 
 Deno.test("git().commit.log({ to }) returns commit ancestors", async () => {

@@ -1700,6 +1700,25 @@ export interface CommitLogOptions {
    * - `false`: only return non-merged commits
    */
   merges?: boolean;
+  /**
+   * Commit ordering.
+   *
+   * Children come before parents, regardless of the ordering method.
+   * The chosen method orders between commits that do not have an
+   * ancestor-descendant relationship.
+   *
+   * - `"author-date"`: order commits by author date
+   * - `"committer-date"`: order commits by committer date (default)
+   * - `"topo"`: avoid intermixing commits on multiple lines of history
+   *
+   * @default {"committer-date"}
+   */
+  sort?: "author-date" | "committer-date" | "topo";
+  /**
+   * Return commits in reverse order.
+   * @default {false}
+   */
+  reverse?: boolean;
 }
 
 /**
@@ -1900,7 +1919,7 @@ export interface BranchDeleteOptions {
 /** Options for the {@linkcode TagOperations.list} function. */
 export interface TagListOptions extends RefListOptions {
   /**
-   * Sort option.
+   * Tag ordering.
    *
    * Setting to `version` uses {@link https://semver.org semantic version}
    * order, returning the latest versions first.
@@ -3088,8 +3107,12 @@ export function git(options?: GitOptions): Git {
             flag("--max-count", options?.limit, { equals: true }),
             flag(["--merges", "--no-merges"], options?.merges),
             pickaxeFlags(options?.pickaxe),
+            flag("--reverse", options?.reverse),
             flag("--skip", options?.skip),
             flag("--since", dateArg(options?.since)),
+            flag("--date-order", options?.sort === "committer-date"),
+            flag("--author-date-order", options?.sort === "author-date"),
+            flag("--topo-order", options?.sort === "topo"),
             flag("--until", dateArg(options?.until)),
             rangeArg(options),
             "--",
