@@ -50,7 +50,7 @@ export interface DenoCommands {
    * Code blocks in documentation are also linted.
    *
    * @param files List of files to type check.
-   * @param options Options for formatting.
+   * @param options Options for type checking.
    * @returns Problems found type checking.
    * @throws {DenoError} If the command fails with no error message.
    */
