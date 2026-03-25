@@ -432,19 +432,7 @@ function titleCommand(context: ForgeOptions | undefined) {
       const packages = await workspace({
         ...context?.repo && { root: context?.repo.git.path() },
       });
-      const attribution = {
-        name: "",
-        email: "",
-        date: Temporal.Instant.fromEpochMilliseconds(0)
-          .toZonedDateTimeISO("UTC"),
-      };
-      const commit = conventional({
-        hash: "",
-        short: "",
-        author: attribution,
-        committer: attribution,
-        subject: title,
-      });
+      const commit = conventional({ subject: title });
       if (
         options.types && (!commit.type || !options.types.includes(commit.type))
       ) {
@@ -454,9 +442,8 @@ function titleCommand(context: ForgeOptions | undefined) {
         ].join("\n\n"));
       }
       for (const scope of commit.scopes ?? []) {
-        const scoped = { ...commit, scopes: [scope] };
         if (
-          !packages.some((pkg) => scopes(pkg, scoped, { strict: true }).length)
+          !packages.some((pkg) => scopes(pkg, [scope], { strict: true }).length)
         ) {
           const allowed = distinct(
             packages.map((pkg) => [

@@ -149,7 +149,7 @@ export function changelog(
         .map((x) => `${markdown.bullet}${x}`).join("\n"),
     ]
     : [];
-  let log = commits.map(conventional);
+  let log = commits.map((c) => conventional(c));
   if (options?.commit?.sort === "importance") log = sorted(log, byImportance);
   const blocks = [
     ...title ? [`${markdown.heading}${title}`] : [],
