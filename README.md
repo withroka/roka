@@ -13,18 +13,6 @@ toolkit for building and shipping packages.
 
 ## Components
 
-### core 🧩
-
-Shared libraries that extend [std](https://jsr.io/@std). Each package can be
-used on its own. See the [documentation](https://jsr.io/@roka) for more details.
-
-### flow 🍃
-
-A CLI that runs quality checks and unit tests for Deno projects. Running it
-without arguments verifies that checks and tests affected by unmerged changes
-pass across code and documentation blocks. See the package
-[documentation](https://jsr.io/@roka/flow) for details.
-
 ### forge ⚒️
 
 A CLI for managing Deno packages hosted on GitHub. It compiles binaries,
@@ -33,6 +21,18 @@ calculates versions, and creates GitHub releases from
 single-package repositories and monorepos using
 [workspaces](https://docs.deno.com/runtime/fundamentals/workspaces/). See the
 package [documentation](https://jsr.io/@roka/forge) for details.
+
+### flow 🍃
+
+A CLI that runs quality checks and unit tests for Deno projects. Running it
+without arguments verifies that checks and tests affected by unmerged changes
+pass across code and documentation blocks. See the package
+[documentation](https://jsr.io/@roka/flow) for details.
+
+### core 🧩
+
+Shared libraries that extend [std](https://jsr.io/@std). Each package can be
+used on its own. See the [documentation](https://jsr.io/@roka) for more details.
 
 ## Contributing
 
