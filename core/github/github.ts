@@ -247,7 +247,7 @@ export type ReleaseUpdateOptions = Partial<
  * ```ts
  * import { github } from "@roka/github";
  * (async () => {
- *   const repo = await github({ token: "TOKEN" }).repos.get();
+ *   const repo = await github({ token: "my-token" }).repos.get();
  *   const pulls = await repo.pulls.list();
  *   return { pulls };
  * });
@@ -270,6 +270,32 @@ export type ReleaseUpdateOptions = Partial<
  *   const repo = await github().repos.get();
  *   const pr = await repo.pulls.create({ title: "New PR" });
  *   return { pr };
+ * });
+ * ```
+ *
+ * @example Update and close a pull request.
+ * ```ts
+ * import { github } from "@roka/github";
+ * (async () => {
+ *   const repo = await github().repos.get();
+ *   const [pr] = await repo.pulls.list({ head: "my-branch" });
+ *   if (!pr) return;
+ *   const updated = await pr.update({ title: "Updated title" });
+ *   await updated.update({ closed: true });
+ * });
+ * ```
+ *
+ * @example Create a release and upload an asset.
+ * ```ts
+ * import { github } from "@roka/github";
+ * (async () => {
+ *   const repo = github().repos.get("owner", "repo");
+ *   const release = await repo.releases.create("v1.0.0", {
+ *     name: "Release v1.0.0",
+ *     body: "First release",
+ *   });
+ *   await release.assets.upload("dist/bundle.js");
+ *   return { release };
  * });
  * ```
  */
