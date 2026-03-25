@@ -79,7 +79,7 @@ export interface MockFetchOptions extends MockOptions {
  *
  * @param context The test context.
  * @param options Options for the mock.
- * @return A mock function that records and replays calls to the global `fetch`.
+ * @returns A mock function that records and replays calls to the global `fetch`.
  */
 export function mockFetch(
   context: Deno.TestContext,
