@@ -182,39 +182,146 @@ export interface ConfigOperations {
 
 /** Index operations from {@linkcode Git.index}. */
 export interface IndexOperations {
-  /** Stages files for commit. */
+  /**
+   * Stages files for commit.
+   *
+   * @example Stage a file for commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const repo = git();
+   *   await repo.index.add("file.txt");
+   * });
+   * ```
+   */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
-  /** Moves or renames a file, a directory, or a symlink. */
+  /**
+   * Moves or renames a file, a directory, or a symlink.
+   *
+   * @example Rename a file.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().index.move("old.txt", "new.txt");
+   * });
+   * ```
+   */
   move(
     source: string | string[],
     destination: string,
     options?: IndexMoveOptions,
   ): Promise<void>;
-  /** Restores files in the working tree and index from a source. */
+  /**
+   * Restores files in the working tree and index from a source.
+   *
+   * @example Discard working tree changes to a file.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().index.restore("file.txt");
+   * });
+   * ```
+   */
   restore(
     path: string | string[],
     options?: IndexRestoreOptions,
   ): Promise<void>;
-  /** Removes files or directories from the working tree and index. */
+  /**
+   * Removes files or directories from the working tree and index.
+   *
+   * @example Remove a file from the repository.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().index.remove("file.txt");
+   * });
+   * ```
+   */
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
 }
 
 /** Difference operations from {@linkcode Git.diff}. */
 export interface DiffOperations {
-  /** Returns the list of changed file paths with their status. */
+  /**
+   * Returns the list of changed file paths with their status.
+   *
+   * @example Check for staged changes.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const staged = await git().diff.status({ location: "index" });
+   *   return { staged };
+   * });
+   * ```
+   *
+   * @example Get changed files with diff stats between two tags.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const status = await git().diff.status({
+   *     from: "v1.0.0",
+   *     to: "v2.0.0",
+   *     stats: true,
+   *   });
+   *   return { status };
+   * });
+   * ```
+   */
   status(options?: DiffStatusOptions): Promise<Status[]>;
-  /** Returns the patch text for changes. */
+  /**
+   * Returns the patch text for changes.
+   *
+   * @example Get patch text for staged changes.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const patch = await git().diff.patch({ location: "index" });
+   *   return { patch };
+   * });
+   * ```
+   *
+   * @example Get patch text between two tags.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const patch = await git().diff.patch({ from: "v1.0.0", to: "v2.0.0" });
+   *   return { patch };
+   * });
+   * ```
+   */
   patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
 export interface IgnoreOperations {
-  /** Checks paths against gitignore list and returns the ignored patterns. */
+  /**
+   * Checks paths against gitignore list and returns the ignored patterns.
+   *
+   * @example Find which files are ignored.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const ignored = await git().ignore.filter(["src/main.ts", "dist/bundle.js"]);
+   *   return { ignored };
+   * });
+   * ```
+   */
   filter(
     path: string | string[],
     options?: IgnoreFilterOptions,
   ): Promise<string[]>;
-  /** Checks paths against gitignore list and returns the unignored patterns. */
+  /**
+   * Checks paths against gitignore list and returns the unignored patterns.
+   *
+   * @example Find which files are not ignored.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const tracked = await git().ignore.omit(["src/main.ts", "dist/bundle.js"]);
+   *   return { tracked };
+   * });
+   * ```
+   */
   omit(
     path: string | string[],
     options?: IgnoreFilterOptions,
@@ -225,11 +332,31 @@ export interface IgnoreOperations {
 export interface FileOperations {
   /**
    * Reads a file as text.
+   *
+   * @example Read a file from a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const content = await git().file.text("README.md", { source: "HEAD~1" });
+   *   return { content };
+   * });
+   * ```
+   *
    * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
    */
   text(path: string, options?: FileOptions): Promise<string>;
   /**
    * Reads a file and parses it as JSON.
+   *
+   * @example Read a JSON config from a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const config = await git().file.json("deno.json", { source: "HEAD" });
+   *   return { config };
+   * });
+   * ```
+   *
    * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
    * @throws {@linkcode SyntaxError} If the file content is not valid JSON.
    */
