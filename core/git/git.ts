@@ -449,6 +449,7 @@ export const CONFIG_SCHEMA = {
   "author.name": ["string"],
   "blame.blankBoundary": ["boolean"],
   "blame.coloring": ["none", "repeatedLines", "highlightRecent"],
+  "blame.date": ["string"],
   "blame.ignoreRevsFile": ["array"],
   "blame.markIgnoredLines": ["boolean"],
   "blame.markUnblamableLines": ["boolean"],
@@ -698,6 +699,7 @@ export const CONFIG_SCHEMA = {
   "init.defaultRefFormat": ["files", "reftable"],
   "init.templateDir": ["string"],
   "log.abbrevCommit": ["boolean"],
+  "log.date": ["string"],
   "log.decorate": ["short", "full", "auto", "no"],
   "log.diffMerges": [
     "off",
@@ -4153,10 +4155,10 @@ function rangeArg(range: RevisionRange | undefined): string | undefined {
 function flag(
   flag: string | [string, string],
   value: boolean | number | string | string[] | undefined,
-  options?: { equals?: boolean; join?: boolean },
+  options?: { equals?: boolean },
 ): string[] {
   const pair = (k: string, v: string) =>
-    options?.equals ? [`${k}=${v}`] : options?.join ? [`${k}${v}`] : [k, v];
+    options?.equals ? [`${k}=${v}`] : [k, v];
   if (typeof flag === "string") flag = [flag, ""];
   if (value === true) return [flag[0]];
   if (value === false && flag[1]) return [flag[1]];
