@@ -268,7 +268,16 @@ export interface TagOperations {
   delete(tag: string | Tag): Promise<void>;
 }
 
-/** Merge operations from {@linkcode Git.merge}. */
+/**
+ * Merge operations from {@linkcode Git.merge}.
+ *
+ * The merge process can be followed with the returned {@linkcode Merge}
+ * object. The functions will return `undefined` if the merge operation
+ * completes successfully.
+ *
+ * If an unexpected error occurs during the merge process, a
+ * {@linkcode GitError} will be thrown, after aborting the merge.
+ */
 export interface MergeOperations {
   /** Returns the best common ancestor of two or more commits. */
   base(
