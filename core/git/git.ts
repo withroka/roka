@@ -1715,7 +1715,7 @@ export interface CommitLogOptions {
    */
   sort?: "author-date" | "committer-date" | "topo";
   /**
-   * Return commits in reverse order.
+   * Returns commits in reverse order.
    * @default {false}
    */
   reverse?: boolean;

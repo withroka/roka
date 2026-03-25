@@ -76,7 +76,7 @@ export interface ChangelogOptions {
      */
     hash?: boolean;
     /**
-     * List only pull request numbers as commit subjects.
+     * Lists only pull request numbers as commit subjects.
      *
      * This provides a nicely formatted changelog for GitHub pull requests, and
      * avoids listing commit titles twice.

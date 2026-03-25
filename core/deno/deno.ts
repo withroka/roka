@@ -56,7 +56,7 @@ export interface DenoCommands {
    */
   check(files: string[], options?: CheckOptions): Promise<FileResult[]>;
   /**
-   * Format given files using [`deno fmt`](https://docs.deno.com/go/fmt).
+   * Formats given files using [`deno fmt`](https://docs.deno.com/go/fmt).
    *
    * Code blocks in documentation are also formatted.
    *
@@ -67,7 +67,7 @@ export interface DenoCommands {
    */
   fmt(files: string[], options?: FmtOptions): Promise<FileResult[]>;
   /**
-   * Generate documentation data from given files using
+   * Generates documentation data from given files using
    * [`deno doc`](https://docs.deno.com/go/doc).
    *
    * @param files List of files to generate documentation from.
@@ -222,7 +222,7 @@ export interface OutputInfo extends Report {
 /** Callback options for `deno` commands. */
 export interface DenoOptions {
   /**
-   * Run the commands under a specific directory.
+   * Runs the commands under a specific directory.
    * @default {"."}
    */
   directory?: string | URL;
@@ -275,7 +275,7 @@ export interface DocOptions {
 /** Options for the {@linkcode Deno.fmt} function. */
 export interface FmtOptions {
   /**
-   * Check if the source files are formatted.
+   * Checks if the source files are formatted.
    *
    * If set to `true`, no actual formatting will be done. Instead, any files
    * that are not properly formatted will be reported as problems.
@@ -307,7 +307,7 @@ export interface LintOptions {
 /** Options for the {@linkcode Deno.test} function. */
 export interface TestOptions {
   /**
-   * Run tests with this string or RegExp pattern in the test name.
+   * Runs tests with this string or RegExp pattern in the test name.
    *
    * If a string is provided, it will not be regarded as a pattern even if it
    * is enclosed in slashes.
