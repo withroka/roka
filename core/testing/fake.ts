@@ -56,7 +56,7 @@
  * assertEquals(new TextDecoder().decode(stdout), "Hello, World!\n");
  * ```
  *
- * @todo Support `Deno.Spawn` family.
+ * @todo Support `Deno.spawn()` and family.
  *
  * @module fake
  */
