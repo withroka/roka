@@ -419,7 +419,7 @@ function moduleRows(pkg: Package): string[][] {
   const rows = Object.entries(modules(pkg)).map(([name, path]) =>
     console.row(dim, [
       name || "(default)",
-      relative(".", join(pkg.directory, path)),
+      relative(pkg.root, join(pkg.directory, path)),
     ])
   );
   return rows.length ? [...rows, []] : [];
