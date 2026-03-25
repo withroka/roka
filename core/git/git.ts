@@ -2144,7 +2144,7 @@ export interface SyncRemoteOptions {
  * (e.g. {@linkcode SyncOperations.push}).
  */
 export interface SyncOptions {
-  /** Either update all refs or don't update any.*/
+  /** Either updates all refs or doesn't update any. */
   atomic?: boolean;
   /** Prunes refs that no longer exist on the updated repository. */
   prune?: boolean;
