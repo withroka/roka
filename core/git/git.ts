@@ -929,11 +929,16 @@ export interface UserAndDate extends User {
 
 /** Different ways to set user and date on a commit or tag. */
 export type UserLike =
-  | User & { date?: InstantLike }
-  | { date?: InstantLike; name?: never; email?: never };
+  | User & { date?: DateLike }
+  | { date?: DateLike; name?: never; email?: never };
 
-/** An instant in time for commit and tag attribution. */
-export type InstantLike = Temporal.Instant | Temporal.ZonedDateTime;
+/**
+ * Accepted date and time values.
+ *
+ * This library supports only datetimes, but these are called "date" to be
+ * consistent with Git terminology.
+ */
+export type DateLike = Temporal.Instant | Temporal.ZonedDateTime;
 
 /** A remote repository configured in a git repository. */
 export interface Remote {
@@ -1678,6 +1683,10 @@ export interface CommitLogOptions {
   limit?: number;
   /** Number of commits to skip. */
   skip?: number;
+  /** Only commits more recent than given date. */
+  since?: DateLike;
+  /** Only commits older than given date. */
+  until?: DateLike;
   /** Filters for commits where the given pattern is added or deleted. */
   pickaxe?: string | Pickaxe;
   /** Follow only the first parent of merge commits. */
@@ -2156,7 +2165,7 @@ export interface SyncShallowOptions {
   shallow?:
     | { depth: number; exclude?: never; since?: never }
     | { exclude: string[]; depth?: never; since?: never }
-    | { since: InstantLike; depth?: never; exclude?: never };
+    | { since: DateLike; depth?: never; exclude?: never };
 }
 
 /**
@@ -3078,6 +3087,8 @@ export function git(options?: GitOptions): Git {
             flag(["--merges", "--no-merges"], options?.merges),
             pickaxeFlags(options?.pickaxe),
             flag("--skip", options?.skip),
+            flag("--since", dateArg(options?.since)),
+            flag("--until", dateArg(options?.until)),
             rangeArg(options),
             "--",
             options?.path,
@@ -4062,10 +4073,10 @@ function remoteArg(
 
 function userArg(user: User): string;
 function userArg(
-  user: Partial<UserLike> | { date?: InstantLike } | undefined,
+  user: Partial<UserLike> | { date?: DateLike } | undefined,
 ): string | undefined;
 function userArg(
-  user: Partial<UserLike> | { date?: InstantLike } | undefined,
+  user: Partial<UserLike> | { date?: DateLike } | undefined,
 ): string | undefined {
   if (!user) return undefined;
   if (!("name" in user)) return undefined;
@@ -4074,9 +4085,7 @@ function userArg(
   return `${user.name} <${user.email}>`;
 }
 
-function dateArg(
-  date: InstantLike | UserLike | undefined,
-): string | undefined {
+function dateArg(date: DateLike | UserLike | undefined): string | undefined {
   if (date === undefined) return undefined;
   if (date instanceof Temporal.Instant) return date.toString();
   if (date instanceof Temporal.ZonedDateTime) {
