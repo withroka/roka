@@ -52,10 +52,7 @@ export interface Client {
     path: string,
     options?: JsonRequestOptions & { body?: object },
   ): Promise<Partial<T>>;
-  /**
-   * Makes a GET request with optional JSON body and returns the response as a
-   * string.
-   */
+  /** Sends a GET request and returns the response as a string. */
   text(
     path: string,
     options?: JsonRequestOptions & { body?: object },
