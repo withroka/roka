@@ -31,8 +31,9 @@ pass across code and documentation blocks. See the package
 
 ### core 🧩
 
-Shared libraries that extend [std](https://jsr.io/@std). Each package can be
-used on its own. See the [documentation](https://jsr.io/@roka) for more details.
+Shared libraries for common tasks like network requests and testing. Each
+package can be used on its own. See the [documentation](https://jsr.io/@roka)
+for more details.
 
 ## Contributing
 
