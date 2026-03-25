@@ -622,13 +622,35 @@ export interface TagOperations {
  * {@linkcode GitError} will be thrown, after aborting the merge.
  */
 export interface MergeOperations {
-  /** Returns the best common ancestor of two or more commits. */
+  /**
+   * Returns the best common ancestor of two or more commits.
+   *
+   * @example Find the common ancestor of two branches.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const base = await git().merge.base("main", "my-feature");
+   *   return { base };
+   * });
+   * ```
+   */
   base(
     first: Commitish,
     second: Commitish,
     ...rest: Commitish[]
   ): Promise<Commit | undefined>;
-  /** Merges given heads into current branch, and returns incomplete merges. */
+  /**
+   * Merges given heads into current branch, and returns incomplete merges.
+   *
+   * @example Merge a branch into the current branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const merge = await git().merge.with("my-feature");
+   *   if (merge) await git().merge.abort();
+   * });
+   * ```
+   */
   with(
     source: Commitish | Commitish[],
     options?: MergeWithOptions,
@@ -654,7 +676,18 @@ export interface MergeOperations {
  * {@linkcode GitError} will be thrown, after aborting the rebase.
  */
 export interface RebaseOperations {
-  /** Rebases heads onto given base. */
+  /**
+   * Rebases heads onto given base.
+   *
+   * @example Rebase the current branch onto main.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const rebase = await git().rebase.onto("main");
+   *   if (rebase) await git().rebase.abort();
+   * });
+   * ```
+   */
   onto(base: Commitish, options?: RebaseOptions): Promise<Rebase | undefined>;
   /** Continues an ongoing rebase operation with resolved conflicts. */
   continue(): Promise<Rebase | undefined>;
@@ -679,7 +712,18 @@ export interface RebaseOperations {
  * {@linkcode GitError} will be thrown, after aborting the cherry-pick.
  */
 export interface CherryPickOperations {
-  /** Applies one or more commits to the current branch. */
+  /**
+   * Applies one or more commits to the current branch.
+   *
+   * @example Cherry-pick a commit onto the current branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const pick = await git().cherrypick.apply("abc1234");
+   *   if (pick) await git().cherrypick.abort();
+   * });
+   * ```
+   */
   apply(
     commit: Commitish | Commitish[],
     options?: CherryPickOptions,
@@ -707,7 +751,18 @@ export interface CherryPickOperations {
  * {@linkcode GitError} will be thrown, after aborting the revert.
  */
 export interface RevertOperations {
-  /** Reverts one or more commits by creating revert commits. */
+  /**
+   * Reverts one or more commits by creating revert commits.
+   *
+   * @example Revert a commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const revert = await git().revert.apply("abc1234");
+   *   if (revert) await git().revert.abort();
+   * });
+   * ```
+   */
   apply(
     commit: Commitish | Commitish[],
     options?: RevertOptions,
