@@ -3767,6 +3767,7 @@ Deno.test("git().commit.log() handles configuration overrides", async () => {
       "format.pretty": "raw",
       "i18n.logOutputEncoding": "ascii",
       "log.abbrevCommit": true,
+      "log.date": "human",
       "log.decorate": "short",
       "log.follow": true,
       "log.mailmap": false,
