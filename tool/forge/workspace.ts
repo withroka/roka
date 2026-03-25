@@ -303,6 +303,24 @@ export interface ScopeOptions {
  * its configuration, this function will return all packages in that monorepo,
  * excluding its root. If the directory is not a monorepo, the function will
  * return the package in the directory.
+ *
+ * @example List all packages in a workspace.
+ * ```ts
+ * import { workspace } from "@roka/forge/workspace";
+ * (async () => {
+ *   const packages = await workspace();
+ *   return packages.map((pkg) => pkg.name);
+ * });
+ * ```
+ *
+ * @example Filter packages by name.
+ * ```ts
+ * import { workspace } from "@roka/forge/workspace";
+ * (async () => {
+ *   const packages = await workspace({ filters: ["my-package"] });
+ *   return { packages };
+ * });
+ * ```
  */
 export async function workspace(
   options?: WorkspaceOptions,
@@ -339,6 +357,15 @@ export async function workspace(
 
 /**
  * Returns information about a package.
+ *
+ * @example Get information about the current package.
+ * ```ts
+ * import { packageInfo } from "@roka/forge/workspace";
+ * (async () => {
+ *   const pkg = await packageInfo();
+ *   return { name: pkg.name, version: pkg.version };
+ * });
+ * ```
  *
  * @throws {PackageError} If the package configuration was malformed or release
  *                        versions could not be parsed from git tags.
