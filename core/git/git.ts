@@ -213,8 +213,7 @@ export interface IndexOperations {
    * ```ts
    * import { git } from "@roka/git";
    * (async () => {
-   *   const repo = git();
-   *   await repo.index.add("file.txt");
+   *   await git().index.add("file.txt");
    * });
    * ```
    */
@@ -2438,6 +2437,7 @@ export interface TagListOptions extends RefListOptions {
    * considered newer than the release versions. To change this behavior, set
    * the `"versionsort.suffix"` config option to the pre-release suffixes.
    *
+   * @example Semantic version sorting with pre-release suffixes.
    * ```ts
    * import { tempRepository } from "@roka/git/testing";
    * import { git } from "@roka/git";
