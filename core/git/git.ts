@@ -301,7 +301,10 @@ export interface IgnoreOperations {
    * ```ts
    * import { git } from "@roka/git";
    * (async () => {
-   *   const ignored = await git().ignore.filter(["src/main.ts", "dist/bundle.js"]);
+   *   const ignored = await git().ignore.filter([
+   *     "src/main.ts",
+   *     "dist/bundle.js",
+   *   ]);
    *   return { ignored };
    * });
    * ```
@@ -317,7 +320,10 @@ export interface IgnoreOperations {
    * ```ts
    * import { git } from "@roka/git";
    * (async () => {
-   *   const tracked = await git().ignore.omit(["src/main.ts", "dist/bundle.js"]);
+   *   const tracked = await git().ignore.omit([
+   *     "src/main.ts",
+   *     "dist/bundle.js",
+   *   ]);
    *   return { tracked };
    * });
    * ```
@@ -365,27 +371,106 @@ export interface FileOperations {
 
 /** Commit operations from {@linkcode Git.commit}. */
 export interface CommitOperations {
-  /** Returns the history of commits in the repository. */
+  /**
+   * Returns the history of commits in the repository.
+   *
+   * @example Get commit log between two references.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const log = await git().commit.log({ from: "v1.0.0", to: "v2.0.0" });
+   *   return { log };
+   * });
+   * ```
+   */
   log(options?: CommitLogOptions): Promise<Commit[]>;
   /**
    * Returns the commit at the tip of `HEAD`.
+   *
+   * @example Get the latest commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const head = await git().commit.head();
+   *   return { head };
+   * });
+   * ```
+   *
    * @throws {@linkcode GitError} If there are no commits.
    */
   head(): Promise<Commit>;
-  /** Returns a specific commit by its reference. */
+  /**
+   * Returns a specific commit by its reference.
+   *
+   * @example Look up a commit by hash.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const commit = await git().commit.get("abc1234");
+   *   return { commit };
+   * });
+   * ```
+   */
   get(ref: Commitish): Promise<Commit | undefined>;
-  /** Creates a new commit in the repository. */
+  /**
+   * Creates a new commit in the repository.
+   *
+   * @example Create a commit with a message.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const commit = await git().commit.create({
+   *     subject: "feat: add feature",
+   *   });
+   *   return { commit };
+   * });
+   * ```
+   */
   create(options?: CommitCreateOptions): Promise<Commit>;
-  /** Amends the last commit in the repository. */
+  /**
+   * Amends the last commit in the repository.
+   *
+   * @example Amend the last commit with a new message.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const commit = await git().commit.amend({
+   *     subject: "fix: corrected typo",
+   *   });
+   *   return { commit };
+   * });
+   * ```
+   */
   amend(options?: CommitCreateOptions): Promise<Commit>;
 }
 
 /** Branch operations from {@linkcode Git.branch}. */
 export interface BranchOperations {
-  /** Lists branches in the repository alphabetically. */
+  /**
+   * Lists branches in the repository alphabetically.
+   *
+   * @example List local branches.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branches = await git().branch.list({ type: "local" });
+   *   return { branches };
+   * });
+   * ```
+   */
   list(options?: BranchListOptions): Promise<Branch[]>;
   /**
    * Returns the current branch name.
+   *
+   * @example Get the current branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.current();
+   *   return { branch };
+   * });
+   * ```
+   *
    * @throws {@linkcode GitError} If `HEAD` is detached.
    */
   current(): Promise<Branch>;
@@ -394,18 +479,63 @@ export interface BranchOperations {
     name: string | Branch,
     options?: BranchGetOptions,
   ): Promise<Branch | undefined>;
-  /** Creates a branch. */
+  /**
+   * Creates a branch.
+   *
+   * @example Create a branch from a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.create("my-feature", {
+   *     target: "HEAD~1",
+   *   });
+   *   return { branch };
+   * });
+   * ```
+   */
   create(name: string, options?: BranchCreateOptions): Promise<Branch>;
-  /** Switches to an existing or new branch. */
+  /**
+   * Switches to an existing or new branch.
+   *
+   * @example Switch to an existing branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.switch("my-feature");
+   *   return { branch };
+   * });
+   * ```
+   */
   switch(
     branch: string | Branch,
     options?: BranchSwitchOptions,
   ): Promise<Branch>;
   /** Switches to a commit detached from any branch. */
   detach(options?: BranchDetachOptions): Promise<void>;
-  /** Resets the current branch head to a specified state. */
+  /**
+   * Resets the current branch head to a specified state.
+   *
+   * @example Hard reset to a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().branch.reset({ target: "HEAD~3", mode: "hard" });
+   * });
+   * ```
+   */
   reset(options?: BranchResetOptions): Promise<void>;
-  /** Renames a branch. */
+  /**
+   * Renames a branch.
+   *
+   * @example Rename a branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.move("old-name", "new-name");
+   *   return { branch };
+   * });
+   * ```
+   */
   move(
     branch: string | Branch,
     name: string,
@@ -421,19 +551,63 @@ export interface BranchOperations {
   track(branch: string | Branch, upstream: string): Promise<Branch>;
   /** Removes the upstream branch for a given branch. */
   untrack(branch: string | Branch): Promise<Branch>;
-  /** Deletes a branch. */
+  /**
+   * Deletes a branch.
+   *
+   * @example Delete a merged branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().branch.delete("my-feature");
+   * });
+   * ```
+   */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
 }
 
 /** Tag operations from {@linkcode Git.tag}. */
 export interface TagOperations {
-  /** Lists all tags in the repository. */
+  /**
+   * Lists all tags in the repository.
+   *
+   * @example List tags matching a pattern.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const tags = await git().tag.list({ name: "v1.*" });
+   *   return { tags };
+   * });
+   * ```
+   */
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Retrieves a tag. */
   get(tag: string | Tag): Promise<Tag | undefined>;
-  /** Creates a new tag in the repository. */
+  /**
+   * Creates a new tag in the repository.
+   *
+   * @example Create an annotated tag.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const tag = await git().tag.create("v1.0.0", {
+   *     subject: "Release v1.0.0",
+   *   });
+   *   return { tag };
+   * });
+   * ```
+   */
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
-  /** Deletes a tag. */
+  /**
+   * Deletes a tag.
+   *
+   * @example Delete a tag.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().tag.delete("v1.0.0");
+   * });
+   * ```
+   */
   delete(tag: string | Tag): Promise<void>;
 }
 
