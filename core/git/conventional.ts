@@ -53,8 +53,8 @@ export type ConventionalCommitMessage = Pick<
 >;
 
 /**
- * Creates a commit object with
- * {@link https://www.conventionalcommits.org Conventional Commit} details.
+ * Parses {@link https://www.conventionalcommits.org Conventional Commit}
+ * details from a full {@linkcode Commit} object.
  *
  * @example Retrieve conventional commit details from a commit.
  * ```ts
@@ -79,7 +79,8 @@ export type ConventionalCommitMessage = Pick<
 export function conventional(commit: Commit): ConventionalCommit;
 
 /**
- * Returns conventional commit details from commit message information.
+ * Parses {@link https://www.conventionalcommits.org Conventional Commit}
+ * details from message fields only, without a full {@linkcode Commit}.
  *
  * @example Retrieve conventional commit details from commit message.
  * ```ts

@@ -27,35 +27,32 @@ import { request, type RequestOptions } from "./request.ts";
 
 /** A JSON client returned by the {@linkcode client} function. */
 export interface Client {
-  /** Makes a GET request. */
+  /** Sends a GET request and returns the parsed JSON response. */
   get<T>(
     path: string,
     options?: JsonRequestOptions,
   ): Promise<Partial<T>>;
-  /** Makes a DELETE request. */
+  /** Sends a DELETE request and returns the parsed JSON response. */
   delete<T>(
     path: string,
     options?: JsonRequestOptions,
   ): Promise<Partial<T>>;
-  /** Makes a PATCH request. */
+  /** Sends a PATCH request and returns the parsed JSON response. */
   patch<T>(
     path: string,
     options?: JsonRequestOptions & { body?: object },
   ): Promise<Partial<T>>;
-  /** Makes a POST request. */
+  /** Sends a POST request and returns the parsed JSON response. */
   post<T>(
     path: string,
     options?: JsonRequestOptions & { body?: object },
   ): Promise<Partial<T>>;
-  /** Makes a PUT request. */
+  /** Sends a PUT request and returns the parsed JSON response. */
   put<T>(
     path: string,
     options?: JsonRequestOptions & { body?: object },
   ): Promise<Partial<T>>;
-  /**
-   * Makes a GET request with optional JSON body and returns the response as a
-   * string.
-   */
+  /** Sends a GET request and returns the response as a string. */
   text(
     path: string,
     options?: JsonRequestOptions & { body?: object },

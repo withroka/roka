@@ -50,7 +50,7 @@ export interface DenoCommands {
    * Code blocks in documentation are also linted.
    *
    * @param files List of files to type check.
-   * @param options Options for formatting.
+   * @param options Options for type checking.
    * @returns Problems found type checking.
    * @throws {DenoError} If the command fails with no error message.
    */
@@ -122,13 +122,17 @@ export interface DenoCommands {
 export interface FileResult {
   /** The file the results belong to. */
   file: string;
-  /** Errors messages from the file. */
+  /** Error messages from the file. */
   problem: Problem[];
   /** Informational messages from the file. */
   info: Info[];
 }
 
-/** An error report generated from `deno` */
+/**
+ * Union of all error reports from `deno` commands.
+ *
+ * Discriminate on {@linkcode Report.kind} to determine the source.
+ */
 export type Problem =
   | DenoProblem
   | CheckProblem
@@ -136,12 +140,16 @@ export type Problem =
   | DiffProblem
   | TestProblem;
 
-/** An info report generated from `deno` */
+/**
+ * Union of all informational reports from `deno` commands.
+ *
+ * Discriminate on {@linkcode Report.kind} to determine the source.
+ */
 export type Info = TestInfo | OutputInfo;
 
 /** A generic report from `deno`. */
 export interface Report {
-  /** Report kind. */
+  /** Discriminant identifying the report type. */
   kind: string;
   /** The user facing message of the report. */
   message: string;
@@ -155,7 +163,7 @@ export interface Report {
 
 /** A generic error from `deno`. */
 export interface DenoProblem extends Report {
-  /** Error kind. */
+  /** Identifies a general `deno` error. */
   kind: "error";
   /** The reason for the error. */
   reason?: string;
@@ -163,7 +171,7 @@ export interface DenoProblem extends Report {
 
 /** A check error reported from `deno`. */
 export interface CheckProblem extends Report {
-  /** Check problem kind. */
+  /** Identifies a type-check error from `deno check`. */
   kind: "check";
   /** The type-check rule that generated the error. */
   rule: string;
@@ -173,7 +181,7 @@ export interface CheckProblem extends Report {
 
 /** A lint problem reported from `deno`. */
 export interface LintProblem extends Report {
-  /** Lint problem kind. */
+  /** Identifies a lint violation from `deno lint`. */
   kind: "lint";
   /** The lint rule that generated the problem. */
   rule: string;
@@ -183,13 +191,13 @@ export interface LintProblem extends Report {
 
 /** A diff problem reported from `deno fmt --check`. */
 export interface DiffProblem extends Report {
-  /** Diff problem kind. */
+  /** Identifies a formatting diff from `deno fmt --check`. */
   kind: "diff";
 }
 
 /** A test problem reported from `deno`. */
 export interface TestProblem extends Report {
-  /** Test problem kind. */
+  /** Identifies a test failure from `deno test`. */
   kind: "failure";
   /** The name of the test or step. */
   test: [string, ...string[]];
@@ -197,7 +205,7 @@ export interface TestProblem extends Report {
 
 /** A test information reported from `deno`. */
 export interface TestInfo extends Report {
-  /** Test info kind. */
+  /** Identifies a test result from `deno test`. */
   kind: "test";
   /** The name of the test or step. */
   test: [string, ...string[]];
@@ -213,7 +221,7 @@ export interface TestInfo extends Report {
 
 /** An overall output report from `deno`. */
 export interface OutputInfo extends Report {
-  /** Output info kind. */
+  /** Identifies overall output from a `deno` command. */
   kind: "output";
   /** Output from the run. */
   output: string;
