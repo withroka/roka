@@ -6333,12 +6333,38 @@ Deno.test("git().tag.list({ pointsAt }) returns tags that point to a commit", as
   assertEquals(await repo.tag.list({ pointsAt: commit2 }), [tag2]);
 });
 
-Deno.test("git().tag.list({ sort }) can sort by version", async () => {
+Deno.test("git().tag.list({ sort }) controls tag order", async () => {
   await using repo = await tempRepository();
   await repo.commit.create({ subject: "commit", allowEmpty: true });
-  const tag100 = await repo.tag.create("v1.0.0");
-  const tag201 = await repo.tag.create("v2.0.1");
-  const tag200 = await repo.tag.create("v2.0.0");
+  const date = Temporal.Now.instant();
+  const tag201 = await repo.tag.create("v2.0.1", {
+    subject: "subject1",
+  });
+  await repo.commit.create({
+    subject: "commit",
+    allowEmpty: true,
+    committer: { date: date.subtract({ hours: 2 }) },
+  });
+  const tag100 = await repo.tag.create("v1.0.0"); // creator date from commit
+  const tag200 = await repo.tag.create("v2.0.0", {
+    subject: "subject3",
+    tagger: { date: date.subtract({ hours: 3 }) },
+  });
+  assertEquals(await repo.tag.list(), [
+    tag100,
+    tag200,
+    tag201,
+  ]);
+  assertEquals(await repo.tag.list({ sort: "name" }), [
+    tag100,
+    tag200,
+    tag201,
+  ]);
+  assertEquals(await repo.tag.list({ sort: "date" }), [
+    tag200,
+    tag100,
+    tag201,
+  ]);
   assertEquals(await repo.tag.list({ sort: "version" }), [
     tag201,
     tag200,

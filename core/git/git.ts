@@ -1921,6 +1921,10 @@ export interface TagListOptions extends RefListOptions {
   /**
    * Tag ordering.
    *
+   * - `name`: order tags by name (default)
+   * - `date`: order tags by tag creator date
+   * - `version`: order tags by semantic versioning
+   *
    * Setting to `version` uses {@link https://semver.org semantic version}
    * order, returning the latest versions first.
    *
@@ -1953,8 +1957,10 @@ export interface TagListOptions extends RefListOptions {
    *   "v1.0.0",
    * ]);
    * ```
+   *
+   * @default {"name"}
    */
-  sort?: "version";
+  sort?: "name" | "date" | "version";
 }
 
 /** Options for the {@linkcode TagOperations.create} function. */
@@ -3412,6 +3418,8 @@ export function git(options?: GitOptions): Git {
           flag("--merged", commitArg(options?.merged)),
           flag("--no-merged", commitArg(options?.noMerged)),
           flag("--points-at", commitArg(options?.pointsAt)),
+          flag("--sort=refname", options?.sort === "name"),
+          flag("--sort=creatordate", options?.sort === "date"),
           flag("--sort=-version:refname", options?.sort === "version"),
           options?.name,
         );
