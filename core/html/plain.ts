@@ -17,12 +17,11 @@ import { DOMParser } from "@b-fuze/deno-dom";
  * Converts HTML content to plain text by removing tags and decoding special
  * characters.
  *
- * @example Basic usage.
+ * @example Decode HTML entities and strip tags.
  * ```ts
  * import { plain } from "@roka/html/plain";
  * import { assertEquals } from "@std/assert";
- * const text = plain("<p>Hello, <b>world</b>!</p>");
- * assertEquals(text, "Hello, world!");
+ * assertEquals(plain("<b>Hello</b> &amp; &lt;World&gt;!"), "Hello & <World>!");
  * ```
  */
 export function plain(html: string): string {
