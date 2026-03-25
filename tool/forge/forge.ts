@@ -296,7 +296,7 @@ import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { distinct, partition } from "@std/collections";
 import { bold, cyan, dim, gray, red, white, yellow } from "@std/fmt/colors";
-import { join } from "@std/path";
+import { join, relative } from "@std/path";
 import { console, ERROR, SUCCESS } from "../console.ts";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
@@ -417,7 +417,10 @@ function packageRow(pkg: Package): string[] {
 
 function moduleRows(pkg: Package): string[][] {
   const rows = Object.entries(modules(pkg)).map(([name, path]) =>
-    console.row(dim, [name || "(default)", join(pkg.directory, path)])
+    console.row(dim, [
+      name || "(default)",
+      relative(".", join(pkg.directory, path)),
+    ])
   );
   return rows.length ? [...rows, []] : [];
 }
