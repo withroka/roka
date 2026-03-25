@@ -122,7 +122,7 @@ export interface DenoCommands {
 export interface FileResult {
   /** The file the results belong to. */
   file: string;
-  /** Errors messages from the file. */
+  /** Error messages from the file. */
   problem: Problem[];
   /** Informational messages from the file. */
   info: Info[];
