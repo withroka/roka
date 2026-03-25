@@ -4521,9 +4521,7 @@ Deno.test("git().commit.create({ author }) can set author date with timezone", a
 });
 
 Deno.test("git().commit.create({ author }) can set author date without timezone", async () => {
-  await using repo = await tempRepository({
-    config: { "user.name": "name", "user.email": "email" },
-  });
+  await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
@@ -4568,23 +4566,17 @@ Deno.test(
   },
 );
 
-Deno.test(
-  "git().commit.create({ committer }) can set committer date without timezone",
-  { ignore: codespaces },
-  async () => {
-    await using repo = await tempRepository({
-      config: { "user.name": "name", "user.email": "email" },
-    });
-    await Deno.writeTextFile(repo.path("file"), "content");
-    await repo.index.add("file");
-    const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
-    const commit = await repo.commit.create({
-      subject: "commit",
-      committer: { date },
-    });
-    assertEquals(commit.committer.date.toInstant(), date);
-  },
-);
+Deno.test("git().commit.create({ committer }) can set committer date without timezone", async () => {
+  await using repo = await tempRepository();
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const commit = await repo.commit.create({
+    subject: "commit",
+    committer: { date },
+  });
+  assertEquals(commit.committer.date.toInstant(), date);
+});
 
 Deno.test("git().commit.create({ body }) creates a commit with body", async () => {
   await using repo = await tempRepository();
@@ -6529,9 +6521,7 @@ Deno.test("git().tag.create({ tagger }) can set tagger date with timezone", asyn
 });
 
 Deno.test("git().tag.create({ tagger }) can set tagger date without timezone", async () => {
-  await using repo = await tempRepository({
-    config: { "user.name": "name", "user.email": "email" },
-  });
+  await using repo = await tempRepository();
   await repo.commit.create({ subject: "commit", allowEmpty: true });
   const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
   const tag = await repo.tag.create("tag", {
