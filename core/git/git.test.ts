@@ -7264,6 +7264,56 @@ Deno.test("git().rebase.onto({ branch }) can rebase a specific branch and exclud
   assertEquals(await repo.commit.log(), [commit4, commit3, commit1]);
 });
 
+Deno.test("git().rebase.onto({ dates }) can reset author date", async () => {
+  await using repo = await tempRepository();
+  const date1 = Temporal.Instant.fromEpochMilliseconds(1000);
+  const date2 = Temporal.Instant.fromEpochMilliseconds(2000);
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    author: { date: date1 },
+    committer: { date: date2 },
+  });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  await repo.rebase.onto("main", { dates: "reset" });
+  assertEquals(await repo.rebase.active(), undefined);
+  const head = await repo.commit.head();
+  assertExists(head);
+  assertEquals(head.subject, "commit2");
+  assertNotEquals(head.author.date, commit2.author.date);
+  assertNotEquals(head.committer.date, commit2.committer.date);
+});
+
+Deno.test("git().rebase.onto({ dates }) can copy author date into committer date", async () => {
+  await using repo = await tempRepository();
+  const date1 = Temporal.Instant.fromEpochMilliseconds(1000);
+  const date2 = Temporal.Instant.fromEpochMilliseconds(2000);
+  await Deno.writeTextFile(repo.path("file1"), "content");
+  await repo.index.add("file1");
+  const commit1 = await repo.commit.create({ subject: "commit1" });
+  await repo.branch.switch("branch", { create: true });
+  await Deno.writeTextFile(repo.path("file2"), "content");
+  await repo.index.add("file2");
+  const commit2 = await repo.commit.create({
+    subject: "commit2",
+    author: { date: date1 },
+    committer: { date: date2 },
+  });
+  assertEquals(await repo.commit.log(), [commit2, commit1]);
+  await repo.rebase.onto("main", { dates: "committer-is-author" });
+  assertEquals(await repo.rebase.active(), undefined);
+  const head = await repo.commit.head();
+  assertExists(head);
+  assertEquals(head.subject, "commit2");
+  assertEquals(head.author.date, commit2.author.date);
+  assertEquals(head.committer.date, commit2.author.date);
+});
+
 Deno.test("git().rebase.onto({ empty }) can drop empty commits", async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file"), "content1");
