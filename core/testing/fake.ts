@@ -56,6 +56,8 @@
  * assertEquals(new TextDecoder().decode(stdout), "Hello, World!\n");
  * ```
  *
+ * @todo Support `Deno.spawn()` and family.
+ *
  * @module fake
  */
 
@@ -457,6 +459,19 @@ export interface FakeCommandOptions {
  * const proc2 = cmd.spawn();
  * assertEquals(await proc1.status, { success: true, code: 0, signal: null });
  * assertEquals(await proc2.status, { success: false, code: 1, signal: null });
+ * ```
+ *
+ * @example Verify which commands were invoked.
+ * ```ts
+ * import { fakeCommand } from "@roka/testing/fake";
+ * import { assertArrayObjectMatch } from "@roka/assert";
+ * using command = fakeCommand();
+ * await new Deno.Command("echo", { args: ["hello"] }).output();
+ * await new Deno.Command("cat", { args: ["file.txt"] }).output();
+ * assertArrayObjectMatch(command.runs, [
+ *   { command: "echo", options: { args: ["hello"] } },
+ *   { command: "cat", options: { args: ["file.txt"] } },
+ * ]);
  * ```
  *
  * @example Test an always-running process.

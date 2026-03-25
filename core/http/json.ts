@@ -88,7 +88,7 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
  *     state: string;
  *   }
  *   const api = client("https://api.github.com", {
- *     token: "TOKEN",
+ *     token: "my-token",
  *   });
  *   await api.post<Issue>(
  *     "/repos/owner/repo/issues",

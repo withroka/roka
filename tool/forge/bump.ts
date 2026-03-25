@@ -102,6 +102,29 @@ export interface BumpOptions {
  * When working with pull requests, if there is an open PR, it will be updated
  * with the new version information.
  *
+ * @example Bump versions and create a pull request.
+ * ```ts
+ * import { bump } from "@roka/forge/bump";
+ * import { workspace } from "@roka/forge/workspace";
+ * (async () => {
+ *   const packages = await workspace();
+ *   await bump(packages, { pr: true, draft: true });
+ * });
+ * ```
+ *
+ * @example Bump to a release version with changelog.
+ * ```ts
+ * import { bump } from "@roka/forge/bump";
+ * import { workspace } from "@roka/forge/workspace";
+ * (async () => {
+ *   const packages = await workspace();
+ *   await bump(packages, {
+ *     release: true,
+ *     changelog: "CHANGELOG.md",
+ *   });
+ * });
+ * ```
+ *
  * @param pkg Package to bump.
  * @throws {PackageError} If the package does not have an update.
  *

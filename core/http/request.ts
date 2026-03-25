@@ -169,6 +169,42 @@ export interface RequestOptions extends RequestInit {
  *       (https://github.com/denoland/deno/issues/3756).
  * @todo Remove cache polyfill when Deno supports it in `deno compile`.
  *
+ * @example Make a GET request.
+ * ```ts
+ * import { request } from "@roka/http/request";
+ * (async () => {
+ *   const response = await request("https://www.example.com");
+ *   return { response };
+ * });
+ * ```
+ *
+ * @example Make a request with a bearer token.
+ * ```ts
+ * import { request } from "@roka/http/request";
+ * (async () => {
+ *   const response = await request("https://api.example.com/data", {
+ *     token: "my-token",
+ *   });
+ *   return { response };
+ * });
+ * ```
+ *
+ * @example Cache a response and read from the cache.
+ * ```ts
+ * import { request } from "@roka/http/request";
+ * (async () => {
+ *   await request("https://www.example.com", {
+ *     cache: "reload",
+ *     cacheStore: "my-store",
+ *   });
+ *   const cached = await request("https://www.example.com", {
+ *     cache: "force-cache",
+ *     cacheStore: "my-store",
+ *   });
+ *   return { cached };
+ * });
+ * ```
+ *
  * @param input The URL or Request object to fetch.
  * @param options Standard `fetch` init, extended with {@linkcode RequestOptions}.
  * @returns The response object, if the request was successful, or the error is
@@ -274,7 +310,25 @@ async function writeCache(
   await store.put(request, response.clone());
 }
 
-/** Clears the client cache. */
+/**
+ * Clears the client cache.
+ *
+ * @example Clear the default cache.
+ * ```ts
+ * import { clearCache } from "@roka/http/request";
+ * (async () => {
+ *   await clearCache();
+ * });
+ * ```
+ *
+ * @example Clear a named cache store.
+ * ```ts
+ * import { clearCache } from "@roka/http/request";
+ * (async () => {
+ *   await clearCache("my-store");
+ * });
+ * ```
+ */
 export async function clearCache(cacheStore?: string): Promise<void> {
   await caches.delete(cacheStore ?? import.meta.url);
 }

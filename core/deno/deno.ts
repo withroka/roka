@@ -400,6 +400,17 @@ export interface CompileOptions {
  * });
  * ```
  *
+ * @example Stream problems as they are found.
+ * ```ts
+ * import { deno } from "@roka/deno";
+ * (async () => {
+ *   await deno({
+ *     // deno-lint-ignore no-console
+ *     onProblem: (problem) => console.error(problem.message),
+ *   }).lint(["file1.ts"]);
+ * });
+ * ```
+ *
  * @example Compile a script into a self-contained executable.
  * ```ts
  * import { deno } from "@roka/deno";

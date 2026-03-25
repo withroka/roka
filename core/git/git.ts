@@ -85,9 +85,33 @@ export interface Git {
   path(...parts: string[]): string;
   /** Returns the installed git version. */
   version(): Promise<string>;
-  /** Initializes a new git repository, or reinitialize an existing one. */
+  /**
+   * Initializes a new git repository, or reinitialize an existing one.
+   *
+   * @example Initialize a bare repository.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const repo = await git().init({ directory: "/path/to/repo", bare: true });
+   *   return { repo };
+   * });
+   * ```
+   */
   init(options?: InitOptions): Promise<Git>;
-  /** Clones a remote repository. */
+  /**
+   * Clones a remote repository.
+   *
+   * @example Clone a repository into a directory.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const repo = await git().clone("https://github.com/withroka/roka.git", {
+   *     directory: "/path/to/clone",
+   *   });
+   *   return { repo };
+   * });
+   * ```
+   */
   clone(remote: string | URL | Remote, options?: CloneOptions): Promise<Git>;
   /** Config operations. */
   config: ConfigOperations;
@@ -121,58 +145,212 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
-  /** Lists all git configuration values with validation. */
+  /**
+   * Lists all git configuration values with validation.
+   *
+   * @example List all local configuration values.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const config = await git().config.list({ level: "local" });
+   *   return { config };
+   * });
+   * ```
+   */
   list(options?: ConfigOptions): Promise<Config>;
-  /** Gets a git configuration value with validation. */
+  /**
+   * Gets a git configuration value with validation.
+   *
+   * @example Get the configured user name.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const name = await git().config.get("user.name");
+   *   return { name };
+   * });
+   * ```
+   */
   get<K extends ConfigKey>(
     key: K,
     options?: ConfigOptions,
   ): Promise<ConfigValue<K> | undefined>;
-  /** Sets a git configuration value. */
+  /**
+   * Sets a git configuration value.
+   *
+   * @example Disable GPG signing for commits.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().config.set("commit.gpgSign", false);
+   * });
+   * ```
+   */
   set<K extends ConfigKey>(
     key: K,
     value: ConfigValue<K>,
     options?: ConfigOptions,
   ): Promise<void>;
-  /** Removes a git configuration value. */
+  /**
+   * Removes a git configuration value.
+   *
+   * @example Remove a configuration value.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().config.unset("commit.gpgSign");
+   * });
+   * ```
+   */
   unset(key: ConfigKey, options?: ConfigOptions): Promise<void>;
 }
 
 /** Index operations from {@linkcode Git.index}. */
 export interface IndexOperations {
-  /** Stages files for commit. */
+  /**
+   * Stages files for commit.
+   *
+   * @example Stage a file for commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().index.add("file.txt");
+   * });
+   * ```
+   */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
-  /** Moves or renames a file, a directory, or a symlink. */
+  /**
+   * Moves or renames a file, a directory, or a symlink.
+   *
+   * @example Rename a file.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().index.move("old.txt", "new.txt");
+   * });
+   * ```
+   */
   move(
     source: string | string[],
     destination: string,
     options?: IndexMoveOptions,
   ): Promise<void>;
-  /** Restores files in the working tree and index from a source. */
+  /**
+   * Restores files in the working tree and index from a source.
+   *
+   * @example Discard working tree changes to a file.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().index.restore("file.txt");
+   * });
+   * ```
+   */
   restore(
     path: string | string[],
     options?: IndexRestoreOptions,
   ): Promise<void>;
-  /** Removes files or directories from the working tree and index. */
+  /**
+   * Removes files or directories from the working tree and index.
+   *
+   * @example Remove a file from the repository.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().index.remove("file.txt");
+   * });
+   * ```
+   */
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
 }
 
 /** Difference operations from {@linkcode Git.diff}. */
 export interface DiffOperations {
-  /** Returns the list of changed file paths with their status. */
+  /**
+   * Returns the list of changed file paths with their status.
+   *
+   * @example Check for staged changes.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const staged = await git().diff.status({ location: "index" });
+   *   return { staged };
+   * });
+   * ```
+   *
+   * @example Get changed files with diff stats between two tags.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const status = await git().diff.status({
+   *     from: "v1.0.0",
+   *     to: "v2.0.0",
+   *     stats: true,
+   *   });
+   *   return { status };
+   * });
+   * ```
+   */
   status(options?: DiffStatusOptions): Promise<Status[]>;
-  /** Returns the patch text for changes. */
+  /**
+   * Returns the patch text for changes.
+   *
+   * @example Get patch text for staged changes.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const patch = await git().diff.patch({ location: "index" });
+   *   return { patch };
+   * });
+   * ```
+   *
+   * @example Get patch text between two tags.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const patch = await git().diff.patch({ from: "v1.0.0", to: "v2.0.0" });
+   *   return { patch };
+   * });
+   * ```
+   */
   patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
 
 /** Ignore operations from {@linkcode Git.ignore}. */
 export interface IgnoreOperations {
-  /** Checks paths against gitignore list and returns the ignored patterns. */
+  /**
+   * Checks paths against gitignore list and returns the ignored patterns.
+   *
+   * @example Find which files are ignored.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const ignored = await git().ignore.filter([
+   *     "src/main.ts",
+   *     "dist/bundle.js",
+   *   ]);
+   *   return { ignored };
+   * });
+   * ```
+   */
   filter(
     path: string | string[],
     options?: IgnoreFilterOptions,
   ): Promise<string[]>;
-  /** Checks paths against gitignore list and returns the unignored patterns. */
+  /**
+   * Checks paths against gitignore list and returns the unignored patterns.
+   *
+   * @example Find which files are not ignored.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const tracked = await git().ignore.omit([
+   *     "src/main.ts",
+   *     "dist/bundle.js",
+   *   ]);
+   *   return { tracked };
+   * });
+   * ```
+   */
   omit(
     path: string | string[],
     options?: IgnoreFilterOptions,
@@ -183,11 +361,31 @@ export interface IgnoreOperations {
 export interface FileOperations {
   /**
    * Reads a file as text.
+   *
+   * @example Read a file from a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const content = await git().file.text("README.md", { source: "HEAD~1" });
+   *   return { content };
+   * });
+   * ```
+   *
    * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
    */
   text(path: string, options?: FileOptions): Promise<string>;
   /**
    * Reads a file and parses it as JSON.
+   *
+   * @example Read a JSON config from a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const config = await git().file.json("deno.json", { source: "HEAD" });
+   *   return { config };
+   * });
+   * ```
+   *
    * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
    * @throws {@linkcode SyntaxError} If the file content is not valid JSON.
    */
@@ -196,27 +394,106 @@ export interface FileOperations {
 
 /** Commit operations from {@linkcode Git.commit}. */
 export interface CommitOperations {
-  /** Returns the history of commits in the repository. */
+  /**
+   * Returns the history of commits in the repository.
+   *
+   * @example Get commit log between two references.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const log = await git().commit.log({ from: "v1.0.0", to: "v2.0.0" });
+   *   return { log };
+   * });
+   * ```
+   */
   log(options?: CommitLogOptions): Promise<Commit[]>;
   /**
    * Returns the commit at the tip of `HEAD`.
+   *
+   * @example Get the latest commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const head = await git().commit.head();
+   *   return { head };
+   * });
+   * ```
+   *
    * @throws {@linkcode GitError} If there are no commits.
    */
   head(): Promise<Commit>;
-  /** Returns a specific commit by its reference. */
+  /**
+   * Returns a specific commit by its reference.
+   *
+   * @example Look up a commit by hash.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const commit = await git().commit.get("abc1234");
+   *   return { commit };
+   * });
+   * ```
+   */
   get(ref: Commitish): Promise<Commit | undefined>;
-  /** Creates a new commit in the repository. */
+  /**
+   * Creates a new commit in the repository.
+   *
+   * @example Create a commit with a message.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const commit = await git().commit.create({
+   *     subject: "feat: add feature",
+   *   });
+   *   return { commit };
+   * });
+   * ```
+   */
   create(options?: CommitCreateOptions): Promise<Commit>;
-  /** Amends the last commit in the repository. */
+  /**
+   * Amends the last commit in the repository.
+   *
+   * @example Amend the last commit with a new message.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const commit = await git().commit.amend({
+   *     subject: "fix: corrected typo",
+   *   });
+   *   return { commit };
+   * });
+   * ```
+   */
   amend(options?: CommitCreateOptions): Promise<Commit>;
 }
 
 /** Branch operations from {@linkcode Git.branch}. */
 export interface BranchOperations {
-  /** Lists branches in the repository alphabetically. */
+  /**
+   * Lists branches in the repository alphabetically.
+   *
+   * @example List local branches.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branches = await git().branch.list({ type: "local" });
+   *   return { branches };
+   * });
+   * ```
+   */
   list(options?: BranchListOptions): Promise<Branch[]>;
   /**
    * Returns the current branch name.
+   *
+   * @example Get the current branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.current();
+   *   return { branch };
+   * });
+   * ```
+   *
    * @throws {@linkcode GitError} If `HEAD` is detached.
    */
   current(): Promise<Branch>;
@@ -225,18 +502,63 @@ export interface BranchOperations {
     name: string | Branch,
     options?: BranchGetOptions,
   ): Promise<Branch | undefined>;
-  /** Creates a branch. */
+  /**
+   * Creates a branch.
+   *
+   * @example Create a branch from a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.create("my-feature", {
+   *     target: "HEAD~1",
+   *   });
+   *   return { branch };
+   * });
+   * ```
+   */
   create(name: string, options?: BranchCreateOptions): Promise<Branch>;
-  /** Switches to an existing or new branch. */
+  /**
+   * Switches to an existing or new branch.
+   *
+   * @example Switch to an existing branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.switch("my-feature");
+   *   return { branch };
+   * });
+   * ```
+   */
   switch(
     branch: string | Branch,
     options?: BranchSwitchOptions,
   ): Promise<Branch>;
   /** Switches to a commit detached from any branch. */
   detach(options?: BranchDetachOptions): Promise<void>;
-  /** Resets the current branch head to a specified state. */
+  /**
+   * Resets the current branch head to a specified state.
+   *
+   * @example Hard reset to a specific commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().branch.reset({ target: "HEAD~3", mode: "hard" });
+   * });
+   * ```
+   */
   reset(options?: BranchResetOptions): Promise<void>;
-  /** Renames a branch. */
+  /**
+   * Renames a branch.
+   *
+   * @example Rename a branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const branch = await git().branch.move("old-name", "new-name");
+   *   return { branch };
+   * });
+   * ```
+   */
   move(
     branch: string | Branch,
     name: string,
@@ -252,19 +574,63 @@ export interface BranchOperations {
   track(branch: string | Branch, upstream: string): Promise<Branch>;
   /** Removes the upstream branch for a given branch. */
   untrack(branch: string | Branch): Promise<Branch>;
-  /** Deletes a branch. */
+  /**
+   * Deletes a branch.
+   *
+   * @example Delete a merged branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().branch.delete("my-feature");
+   * });
+   * ```
+   */
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
 }
 
 /** Tag operations from {@linkcode Git.tag}. */
 export interface TagOperations {
-  /** Lists all tags in the repository. */
+  /**
+   * Lists all tags in the repository.
+   *
+   * @example List tags matching a pattern.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const tags = await git().tag.list({ name: "v1.*" });
+   *   return { tags };
+   * });
+   * ```
+   */
   list(options?: TagListOptions): Promise<Tag[]>;
   /** Retrieves a tag. */
   get(tag: string | Tag): Promise<Tag | undefined>;
-  /** Creates a new tag in the repository. */
+  /**
+   * Creates a new tag in the repository.
+   *
+   * @example Create an annotated tag.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const tag = await git().tag.create("v1.0.0", {
+   *     subject: "Release v1.0.0",
+   *   });
+   *   return { tag };
+   * });
+   * ```
+   */
   create(name: string, options?: TagCreateOptions): Promise<Tag>;
-  /** Deletes a tag. */
+  /**
+   * Deletes a tag.
+   *
+   * @example Delete a tag.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().tag.delete("v1.0.0");
+   * });
+   * ```
+   */
   delete(tag: string | Tag): Promise<void>;
 }
 
@@ -279,13 +645,35 @@ export interface TagOperations {
  * {@linkcode GitError} will be thrown, after aborting the merge.
  */
 export interface MergeOperations {
-  /** Returns the best common ancestor of two or more commits. */
+  /**
+   * Returns the best common ancestor of two or more commits.
+   *
+   * @example Find the common ancestor of two branches.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const base = await git().merge.base("main", "my-feature");
+   *   return { base };
+   * });
+   * ```
+   */
   base(
     first: Commitish,
     second: Commitish,
     ...rest: Commitish[]
   ): Promise<Commit | undefined>;
-  /** Merges given heads into current branch, and returns incomplete merges. */
+  /**
+   * Merges given heads into current branch, and returns incomplete merges.
+   *
+   * @example Merge a branch into the current branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const merge = await git().merge.with("my-feature");
+   *   if (merge) await git().merge.abort();
+   * });
+   * ```
+   */
   with(
     source: Commitish | Commitish[],
     options?: MergeWithOptions,
@@ -311,7 +699,18 @@ export interface MergeOperations {
  * {@linkcode GitError} will be thrown, after aborting the rebase.
  */
 export interface RebaseOperations {
-  /** Rebases heads onto given base. */
+  /**
+   * Rebases heads onto given base.
+   *
+   * @example Rebase the current branch onto main.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const rebase = await git().rebase.onto("main");
+   *   if (rebase) await git().rebase.abort();
+   * });
+   * ```
+   */
   onto(base: Commitish, options?: RebaseOptions): Promise<Rebase | undefined>;
   /** Continues an ongoing rebase operation with resolved conflicts. */
   continue(): Promise<Rebase | undefined>;
@@ -336,7 +735,18 @@ export interface RebaseOperations {
  * {@linkcode GitError} will be thrown, after aborting the cherry-pick.
  */
 export interface CherryPickOperations {
-  /** Applies one or more commits to the current branch. */
+  /**
+   * Applies one or more commits to the current branch.
+   *
+   * @example Cherry-pick a commit onto the current branch.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const pick = await git().cherrypick.apply("abc1234");
+   *   if (pick) await git().cherrypick.abort();
+   * });
+   * ```
+   */
   apply(
     commit: Commitish | Commitish[],
     options?: CherryPickOptions,
@@ -364,7 +774,18 @@ export interface CherryPickOperations {
  * {@linkcode GitError} will be thrown, after aborting the revert.
  */
 export interface RevertOperations {
-  /** Reverts one or more commits by creating revert commits. */
+  /**
+   * Reverts one or more commits by creating revert commits.
+   *
+   * @example Revert a commit.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const revert = await git().revert.apply("abc1234");
+   *   if (revert) await git().revert.abort();
+   * });
+   * ```
+   */
   apply(
     commit: Commitish | Commitish[],
     options?: RevertOptions,
@@ -383,7 +804,18 @@ export interface RevertOperations {
 
 /** Remote operations from {@linkcode Git.remote}. */
 export interface RemoteOperations {
-  /** Lists remotes in the repository. */
+  /**
+   * Lists remotes in the repository.
+   *
+   * @example List all remotes.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const remotes = await git().remote.list();
+   *   return { remotes };
+   * });
+   * ```
+   */
   list(): Promise<Remote[]>;
   /** Returns the current remote configured for current branch. */
   current(): Promise<Remote | undefined>;
@@ -391,10 +823,34 @@ export interface RemoteOperations {
   get(remote: string | Remote): Promise<Remote | undefined>;
   /**
    * Queries the HEAD branch name on a remote repository.
+   *
+   * @example Get the default branch name from origin.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const head = await git().remote.head("origin");
+   *   return { head };
+   * });
+   * ```
+   *
    * @throws {@linkcode GitError} If remote `HEAD` is detached.
    */
   head(remote: string | URL | Remote): Promise<string>;
-  /** Adds a remote to the repository. */
+  /**
+   * Adds a remote to the repository.
+   *
+   * @example Add a remote.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const remote = await git().remote.add(
+   *     "upstream",
+   *     "https://github.com/withroka/roka.git",
+   *   );
+   *   return { remote };
+   * });
+   * ```
+   */
   add(remote: string, url: string | URL): Promise<Remote>;
   /** Adds given remote to the repository. */
   add(remote: Remote): Promise<Remote>;
@@ -404,7 +860,17 @@ export interface RemoteOperations {
   set(remote: Remote): Promise<Remote>;
   /** Updates a remote with a fetch/push URL. */
   set(remote: string, url: string | URL): Promise<Remote>;
-  /** Prunes stale references to remote branches. */
+  /**
+   * Prunes stale references to remote branches.
+   *
+   * @example Prune stale remote tracking branches.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().remote.prune("origin");
+   * });
+   * ```
+   */
   prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
   /** Removes a remote from the repository. */
   remove(remote: string | Remote): Promise<void>;
@@ -412,11 +878,41 @@ export interface RemoteOperations {
 
 /** Sync operations from {@linkcode Git.sync}. */
 export interface SyncOperations {
-  /** Fetches branches and tags from a remote. */
+  /**
+   * Fetches branches and tags from a remote.
+   *
+   * @example Fetch with pruning.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().sync.fetch({ prune: true });
+   * });
+   * ```
+   */
   fetch(options?: SyncFetchOptions): Promise<void>;
-  /** Pulls branches and tags from a remote. */
+  /**
+   * Pulls branches and tags from a remote.
+   *
+   * @example Pull from origin.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().sync.pull();
+   * });
+   * ```
+   */
   pull(options?: SyncPullOptions): Promise<void>;
-  /** Pushes branches and tags to a remote. */
+  /**
+   * Pushes branches and tags to a remote.
+   *
+   * @example Push the current branch and set upstream.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().sync.push({ track: true });
+   * });
+   * ```
+   */
   push(options?: SyncPushOptions): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
   unshallow(options?: SyncRemoteOptions): Promise<void>;
@@ -1941,6 +2437,7 @@ export interface TagListOptions extends RefListOptions {
    * considered newer than the release versions. To change this behavior, set
    * the `"versionsort.suffix"` config option to the pre-release suffixes.
    *
+   * @example Semantic version sorting with pre-release suffixes.
    * ```ts
    * import { tempRepository } from "@roka/git/testing";
    * import { git } from "@roka/git";
