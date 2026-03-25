@@ -33,7 +33,7 @@ import { mergeReadableStreams, toTransformStream } from "@std/streams";
  * command, the exit code, and the command output.
  */
 export class DenoError extends Error {
-  /** Construct DenoError. */
+  /** Constructs DenoError. */
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "DenoError";

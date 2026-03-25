@@ -72,7 +72,7 @@ import { canParse, greaterOrEqual, parse } from "@std/semver";
  * command, the exit code, and the command output.
  */
 export class GitError extends Error {
-  /** Construct GitError. */
+  /** Constructs GitError. */
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "GitError";
