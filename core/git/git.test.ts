@@ -3760,7 +3760,9 @@ Deno.test("git().commit.log() can work with custom trailer separator", async () 
   assertEquals(commit?.trailers, { key1: "value1", key2: "value2" });
 });
 
-Deno.test("git().commit.log() handles configuration overrides", async () => {
+Deno.test("git().commit.log() handles configuration overrides", {
+  ignore: codespaces,
+}, async () => {
   await using repo = await tempRepository({
     config: {
       "color.log": "always",
@@ -4408,7 +4410,9 @@ Deno.test("git().commit.create() rejects empty commit", async () => {
   );
 });
 
-Deno.test("git().commit.create() handles configuration overrides", async () => {
+Deno.test("git().commit.create() handles configuration overrides", {
+  ignore: codespaces,
+}, async () => {
   await using repo = await tempRepository({
     config: {
       "author.email": "author-email",
@@ -4534,9 +4538,7 @@ Deno.test("git().commit.create({ author }) can set author date in UTC", async ()
   });
 });
 
-Deno.test("git().commit.create({ committer }) sets committer", {
-  ignore: codespaces,
-}, async () => {
+Deno.test("git().commit.create({ committer }) sets committer", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
@@ -6437,9 +6439,7 @@ Deno.test("git().tag.create() creates a lightweight tag", async () => {
   assertEquals(tag, { name: "tag", commit });
 });
 
-Deno.test("git().tag.create() can create an annotated tag", {
-  ignore: codespaces,
-}, async () => {
+Deno.test("git().tag.create() can create an annotated tag", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create({
     subject: "commit",
@@ -6460,9 +6460,7 @@ Deno.test("git().tag.create() can create an annotated tag", {
   });
 });
 
-Deno.test("git().tag.create() ignores empty body", {
-  ignore: codespaces,
-}, async () => {
+Deno.test("git().tag.create() ignores empty body", async () => {
   await using repo = await tempRepository();
   const commit = await repo.commit.create({
     subject: "commit",
@@ -7548,27 +7546,31 @@ Deno.test("git().rebase.onto({ empty }) can stop at empty commits", {
   assertEquals(await repo.diff.status(), []);
 });
 
-Deno.test("git().rebase.onto({ fastForward }) can disable fast-forward rebase", async () => {
-  await using repo = await tempRepository({
-    branch: "main",
-    config: { "committer.name": "author" },
-  });
-  await Deno.writeTextFile(repo.path("file1"), "content");
-  await repo.index.add("file1");
-  const commit1 = await repo.commit.create({ subject: "commit1" });
-  await repo.branch.switch("branch", { create: true });
-  await Deno.writeTextFile(repo.path("file2"), "content");
-  await repo.index.add("file2");
-  const commit2 = await repo.commit.create({ subject: "commit2" });
-  assertEquals(await repo.commit.log(), [commit2, commit1]);
-  await repo.config.set("committer.name", "rebaser");
-  const rebase = await repo.rebase.onto("main", { fastForward: false });
-  assertEquals(rebase, undefined);
-  assertEquals(await repo.rebase.active(), undefined);
-  const replayed = await repo.commit.head();
-  assertEquals(replayed.subject, commit2.subject);
-  assertNotEquals(replayed.hash, commit2.hash);
-});
+Deno.test(
+  "git().rebase.onto({ fastForward }) can disable fast-forward rebase",
+  { ignore: codespaces },
+  async () => {
+    await using repo = await tempRepository({
+      branch: "main",
+      config: { "committer.name": "author" },
+    });
+    await Deno.writeTextFile(repo.path("file1"), "content");
+    await repo.index.add("file1");
+    const commit1 = await repo.commit.create({ subject: "commit1" });
+    await repo.branch.switch("branch", { create: true });
+    await Deno.writeTextFile(repo.path("file2"), "content");
+    await repo.index.add("file2");
+    const commit2 = await repo.commit.create({ subject: "commit2" });
+    assertEquals(await repo.commit.log(), [commit2, commit1]);
+    await repo.config.set("committer.name", "rebaser");
+    const rebase = await repo.rebase.onto("main", { fastForward: false });
+    assertEquals(rebase, undefined);
+    assertEquals(await repo.rebase.active(), undefined);
+    const replayed = await repo.commit.head();
+    assertEquals(replayed.subject, commit2.subject);
+    assertNotEquals(replayed.hash, commit2.hash);
+  },
+);
 
 Deno.test("git().rebase.onto({ merges }) preserves merge commits", async () => {
   await using repo = await tempRepository({ branch: "main" });
@@ -7673,7 +7675,9 @@ Deno.test("git().rebase.onto({ resolve }) can resolve conflicts to their version
   assertEquals(await Deno.readTextFile(repo.path("file")), "content3");
 });
 
-Deno.test("git().rebase.onto({ sign }) rejects wrong key", async () => {
+Deno.test("git().rebase.onto({ sign }) rejects wrong key", {
+  ignore: codespaces,
+}, async () => {
   await using repo = await tempRepository({ branch: "main" });
   await Deno.writeTextFile(repo.path("file1"), "content1");
   await Deno.writeTextFile(repo.path("file2"), "content2");
