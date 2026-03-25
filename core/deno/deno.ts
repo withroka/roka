@@ -128,7 +128,11 @@ export interface FileResult {
   info: Info[];
 }
 
-/** An error report generated from `deno` */
+/**
+ * Union of all error reports from `deno` commands.
+ *
+ * Discriminate on {@linkcode Report.kind} to determine the source.
+ */
 export type Problem =
   | DenoProblem
   | CheckProblem
@@ -136,7 +140,11 @@ export type Problem =
   | DiffProblem
   | TestProblem;
 
-/** An info report generated from `deno` */
+/**
+ * Union of all informational reports from `deno` commands.
+ *
+ * Discriminate on {@linkcode Report.kind} to determine the source.
+ */
 export type Info = TestInfo | OutputInfo;
 
 /** A generic report from `deno`. */
