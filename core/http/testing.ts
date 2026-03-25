@@ -32,7 +32,7 @@ import { pick } from "@std/collections";
 
 /** Options for the {@linkcode mockFetch} function. */
 export interface MockFetchOptions extends MockOptions {
-  /** Limit what gets matched with replay calls. */
+  /** Limits what gets matched with replay calls. */
   ignore?: {
     /**
      * Whether to ignore the request and response headers.
@@ -51,7 +51,7 @@ export interface MockFetchOptions extends MockOptions {
 }
 
 /**
- * Create a mock for the global `fetch` function.
+ * Creates a mock for the global `fetch` function.
  *
  * The behavior of this mock follows the same for any mock created with the
  * `@roka/testing/mock` module. Running tests with the `--update` flag will

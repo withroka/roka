@@ -337,7 +337,7 @@ export interface ForgeOptions {
 }
 
 /**
- * Run the `forge` CLI tool.
+ * Runs the `forge` CLI tool.
  *
  * @returns The exit code of the command.
  */

@@ -32,7 +32,7 @@ export interface ChangelogOptions {
      * If not defined, a title will not be added to the changelog.
      */
     title?: string;
-    /** Add a list of items to the end of the changelog text, like URLs. */
+    /** Adds a list of items to the end of the changelog text, like URLs. */
     footer?: {
       /** Title of the footer section */
       title: string;
@@ -43,7 +43,7 @@ export interface ChangelogOptions {
   /** Options for controlling how commits are formatted in the changelog. */
   commit?: {
     /**
-     * Sort commits in the generated changelog.
+     * Sorts commits in the generated changelog.
      *
      * If set to `importance`, the commits are sorted by their
      * {@link https://www.conventionalcommits.org Conventional Commits} details.
@@ -52,12 +52,12 @@ export interface ChangelogOptions {
      */
     sort?: "importance";
     /**
-     * Use emoji in commit subjects.
+     * Uses emoji in commit subjects.
      * @default {false}
      */
     emoji?: boolean;
     /**
-     * Generate changelog lines optimized for terminal output.
+     * Generates changelog lines optimized for terminal output.
      *
      * Pads emojis with spaces for terminal display, if emojis are enabled.
      * This option is ignored if emojis are not enabled.
@@ -66,7 +66,7 @@ export interface ChangelogOptions {
      */
     terminal?: boolean;
     /**
-     * Include short commit hash in commit subjects, when a pull request number
+     * Includes short commit hash in commit subjects, when a pull request number
      * is not available.
      *
      * This is useful for generating links to commits that were not merged with
@@ -76,7 +76,7 @@ export interface ChangelogOptions {
      */
     hash?: boolean;
     /**
-     * List only pull request numbers as commit subjects.
+     * Lists only pull request numbers as commit subjects.
      *
      * This provides a nicely formatted changelog for GitHub pull requests, and
      * avoids listing commit titles twice.
@@ -109,7 +109,7 @@ export interface ChangelogOptions {
 }
 
 /**
- * Generate Markdown text for a package changelog.
+ * Generates Markdown text for a package changelog.
  *
  * @example Generate a Markdown changelog.
  * ```ts

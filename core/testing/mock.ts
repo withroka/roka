@@ -158,7 +158,7 @@ export interface MockConversion<
   /** Input conversions. */
   input?: {
     /**
-     * Convert input arguments to a custom value.
+     * Converts input arguments to a custom value.
      *
      * This is needed when the original input arguments cannot be serialized to
      * JavaScript code, when any argument is consumable, or when sensitive
@@ -172,7 +172,7 @@ export interface MockConversion<
   /** Output conversions. */
   output?: {
     /**
-     * Convert output to a custom value.
+     * Converts output to a custom value.
      *
      * This is needed when the result value cannot be serialized to JavaScript
      * code, when the output is consumable, or when sensitive information needs
@@ -183,7 +183,7 @@ export interface MockConversion<
      */
     convert?: (result: Awaited<ReturnType<T>>) => Output | Promise<Output>;
     /**
-     * Revert output to the original format.
+     * Reverts output to the original format.
      *
      * This is needed when the output was converted to a custom value that is
      * incompatible with the original format.
@@ -195,7 +195,7 @@ export interface MockConversion<
 }
 
 /**
- * Create a mock for an asynchronous function.
+ * Creates a mock for an asynchronous function.
  *
  * Usage is `@std/testing/snapshot` style. Running tests with the `--update`
  * or `-u` flag will create a mock file in the `__mocks__` directory, using

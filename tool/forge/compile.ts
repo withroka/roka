@@ -54,7 +54,7 @@ export interface CompileOptions {
    */
   bundle?: boolean;
   /**
-   * Create a checksum file.
+   * Creates a checksum file.
    * @default {false}
    */
   checksum?: boolean;
@@ -75,7 +75,7 @@ export interface CompileOptions {
 }
 
 /**
- * Compile a package using the given options.
+ * Compiles a package using the given options.
  *
  * @param pkg Package to compile.
  * @throws {PackageError} If the package does not have a compile configuration.
@@ -143,7 +143,7 @@ export async function compile(
   return artifacts;
 }
 
-/** Return all compile targets supported by `deno compile`. */
+/** Returns all compile targets supported by `deno compile`. */
 export async function targets(): Promise<string[]> {
   const command = new Deno.Command("deno", { args: ["compile", "--target"] });
   const { success, stderr } = await command.output();

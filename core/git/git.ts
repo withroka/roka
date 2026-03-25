@@ -72,7 +72,7 @@ import { canParse, greaterOrEqual, parse } from "@std/semver";
  * command, the exit code, and the command output.
  */
 export class GitError extends Error {
-  /** Construct GitError. */
+  /** Constructs GitError. */
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "GitError";
@@ -142,7 +142,7 @@ export interface ConfigOperations {
 export interface IndexOperations {
   /** Stages files for commit. */
   add(path: string | string[], options?: IndexAddOptions): Promise<void>;
-  /** Move or rename a file, a directory, or a symlink. */
+  /** Moves or renames a file, a directory, or a symlink. */
   move(
     source: string | string[],
     destination: string,
@@ -213,7 +213,7 @@ export interface CommitOperations {
 
 /** Branch operations from {@linkcode Git.branch}. */
 export interface BranchOperations {
-  /** List branches in the repository alphabetically. */
+  /** Lists branches in the repository alphabetically. */
   list(options?: BranchListOptions): Promise<Branch[]>;
   /**
    * Returns the current branch name.
@@ -232,7 +232,7 @@ export interface BranchOperations {
     branch: string | Branch,
     options?: BranchSwitchOptions,
   ): Promise<Branch>;
-  /** Switch to a commit detached from any branch. */
+  /** Switches to a commit detached from any branch. */
   detach(options?: BranchDetachOptions): Promise<void>;
   /** Resets the current branch head to a specified state. */
   reset(options?: BranchResetOptions): Promise<void>;
@@ -1182,7 +1182,7 @@ export interface Pickaxe {
   /** Extended regular expression pattern to search in changes. */
   pattern: string;
   /**
-   * Match any diff line containing the pattern.
+   * Matches any diff line containing the pattern.
    *
    * - `false`: only find additions or deletions (`-S` behavior)
    * - `true`: also find modifications (`-G` behavior)
@@ -1195,7 +1195,7 @@ export interface Pickaxe {
 /** Options for the {@linkcode git} function. */
 export interface GitOptions {
   /**
-   * Run the commands under a specific directory.
+   * Runs the commands under a specific directory.
    *
    * This can be a string path or a file URL.
    *
@@ -1309,7 +1309,7 @@ export interface RepositoryOptions {
    */
   directory?: string | URL;
   /**
-   * Create a bare repository.
+   * Creates a bare repository.
    * @default {false}
    */
   bare?: boolean;
@@ -1321,7 +1321,7 @@ export interface RepositoryOptions {
    */
   config?: Config;
   /**
-   * Create the git directory at given path.
+   * Creates the git directory at given path.
    *
    * This can be a string path or a file URL.
    */
@@ -1337,17 +1337,17 @@ export interface InitOptions extends RepositoryOptions {
    */
   branch?: string;
   /**
-   * Specify hashing algorithm for the repository.
+   * Specifies hashing algorithm for the repository.
    * @default {"sha1"}
    */
   objectFormat?: "sha1" | "sha256";
   /**
-   * Specify ref storage format (available since git 2.45).
+   * Specifies ref storage format (available since git 2.45).
    * @default {"files"}
    */
   refFormat?: "files" | "reftable";
   /**
-   * Specify user sharing for the repository.
+   * Specifies user sharing for the repository.
    *
    * `false`: use permissions reported by `umask`
    * `true`: make repository writable by group
@@ -1380,14 +1380,14 @@ export interface CloneOptions
    */
   branch?: string | null;
   /**
-   * Set configuration for the initialized repository.
+   * Sets configuration for the initialized repository.
    *
    * This configuration will apply to initialization and fetch, and it will
    * persist in the local repository afterwards.
    */
   config?: Config;
   /**
-   * Control local repository optimizations.
+   * Controls local repository optimizations.
    *
    * - `false`: disable optimizations, use remote transport
    * - `true`: use local transport with hardlinks (default)
@@ -1410,14 +1410,14 @@ export interface CloneOptions
    */
   remote?: string;
   /**
-   * Clone only the tip of a single branch.
+   * Clones only the tip of a single branch.
    *
    * The cloned branch is either remote `HEAD` or
    * {@linkcode InitOptions.branch}.
    */
   singleBranch?: boolean;
   /**
-   * Fetch tags during clone.
+   * Fetches tags during clone.
    *
    * If set to `false`, the repository is configured to not fetch tags.
    *
@@ -1461,14 +1461,14 @@ export interface ConfigFileOptions {
 /** Options for the {@linkcode IndexOperations.add} function. */
 export interface IndexAddOptions {
   /**
-   * Override the executable bit of the file.
+   * Overrides the executable bit of the file.
    *
    * If set, the file mode in the file system is ignored, and the executable
    * bit is set to the given value.
    */
   executable?: boolean;
   /**
-   * Add files to the index, even if they are ignored.
+   * Adds files to the index, even if they are ignored.
    * @default {false}
    */
   force?: boolean;
@@ -1477,7 +1477,7 @@ export interface IndexAddOptions {
 /** Options for the {@linkcode IndexOperations.move} function. */
 export interface IndexMoveOptions {
   /**
-   * Move files, even if the destination file already exists.
+   * Moves files, even if the destination file already exists.
    * @default {false}
    */
   force?: boolean;
@@ -1516,7 +1516,7 @@ export interface IndexRestoreOptions {
 /** Options for the {@linkcode IndexOperations.remove} function. */
 export interface IndexRemoveOptions {
   /**
-   * Remove files, even if they have local modifications.
+   * Removes files, even if they have local modifications.
    * @default {false}
    */
   force?: boolean;
@@ -1541,18 +1541,18 @@ export interface DiffOptions {
    */
   location?: "index" | "worktree" | "both";
   /**
-   * Include changes since the given commit.
+   * Includes changes since the given commit.
    * @default {"HEAD"}
    */
   from?: Commitish;
   /**
-   * Include changes up to the given commit.
+   * Includes changes up to the given commit.
    *
    * Uncommitted changes will be included if not set.
    */
   to?: Commitish;
   /**
-   * Limit the diff to the given pathspecs.
+   * Limits the diff to the given pathspecs.
    *
    * If directories are given, all files under those directories are included.
    *
@@ -1560,7 +1560,7 @@ export interface DiffOptions {
    */
   path?: string | string[];
   /**
-   * Control the diff output for copied files.
+   * Controls the diff output for copied files.
    *
    * - `true`: enable copy detection, and list copied files as such
    * - `false`: disable copy detection, and list copied files as added (default)
@@ -1572,7 +1572,7 @@ export interface DiffOptions {
    */
   copies?: boolean;
   /**
-   * Control the diff output for renamed files.
+   * Controls the diff output for renamed files.
    *
    * - `true`: enable rename detection, and list renamed files as such (default)
    * - `false`: disable rename detection, and list files as added and deleted
@@ -1586,10 +1586,10 @@ export interface DiffOptions {
 
 /** Options for the {@linkcode DiffOperations.status} function. */
 export interface DiffStatusOptions extends DiffOptions {
-  /** Include diff stats in the output. */
+  /** Includes diff stats in the output. */
   stats?: boolean;
   /**
-   * Control the status output for untracked files.
+   * Controls the status output for untracked files.
    *
    * - `false`: exclude untracked files (default)
    * - `true`: include untracked directories, but not their files
@@ -1599,7 +1599,7 @@ export interface DiffStatusOptions extends DiffOptions {
    */
   untracked?: boolean | "all";
   /**
-   * Control the status output for ignored files.
+   * Controls the status output for ignored files.
    *
    * - `true`: include ignored files and directories
    * - `false`: exclude ignored files and directories (default)
@@ -1715,7 +1715,7 @@ export interface CommitLogOptions {
    */
   sort?: "author-date" | "committer-date" | "topo";
   /**
-   * Return commits in reverse order.
+   * Returns commits in reverse order.
    * @default {false}
    */
   reverse?: boolean;
@@ -1731,12 +1731,12 @@ export interface CommitCreateOptions extends MessageOptions, SignOptions {
    */
   all?: boolean;
   /**
-   * Allow empty commits.
+   * Allows empty commits.
    * @default {false}
    */
   allowEmpty?: boolean;
   /**
-   * Allow empty messages.
+   * Allows empty messages.
    * @default {false}
    */
   allowEmptyMessage?: boolean;
@@ -1784,7 +1784,7 @@ export interface BranchGetOptions {
  */
 export interface BranchCreateOptions extends BranchCreateTrackOptions {
   /**
-   * Reset branch to {@linkcode BranchCreateOptions.target target} even if it
+   * Resets branch to {@linkcode BranchCreateOptions.target target} even if it
    * already exists.
    *
    * @default {false}
@@ -1821,7 +1821,7 @@ export interface BranchCreateTrackOptions {
 /** Options for the {@linkcode BranchOperations.switch} function. */
 export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   /**
-   * Create a new branch at given target, `"HEAD"` if set to `true`.
+   * Creates a new branch at given target, `"HEAD"` if set to `true`.
    *
    * Incompatible with the {@linkcode BranchSwitchOptions.orphan orphan}
    * option.
@@ -1833,14 +1833,14 @@ export interface BranchSwitchOptions extends BranchCreateTrackOptions {
    */
   create?: boolean | Commitish;
   /**
-   * Create an unborn branch.
+   * Creates an unborn branch.
    *
    * Incompatible with the {@linkcode BranchSwitchOptions.create create}
    * option.
    */
   orphan?: boolean;
   /**
-   * Discard any local changes when switching branches.
+   * Discards any local changes when switching branches.
    *
    * If creating a new branch with
    * {@linkcode BranchSwitchOptions.create create}, this will reset the new
@@ -1887,7 +1887,7 @@ export interface BranchResetOptions {
 /** Options for the {@linkcode BranchOperations.move} function. */
 export interface BranchMoveOptions {
   /**
-   * Force rename the branch.
+   * Forcefully renames the branch.
    * @default {false}
    */
   force?: boolean;
@@ -1896,7 +1896,7 @@ export interface BranchMoveOptions {
 /** Options for the {@linkcode BranchOperations.copy} function. */
 export interface BranchCopyOptions {
   /**
-   * Force copy the branch.
+   * Forcefully copies the branch.
    * @default {false}
    */
   force?: boolean;
@@ -1905,7 +1905,7 @@ export interface BranchCopyOptions {
 /** Options for the {@linkcode BranchOperations.delete} function. */
 export interface BranchDeleteOptions {
   /**
-   * Force delete the branch.
+   * Forcefully deletes the branch.
    * @default {false}
    */
   force?: boolean;
@@ -1975,7 +1975,7 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
    * @default {"HEAD"}
    */
   target?: Commitish;
-  /** Replace existing tags instead of failing. */
+  /** Replaces existing tags instead of failing. */
   force?: boolean;
   /** Tagger attribution. */
   tagger?: UserLike;
@@ -1987,7 +1987,7 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
  */
 export interface MergeOptions extends ResolveOptions, SignOptions {
   /**
-   * Create a merge commit after merging.
+   * Creates a merge commit after merging.
    * @default {true}
    */
   commit?: boolean;
@@ -2024,7 +2024,7 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
   /** Excludes commits reachable from this commit (--onto mode). */
   after?: Commitish;
   /**
-   * Control the date of rebased commits.
+   * Controls the date of rebased commits.
    *
    * - `"preserve"`: preserve original author dates (default)
    * - `"reset"`: set author dates to the time of rebase
@@ -2037,7 +2037,7 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    */
   dates?: "preserve" | "reset" | "committer-is-author";
   /**
-   * Control how commits that become empty after rebasing are handled.
+   * Controls how commits that become empty after rebasing are handled.
    *
    * - `"drop"`: drop commits that become empty (default)
    * - `"keep"`: keep commits even if they become empty
@@ -2061,7 +2061,7 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    */
   fastForward?: boolean;
   /**
-   * Preserve the branch structure for merge commits.
+   * Preserves the branch structure for merge commits.
    * @default {false}
    */
   merges?: boolean;
@@ -2079,7 +2079,7 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
 /** Options for the {@linkcode CherryPickOperations.apply} function. */
 export interface CherryPickOptions extends ResolveOptions, SignOptions {
   /**
-   * Allow empty commits.
+   * Allows empty commits.
    *
    * By default, Git stops cherry-pick sequence if an empty commit is
    * encountered.
@@ -2088,7 +2088,7 @@ export interface CherryPickOptions extends ResolveOptions, SignOptions {
    */
   allowEmpty?: boolean;
   /**
-   * Create commit after cherry-pick.
+   * Creates commit after cherry-pick.
    * @default {true}
    */
   commit?: boolean;
@@ -2104,7 +2104,7 @@ export interface CherryPickOptions extends ResolveOptions, SignOptions {
 /** Options for the {@linkcode RevertOperations.apply} function. */
 export interface RevertOptions extends ResolveOptions, SignOptions {
   /**
-   * Create commit after revert.
+   * Creates commit after revert.
    * @default {true}
    */
   commit?: boolean;
@@ -2119,9 +2119,9 @@ export interface RevertOptions extends ResolveOptions, SignOptions {
 
 /** Options for the {@linkcode RemoteOperations.add} function. */
 export interface RemoteAddOptions {
-  /** Fetch remote immediately after adding. */
+  /** Fetches remote immediately after adding. */
   fetch?: boolean;
-  /** Control fetching tags. */
+  /** Controls fetching tags. */
   tags?: "none" | "all";
 }
 
@@ -2144,12 +2144,12 @@ export interface SyncRemoteOptions {
  * (e.g. {@linkcode SyncOperations.push}).
  */
 export interface SyncOptions {
-  /** Either update all refs or don't update any.*/
+  /** Either updates all refs or doesn't update any. */
   atomic?: boolean;
-  /** Prune refs that no longer exist on the updated repository. */
+  /** Prunes refs that no longer exist on the updated repository. */
   prune?: boolean;
   /**
-   * Control fetching or pushing tags.
+   * Controls fetching or pushing tags.
    *
    * - `"none"`: do not copy any tags (push default)
    * - `"follow"`: copy only tags that point to copied objects (fetch default)
@@ -2166,7 +2166,7 @@ export interface SyncOptions {
  */
 export interface SyncTrackOptions {
   /**
-   * Set upstream tracking for every branch successfully fetched or pushed.
+   * Sets upstream tracking for every branch successfully fetched or pushed.
    * @default {false}
    */
   track?: boolean;
@@ -2178,7 +2178,7 @@ export interface SyncTrackOptions {
  */
 export interface SyncShallowOptions {
   /**
-   * Create a shallow fetch.
+   * Creates a shallow fetch.
    *
    * If any of the shallow options are provided, shallow fetching is enabled,
    * rewriting the history to only include the specified commits.
@@ -2201,7 +2201,7 @@ export interface SyncShallowOptions {
  */
 export interface SyncFilterOptions {
   /**
-   * Filter objects with given filter specification to create a partial clone.
+   * Filters objects with given filter specification to create a partial clone.
    *
    * When cloning, this will result in a partial clone where some objects are
    * omitted from the initial clone, which are fetched on-demand later.
@@ -2252,7 +2252,7 @@ export interface SyncFetchSingleOptions
 export interface SyncFetchMultipleOptions
   extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SyncFilterOptions {
   /**
-   * Fetch from multiple repositories.
+   * Fetches from multiple repositories.
    *
    * If set to `"all"`, fetches from all configured remotes.
    */
@@ -2269,7 +2269,7 @@ export interface SyncFetchMultipleOptions
  */
 export interface SyncFetchAllOptions
   extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SyncFilterOptions {
-  /** Fetch from all configured repositories. */
+  /** Fetches from all configured repositories. */
   all: boolean;
   /** Cannot be specified with {@linkcode SyncFetchAllOptions.all}. */
   remote?: never;
@@ -2313,7 +2313,7 @@ export interface SyncPullAllOptions
     SyncTrackOptions,
     SyncShallowOptions,
     SyncPullMergeOptions {
-  /** Pull from all configured repositories. */
+  /** Pulls from all configured repositories. */
   all: boolean;
   /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
   remote?: never;
@@ -2327,7 +2327,7 @@ export interface SyncPullAllOptions
  */
 export interface SyncPullMergeOptions extends MergeOptions {
   /**
-   * Rebase instead of merge when integrating fetched changes.
+   * Rebases instead of merging when integrating fetched changes.
    *
    * - `false`: merge fetched changes (default)
    * - `true`: rebase current branch on top of fetched changes
@@ -2366,7 +2366,7 @@ export interface SyncPushBranchOptions
    */
   target?: string | Branch | (string | Branch)[];
   /**
-   * Delete the specified branch or branches on remote.
+   * Deletes the specified branch or branches on remote.
    * @default {false}
    */
   delete?: boolean;
@@ -2391,7 +2391,7 @@ export interface SyncPushAllBranchesOptions
     SyncPushForceOptions,
     SyncTrackOptions,
     SignOptions {
-  /** Push all branches to remote. */
+  /** Pushes all branches to remote. */
   branches: "all";
   /**
    * Cannot be specified with {@linkcode SyncPushAllBranchesOptions.branches}.
@@ -2421,7 +2421,7 @@ export interface SyncPushTagOptions
   /** Tag or tags to push to remote. */
   tag: string | Tag | (string | Tag)[];
   /**
-   * Delete the specified tag or tags on remote.
+   * Deletes the specified tag or tags on remote.
    * @default {false}
    */
   delete?: boolean;
@@ -2445,7 +2445,7 @@ export interface SyncPushTagOptions
  */
 export interface SyncPushForceOptions {
   /**
-   * Force push to remote.
+   * Forcefully pushes to remote.
    *
    * - `false`: do not force push (default)
    * - `true`: force push unconditionally

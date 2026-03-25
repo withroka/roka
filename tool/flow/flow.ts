@@ -99,7 +99,7 @@ const DESCRIPTION = `
 `;
 
 /**
- * Run the `flow` CLI tool.
+ * Runs the `flow` CLI tool.
  *
  * @returns The exit code of the command.
  */

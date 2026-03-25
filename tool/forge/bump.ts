@@ -61,19 +61,19 @@ export interface BumpOptions {
    */
   release?: boolean;
   /**
-   * Update given file with the generated changelog.
+   * Updates given file with the generated changelog.
    *
    * If a relative path is provided, the path will be resolved from the current
    * working directory.
    */
   changelog?: string;
   /**
-   * Create a pull request.
+   * Creates a pull request.
    * @default {false}
    */
   pr?: boolean;
   /**
-   * Make the newly created pull request a draft.
+   * Makes the newly created pull request a draft.
    *
    * Requires {@linkcode BumpOptions.pr pr} to be set.
    *
@@ -83,7 +83,7 @@ export interface BumpOptions {
    */
   draft?: boolean;
   /**
-   * Use emoji in commit subjects.
+   * Uses emoji in commit subjects.
    * @default {false}
    */
   emoji?: boolean;

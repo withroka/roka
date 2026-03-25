@@ -81,9 +81,9 @@ export interface Repository {
 
 /** Pull request operations from {@linkcode Repository.pulls}. */
 export interface PullRequests {
-  /** List pull requests. */
+  /** Lists pull requests. */
   list(options?: PullRequestListOptions): Promise<PullRequest[]>;
-  /** Create a pull request. */
+  /** Creates a pull request. */
   create(options?: PullRequestCreateOptions): Promise<PullRequest>;
 }
 
@@ -109,15 +109,15 @@ export interface PullRequest {
   closed: boolean;
   /** Whether the pull request is locked. */
   locked: boolean;
-  /** Update the pull request. */
+  /** Updates the pull request. */
   update(options?: PullRequestUpdateOptions): Promise<PullRequest>;
 }
 
 /** Release operations from {@linkcode Repository.releases}. */
 export interface Releases {
-  /** List releases. */
+  /** Lists releases. */
   list(options?: ReleaseListOptions): Promise<Release[]>;
-  /** Create a release. */
+  /** Creates a release. */
   create(tag: string, options?: ReleaseCreateOptions): Promise<Release>;
 }
 
@@ -141,9 +141,9 @@ export interface Release {
   draft: boolean;
   /** Whether the release is a pre-release. */
   prerelease: boolean;
-  /** Update the release. */
+  /** Updates the release. */
   update(options?: ReleaseUpdateOptions): Promise<Release>;
-  /** Delete the release. */
+  /** Deletes the release. */
   delete(): Promise<void>;
   /** Operations for managing release assets. */
   assets: ReleaseAssets;
@@ -151,9 +151,9 @@ export interface Release {
 
 /** Asset operations from {@linkcode Release.assets}. */
 export interface ReleaseAssets {
-  /** List release assets. */
+  /** Lists release assets. */
   list(): Promise<ReleaseAsset[]>;
-  /** Upload an asset to the release. */
+  /** Uploads an asset to the release. */
   upload(file: string | URL): Promise<ReleaseAsset>;
 }
 
@@ -171,7 +171,7 @@ export interface ReleaseAsset {
   size: number;
   /** Release asset download count. */
   downloadCount: number;
-  /** Delete the release asset. */
+  /** Deletes the release asset. */
   delete(): Promise<void>;
 }
 

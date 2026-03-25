@@ -196,7 +196,7 @@ export interface WorkspaceOptions {
    */
   root?: string | URL;
   /**
-   * Filter packages by name or directory.
+   * Filters packages by name or directory.
    *
    * Each filter is a glob pattern that matches the name or the directory of
    * the package relative to root. For example, either `"forge"` or the
@@ -251,7 +251,7 @@ export interface ReleaseOptions {
    */
   limit?: number;
   /**
-   * Include pre-release versions.
+   * Includes pre-release versions.
    * @default {false}
    */
   prerelease?: boolean;

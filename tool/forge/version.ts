@@ -24,12 +24,12 @@ import { PackageError, packageInfo } from "./workspace.ts";
 /** Options for the {@linkcode version} function. */
 export interface VersionOptions {
   /**
-   * Add release information to the version.
+   * Adds release information to the version.
    * @default {false}
    */
   release?: boolean;
   /**
-   * Add build information to the version.
+   * Adds build information to the version.
    * @default {false}
    */
   target?: boolean;

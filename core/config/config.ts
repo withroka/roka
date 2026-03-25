@@ -41,7 +41,7 @@ export interface Config<T extends Record<string, unknown>> {
   get(): Promise<Partial<T>>;
   /** Writes data to the configuration. Prior data is not deleted. */
   set(value: Partial<T>): Promise<void>;
-  /** Clear all stored configuration data. */
+  /** Clears all stored configuration data. */
   clear(): Promise<void>;
 }
 

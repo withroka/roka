@@ -274,7 +274,7 @@ async function writeCache(
   await store.put(request, response.clone());
 }
 
-/** Clear the client cache. */
+/** Clears the client cache. */
 export async function clearCache(cacheStore?: string): Promise<void> {
   await caches.delete(cacheStore ?? import.meta.url);
 }

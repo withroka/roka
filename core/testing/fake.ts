@@ -76,7 +76,7 @@ export interface FakeArgs {
 }
 
 /**
- * Create a fake replacement for script arguments supplied by `Deno.args`.
+ * Creates a fake replacement for script arguments supplied by `Deno.args`.
  *
  * Useful for testing command-line applications.
  *
@@ -125,7 +125,7 @@ export interface FakeEnv extends Deno.Env {
 }
 
 /**
- * Create a fake replacement for environment variables supplied by `Deno.env`.
+ * Creates a fake replacement for environment variables supplied by `Deno.env`.
  *
  * Useful for supplying and manipulating environment variables in tests.
  *
@@ -235,16 +235,16 @@ export interface FakeConsoleOutputOptions {
    */
   stripCss?: boolean;
   /**
-   * Trim horizontal whitespace from output lines.
+   * Trims horizontal whitespace from output lines.
    * @default {false}
    */
   trimEnd?: boolean;
-  /** Wrap output with a string on both sides before returning it. */
+  /** Wraps output with a string on both sides before returning it. */
   wrap?: string;
 }
 
 /**
- * Create a fake replacement for the global `console` by overriding calls to
+ * Creates a fake replacement for the global `console` by overriding calls to
  * its log methods.
  *
  * Useful for verifying output from command-line tools.
@@ -428,7 +428,7 @@ export interface FakeCommandOptions {
 }
 
 /**
- * Create a fake replacement for the `Deno.Command` class.
+ * Creates a fake replacement for the `Deno.Command` class.
  *
  * Useful for testing subprocess execution without actually running commands.
  *
