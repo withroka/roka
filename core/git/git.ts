@@ -781,7 +781,18 @@ export interface RevertOperations {
 
 /** Remote operations from {@linkcode Git.remote}. */
 export interface RemoteOperations {
-  /** Lists remotes in the repository. */
+  /**
+   * Lists remotes in the repository.
+   *
+   * @example List all remotes.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const remotes = await git().remote.list();
+   *   return { remotes };
+   * });
+   * ```
+   */
   list(): Promise<Remote[]>;
   /** Returns the current remote configured for current branch. */
   current(): Promise<Remote | undefined>;
@@ -789,10 +800,34 @@ export interface RemoteOperations {
   get(remote: string | Remote): Promise<Remote | undefined>;
   /**
    * Queries the HEAD branch name on a remote repository.
+   *
+   * @example Get the default branch name from origin.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const head = await git().remote.head("origin");
+   *   return { head };
+   * });
+   * ```
+   *
    * @throws {@linkcode GitError} If remote `HEAD` is detached.
    */
   head(remote: string | URL | Remote): Promise<string>;
-  /** Adds a remote to the repository. */
+  /**
+   * Adds a remote to the repository.
+   *
+   * @example Add a remote.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const remote = await git().remote.add(
+   *     "upstream",
+   *     "https://github.com/withroka/roka.git",
+   *   );
+   *   return { remote };
+   * });
+   * ```
+   */
   add(remote: string, url: string | URL): Promise<Remote>;
   /** Adds given remote to the repository. */
   add(remote: Remote): Promise<Remote>;
@@ -802,7 +837,17 @@ export interface RemoteOperations {
   set(remote: Remote): Promise<Remote>;
   /** Updates a remote with a fetch/push URL. */
   set(remote: string, url: string | URL): Promise<Remote>;
-  /** Prunes stale references to remote branches. */
+  /**
+   * Prunes stale references to remote branches.
+   *
+   * @example Prune stale remote tracking branches.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().remote.prune("origin");
+   * });
+   * ```
+   */
   prune(remote: string | Remote | (string | Remote)[]): Promise<void>;
   /** Removes a remote from the repository. */
   remove(remote: string | Remote): Promise<void>;
@@ -810,11 +855,41 @@ export interface RemoteOperations {
 
 /** Sync operations from {@linkcode Git.sync}. */
 export interface SyncOperations {
-  /** Fetches branches and tags from a remote. */
+  /**
+   * Fetches branches and tags from a remote.
+   *
+   * @example Fetch with pruning.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().sync.fetch({ prune: true });
+   * });
+   * ```
+   */
   fetch(options?: SyncFetchOptions): Promise<void>;
-  /** Pulls branches and tags from a remote. */
+  /**
+   * Pulls branches and tags from a remote.
+   *
+   * @example Pull from origin.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().sync.pull();
+   * });
+   * ```
+   */
   pull(options?: SyncPullOptions): Promise<void>;
-  /** Pushes branches and tags to a remote. */
+  /**
+   * Pushes branches and tags to a remote.
+   *
+   * @example Push the current branch and set upstream.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().sync.push({ track: true });
+   * });
+   * ```
+   */
   push(options?: SyncPushOptions): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
   unshallow(options?: SyncRemoteOptions): Promise<void>;
