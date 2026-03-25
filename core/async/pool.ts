@@ -73,14 +73,11 @@ export interface PoolOptions {
  * ```ts
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
- * const result = await pool(
- *   [
- *     () => Promise.resolve(1),
- *     () => Promise.resolve(2),
- *     () => Promise.resolve(3),
- *   ],
- *   { concurrency: 2 },
- * );
+ * const result = await pool([
+ *   () => Promise.resolve(1),
+ *   () => Promise.resolve(2),
+ *   () => Promise.resolve(3),
+ * ], { concurrency: 2 });
  * assertEquals(result, [1, 2, 3]);
  * ```
  *
@@ -189,12 +186,12 @@ export async function pool<T, R>(
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
- * const iterable = pooled([
+ * const numbers = pooled([
  *   () => Promise.resolve(1),
  *   () => Promise.resolve(2),
  *   () => Promise.resolve(3),
  * ]);
- * for await (const number of iterable) {
+ * for await (const number of numbers) {
  *   results.push(number);
  * }
  * assertEquals(results, [1, 2, 3]);
@@ -205,15 +202,12 @@ export async function pool<T, R>(
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
- * const iterable = pooled(
- *   [
- *     () => Promise.resolve(1),
- *     () => Promise.resolve(2),
- *     () => Promise.resolve(3),
- *   ],
- *   { concurrency: 2 },
- * );
- * for await (const number of iterable) {
+ * const numbers = pooled([
+ *   () => Promise.resolve(1),
+ *   () => Promise.resolve(2),
+ *   () => Promise.resolve(3),
+ * ], { concurrency: 2 });
+ * for await (const number of numbers) {
  *   results.push(number);
  * }
  * assertEquals(results, [1, 2, 3]);
@@ -251,11 +245,11 @@ export function pooled<T>(
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
- * const iterable = pooled(
+ * const numbers = pooled(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
  * );
- * for await (const number of iterable) {
+ * for await (const number of numbers) {
  *   results.push(number);
  * }
  * assertEquals(results, [2, 4, 6]);
@@ -266,12 +260,12 @@ export function pooled<T>(
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
  * const results: number[] = [];
- * const iterable = pooled(
+ * const numbers = pooled(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
  *   { concurrency: 2 },
  * );
- * for await (const number of iterable) {
+ * for await (const number of numbers) {
  *   results.push(number);
  * }
  * assertEquals(results, [2, 4, 6]);
@@ -287,12 +281,11 @@ export function pooled<T>(
  *   yield 2;
  *   yield 3;
  * }
- * for await (
- *   const number of pooled(
- *     asyncIterable(),
- *     (value) => Promise.resolve(value * 2),
- *   )
- * ) {
+ * const numbers = pooled(
+ *   asyncIterable(),
+ *   (value) => Promise.resolve(value * 2),
+ * );
+ * for await (const number of numbers) {
  *   results.push(number);
  * }
  * assertEquals(results, [2, 4, 6]);
