@@ -2133,12 +2133,14 @@ export interface SyncShallowOptions {
    *
    * - `{ depth }`: limit to the number of commits from the tip of each branch
    * - `{ exclude }`: exclude commits reachable from specified branches or tags
+   * - `{ since }`: keep history after the specified time
    *
    * Only one shallow option can be set at a time.
    */
   shallow?:
-    | { depth: number; exclude?: never }
-    | { exclude: string[]; depth?: never };
+    | { depth: number; exclude?: never; since?: never }
+    | { exclude: string[]; depth?: never; since?: never }
+    | { since: InstantLike; depth?: never; exclude?: never };
 }
 
 /**
@@ -2586,9 +2588,12 @@ export function git(options?: GitOptions): Git {
         flag("--dissociate", reference?.dissociate),
         flag("--origin", origin),
         flag("--depth", options?.shallow?.depth),
-        flag("--shallow-exclude", options?.shallow?.exclude, {
-          equals: true,
-        }),
+        flag("--shallow-exclude", options?.shallow?.exclude, { equals: true }),
+        flag(
+          "--shallow-since",
+          dateArg(options?.shallow?.since),
+          { equals: true },
+        ),
         flag(
           ["--single-branch", "--no-single-branch"],
           options?.singleBranch,
@@ -3818,6 +3823,11 @@ export function git(options?: GitOptions): Git {
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
           }),
+          flag(
+            "--shallow-since",
+            dateArg(options?.shallow?.since),
+            { equals: true },
+          ),
           flag("--no-tags", options?.tags === "none"),
           flag("--tags", options?.tags === "all"),
           flag("--set-upstream", options?.track),
@@ -3847,6 +3857,11 @@ export function git(options?: GitOptions): Git {
           flag("--shallow-exclude", options?.shallow?.exclude, {
             equals: true,
           }),
+          flag(
+            "--shallow-since",
+            dateArg(options?.shallow?.since),
+            { equals: true },
+          ),
           flag(["--gpg-sign", "--no-gpg-sign"], options?.sign, {
             equals: true,
           }),

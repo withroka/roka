@@ -662,6 +662,35 @@ Deno.test("git().clone({ shallow }) can exclude history by target", async () => 
   ]);
 });
 
+Deno.test("git().clone({ shallow }) can exclude history by date", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const since = Temporal.Now.instant();
+  await upstream.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+    committer: { date: since.subtract({ hours: 2 }) },
+  });
+  await upstream.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+    committer: { date: since.subtract({ hours: 2 }) },
+  });
+  const commit3 = await upstream.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+    committer: { date: since.add({ hours: 1 }) },
+  });
+  await using directory = await tempDirectory();
+  const repo = await git().clone(upstream.path(), {
+    directory: directory.path(),
+    shallow: { since },
+    local: false,
+  });
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
+    omit(commit3, ["parents"]),
+  ]);
+});
+
 Deno.test("git().clone({ singleBranch }) copies a single branch", async () => {
   await using upstream = await tempRepository();
   await upstream.branch.switch("branch1", { create: true });
@@ -9194,6 +9223,36 @@ Deno.test("git().sync.fetch({ shallow }) can exclude history by target", async (
   ]);
 });
 
+Deno.test("git().sync.fetch({ shallow }) can exclude history by date", async () => {
+  await using upstream = await tempRepository({ branch: "main" });
+  const since = Temporal.Now.instant();
+  const commit1 = await upstream.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+    committer: { date: since.subtract({ hours: 2 }) },
+  });
+  const commit2 = await upstream.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+    committer: { date: since.subtract({ hours: 1 }) },
+  });
+  const commit3 = await upstream.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+    committer: { date: since.add({ hours: 1 }) },
+  });
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
+    commit3,
+    commit2,
+    commit1,
+  ]);
+  await repo.sync.fetch({ shallow: { since } });
+  assertEquals(await repo.commit.log({ to: "origin/main" }), [
+    omit(commit3, ["parents"]),
+  ]);
+});
+
 Deno.test("git().sync.fetch({ tags }) can skip tags", async () => {
   await using upstream = await tempRepository({ branch: "main" });
   await using repo = await tempRepository({ clone: upstream });
@@ -9622,6 +9681,30 @@ Deno.test("git().sync.pull({ shallow }) can exclude history by target", async ()
   await using repo = await tempRepository({ clone: upstream });
   assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
   await repo.sync.pull({ shallow: { exclude: [tag.name] } });
+  assertEquals(await repo.commit.log(), [omit(commit3, ["parents"])]);
+});
+
+Deno.test("git().sync.pull({ shallow }) can exclude history by date", async () => {
+  await using upstream = await tempRepository();
+  const since = Temporal.Now.instant();
+  const commit1 = await upstream.commit.create({
+    subject: "commit1",
+    allowEmpty: true,
+    committer: { date: since.subtract({ hours: 2 }) },
+  });
+  const commit2 = await upstream.commit.create({
+    subject: "commit2",
+    allowEmpty: true,
+    committer: { date: since.subtract({ hours: 1 }) },
+  });
+  const commit3 = await upstream.commit.create({
+    subject: "commit3",
+    allowEmpty: true,
+    committer: { date: since.add({ hours: 1 }) },
+  });
+  await using repo = await tempRepository({ clone: upstream });
+  assertEquals(await repo.commit.log(), [commit3, commit2, commit1]);
+  await repo.sync.pull({ shallow: { since: commit3.committer.date } });
   assertEquals(await repo.commit.log(), [omit(commit3, ["parents"])]);
 });
 
