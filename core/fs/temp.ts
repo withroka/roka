@@ -45,12 +45,14 @@ export interface TempDirectoryOptions {
  * @example Automatically changing to the directory.
  * ```ts
  * import { tempDirectory } from "@roka/fs/temp";
+ * import { assertEquals } from "@std/assert";
+ * const cwd = Deno.cwd();
  * {
- *   await using _ = await tempDirectory({ chdir: true });
- *   Deno.cwd(); // _.path()
+ *   await using directory = await tempDirectory({ chdir: true });
+ *   assertEquals(Deno.cwd(), await Deno.realPath(directory.path()));
  *   await Deno.writeTextFile("file.txt", "Hello!");
  * }
- * Deno.cwd(); // restored
+ * assertEquals(Deno.cwd(), cwd);
  * ```
  */
 export async function tempDirectory(
