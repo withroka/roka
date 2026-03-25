@@ -274,7 +274,6 @@ export function pooled<T>(
  * for await (const number of iterable) {
  *   results.push(number);
  * }
- *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
@@ -296,7 +295,6 @@ export function pooled<T>(
  * ) {
  *   results.push(number);
  * }
- *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
