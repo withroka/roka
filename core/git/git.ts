@@ -121,20 +121,62 @@ export interface Git {
 
 /** Config operations from {@linkcode Git.config}. */
 export interface ConfigOperations {
-  /** Lists all git configuration values with validation. */
+  /**
+   * Lists all git configuration values with validation.
+   *
+   * @example List all local configuration values.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const config = await git().config.list({ level: "local" });
+   *   return { config };
+   * });
+   * ```
+   */
   list(options?: ConfigOptions): Promise<Config>;
-  /** Gets a git configuration value with validation. */
+  /**
+   * Gets a git configuration value with validation.
+   *
+   * @example Get the configured user name.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   const name = await git().config.get("user.name");
+   *   return { name };
+   * });
+   * ```
+   */
   get<K extends ConfigKey>(
     key: K,
     options?: ConfigOptions,
   ): Promise<ConfigValue<K> | undefined>;
-  /** Sets a git configuration value. */
+  /**
+   * Sets a git configuration value.
+   *
+   * @example Disable GPG signing for commits.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().config.set("commit.gpgSign", false);
+   * });
+   * ```
+   */
   set<K extends ConfigKey>(
     key: K,
     value: ConfigValue<K>,
     options?: ConfigOptions,
   ): Promise<void>;
-  /** Removes a git configuration value. */
+  /**
+   * Removes a git configuration value.
+   *
+   * @example Remove a configuration value.
+   * ```ts
+   * import { git } from "@roka/git";
+   * (async () => {
+   *   await git().config.unset("commit.gpgSign");
+   * });
+   * ```
+   */
   unset(key: ConfigKey, options?: ConfigOptions): Promise<void>;
 }
 
