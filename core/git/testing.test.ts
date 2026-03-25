@@ -24,8 +24,8 @@ Deno.test("testCommit() creates a commit with default data", () => {
 });
 
 Deno.test("testCommit() creates a commit with custom data", () => {
-  const date1 = Temporal.Instant.fromEpochMilliseconds(111000);
-  const date2 = Temporal.Instant.fromEpochMilliseconds(222000);
+  const date1 = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
+  const date2 = Temporal.ZonedDateTime.from("2002-02-02T02:02:02[+02:00]");
   const commit = testCommit({
     subject: "custom-subject",
     body: "custom-body",

@@ -3681,10 +3681,10 @@ Deno.test("git().commit.log() returns multiple commits", async () => {
   assertEquals(await repo.commit.log(), [commit2, commit1]);
 });
 
-Deno.test("git().commit.log() can parse author and committer", async () => {
+Deno.test("git().commit.log() can parse attribution", async () => {
   await using repo = await tempRepository();
   const date1 = Temporal.Instant.from("2001-01-01T01:01:01Z");
-  const date2 = Temporal.Instant.from("2002-02-02T02:02:02Z");
+  const date2 = Temporal.ZonedDateTime.from("2002-02-02T02:02:02[+02:00]");
   await repo.commit.create({
     subject: "commit",
     allowEmpty: true,
@@ -3696,7 +3696,7 @@ Deno.test("git().commit.log() can parse author and committer", async () => {
   assertEquals(commit.author, {
     name: "name1",
     email: "email1",
-    date: date1,
+    date: date1.toZonedDateTimeISO("UTC"),
   });
   assertEquals(commit.committer, {
     name: "name2",
@@ -3750,8 +3750,12 @@ Deno.test("git().commit.log() handles configuration overrides", async () => {
       "committer.name": "committer-name",
     },
   });
-  const date1 = Temporal.Instant.fromEpochMilliseconds(1000);
-  const date2 = Temporal.Instant.fromEpochMilliseconds(2000);
+  const date1 = Temporal.Instant
+    .fromEpochMilliseconds(1000)
+    .toZonedDateTimeISO("+01:00");
+  const date2 = Temporal.Instant
+    .fromEpochMilliseconds(2000)
+    .toZonedDateTimeISO("+02:00");
   const commit = await repo.commit.create({
     subject: "subject with Unicode character: ∑",
     body: "body",
@@ -4312,12 +4316,48 @@ Deno.test("git().commit.create({ author }) sets author", async () => {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const date = Temporal.Instant.fromEpochMilliseconds(1000);
+  const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
   const commit = await repo.commit.create({
     subject: "commit",
     author: { name: "name", email: "email", date },
   });
   assertEquals(commit.author, { name: "name", email: "email", date });
+});
+
+Deno.test("git().commit.create({ author }) can set author date with timezone", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "name", "user.email": "email" },
+  });
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
+  const commit = await repo.commit.create({
+    subject: "commit",
+    author: { date },
+  });
+  assertEquals(commit.author, {
+    name: "name",
+    email: "email",
+    date: date,
+  });
+});
+
+Deno.test("git().commit.create({ author }) can set author date in UTC", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "name", "user.email": "email" },
+  });
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const commit = await repo.commit.create({
+    subject: "commit",
+    author: { date },
+  });
+  assertEquals(commit.author, {
+    name: "name",
+    email: "email",
+    date: date.toZonedDateTimeISO("UTC"),
+  });
 });
 
 Deno.test("git().commit.create({ committer }) sets committer", {
@@ -4326,12 +4366,54 @@ Deno.test("git().commit.create({ committer }) sets committer", {
   await using repo = await tempRepository();
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
-  const date = Temporal.Instant.fromEpochMilliseconds(1000);
+  const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
   const commit = await repo.commit.create({
     subject: "commit",
     committer: { name: "name", email: "email", date },
   });
   assertEquals(commit.committer, { name: "name", email: "email", date });
+});
+
+Deno.test(
+  "git().commit.create({ committer }) can set committer date with timezone",
+  { ignore: codespaces },
+  async () => {
+    await using repo = await tempRepository({
+      config: { "user.name": "name", "user.email": "email" },
+    });
+    await Deno.writeTextFile(repo.path("file"), "content");
+    await repo.index.add("file");
+    const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
+    const commit = await repo.commit.create({
+      subject: "commit",
+      committer: { date },
+    });
+    assertEquals(commit.committer, {
+      name: "name",
+      email: "email",
+      date: date,
+    });
+  },
+);
+
+Deno.test("git().commit.create({ committer }) can set committer date in UTC", {
+  ignore: codespaces,
+}, async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "name", "user.email": "email" },
+  });
+  await Deno.writeTextFile(repo.path("file"), "content");
+  await repo.index.add("file");
+  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const commit = await repo.commit.create({
+    subject: "commit",
+    committer: { date },
+  });
+  assertEquals(commit.committer, {
+    name: "name",
+    email: "email",
+    date: date.toZonedDateTimeISO("UTC"),
+  });
 });
 
 Deno.test("git().commit.create({ body }) creates a commit with body", async () => {
@@ -4479,7 +4561,9 @@ Deno.test("git().commit.amend({ author }) can update the author", async () => {
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit" });
-  const date = Temporal.Instant.fromEpochMilliseconds(1000);
+  const date = Temporal.Instant
+    .fromEpochMilliseconds(1000)
+    .toZonedDateTimeISO("+01:00");
   const amended = await repo.commit.amend({
     author: { name: "new-name", email: "new-email", date },
   });
@@ -4495,7 +4579,9 @@ Deno.test("git().commit.amend({ author }) can update the committer", async () =>
   await Deno.writeTextFile(repo.path("file"), "content");
   await repo.index.add("file");
   await repo.commit.create({ subject: "commit" });
-  const date = Temporal.Instant.fromEpochMilliseconds(1000);
+  const date = Temporal.Instant
+    .fromEpochMilliseconds(1000)
+    .toZonedDateTimeISO("+01:00");
   const amended = await repo.commit.amend({
     committer: { name: "new-name", email: "new-email", date },
   });
@@ -6159,7 +6245,7 @@ Deno.test("git().tag.create() can create an annotated tag", {
     subject: "commit",
     allowEmpty: true,
   });
-  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
   const tag = await repo.tag.create("tag", {
     subject: "subject",
     body: "body",
@@ -6182,7 +6268,7 @@ Deno.test("git().tag.create() ignores empty body", {
     subject: "commit",
     allowEmpty: true,
   });
-  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
   const tag = await repo.tag.create("tag", {
     subject: "subject",
     body: "",
@@ -6235,6 +6321,32 @@ Deno.test("git().tag.create({ sign }) rejects wrong key", async () => {
     GitError,
     "signing",
   );
+});
+
+Deno.test("git().tag.create({ tagger }) can set tagger date with timezone", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "name", "user.email": "email" },
+  });
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
+  const tag = await repo.tag.create("tag", {
+    subject: "subject",
+    tagger: { date },
+  });
+  assertEquals(tag.tagger?.date, date);
+});
+
+Deno.test("git().tag.create({ tagger }) can set tagger date in UTC", async () => {
+  await using repo = await tempRepository({
+    config: { "user.name": "name", "user.email": "email" },
+  });
+  await repo.commit.create({ subject: "commit", allowEmpty: true });
+  const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+  const tag = await repo.tag.create("tag", {
+    subject: "subject",
+    tagger: { date },
+  });
+  assertEquals(tag.tagger?.date, date.toZonedDateTimeISO("UTC"));
 });
 
 Deno.test("git().tag.create({ target }) creates a tag with commit", async () => {
@@ -6293,7 +6405,7 @@ Deno.test(
       subject: "commit",
       allowEmpty: true,
     });
-    const date = Temporal.Instant.from("2001-01-01T01:01:01Z");
+    const date = Temporal.ZonedDateTime.from("2001-01-01T01:01:01[+01:00]");
     const tag = await repo.tag.create("tag", {
       subject: "subject",
       body: "body",
