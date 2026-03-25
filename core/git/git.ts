@@ -1988,6 +1988,19 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
   /** Excludes commits reachable from this commit (--onto mode). */
   after?: Commitish;
   /**
+   * Control the date of rebased commits.
+   *
+   * - `"preserve"`: preserve original author dates (default)
+   * - `"reset"`: set author dates to the time of rebase
+   * - `"committer-is-author"`: re-apply author dates as committer dates
+   *
+   * Options other than `"preserve"` imply
+   * {@linkcode RebaseOptions.fastForward fastForward} is `false`.
+   *
+   * @default {"preserve"}
+   */
+  dates?: "preserve" | "reset" | "committer-is-author";
+  /**
    * Control how commits that become empty after rebasing are handled.
    *
    * - `"drop"`: drop commits that become empty (default)
@@ -2004,6 +2017,9 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    *
    * - `true`: allow fast-forwarding (default)
    * - `false`: disable fast-forwarding, and recreate every commit
+   *
+   * This option is ignored if history is being rewritten with
+   * {@linkcode RebaseOptions.dates dates}.
    *
    * @default {true}
    */
@@ -3477,6 +3493,11 @@ export function git(options?: GitOptions): Git {
           run(
             runOptions,
             ["rebase", "--no-stat"],
+            flag("--reset-author-date", options?.dates === "reset"),
+            flag(
+              "--committer-date-is-author-date",
+              options?.dates === "committer-is-author",
+            ),
             flag("--empty", options?.empty, { equals: true }),
             flag("--force-rebase", options?.fastForward === false),
             flag(["--rebase-merges", "--no-rebase-merges"], options?.merges),
