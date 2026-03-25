@@ -99,7 +99,7 @@ export interface FindOptions {
  * that are neither files nor directories, such as sockets and devices, are
  * ignored.
  *
- * This functions returns all file system node types by default. Filtering by
+ * This function returns all file system node types by default. Filtering by
  * type can be done with {@linkcode FindOptions.type}.
  *
  * The results contain no duplicates, even if there are multiple paths

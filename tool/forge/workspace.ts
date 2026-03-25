@@ -75,7 +75,7 @@ import {
 
 /** An error thrown by the `forge` package. */
 export class PackageError extends Error {
-  /** Construct PackageError. */
+  /** Constructs PackageError. */
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "PackageError";

@@ -73,7 +73,7 @@ export class RequestError extends Error {
   /** The status code of the response. */
   readonly status?: number;
 
-  /** Construct RequestError. */
+  /** Constructs RequestError. */
   constructor(
     message: string,
     options?: { status?: number; cause?: unknown },
@@ -132,7 +132,7 @@ export interface RequestOptions extends RequestInit {
    * Cache store name.
    *
    * By default, client cache is shared across all requests. This parameter
-   * allows to create separate cache stores.
+   * allows creating separate cache stores.
    *
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Request/cache Request: cache property}
    */

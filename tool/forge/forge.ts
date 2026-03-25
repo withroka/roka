@@ -70,7 +70,7 @@
  *   style(example): nicer code style (#5)
  *   fix(example)!: really fix bug with breaking change (#4)
  *   revert(example): revert bug fix, it broke something (#3)
- *   fix(example) fix bug (#2)
+ *   fix(example): fix bug (#2)
  *   feat(example): introduce new feature (#1)
  * ```
  *

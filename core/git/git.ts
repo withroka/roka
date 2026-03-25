@@ -1272,7 +1272,7 @@ export interface ResolveOptions {
    * - `"theirs"`: in case of conflicts, prefer their changes
    *
    * By default, git uses the `ort` strategy when merging two heads, and the
-   * 'octopus' strategy when merging more than two heads. When this option is
+   * `octopus` strategy when merging more than two heads. When this option is
    * provided, merge is done using the `ort` strategy with the provided
    * resolution method.
    */
@@ -1352,7 +1352,7 @@ export interface InitOptions extends RepositoryOptions {
    * `false`: use permissions reported by `umask`
    * `true`: make repository writable by group
    * `"all"`: make repository writable by group, and readable by others
-   * mode: set repository mode to given number mode
+   * `number`: set repository mode to given number
    *
    * @default {false}
    */
@@ -1632,7 +1632,7 @@ export interface DiffPatchOptions extends DiffOptions {
  */
 export interface IgnoreFilterOptions {
   /**
-   * Look in the index when undertaking the checks.
+   * Looks in the index when undertaking the checks.
    * @default {true}
    */
   index?: boolean;
@@ -1799,11 +1799,11 @@ export interface BranchCreateOptions extends BranchCreateTrackOptions {
 
 /**
  * Options common to the {@linkcode BranchOperations.create} and
- * {@linkcode BranchOperations.switch} functions for upstream tracking setup.
+ * {@linkcode BranchOperations.switch} functions for upstream tracking set-up.
  */
 export interface BranchCreateTrackOptions {
   /**
-   * Setup upstream configuration for a newly created branch.
+   * Sets up upstream configuration for a newly created branch.
    *
    * The tracking configuration depends on the value of the target of the
    * created branch.
@@ -2001,7 +2001,7 @@ export interface MergeOptions extends ResolveOptions, SignOptions {
   fastForward?: boolean | "only";
   /**
    * Produces the working tree and index state as if a merge has happened, but
-   * do not create a merge commit.
+   * does not create a merge commit.
    *
    * Implies {@linkcode MergeOptions.commit commit} is `false`.
    *
@@ -2161,7 +2161,7 @@ export interface SyncOptions {
 }
 
 /**
- * Options common to operations that can setup upstream tracking with remotes
+ * Options common to operations that can set up upstream tracking with remotes
  * (e.g. {@linkcode SyncOperations.push}).
  */
 export interface SyncTrackOptions {
