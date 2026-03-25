@@ -279,7 +279,7 @@ export interface MockConversion<
  * @param self The object containing the function to mock.
  * @param property The property symbol of the object to mock.
  * @param options Options and data conversions for the mock.
- * @return A mock function that records and replays calls to the original.
+ * @returns A mock function that records and replays calls to the original.
  */
 export function mock<
   Self extends Record<
