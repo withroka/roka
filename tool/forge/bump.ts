@@ -96,7 +96,7 @@ export interface BumpOptions {
  * the {@link https://www.conventionalcommits.org Conventional Commits} for
  * the package since that release. If the changelog is not empty, the version
  * will be a pre-release version. If {@linkcode BumpOptions.release release}
- * is set, the version of the next release will be written, dropping prerelase
+ * is set, the version of the next release will be written, dropping prerelease
  * and build information from the version string.
  *
  * When working with pull requests, if there is an open PR, it will be updated

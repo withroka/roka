@@ -1,5 +1,5 @@
 /**
- * This module provides the {@linkcode plain} function, which  removes HTML
+ * This module provides the {@linkcode plain} function, which removes HTML
  * tags and escapes special characters to produce plain text from HTML input.
  *
  * ```ts

@@ -154,7 +154,7 @@ export interface RequestOptions extends RequestInit {
  * A default browser agent is always sent with the request, unless overridden
  * with the {@linkcode RequestOptions.agent agent} option.
  *
- * If the {@linkcode RequestOptions.token token} option set, it is sent as a
+ * If the {@linkcode RequestOptions.token token} option is set, it is sent as a
  * bearer token in the `Authorization` header.
  *
  * The responses for `GET` requests are cached on the client side using the
