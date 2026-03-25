@@ -4476,10 +4476,10 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
         date: {
           kind: "string",
           format: "%aI",
-          transform: (value) =>
-            Temporal.Instant.from(value).toZonedDateTimeISO(
-              value.match(TIMEZONE_PATTERN)?.[0] || "UTC",
-            ),
+          transform: (value) => {
+            return Temporal.Instant.from(value)
+              .toZonedDateTimeISO(value.match(TIMEZONE_PATTERN)?.[0] || "UTC");
+          },
         },
       },
     },
@@ -4491,10 +4491,10 @@ const COMMIT_FORMAT: FormatDescriptor<Commit> = {
         date: {
           kind: "string",
           format: "%cI",
-          transform: (value) =>
-            Temporal.Instant.from(value).toZonedDateTimeISO(
-              value.match(TIMEZONE_PATTERN)?.[0] || "UTC",
-            ),
+          transform: (value) => {
+            return Temporal.Instant.from(value)
+              .toZonedDateTimeISO(value.match(TIMEZONE_PATTERN)?.[0] || "UTC");
+          },
         },
       },
     },
@@ -4553,10 +4553,10 @@ const TAG_FORMAT: FormatDescriptor<Tag> = {
           kind: "string",
           format:
             "%(if)%(object)%(then)%(taggerdate:iso-strict)%(else)%00%(end)",
-          transform: (value) =>
-            Temporal.Instant.from(value).toZonedDateTimeISO(
-              value.match(TIMEZONE_PATTERN)?.[0] || "UTC",
-            ),
+          transform: (value) => {
+            return Temporal.Instant.from(value)
+              .toZonedDateTimeISO(value.match(TIMEZONE_PATTERN)?.[0] || "UTC");
+          },
         },
       },
     },
