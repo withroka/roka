@@ -274,7 +274,7 @@ Deno.test("pooled({ concurrency }) rejects floating point", () => {
   );
 });
 
-Deno.test("pooled({ concurrency }) rejects floating infinity", () => {
+Deno.test("pooled({ concurrency }) rejects infinity", () => {
   assertThrows(
     () => pooled([], (x) => Promise.resolve(x), { concurrency: Infinity }),
     RangeError,
