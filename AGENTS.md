@@ -18,7 +18,8 @@ Proactively use a subagent available through your tooling for every task.
 
 ## Commit conventions
 
-This project uses [Conventional Commits](https://www.conventionalcommits.org/) for commit messages and PR titles.
+This project uses [Conventional Commits](https://www.conventionalcommits.org/)
+for commit messages and PR titles.
 
 - **feat**: New features
 - **fix**: Bug fixes

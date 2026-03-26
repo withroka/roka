@@ -868,10 +868,7 @@ export function deno(options?: DenoOptions): DenoCommands {
           ],
           next: "error-body",
         }, {
-          patterns: [
-            /^Error generating coverage report: [\s\S]+$/,
-            /^error: /,
-          ],
+          patterns: [/^error: /],
           report: "fatal",
         }, {
           states: ["fatal"],
@@ -902,8 +899,14 @@ export function deno(options?: DenoOptions): DenoCommands {
           report: "debug",
           next: "coverage",
         }, {
-          patterns: [/^Missing transpiled source code for:/],
+          patterns: [
+            /^Missing transpiled source code for:/,
+            /^Error generating coverage report: No covered files included in the report$/,
+          ],
           report: "debug",
+        }, {
+          patterns: [/^Error generating coverage report: [\s\S]+$/],
+          report: "fatal",
         }, {
           patterns: [/^$/],
         }],
