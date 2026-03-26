@@ -174,6 +174,7 @@ export async function pool<T, R>(
   options?: PoolOptions,
 ): Promise<R[]>;
 
+/** Implementation for {@linkcode pool}. */
 export async function pool<T, R>(
   array: Iterable<() => Promise<T>> | AsyncIterable<T> | Iterable<T>,
   iteratorFnOrOptions?: ((value: T) => Promise<R>) | PoolOptions,
@@ -337,6 +338,7 @@ export function pooled<T, R>(
   options?: PoolOptions,
 ): AsyncIterableIterator<R>;
 
+/** Implementation for {@linkcode pooled}. */
 export function pooled<T, R>(
   array: Iterable<() => Promise<T>> | AsyncIterable<T> | Iterable<T>,
   iteratorFnOrOptions?: ((value: T) => Promise<R>) | PoolOptions,

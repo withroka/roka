@@ -161,6 +161,7 @@ export function maybe<T>(fn: () => Promise<T>): Promise<Maybe<T>>;
  */
 export function maybe<T>(fn: () => T): Maybe<T>;
 
+/** Implementation for {@linkcode maybe}. */
 export function maybe<T>(
   fn: () => T | Promise<T>,
 ): Maybe<T> | Promise<Maybe<T>> {
