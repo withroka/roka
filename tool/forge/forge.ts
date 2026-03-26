@@ -295,9 +295,18 @@ import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { distinct, partition } from "@std/collections";
-import { bold, cyan, dim, gray, red, white, yellow } from "@std/fmt/colors";
+import {
+  bold,
+  cyan,
+  dim,
+  gray,
+  green,
+  red,
+  stripAnsiCode,
+  white,
+  yellow,
+} from "@std/fmt/colors";
 import { join, relative } from "@std/path";
-import { console, ERROR, SUCCESS } from "../console.ts";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
@@ -321,8 +330,34 @@ const DESCRIPTION = `
   Conventional Commits.
 `;
 
+const SUCCESS = green(bold("✓"));
+const ERROR = red("✘");
 const PACKAGE = cyan("  ■");
 const ARTIFACT = cyan("  ◆");
+
+const console = {
+  verbose: false,
+  print(
+    fn: typeof globalThis.console.log,
+    pipe: typeof Deno.stdout,
+    data: unknown[],
+  ) {
+    if (pipe.isTerminal()) return fn(...data);
+    return fn(...data.map((x) => typeof x === "string" ? stripAnsiCode(x) : x));
+  },
+  debug: (...data: unknown[]) =>
+    console.verbose
+      ? console.print(globalThis.console.debug, Deno.stdout, data)
+      : undefined,
+  log: (...data: unknown[]) =>
+    console.print(globalThis.console.log, Deno.stdout, data),
+  warn: (...data: unknown[]) =>
+    console.print(globalThis.console.warn, Deno.stderr, data),
+  error: (...data: unknown[]) =>
+    console.print(globalThis.console.error, Deno.stderr, data),
+  row: (color: (data: string) => string, data: string[]) =>
+    Deno.stdout.isTerminal() ? data.map((x) => color(x)) : data,
+};
 
 /**
  * Options for the {@link forge} function.
