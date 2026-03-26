@@ -88,7 +88,7 @@ Deno.test("compile({ concurrency }) rejects negative numbers ", async () => {
   );
   await assertRejects(
     () => compile(pkg, { concurrency: -1 }),
-    TypeError,
+    RangeError,
     "concurrency",
   );
 });
