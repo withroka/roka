@@ -1,6 +1,6 @@
-import { testCommit } from "@roka/git/testing";
 import { assertEquals, assertExists } from "@std/assert";
 import { conventional } from "./conventional.ts";
+import { testCommit } from "./testing.ts";
 
 Deno.test("conventional() creates conventional commits from full commit", () => {
   const commit = testCommit({ subject: "feat(scope): description" });

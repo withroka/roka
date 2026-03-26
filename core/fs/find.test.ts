@@ -1,10 +1,10 @@
 import { assertSameElements } from "@roka/assert";
 import { pool } from "@roka/async/pool";
-import { find } from "@roka/fs/find";
-import { tempDirectory } from "@roka/fs/temp";
 import { assert, assertRejects } from "@std/assert";
 import { distinct } from "@std/collections";
 import { dirname, resolve, toFileUrl } from "@std/path";
+import { find } from "./find.ts";
+import { tempDirectory } from "./temp.ts";
 
 async function createFiles(files: string[]) {
   const directories = distinct(files.map(dirname)).filter((x) => x !== ".");
