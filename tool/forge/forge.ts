@@ -284,6 +284,7 @@
  * @todo Add documentation for GitHub workflows.
  * @todo Better output when we are on a pre-release tag.
  * @todo Make bump trigger CI on force push.
+ * @todo Support `deno.jsonc`.
  *
  * @module forge
  */
