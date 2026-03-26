@@ -2589,6 +2589,11 @@ export interface TagListOptions extends RefListOptions {
    * @default {"name"}
    */
   sort?: "name" | "date" | "version";
+  /**
+   * Returns tags in reverse order.
+   * @default {false}
+   */
+  reverse?: boolean;
 }
 
 /**
@@ -4100,6 +4105,7 @@ export function git(options?: GitOptions): Git {
     },
     tag: {
       async list(options) {
+        const { sort, reverse } = options ?? {};
         const output = await run(
           runOptions,
           ["tag", "--no-color", "--no-column", "--list"],
@@ -4109,9 +4115,12 @@ export function git(options?: GitOptions): Git {
           flag("--merged", commitArg(options?.merged)),
           flag("--no-merged", commitArg(options?.noMerged)),
           flag("--points-at", commitArg(options?.pointsAt)),
-          flag("--sort=refname", options?.sort === "name"),
-          flag("--sort=creatordate", options?.sort === "date"),
-          flag("--sort=-version:refname", options?.sort === "version"),
+          flag("--sort=-refname", reverse && (!sort || sort === "name")),
+          flag("--sort=refname", !reverse && sort === "name"),
+          flag("--sort=-creatordate", reverse && sort === "date"),
+          flag("--sort=creatordate", !reverse && sort === "date"),
+          flag("--sort=version:refname", reverse && sort === "version"),
+          flag("--sort=-version:refname", !reverse && sort === "version"),
           options?.name,
         );
         const tags = parseOutput(TAG_FORMAT, output);
