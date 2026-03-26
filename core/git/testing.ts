@@ -7,6 +7,7 @@
  *
  * await using repo = await tempRepository();
  * const commit = testCommit({ subject: "feat(cli): add command" });
+ *
  * await repo.commit.create({
  *   subject: commit.subject,
  *   author: commit.author,
@@ -22,7 +23,7 @@ import { type Commit, type Config, type Git, git } from "./git.ts";
 /**
  * Creates a commit with fake data.
  *
- * @example Create a commit with a subject.
+ * @example Create a commit with a subject
  * ```ts
  * import { testCommit } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";
@@ -87,7 +88,7 @@ export interface TempRepositoryOptions {
 /**
  * Creates a temporary repository for testing.
  *
- * @example Create a temporary repository.
+ * @example Create a temporary repository
  * ```ts
  * import { tempRepository } from "@roka/git/testing";
  * import { assertEquals } from "@std/assert";

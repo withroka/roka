@@ -7,6 +7,7 @@
  * import { git } from "@roka/git";
  * import { conventional } from "@roka/git/conventional";
  * import { assertEquals, assertFalse } from "@std/assert";
+ *
  * (async () => {
  *   const repo = git();
  *   await repo.commit.create({ subject: "feat(cli): add new command" });
@@ -18,7 +19,10 @@
  * });
  * ```
  *
- * This implementation adheres to the version 1.0.0 of the specification.
+ * ### Notes
+ *
+ * This implementation adheres to the version 1.0.0 of the Conventional Commits
+ * specification.
  *
  * @module conventional
  */
@@ -28,7 +32,7 @@ import type { Commit } from "./git.ts";
 
 /**
  * A {@link https://www.conventionalcommits.org Conventional Commit} returned
- * by {@linkcode conventional}.
+ * by the {@linkcode conventional} function.
  */
 export interface ConventionalCommit extends Commit {
   /** Whether the commit is a breaking change. */
@@ -56,25 +60,27 @@ export type ConventionalCommitMessage = Pick<
  * Parses {@link https://www.conventionalcommits.org Conventional Commit}
  * details from a full {@linkcode Commit} object.
  *
- * @example Retrieve conventional commit details from a commit.
+ * @example Retrieve conventional commit details from a commit
  * ```ts
- * import { tempRepository } from "@roka/git/testing";
  * import { conventional } from "@roka/git/conventional";
+ * import { tempRepository } from "@roka/git/testing";
  * import { assertEquals, assertFalse } from "@std/assert";
  *
  * await using repo = await tempRepository();
  * await Deno.writeTextFile(repo.path("file.txt"), "content");
  * await repo.index.add("file.txt");
- * await repo.commit.create({ subject: "feat(cli): add new command" });
- * const commit = conventional(await repo.commit.head());
+ *
+ * const commit = conventional(
+ *   await repo.commit.create({ subject: "feat(cli): add new command" }),
+ * );
  *
  * assertEquals(commit.type, "feat");
  * assertEquals(commit.scopes, ["cli"]);
  * assertFalse(commit.breaking);
  * ```
  *
- * @param commit The commit object to convert, retrieved with {@linkcode git}.
- * @returns The commit object with conventional commit details.
+ * @param commit The commit object, retrieved from Git
+ * @returns The commit object with conventional commit details
  */
 export function conventional(commit: Commit): ConventionalCommit;
 
@@ -82,18 +88,20 @@ export function conventional(commit: Commit): ConventionalCommit;
  * Parses {@link https://www.conventionalcommits.org Conventional Commit}
  * details from message fields only, without a full {@linkcode Commit}.
  *
- * @example Retrieve conventional commit details from commit message.
+ * @example Retrieve conventional commit details from commit message
  * ```ts
  * import { conventional } from "@roka/git/conventional";
  * import { assertEquals, assertFalse } from "@std/assert";
+ *
  * const commit = conventional({ subject: "feat(cli): add new command" });
+ *
  * assertEquals(commit.type, "feat");
  * assertEquals(commit.scopes, ["cli"]);
  * assertFalse(commit.breaking);
  * ```
  *
- * @param commit The commit message to convert.
- * @returns The commit object with conventional commit details.
+ * @param commit The commit message to convert
+ * @returns The commit object with conventional commit details
  */
 export function conventional(commit: CommitMessage): ConventionalCommitMessage;
 

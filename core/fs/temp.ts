@@ -5,6 +5,7 @@
  *
  * ```ts
  * import { tempDirectory } from "@roka/fs/temp";
+ *
  * await using directory = await tempDirectory();
  * await Deno.writeTextFile(directory.path("file.txt"), "Hello, world!");
  * ```
@@ -34,18 +35,20 @@ export interface TempDirectoryOptions {
 /**
  * Returns a temporary directory as a disposable object.
  *
- * @example Using a temporary directory.
+ * @example Using a temporary directory
  * ```ts
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
+ *
  * await using directory = await tempDirectory();
  * assertEquals((await Deno.stat(directory.path())).isDirectory, true);
  * ```
  *
- * @example Automatically changing to the directory.
+ * @example Automatically changing to the directory
  * ```ts
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
+ *
  * const cwd = Deno.cwd();
  * {
  *   await using directory = await tempDirectory({ chdir: true });

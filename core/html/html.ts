@@ -8,12 +8,16 @@
  * ```ts
  * import { plain } from "@roka/html/plain";
  * import { assertEquals } from "@std/assert";
- * assertEquals(plain("<p>Hello, <b>world</b>!</p>"), "Hello, world!");
+ *
+ * assertEquals(
+ *   plain("<p>Hello, <b>world</b>!</p>"),
+ *   "Hello, world!",
+ * );
  * ```
  *
- * ## Modules
+ * ### Modules
  *
- *  -  {@link [plain]}: Convert HTML to plain text.
+ *  - {@link [plain]}: Convert HTML to plain text
  *
  * @module html
  */

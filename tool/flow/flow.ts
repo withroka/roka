@@ -5,10 +5,10 @@
  * comprehensive code quality checks. The tool uses Deno to format, type-check,
  * lint, and test code, including example code in documentation.
  *
- * ## Usage
+ * ### Usage
  *
- * Run **flow** with `deno run -P jsr:@roka/flow`. You can also install with
- * `deno install -gP jsr:@roka/flow` and run with the flow.
+ * Run **flow** with `dx jsr:@roka/flow`. You can also install with
+ * `deno install -gA jsr:@roka/flow` and run with the flow.
  *
  * ```sh
  * flow
@@ -39,7 +39,7 @@
  * {@link https://docs.deno.com/go/config/#linting linting} are configured
  * in `deno.json`. The
  * {@link https://docs.deno.com/go/doc/#linting documentation linter} runs
- * when run at the project root with no arguments.
+ * when the `doc` command or `--doc` flag is used.
  *
  * Tests use {@link https://docs.deno.com/go/config/#permissions permissions}
  * from the `deno.json` file. {@link https://jsr.io/@roka/testing/doc/mock Mocks}
@@ -54,8 +54,8 @@
  * contributions if it is useful to you. The interface is unstable and may
  * change._
  *
- * @todo Determine affected files based on module graph.
- * @todo Respect `include` and `exclude` lists in `deno.json`.
+ * @todo Determine affected files based on module graph
+ * @todo Respect `include` and `exclude` lists in `deno.json`
  *
  * @module flow
  */
@@ -127,7 +127,7 @@ const console = {
 /**
  * Runs the `flow` CLI tool.
  *
- * @returns The exit code of the command.
+ * @returns The exit code of the command
  */
 export async function flow(): Promise<number> {
   const cmd = new Command()

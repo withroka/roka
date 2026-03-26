@@ -6,6 +6,7 @@
  * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
+ *
  * Deno.test("mock() usage", async (t) => {
  *   using fetch = mock(t, globalThis, "fetch");
  *   const response = await fetch("https://www.example.com");
@@ -42,6 +43,7 @@
  *
  * ```ts ignore
  * import { mock } from "@roka/testing/mock";
+ *
  * Deno.test("mock() conversions", async (t) => {
  *   const _ = {
  *     async request(url: string, token: string) {
@@ -51,6 +53,7 @@
  *       return await fetch(request);
  *     },
  *   };
+ *
  *   using _mock = mock(t, _, "request", {
  *     conversion: {
  *       input: {
@@ -65,12 +68,13 @@
  *       },
  *     },
  *   });
+ *
  *   await _.request("https://www.example.com", "token");
  * });
  * ```
  *
  * **Note**: A ready-to-use mock for the Web API `fetch` is provided by the
- * {@link https://jsr.io/@roka/http **@roka/http**} module.
+ * {@link https://jsr.io/@roka/http/doc/testing **@roka/http/testing**} module.
  *
  * @module mock
  */
@@ -90,8 +94,8 @@ import { type GetParametersFromProp, MockError, stub } from "@std/testing/mock";
 /**
  * The mode of mocking.
  *
- *  - `replay`: The mock will replay the recorded calls from the mock file.
- *  - `update`: The mock will store the recorded calls into the mock file.
+ *  - `replay`: Replay the recorded calls from the mock file
+ *  - `update`: Store the recorded calls into the mock file
  */
 export type MockMode = "replay" | "update";
 
@@ -99,7 +103,7 @@ export type MockMode = "replay" | "update";
  * A mock for an async function or method returned by the {@linkcode mock}
  * function.
  *
- * @typeParam T The type of the original function being mocked.
+ * @typeParam T The type of the original function being mocked
  */
 export interface Mock<T extends (...args: Parameters<T>) => ReturnType<T>> {
   (...args: Parameters<T>): ReturnType<T>;
@@ -134,9 +138,9 @@ export interface MockOptions {
   /**
    * Mock output path.
    *
-   * If both {@linkcode MockOptions.dir dir} and `path` are specified, the
-   * `dir` option will be ignored, and the `path` option will be handled as
-   * normal.
+   * If both the {@linkcode MockOptions.dir dir} and the `path` options are
+   * specified, the `dir` option will be ignored, and the `path` option will be
+   * handled as normal.
    *
    * This can be a string path or a file URL.
    */
@@ -146,9 +150,9 @@ export interface MockOptions {
 /**
  * Data conversions for the {@linkcode mock} function.
  *
- * @typeParam T The type of the original function being mocked.
- * @typeParam Input The type of the input stored for mock calls.
- * @typeParam Output The type of the output stored for mock calls.
+ * @typeParam T The type of the original function being mocked
+ * @typeParam Input The type of the input stored for mock calls
+ * @typeParam Output The type of the output stored for mock calls
  */
 export interface MockConversion<
   T extends (...args: Parameters<T>) => ReturnType<T>,
@@ -223,7 +227,7 @@ export interface MockConversion<
  * an error. During replay, the mock will fail to find a matching call, and a
  * `MockError` will be thrown.
  *
- * @example Using the mock as a disposable.
+ * @example Using the mock as a disposable
  * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
@@ -235,7 +239,7 @@ export interface MockConversion<
  * });
  * ```
  *
- * @example Using the mock with manual restore.
+ * @example Using the mock with manual restore
  * ```ts ignore
  * import { mock } from "@roka/testing/mock";
  * import { assertEquals } from "@std/assert";
@@ -248,9 +252,10 @@ export interface MockConversion<
  * });
  * ```
  *
- * @example Using the mock with custom conversions.
+ * @example Using the mock with custom conversions
  * ```ts ignore
  * import { mock } from "@roka/testing/mock";
+ *
  * Deno.test("mock() with custom conversions", async (t) => {
  *   const _ = {
  *     async request(url: string, token: string) {
@@ -260,6 +265,7 @@ export interface MockConversion<
  *       return await fetch(request);
  *     },
  *   };
+ *
  *   using request = mock(t, _, "request", {
  *     conversion: {
  *       input: {
@@ -267,19 +273,20 @@ export interface MockConversion<
  *        },
  *     },
  *   });
+ *
  *   await _.request("https://www.example.com", "token");
  * });
  * ```
  *
- * @typeParam Self The type of object containing the function to mock.
- * @typeParam Prop The type of property symbol of the function field.
- * @typeParam Input The type of the input stored for mock calls.
- * @typeParam Output The type of the output stored for mock calls.
- * @param context The test context.
- * @param self The object containing the function to mock.
- * @param property The property symbol of the object to mock.
- * @param options Options and data conversions for the mock.
- * @returns A mock function that records and replays calls to the original.
+ * @typeParam Self The type of object containing the function to mock
+ * @typeParam Prop The type of property symbol of the function field
+ * @typeParam Input The type of the input stored for mock calls
+ * @typeParam Output The type of the output stored for mock calls
+ * @param context The test context
+ * @param self The object containing the function to mock
+ * @param property The property symbol of the object to mock
+ * @param options Options and data conversions for the mock
+ * @returns A mock function that records and replays calls to the original
  */
 export function mock<
   Self extends Record<

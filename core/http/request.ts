@@ -5,44 +5,13 @@
  *
  * ```ts
  * import { request } from "@roka/http/request";
+ *
  * (async () => {
  *   const response = await request("https://www.example.com", {
  *     method: "GET",
  *     agent: "Mozilla/5.0",
  *   });
  *   return { response };
- * });
- * ```
- *
- * The function retries the fetch call on certain status codes, with
- * exponential back off by default. The retry behavior can be customized with
- * the {@linkcode RequestOptions.retry retry} option.
- *
- * ```ts
- * import { request } from "@roka/http/request";
- * (async () => {
- *   const response = await request("https://www.example.com", {
- *     retry: { maxAttempts: 2 },
- *   });
- *   return { response };
- * });
- * ```
- *
- * The function throws a {@linkcode RequestError} on error responses. Some
- * errors can be allowed to pass through with the
- * {@linkcode RequestOptions.allowedErrors allowedErrors} option.
- *
- * ```ts
- * import { request } from "@roka/http/request";
- * import { STATUS_CODE } from "@std/http/status";
- * (async () => {
- *   const response = await request("https://www.example.com", {
- *     allowedErrors: [STATUS_CODE.NotFound],
- *   });
- *   if (response.status === STATUS_CODE.NotFound) {
- *     // deno-lint-ignore no-console
- *     console.log("Not found");
- *   }
  * });
  * ```
  *
@@ -144,7 +113,7 @@ export interface RequestOptions extends RequestInit {
  *
  * If the response status is retryable, for example a 429, the request will be
  * retried. The default retry strategy is exponential back off, and it can be
- * customized with {@linkcode RequestOptions.retry retry}.
+ * customized with the {@linkcode RequestOptions.retry retry} option.
  *
  * A {@linkcode RequestError} is thrown for non-retryable errors and errors
  * that persist. The {@linkcode RequestOptions.allowedErrors allowedErrors}
@@ -160,27 +129,29 @@ export interface RequestOptions extends RequestInit {
  * The responses for `GET` requests are cached on the client side using the
  * {@link https://developer.mozilla.org/en-US/docs/Web/API/Cache Cache API}.
  * The cache behavior can be controlled with the
- * {@linkcode RequestOptions.cache `cache`} option.
+ * {@linkcode RequestOptions.cache cache} option.
  *
  * The returned response must be consumed or cancelled to avoid resource leaks.
  *
- * @todo Implement `no-cache` conditional request.
- * @todo Remove caching when Deno supports it in Fetch API.
- *       (https://github.com/denoland/deno/issues/3756).
- * @todo Remove cache polyfill when Deno supports it in `deno compile`.
+ * @todo Implement `no-cache` conditional request
+ * @todo Remove caching when Deno supports it in Fetch API
+ *       (https://github.com/denoland/deno/issues/3756)
+ * @todo Remove cache polyfill when Deno supports it in `deno compile`
  *
- * @example Make a GET request.
+ * @example Make a GET request
  * ```ts
  * import { request } from "@roka/http/request";
+ *
  * (async () => {
  *   const response = await request("https://www.example.com");
  *   return { response };
  * });
  * ```
  *
- * @example Make a request with a bearer token.
+ * @example Make a request with a bearer token
  * ```ts
  * import { request } from "@roka/http/request";
+ *
  * (async () => {
  *   const response = await request("https://api.example.com/data", {
  *     token: "my-token",
@@ -189,9 +160,10 @@ export interface RequestOptions extends RequestInit {
  * });
  * ```
  *
- * @example Cache a response and read from the cache.
+ * @example Cache a response and read from the cache
  * ```ts
  * import { request } from "@roka/http/request";
+ *
  * (async () => {
  *   await request("https://www.example.com", {
  *     cache: "reload",
@@ -205,11 +177,12 @@ export interface RequestOptions extends RequestInit {
  * });
  * ```
  *
- * @param input The URL or Request object to fetch.
- * @param options Standard `fetch` init, extended with {@linkcode RequestOptions}.
- * @returns The response object, if the request was successful, or the error is
- *          one of {@linkcode RequestOptions.allowedErrors allowedErrors}.
- * @throws {RequestError} If the request failed with an unrecoverable error.
+ * @param input The URL or Request object to fetch
+ * @param options Standard `fetch` init with {@linkcode RequestOptions}
+ * @returns The response object, if the request was successful, or the error
+ *          code is listed with the
+ *          {@linkcode RequestOptions.allowedErrors allowedErrors} option
+ * @throws {RequestError} If the request failed with an unrecoverable error
  */
 export async function request(
   input: Request | URL | string,
@@ -313,17 +286,19 @@ async function writeCache(
 /**
  * Clears the client cache.
  *
- * @example Clear the default cache.
+ * @example Clear the default cache
  * ```ts
  * import { clearCache } from "@roka/http/request";
+ *
  * (async () => {
  *   await clearCache();
  * });
  * ```
  *
- * @example Clear a named cache store.
+ * @example Clear a named cache store
  * ```ts
  * import { clearCache } from "@roka/http/request";
+ *
  * (async () => {
  *   await clearCache("my-store");
  * });

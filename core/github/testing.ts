@@ -8,9 +8,12 @@
  *   fakeRepository,
  * } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
+ *
  * const repo = fakeRepository();
+ *
  * const pull = fakePullRequest({ repo, title: "title" });
  * assertEquals(pull.title, "title");
+ *
  * const release = fakeRelease({ repo, tag: "tag" });
  * assertEquals(release.tag, "tag");
  * ```
@@ -32,16 +35,19 @@ import type {
  *
  * The created repository keeps track of its pull requests and releases.
  *
- * @example Create a repository with a pull request and a release.
+ * @example Create a repository with a pull request and a release
  * ```ts
  * import { fakeRepository } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
  *
  * const repo = fakeRepository();
+ *
  * const pull = await repo.pulls.create({ title: "title" });
  * assertEquals(await repo.pulls.list(), [pull]);
+ *
  * const release = await repo.releases.create("tag");
  * assertEquals(await repo.releases.list(), [release]);
+ *
  * await release.delete();
  * assertEquals(await repo.releases.list(), []);
  * ```
@@ -93,7 +99,7 @@ export function fakeRepository(data?: Partial<Repository>): Repository {
 /**
  * Creates a pull request with fake data and operations.
  *
- * @example Create a pull request with a title.
+ * @example Create a pull request with a title
  * ```ts
  * import { fakePullRequest } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
@@ -130,7 +136,7 @@ export function fakePullRequest(data?: Partial<PullRequest>): PullRequest {
 /**
  * Creates a release with fake data and operations.
  *
- * @example Create a release with a tag.
+ * @example Create a release with a tag
  * ```ts
  * import { fakeRelease } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";
@@ -189,7 +195,7 @@ export function fakeRelease(data?: Partial<Release>): Release {
 /**
  * Creates a release asset with fake data and operations.
  *
- * @example Create a release asset with a name.
+ * @example Create a release asset with a name
  * ```ts
  * import { fakeReleaseAsset } from "@roka/github/testing";
  * import { assertEquals } from "@std/assert";

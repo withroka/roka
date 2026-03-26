@@ -17,6 +17,7 @@
  * ```ts
  * import { bump } from "@roka/forge/bump";
  * import { workspace } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const packages = await workspace();
  *   await bump(packages, { pr: true });
@@ -75,7 +76,7 @@ export interface BumpOptions {
   /**
    * Makes the newly created pull request a draft.
    *
-   * Requires {@linkcode BumpOptions.pr pr} to be set.
+   * Requires the {@linkcode BumpOptions.pr pr} option to be set.
    *
    * If a pull request already exists, this flag won't affect it.
    *
@@ -95,27 +96,29 @@ export interface BumpOptions {
  * The version for the package is calculated using the latest release tag and
  * the {@link https://www.conventionalcommits.org Conventional Commits} for
  * the package since that release. If the changelog is not empty, the version
- * will be a pre-release version. If {@linkcode BumpOptions.release release}
- * is set, the version of the next release will be written, dropping prerelease
- * and build information from the version string.
+ * will be a pre-release version. If the {@linkcode BumpOptions.release release}
+ * option is set, the version of the next release will be written, dropping
+ * prerelease and build information from the version string.
  *
  * When working with pull requests, if there is an open PR, it will be updated
  * with the new version information.
  *
- * @example Bump versions and create a pull request.
+ * @example Bump versions and create a pull request
  * ```ts
  * import { bump } from "@roka/forge/bump";
  * import { workspace } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const packages = await workspace();
  *   await bump(packages, { pr: true, draft: true });
  * });
  * ```
  *
- * @example Bump to a release version with changelog.
+ * @example Bump to a release version with changelog
  * ```ts
  * import { bump } from "@roka/forge/bump";
  * import { workspace } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const packages = await workspace();
  *   await bump(packages, {
@@ -125,10 +128,10 @@ export interface BumpOptions {
  * });
  * ```
  *
- * @param pkg Package to bump.
- * @throws {PackageError} If the package does not have an update.
+ * @param pkg Package to bump
+ * @throws {PackageError} If the package does not have an update
  *
- * @todo Recalculate versions when the bump PR is rebased.
+ * @todo Recalculate versions when the bump PR is rebased
  */
 export async function bump(
   packages: Package[],

@@ -11,6 +11,7 @@
  * ```ts
  * import { release } from "@roka/forge/release";
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   await release(pkg, { draft: true });
@@ -59,10 +60,11 @@ export interface ReleaseOptions {
  * If a release already exists for the same package and version, it will be
  * updated.
  *
- * @example Create a draft release for a package.
+ * @example Create a draft release for a package
  * ```ts
  * import { release } from "@roka/forge/release";
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   const [rls, assets] = await release(pkg, { draft: true });
@@ -70,11 +72,11 @@ export interface ReleaseOptions {
  * });
  * ```
  *
- * @param pkg Package to release.
- * @returns The created release and its assets.
- * @throws {PackageError} If the package does not have a version.
+ * @param pkg Package to release
+ * @returns The created release and its assets
+ * @throws {PackageError} If the package does not have a version
  *
- * @todo Calculate changelog from the exact commit that introduced the version.
+ * @todo Calculate changelog from the exact commit that introduced the version
  */
 export async function release(
   pkg: Package,

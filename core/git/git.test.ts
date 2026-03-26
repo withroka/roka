@@ -9,8 +9,8 @@ import {
   assertNotEquals,
   assertObjectMatch,
   assertRejects,
+  assertStringIncludes,
 } from "@std/assert";
-import { assertStringIncludes } from "@std/assert/string-includes";
 import { omit } from "@std/collections";
 import { basename, resolve, toFileUrl } from "@std/path";
 import { lessThan, parse } from "@std/semver";

@@ -9,6 +9,7 @@
  *
  * ```ts
  * import { github } from "@roka/github";
+ *
  * (async () => {
  *   const repo = await github().repos.get();
  *   const releases = await repo.releases.list();
@@ -19,20 +20,20 @@
  * });
  * ```
  *
- * ## Submodules
+ * ### Submodules
  *
- *  -  {@link [testing]}: Write tests with fake GitHub API responses.
+ *  - {@link [testing]}: Write tests with fake GitHub API responses
  *
- * @todo Support pagination.
- * @todo Provide dates.
- * @todo Provide user.
- * @todo Add `github().issues`.
- * @todo Add `github().gists`.
- * @todo Add `github().projects`.
- * @todo Add `github().labels`.
- * @todo Add `github().comments`.
- * @todo Add `github().teams`.
- * @todo Add `github().organizations`.
+ * @todo Support pagination
+ * @todo Provide dates
+ * @todo Provide user
+ * @todo Add `github().issues`
+ * @todo Add `github().gists`
+ * @todo Add `github().projects`
+ * @todo Add `github().labels`
+ * @todo Add `github().comments`
+ * @todo Add `github().teams`
+ * @todo Add `github().organizations`
  *
  * @module github
  */
@@ -55,7 +56,7 @@ export interface GitHub {
   repos: Repositories;
 }
 
-/** Repository operations from {@linkcode GitHub.repos}. */
+/** Repository operations from {@linkcode GitHub.repos github().repos}. */
 export interface Repositories {
   /** Retrieve a repository using a local remote URL. */
   get(options?: RepositoryGetOptions): Promise<Repository>;
@@ -185,7 +186,9 @@ export interface GitHubOptions {
   token?: string;
 }
 
-/** Options for the {@linkcode Repositories.get} function. */
+/**
+ * Options for the {@linkcode Repositories.get github().repos.get} function.
+ */
 export interface RepositoryGetOptions {
   /**
    * Local directory for the repository.
@@ -200,32 +203,48 @@ export interface RepositoryGetOptions {
   directory?: string | URL;
 }
 
-/** Options for the {@linkcode PullRequests.list} function. */
+/**
+ * Options for the {@linkcode PullRequests.list github().pulls.list} function.
+ */
 export type PullRequestListOptions = Partial<
   Pick<PullRequest, "title" | "head" | "base" | "closed">
 >;
 
-/** Options for the {@linkcode PullRequests.create} function. */
+/**
+ * Options for the {@linkcode PullRequests.create github().pulls.create}
+ * function.
+ */
 export type PullRequestCreateOptions = Partial<
   Pick<PullRequest, "title" | "body" | "base" | "head" | "draft">
 >;
 
-/** Options for the {@linkcode PullRequest.update} function. */
+/**
+ * Options for the {@linkcode PullRequest.update github().pulls.update}
+ * function.
+ */
 export type PullRequestUpdateOptions = Partial<
   Pick<PullRequest, "title" | "body" | "base" | "closed">
 >;
 
-/** Options for the {@linkcode Releases.list} function. */
+/**
+ * Options for the {@linkcode Releases.list github().releases.list} function.
+ */
 export type ReleaseListOptions = Partial<
   Pick<Release, "name" | "tag" | "draft">
 >;
 
-/** Options for the {@linkcode Releases.create} function. */
+/**
+ * Options for the {@linkcode Releases.create github().releases.create}
+ * function.
+ */
 export type ReleaseCreateOptions = Partial<
   Pick<Release, "name" | "body" | "commit" | "draft" | "prerelease">
 >;
 
-/** Options for the {@linkcode Release.update} function. */
+/**
+ * Options for the {@linkcode Release.update github().releases.update}
+ * function.
+ */
 export type ReleaseUpdateOptions = Partial<
   Pick<Release, "name" | "body" | "tag" | "commit" | "draft" | "prerelease">
 >;
@@ -233,9 +252,10 @@ export type ReleaseUpdateOptions = Partial<
 /**
  * Creates a GitHub API client.
  *
- * @example Create a GitHub client to work on the current repository.
+ * @example Create a GitHub client to work on the current repository
  * ```ts
  * import { github } from "@roka/github";
+ *
  * (async () => {
  *   const repo = await github().repos.get();
  *   const pulls = await repo.pulls.list();
@@ -243,9 +263,10 @@ export type ReleaseUpdateOptions = Partial<
  * });
  * ```
  *
- * @example Create a GitHub client with a personal access token.
+ * @example Create a GitHub client with a personal access token
  * ```ts
  * import { github } from "@roka/github";
+ *
  * (async () => {
  *   const repo = await github({ token: "my-token" }).repos.get();
  *   const pulls = await repo.pulls.list();
@@ -253,9 +274,10 @@ export type ReleaseUpdateOptions = Partial<
  * });
  * ```
  *
- * @example Create a GitHub client for a specific repository.
+ * @example Create a GitHub client for a specific repository
  * ```ts
  * import { github } from "@roka/github";
+ *
  * (async () => {
  *   const repo = github().repos.get("owner", "repo");
  *   const releases = await repo.releases.list();
@@ -263,9 +285,10 @@ export type ReleaseUpdateOptions = Partial<
  * });
  * ```
  *
- * @example Create a pull request from the current local branch.
+ * @example Create a pull request from the current local branch
  * ```ts
  * import { github } from "@roka/github";
+ *
  * (async () => {
  *   const repo = await github().repos.get();
  *   const pr = await repo.pulls.create({ title: "New PR" });
@@ -273,9 +296,10 @@ export type ReleaseUpdateOptions = Partial<
  * });
  * ```
  *
- * @example Update and close a pull request.
+ * @example Update and close a pull request
  * ```ts
  * import { github } from "@roka/github";
+ *
  * (async () => {
  *   const repo = await github().repos.get();
  *   const [pr] = await repo.pulls.list({ head: "my-branch" });
@@ -285,9 +309,10 @@ export type ReleaseUpdateOptions = Partial<
  * });
  * ```
  *
- * @example Create a release and upload an asset.
+ * @example Create a release and upload an asset
  * ```ts
  * import { github } from "@roka/github";
+ *
  * (async () => {
  *   const repo = github().repos.get("owner", "repo");
  *   const release = await repo.releases.create("v1.0.0", {

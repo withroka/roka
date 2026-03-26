@@ -7,6 +7,8 @@
  * functionality provided here is split into the groups of _fake_ and _mock_
  * objects.
  *
+ * ### Fake objects
+ *
  * The "**fake**" objects implement the same interface as their real
  * counterparts, but with fake data and functionality. For example, the
  * {@linkcode [fake].fakeConsole fakeConsole} function mimics the `console`
@@ -15,20 +17,25 @@
  * ```ts
  * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
+ *
  * Deno.test("fakeConsole()", () => {
  *   using console = fakeConsole();
  *   console.log("I won't be printed");
  * });
  * ```
  *
+ * ### Mock objects
+ *
  * The "**mock**" system is more heavy-handed than fake objects. It provides
  * the {@linkcode [mock].mock mock} function to record and replay calls to an
- * asynchronous function. This is used to build the `mockFetch` function from
- * the {@link https://jsr.io/@roka/http **@roka/http**} module to record and
- * replay real HTTP calls.
+ * asynchronous function. This is used to build the
+ * {@linkcode https://jsr.io/@roka/http/doc/testing/~/mockFetch mockFetch}
+ * function from the {@link https://jsr.io/@roka/http **@roka/http**} module to
+ * record and replay real HTTP calls.
  *
  * ```ts
  * import { mock } from "@roka/testing/mock";
+ *
  * Deno.test("mock()", async (t) => {
  *   const mocked = {
  *     func: async () => await Promise.resolve("Hello, world!"),
@@ -40,17 +47,17 @@
  * });
  * ```
  *
+ * ### Notes
+ *
  * This package contains only the most common utilities from these groups.
- * More specific test helpers are provided in other Roka packages. For example,
+ * Domain-specific test helpers are provided in other Roka packages. For example,
  * {@link https://jsr.io/@roka/git/doc/testing **@roka/git/testing**}
- * provides temporary git repositories, and
- * {@link https://jsr.io/@roka/github/doc/testing **@roka/github/testing**}
- * provides a fake GitHub API.
+ * provides temporary repositories for testing as well as fake Git data.
  *
- * ## Modules
+ * ### Modules
  *
- *  -  {@link [fake]}: Use fake objects in tests.
- *  -  {@link [mock]}: Build test mocks for async functions.
+ *  - {@link [fake]}: Use fake objects in tests
+ *  - {@link [mock]}: Build test mocks for async functions
  *
  * @module testing
  */

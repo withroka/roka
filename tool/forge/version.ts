@@ -4,13 +4,14 @@
  *
  * ```ts
  * import { version } from "@roka/forge/version";
+ *
  * (async () => {
  *   return await version();
  * });
  * ```
  *
- * @todo Detect when an app is run as a JSR module without version specifier.
- * @todo This module does not have good test coverage, use caution with changes.
+ * @todo Detect when an app is run as a JSR module without version specifier
+ * @todo Add good test coverage (use caution with changes for now)
  *
  * @module version
  */
@@ -50,16 +51,18 @@ export interface VersionOptions {
  *    (local development) config version from `deno.json` (deno run)
  *  - `"(unknown)"` if none of the above are available
  *
- * @example Retrieve the version of the current package.
+ * @example Retrieve the version of the current package
  * ```ts
  * import { version } from "@roka/forge/version";
+ *
  * await version();
  * // 1.0.0
  * ```
  *
- * @example Retrieve the version with meta information.
+ * @example Retrieve the version with meta information
  * ```ts
  * import { version } from "@roka/forge/version";
+ *
  * await version({ release: true, target: true });
  * // 1.0.0 (release, aarch64-apple-darwin)
  * ```

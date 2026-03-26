@@ -1,38 +1,62 @@
 /**
- * A library for interacting with local Git repositories.
- *
- * This package provides mostly complete functionality to run
- * {@link https://git-scm.com git} commands.
+ * A library for interacting with {@link https://git-scm.com Git} repositories.
  *
  * The main module provides the {@linkcode git} function that exposes git
- * operations, as well as the {@linkcode Commit}, {@linkcode Tag}, and similar
- * git objects.
+ * operations, as well as {@linkcode Commit}, {@linkcode Tag}, and other
+ * similar Git objects.
+ *
+ * ```ts
+ * import { git } from "@roka/git";
+ *
+ * (async () => {
+ *   const repo = git();
+ *
+ *   const branch = await repo.branch.current();
+ *   if (branch?.name === "main") {
+ *     await repo.branch.switch("feature", { create: true });
+ *   }
+ *
+ *   await Deno.writeTextFile(repo.path("file.txt"), "content");
+ *   await repo.index.add("file.txt");
+ *   await repo.commit.create({ subject: "Initial commit" });
+ *
+ *   await repo.tag.create("v1.0.0");
+ * });
+ * ```
+ *
+ * The library will use the `git` executable installed on the system.
+ *
+ * ### Supported operations
+ *
+ * - {@link Git.init git().init()}: `git init`
+ * - {@link Git.clone git().clone()}: `git clone`
+ * - {@link ConfigOperations git().config.*}: `git config`
+ * - {@link IndexOperations git().index.*}: `git add`, `git mv`, `git rm`, `git restore`
+ * - {@link DiffOperations git().diff.*}: `git diff`
+ * - {@link IgnoreOperations git().ignore.*}: `git check-ignore`
+ * - {@link FileOperations git().file.*}: `git show` for file content
+ * - {@link CommitOperations git().commit.*}: `git log`, `git commit`
+ * - {@link BranchOperations git().branch.*}: `git branch`, `git switch`, `git reset`
+ * - {@link TagOperations git().tag.*}: `git tag`
+ * - {@link MergeOperations git().merge.*}: `git merge`
+ * - {@link RebaseOperations git().rebase.*}: `git rebase`
+ * - {@link CherryPickOperations git().cherrypick.*}: `git cherry-pick`
+ * - {@link RevertOperations git().revert.*}: `git revert`
+ * - {@link RemoteOperations git().remote.*}: `git remote`
+ * - {@link SyncOperations git().sync.*}: `git fetch`, `git pull`, `git push`
+ *
+ * ### Default values
  *
  * All options adhere to default Git configurations and behaviors. If an option
  * is explicitly set, it will override any corresponding Git configuration.
  * Similarly, an omitted option can potentially be configured externally, even
  * if a default is specified in the documentation.
  *
- * ```ts
- * import { git } from "@roka/git";
- * (async () => {
- *   const repo = git();
- *   const branch = await repo.branch.current();
- *   if (branch?.name === "main") {
- *     await repo.branch.switch("feature", { create: true });
- *   }
- *   await Deno.writeTextFile(repo.path("file.txt"), "content");
- *   await repo.index.add("file.txt");
- *   await repo.commit.create({ subject: "Initial commit" });
- *   await repo.tag.create("v1.0.0");
- * });
- * ```
+ * ### Submodules
  *
- * ## Submodules
- *
- *  -  {@link [conventional]}: Work with
- *     {@link https://www.conventionalcommits.org Conventional Commits}.
- *  -  {@link [testing]}: Write tests using temporary git repositories.
+ *  - {@link [conventional]}: Work with
+ *    {@link https://www.conventionalcommits.org Conventional Commits}
+ *  - {@link [testing]}: Write tests using temporary Git repositories
  *
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
@@ -41,8 +65,8 @@
  * @todo Add `git().reflog.*`
  * @todo Add `git().maintenance.*`
  * @todo Add `git().hook.*`
- * @todo Add templates.
- * @todo Verify signatures.
+ * @todo Add templates
+ * @todo Verify signatures
  *
  * @module git
  */
@@ -68,7 +92,7 @@ import { canParse, greaterOrEqual, parse } from "@std/semver";
 /**
  * An error thrown by the `git` package.
  *
- * If the error is from running a `git` command, the message will include the
+ * If the error is from running a Git command, the message will include the
  * command, the exit code, and the command output.
  */
 export class GitError extends Error {
@@ -83,14 +107,15 @@ export class GitError extends Error {
 export interface Git {
   /** Returns the repository directory, with optional relative children. */
   path(...parts: string[]): string;
-  /** Returns the installed git version. */
+  /** Returns the installed Git version. */
   version(): Promise<string>;
   /**
-   * Initializes a new git repository, or reinitialize an existing one.
+   * Initializes a new Git repository, or reinitialize an existing one.
    *
-   * @example Initialize a bare repository.
+   * @example Initialize a bare repository
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const repo = await git().init({ directory: "/path/to/repo", bare: true });
    *   return { repo };
@@ -101,9 +126,10 @@ export interface Git {
   /**
    * Clones a remote repository.
    *
-   * @example Clone a repository into a directory.
+   * @example Clone a repository into a directory
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const repo = await git().clone("https://github.com/withroka/roka.git", {
    *     directory: "/path/to/clone",
@@ -143,14 +169,15 @@ export interface Git {
   sync: SyncOperations;
 }
 
-/** Config operations from {@linkcode Git.config}. */
+/** Config operations from {@linkcode Git.config git().config}. */
 export interface ConfigOperations {
   /**
-   * Lists all git configuration values with validation.
+   * Lists all Git configuration values with validation.
    *
-   * @example List all local configuration values.
+   * @example List all local configuration values
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const config = await git().config.list({ level: "local" });
    *   return { config };
@@ -159,11 +186,12 @@ export interface ConfigOperations {
    */
   list(options?: ConfigOptions): Promise<Config>;
   /**
-   * Gets a git configuration value with validation.
+   * Gets a Git configuration value with validation.
    *
-   * @example Get the configured user name.
+   * @example Get the configured user name
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const name = await git().config.get("user.name");
    *   return { name };
@@ -175,11 +203,12 @@ export interface ConfigOperations {
     options?: ConfigOptions,
   ): Promise<ConfigValue<K> | undefined>;
   /**
-   * Sets a git configuration value.
+   * Sets a Git configuration value.
    *
-   * @example Disable GPG signing for commits.
+   * @example Disable GPG signing for commits
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().config.set("commit.gpgSign", false);
    * });
@@ -191,11 +220,12 @@ export interface ConfigOperations {
     options?: ConfigOptions,
   ): Promise<void>;
   /**
-   * Removes a git configuration value.
+   * Removes a Git configuration value.
    *
-   * @example Remove a configuration value.
+   * @example Remove a configuration value
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().config.unset("commit.gpgSign");
    * });
@@ -204,14 +234,15 @@ export interface ConfigOperations {
   unset(key: ConfigKey, options?: ConfigOptions): Promise<void>;
 }
 
-/** Index operations from {@linkcode Git.index}. */
+/** Index operations from {@linkcode Git.index git().index}. */
 export interface IndexOperations {
   /**
    * Stages files for commit.
    *
-   * @example Stage a file for commit.
+   * @example Stage a file for commit
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().index.add("file.txt");
    * });
@@ -221,9 +252,10 @@ export interface IndexOperations {
   /**
    * Moves or renames a file, a directory, or a symlink.
    *
-   * @example Rename a file.
+   * @example Rename a file
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().index.move("old.txt", "new.txt");
    * });
@@ -237,9 +269,10 @@ export interface IndexOperations {
   /**
    * Restores files in the working tree and index from a source.
    *
-   * @example Discard working tree changes to a file.
+   * @example Discard working tree changes to a file
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().index.restore("file.txt");
    * });
@@ -252,9 +285,10 @@ export interface IndexOperations {
   /**
    * Removes files or directories from the working tree and index.
    *
-   * @example Remove a file from the repository.
+   * @example Remove a file from the repository
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().index.remove("file.txt");
    * });
@@ -263,23 +297,25 @@ export interface IndexOperations {
   remove(path: string | string[], options?: IndexRemoveOptions): Promise<void>;
 }
 
-/** Difference operations from {@linkcode Git.diff}. */
+/** Difference operations from {@linkcode Git.diff git().diff}. */
 export interface DiffOperations {
   /**
    * Returns the list of changed file paths with their status.
    *
-   * @example Check for staged changes.
+   * @example Check for staged changes
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const staged = await git().diff.status({ location: "index" });
    *   return { staged };
    * });
    * ```
    *
-   * @example Get changed files with diff stats between two tags.
+   * @example Get changed files with diff stats between two tags
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const status = await git().diff.status({
    *     from: "v1.0.0",
@@ -294,18 +330,20 @@ export interface DiffOperations {
   /**
    * Returns the patch text for changes.
    *
-   * @example Get patch text for staged changes.
+   * @example Get patch text for staged changes
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const patch = await git().diff.patch({ location: "index" });
    *   return { patch };
    * });
    * ```
    *
-   * @example Get patch text between two tags.
+   * @example Get patch text between two tags
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const patch = await git().diff.patch({ from: "v1.0.0", to: "v2.0.0" });
    *   return { patch };
@@ -315,14 +353,15 @@ export interface DiffOperations {
   patch(options?: DiffPatchOptions): Promise<Patch[]>;
 }
 
-/** Ignore operations from {@linkcode Git.ignore}. */
+/** Ignore operations from {@linkcode Git.ignore git().ignore}. */
 export interface IgnoreOperations {
   /**
    * Checks paths against gitignore list and returns the ignored patterns.
    *
-   * @example Find which files are ignored.
+   * @example Find which files are ignored
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const ignored = await git().ignore.filter([
    *     "src/main.ts",
@@ -339,9 +378,10 @@ export interface IgnoreOperations {
   /**
    * Checks paths against gitignore list and returns the unignored patterns.
    *
-   * @example Find which files are not ignored.
+   * @example Find which files are not ignored
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const tracked = await git().ignore.omit([
    *     "src/main.ts",
@@ -357,49 +397,52 @@ export interface IgnoreOperations {
   ): Promise<string[]>;
 }
 
-/** File operations from {@linkcode Git.file}. */
+/** File operations from {@linkcode Git.file git().file}. */
 export interface FileOperations {
   /**
    * Reads a file as text.
    *
-   * @example Read a file from a specific commit.
+   * @example Read a file from a specific commit
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const content = await git().file.text("README.md", { source: "HEAD~1" });
    *   return { content };
    * });
    * ```
    *
-   * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
+   * @throws {Deno.errors.NotFound} If the file does not exist
    */
   text(path: string, options?: FileOptions): Promise<string>;
   /**
    * Reads a file and parses it as JSON.
    *
-   * @example Read a JSON config from a specific commit.
+   * @example Read a JSON config from a specific commit
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const config = await git().file.json("deno.json", { source: "HEAD" });
    *   return { config };
    * });
    * ```
    *
-   * @throws {@linkcode Deno.errors.NotFound} If the file does not exist.
-   * @throws {@linkcode SyntaxError} If the file content is not valid JSON.
+   * @throws {Deno.errors.NotFound} If the file does not exist
+   * @throws {SyntaxError} If the file content is not valid JSON
    */
   json<T = unknown>(path: string, options?: FileOptions): Promise<T>;
 }
 
-/** Commit operations from {@linkcode Git.commit}. */
+/** Commit operations from {@linkcode Git.commit git().commit}. */
 export interface CommitOperations {
   /**
    * Returns the history of commits in the repository.
    *
-   * @example Get commit log between two references.
+   * @example Get commit log between two references
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const log = await git().commit.log({ from: "v1.0.0", to: "v2.0.0" });
    *   return { log };
@@ -410,24 +453,26 @@ export interface CommitOperations {
   /**
    * Returns the commit at the tip of `HEAD`.
    *
-   * @example Get the latest commit.
+   * @example Get the latest commit
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const head = await git().commit.head();
    *   return { head };
    * });
    * ```
    *
-   * @throws {@linkcode GitError} If there are no commits.
+   * @throws {GitError} If there are no commits
    */
   head(): Promise<Commit>;
   /**
    * Returns a specific commit by its reference.
    *
-   * @example Look up a commit by hash.
+   * @example Look up a commit by hash
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const commit = await git().commit.get("abc1234");
    *   return { commit };
@@ -438,9 +483,10 @@ export interface CommitOperations {
   /**
    * Creates a new commit in the repository.
    *
-   * @example Create a commit with a message.
+   * @example Create a commit with a message
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const commit = await git().commit.create({
    *     subject: "feat: add feature",
@@ -453,9 +499,10 @@ export interface CommitOperations {
   /**
    * Amends the last commit in the repository.
    *
-   * @example Amend the last commit with a new message.
+   * @example Amend the last commit with a new message
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const commit = await git().commit.amend({
    *     subject: "fix: corrected typo",
@@ -467,14 +514,15 @@ export interface CommitOperations {
   amend(options?: CommitCreateOptions): Promise<Commit>;
 }
 
-/** Branch operations from {@linkcode Git.branch}. */
+/** Branch operations from {@linkcode Git.branch git().branch}. */
 export interface BranchOperations {
   /**
    * Lists branches in the repository alphabetically.
    *
-   * @example List local branches.
+   * @example List local branches
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const branches = await git().branch.list({ type: "local" });
    *   return { branches };
@@ -485,16 +533,17 @@ export interface BranchOperations {
   /**
    * Returns the current branch name.
    *
-   * @example Get the current branch.
+   * @example Get the current branch
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const branch = await git().branch.current();
    *   return { branch };
    * });
    * ```
    *
-   * @throws {@linkcode GitError} If `HEAD` is detached.
+   * @throws {GitError} If `HEAD` is detached
    */
   current(): Promise<Branch>;
   /** Returns a branch. */
@@ -505,9 +554,10 @@ export interface BranchOperations {
   /**
    * Creates a branch.
    *
-   * @example Create a branch from a specific commit.
+   * @example Create a branch from a specific commit
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const branch = await git().branch.create("my-feature", {
    *     target: "HEAD~1",
@@ -520,9 +570,10 @@ export interface BranchOperations {
   /**
    * Switches to an existing or new branch.
    *
-   * @example Switch to an existing branch.
+   * @example Switch to an existing branch
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const branch = await git().branch.switch("my-feature");
    *   return { branch };
@@ -538,9 +589,10 @@ export interface BranchOperations {
   /**
    * Resets the current branch head to a specified state.
    *
-   * @example Hard reset to a specific commit.
+   * @example Hard reset to a specific commit
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().branch.reset({ target: "HEAD~3", mode: "hard" });
    * });
@@ -550,9 +602,10 @@ export interface BranchOperations {
   /**
    * Renames a branch.
    *
-   * @example Rename a branch.
+   * @example Rename a branch
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const branch = await git().branch.move("old-name", "new-name");
    *   return { branch };
@@ -577,9 +630,10 @@ export interface BranchOperations {
   /**
    * Deletes a branch.
    *
-   * @example Delete a merged branch.
+   * @example Delete a merged branch
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().branch.delete("my-feature");
    * });
@@ -588,14 +642,15 @@ export interface BranchOperations {
   delete(branch: string | Branch, options?: BranchDeleteOptions): Promise<void>;
 }
 
-/** Tag operations from {@linkcode Git.tag}. */
+/** Tag operations from {@linkcode Git.tag git().tag}. */
 export interface TagOperations {
   /**
    * Lists all tags in the repository.
    *
-   * @example List tags matching a pattern.
+   * @example List tags matching a pattern
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const tags = await git().tag.list({ name: "v1.*" });
    *   return { tags };
@@ -608,9 +663,10 @@ export interface TagOperations {
   /**
    * Creates a new tag in the repository.
    *
-   * @example Create an annotated tag.
+   * @example Create an annotated tag
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const tag = await git().tag.create("v1.0.0", {
    *     subject: "Release v1.0.0",
@@ -623,9 +679,10 @@ export interface TagOperations {
   /**
    * Deletes a tag.
    *
-   * @example Delete a tag.
+   * @example Delete a tag
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().tag.delete("v1.0.0");
    * });
@@ -635,7 +692,7 @@ export interface TagOperations {
 }
 
 /**
- * Merge operations from {@linkcode Git.merge}.
+ * Merge operations from {@linkcode Git.merge git().merge}.
  *
  * The merge process can be followed with the returned {@linkcode Merge}
  * object. The functions will return `undefined` if the merge operation
@@ -648,9 +705,10 @@ export interface MergeOperations {
   /**
    * Returns the best common ancestor of two or more commits.
    *
-   * @example Find the common ancestor of two branches.
+   * @example Find the common ancestor of two branches
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const base = await git().merge.base("main", "my-feature");
    *   return { base };
@@ -665,9 +723,10 @@ export interface MergeOperations {
   /**
    * Merges given heads into current branch, and returns incomplete merges.
    *
-   * @example Merge a branch into the current branch.
+   * @example Merge a branch into the current branch
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const merge = await git().merge.with("my-feature");
    *   if (merge) await git().merge.abort();
@@ -689,7 +748,7 @@ export interface MergeOperations {
 }
 
 /**
- * Rebase operations from {@linkcode Git.rebase}.
+ * Rebase operations from {@linkcode Git.rebase git().rebase}.
  *
  * The rebase process can be followed with the returned {@linkcode Rebase}
  * object. The functions will return `undefined` if the rebase operation
@@ -702,9 +761,10 @@ export interface RebaseOperations {
   /**
    * Rebases heads onto given base.
    *
-   * @example Rebase the current branch onto main.
+   * @example Rebase the current branch onto main
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const rebase = await git().rebase.onto("main");
    *   if (rebase) await git().rebase.abort();
@@ -725,7 +785,7 @@ export interface RebaseOperations {
 }
 
 /**
- * Cherry-pick operations from {@linkcode Git.cherrypick}.
+ * Cherry-pick operations from {@linkcode Git.cherrypick git().cherrypick}.
  *
  * The cherry-pick process can be followed with the returned
  * {@linkcode CherryPick} object. The functions will return `undefined` if the
@@ -738,9 +798,10 @@ export interface CherryPickOperations {
   /**
    * Applies one or more commits to the current branch.
    *
-   * @example Cherry-pick a commit onto the current branch.
+   * @example Cherry-pick a commit onto the current branch
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const pick = await git().cherrypick.apply("abc1234");
    *   if (pick) await git().cherrypick.abort();
@@ -764,7 +825,7 @@ export interface CherryPickOperations {
 }
 
 /**
- * Revert operations from {@linkcode Git.revert}.
+ * Revert operations from {@linkcode Git.revert git().revert}.
  *
  * The revert process can be followed with the returned {@linkcode Revert}
  * object. The functions will return `undefined` if the revert operation
@@ -777,9 +838,10 @@ export interface RevertOperations {
   /**
    * Reverts one or more commits by creating revert commits.
    *
-   * @example Revert a commit.
+   * @example Revert a commit
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const revert = await git().revert.apply("abc1234");
    *   if (revert) await git().revert.abort();
@@ -802,14 +864,15 @@ export interface RevertOperations {
   active(): Promise<Revert | undefined>;
 }
 
-/** Remote operations from {@linkcode Git.remote}. */
+/** Remote operations from {@linkcode Git.remote git().remote}. */
 export interface RemoteOperations {
   /**
    * Lists remotes in the repository.
    *
-   * @example List all remotes.
+   * @example List all remotes
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const remotes = await git().remote.list();
    *   return { remotes };
@@ -824,24 +887,26 @@ export interface RemoteOperations {
   /**
    * Queries the HEAD branch name on a remote repository.
    *
-   * @example Get the default branch name from origin.
+   * @example Get the default branch name from origin
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const head = await git().remote.head("origin");
    *   return { head };
    * });
    * ```
    *
-   * @throws {@linkcode GitError} If remote `HEAD` is detached.
+   * @throws {GitError} If remote `HEAD` is detached
    */
   head(remote: string | URL | Remote): Promise<string>;
   /**
    * Adds a remote to the repository.
    *
-   * @example Add a remote.
+   * @example Add a remote
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   const remote = await git().remote.add(
    *     "upstream",
@@ -863,9 +928,10 @@ export interface RemoteOperations {
   /**
    * Prunes stale references to remote branches.
    *
-   * @example Prune stale remote tracking branches.
+   * @example Prune stale remote tracking branches
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().remote.prune("origin");
    * });
@@ -876,14 +942,15 @@ export interface RemoteOperations {
   remove(remote: string | Remote): Promise<void>;
 }
 
-/** Sync operations from {@linkcode Git.sync}. */
+/** Sync operations from {@linkcode Git.sync git().sync}. */
 export interface SyncOperations {
   /**
    * Fetches branches and tags from a remote.
    *
-   * @example Fetch with pruning.
+   * @example Fetch with pruning
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().sync.fetch({ prune: true });
    * });
@@ -893,9 +960,10 @@ export interface SyncOperations {
   /**
    * Pulls branches and tags from a remote.
    *
-   * @example Pull from origin.
+   * @example Pull from origin
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().sync.pull();
    * });
@@ -905,9 +973,10 @@ export interface SyncOperations {
   /**
    * Pushes branches and tags to a remote.
    *
-   * @example Push the current branch and set upstream.
+   * @example Push the current branch and set upstream
    * ```ts
    * import { git } from "@roka/git";
+   *
    * (async () => {
    *   await git().sync.push({ track: true });
    * });
@@ -916,7 +985,7 @@ export interface SyncOperations {
   push(options?: SyncPushOptions): Promise<void>;
   /** Fetches missing objects after a shallow clone or fetch. */
   unshallow(options?: SyncRemoteOptions): Promise<void>;
-  /** Fetches missing objects in a partial clone (available since git 2.49). */
+  /** Fetches missing objects in a partial clone (available since Git 2.49). */
   backfill(options?: SyncBackfillOptions): Promise<void>;
 }
 
@@ -947,7 +1016,7 @@ export const SORT_CONFIG = [
   "string",
 ] as const;
 
-/** Runtime schema for known git configuration. */
+/** Runtime schema for known Git configuration. */
 export const CONFIG_SCHEMA = {
   "add.ignoreErrors": ["boolean"],
   "author.email": ["string"],
@@ -1363,7 +1432,7 @@ export const REMOTE_CONFIG_SCHEMA = {
   "url": ["string"],
 } as const;
 
-/** Configuration for a git repository. */
+/** Configuration for a Git repository. */
 export type Config = {
   [K in ConfigKey]?: ConfigValue<K>;
 };
@@ -1420,7 +1489,7 @@ export type ConfigSchemaLowercase<T> = {
  */
 export type UnknownConfigValue = boolean | number | string | string[];
 
-/** An author or committer on a git repository. */
+/** An author or committer on a Git repository. */
 export interface User {
   /** Name of the user. */
   name: string;
@@ -1447,7 +1516,7 @@ export type UserLike =
  */
 export type DateLike = Temporal.Instant | Temporal.ZonedDateTime;
 
-/** A remote repository configured in a git repository. */
+/** A remote repository configured in a Git repository. */
 export interface Remote {
   /** Remote name. */
   name: string;
@@ -1459,7 +1528,7 @@ export interface Remote {
   push: URL[];
 }
 
-/** A branch in a git repository. */
+/** A branch in a Git repository. */
 export interface Branch {
   /** Short name of the branch. */
   name: string;
@@ -1498,7 +1567,8 @@ export interface Branch {
 }
 
 /**
- * Status of a file returned by the {@linkcode DiffOperations.status} function.
+ * Status of a file returned by the
+ * {@linkcode DiffOperations.status git().diff.status} function.
  */
 export interface Status {
   /** Path to the file. */
@@ -1521,7 +1591,8 @@ export interface Status {
 }
 
 /**
- * A patch for a file returned by the {@linkcode DiffOperations.patch} function.
+ * A patch for a file returned by the
+ * {@linkcode DiffOperations.patch git().diff.patch} function.
  */
 export interface Patch {
   /** Path to the file. */
@@ -1556,8 +1627,8 @@ export interface DiffStats {
 }
 
 /**
- * A single hunk in a patch returned by the {@linkcode DiffOperations.patch}
- * function.
+ * A single hunk in a patch returned by the
+ * {@linkcode DiffOperations.patch git().diff.patch} function.
  */
 export interface Hunk {
   /** Line location of the hunk. */
@@ -1577,8 +1648,8 @@ export interface Hunk {
 }
 
 /**
- * A conflict region in a patch returned by the {@linkcode DiffOperations.patch}
- * function.
+ * A conflict region in a patch returned by the
+ * {@linkcode DiffOperations.patch git().diff.patch} function.
  */
 export interface Conflict {
   /**
@@ -1600,7 +1671,7 @@ export interface Conflict {
   base?: string[];
 }
 
-/** A single commit in a git repository. */
+/** A single commit in a Git repository. */
 export interface Commit {
   /** Full hash of commit. */
   hash: string;
@@ -1620,7 +1691,7 @@ export interface Commit {
   trailers?: Record<string, string>;
 }
 
-/** A tag in a git repository. */
+/** A tag in a Git repository. */
 export interface Tag {
   /** Tag name. */
   name: string;
@@ -1639,13 +1710,13 @@ export interface Tag {
 /** A reference that recursively points to a commit object. */
 export type Commitish = Commit | Branch | Tag | string;
 
-/** Result of a merge operation from {@linkcode Git.merge}. */
+/** Result of a merge operation from {@linkcode Git.merge git().merge}. */
 export interface Merge {
   /** List of unmerged files due to conflicts. */
   conflicts?: string[];
 }
 
-/** Result of a rebase operation from {@linkcode Git.rebase}. */
+/** Result of a rebase operation from {@linkcode Git.rebase git().rebase}. */
 export interface Rebase {
   /** Current step in the rebase sequence. */
   step: number;
@@ -1657,7 +1728,10 @@ export interface Rebase {
   conflicts?: string[];
 }
 
-/** Result of a cherry-pick operation from {@linkcode Git.cherrypick}. */
+/**
+ * Result of a cherry-pick operation from
+ * {@linkcode Git.cherrypick git().cherrypick}.
+ */
 export interface CherryPick {
   /** Remaining commits to be cherry-picked. */
   remaining: number;
@@ -1665,7 +1739,7 @@ export interface CherryPick {
   conflicts?: string[];
 }
 
-/** Result of a revert operation from {@linkcode Git.revert}. */
+/** Result of a revert operation from {@linkcode Git.revert git().revert}. */
 export interface Revert {
   /** Remaining commits to be reverted. */
   remaining: number;
@@ -1708,7 +1782,7 @@ export interface GitOptions {
    */
   directory?: string | URL;
   /**
-   * Configuration options for each executed git command.
+   * Configuration options for each executed Git command.
    *
    * These will override repository or global configurations.
    */
@@ -1716,8 +1790,8 @@ export interface GitOptions {
 }
 
 /**
- * Options common to the {@linkcode BranchOperations.list} and
- * {@linkcode TagOperations.list} functions for ref filtering.
+ * Options common to the {@linkcode BranchOperations.list git().branch.list}
+ * and {@linkcode TagOperations.list git().tag.list} functions for ref filtering.
  */
 export interface RefListOptions {
   /** Ref selection pattern. The default is all relevant refs. */
@@ -1735,8 +1809,9 @@ export interface RefListOptions {
 }
 
 /**
- * Options common to {@linkcode CommitOperations.create} and
- * {@linkcode TagOperations.create} for setting message bodies.
+ * Options common to {@linkcode CommitOperations.create git().commit.create}
+ * and {@linkcode TagOperations.create git().tag.create} for setting message
+ * bodies.
  */
 export interface MessageOptions {
   /**
@@ -1759,15 +1834,15 @@ export interface MessageOptions {
   /**
    * Message trailers.
    *
-   * Commit trailers are available since git 2.32. Tag trailers are available
-   * since git 2.46.
+   * Commit trailers are available since Git 2.32. Tag trailers are available
+   * since Git 2.46.
    */
   trailers?: Record<string, string>;
 }
 
 /**
  * Options common to operations that create merge conflicts, such as
- * {@linkcode Git.merge}.
+ * {@linkcode Git.merge git().merge}.
  */
 export interface ResolveOptions {
   /**
@@ -1776,7 +1851,7 @@ export interface ResolveOptions {
    * - `"ours"`: in case of conflicts, prefer our changes
    * - `"theirs"`: in case of conflicts, prefer their changes
    *
-   * By default, git uses the `ort` strategy when merging two heads, and the
+   * By default, Git uses the `ort` strategy when merging two heads, and the
    * `octopus` strategy when merging more than two heads. When this option is
    * provided, merge is done using the `ort` strategy with the provided
    * resolution method.
@@ -1785,8 +1860,8 @@ export interface ResolveOptions {
 }
 
 /**
- * Options common to {@linkcode CommitOperations.create} and
- * {@linkcode TagOperations.create} for GPG signing.
+ * Options common to {@linkcode CommitOperations.create git().commit.create}
+ * and {@linkcode TagOperations.create git().tag.create} for GPG signing.
  */
 export interface SignOptions {
   /**
@@ -1801,8 +1876,8 @@ export interface SignOptions {
 }
 
 /**
- * Options common to the {@linkcode Git.init} and {@linkcode Git.clone}
- * functions.
+ * Options common to the {@linkcode Git.init git().init} and
+ * {@linkcode Git.clone git().clone} functions.
  */
 export interface RepositoryOptions {
   /**
@@ -1826,14 +1901,14 @@ export interface RepositoryOptions {
    */
   config?: Config;
   /**
-   * Creates the git directory at given path.
+   * Creates the Git directory at given path.
    *
    * This can be a string path or a file URL.
    */
   separateGitDir?: string | URL;
 }
 
-/** Options for the {@linkcode Git.init} function. */
+/** Options for the {@linkcode Git.init git().init} function. */
 export interface InitOptions extends RepositoryOptions {
   /**
    * Initial branch name.
@@ -1847,7 +1922,7 @@ export interface InitOptions extends RepositoryOptions {
    */
   objectFormat?: "sha1" | "sha256";
   /**
-   * Specifies ref storage format (available since git 2.45).
+   * Specifies ref storage format (available since Git 2.45).
    * @default {"files"}
    */
   refFormat?: "files" | "reftable";
@@ -1864,7 +1939,7 @@ export interface InitOptions extends RepositoryOptions {
   shared?: boolean | "all" | number;
 }
 
-/** Options for the {@linkcode Git.clone} function. */
+/** Options for the {@linkcode Git.clone git().clone} function. */
 export interface CloneOptions
   extends RepositoryOptions, SyncShallowOptions, SyncFilterOptions {
   /**
@@ -1918,7 +1993,7 @@ export interface CloneOptions
    * Clones only the tip of a single branch.
    *
    * The cloned branch is either remote `HEAD` or
-   * {@linkcode InitOptions.branch}.
+   * the value of the {@linkcode InitOptions.branch branch} option.
    */
   singleBranch?: boolean;
   /**
@@ -1933,7 +2008,8 @@ export interface CloneOptions
 
 /**
  * Options common to all config operations, such as
- * {@linkcode ConfigOperations.get} or {@linkcode ConfigOperations.set}.
+ * the {@linkcode ConfigOperations.get git().config.get} or
+ * the {@linkcode ConfigOperations.set git().config.set} functions.
  */
 export type ConfigOptions = ConfigLevelOptions | ConfigFileOptions;
 
@@ -1963,7 +2039,9 @@ export interface ConfigFileOptions {
   file: string | URL;
 }
 
-/** Options for the {@linkcode IndexOperations.add} function. */
+/**
+ * Options for the {@linkcode IndexOperations.add git().index.add} function.
+ */
 export interface IndexAddOptions {
   /**
    * Overrides the executable bit of the file.
@@ -1979,7 +2057,9 @@ export interface IndexAddOptions {
   force?: boolean;
 }
 
-/** Options for the {@linkcode IndexOperations.move} function. */
+/**
+ * Options for the {@linkcode IndexOperations.move git().index.move} function.
+ */
 export interface IndexMoveOptions {
   /**
    * Moves files, even if the destination file already exists.
@@ -1988,7 +2068,10 @@ export interface IndexMoveOptions {
   force?: boolean;
 }
 
-/** Options for the {@linkcode IndexOperations.restore} function. */
+/**
+ * Options for the {@linkcode IndexOperations.restore git().index.restore}
+ * function.
+ */
 export interface IndexRestoreOptions {
   /**
    * Source commit to restore from.
@@ -2018,7 +2101,10 @@ export interface IndexRestoreOptions {
   location?: "index" | "worktree" | "both";
 }
 
-/** Options for the {@linkcode IndexOperations.remove} function. */
+/**
+ * Options for the {@linkcode IndexOperations.remove git().index.remove}
+ * function.
+ */
 export interface IndexRemoveOptions {
   /**
    * Removes files, even if they have local modifications.
@@ -2028,8 +2114,8 @@ export interface IndexRemoveOptions {
 }
 
 /**
- * Options for the {@linkcode DiffOperations.status} and
- * {@linkcode DiffOperations.patch} functions.
+ * Options for the {@linkcode DiffOperations.status git().diff.status} and
+ * the {@linkcode DiffOperations.patch git().diff.patch} functions.
  */
 export interface DiffOptions {
   /**
@@ -2039,8 +2125,9 @@ export interface DiffOptions {
    * - `"worktree"`: include unstaged changes, exclude staged changes
    * - `"both"`: include all uncommitted changes (default)
    *
-   * To exclude all uncommitted changes, use {@linkcode DiffOptions.from from}
-   * and {@linkcode DiffOptions.to to} to provide a specific revision range.
+   * To exclude all uncommitted changes, use the
+   * {@linkcode DiffOptions.from from} and the {@linkcode DiffOptions.to to}
+   * options to provide a specific revision range.
    *
    * Ignored if {@linkcode DiffOptions.to to} is set.
    */
@@ -2089,7 +2176,10 @@ export interface DiffOptions {
   pickaxe?: string | Pickaxe;
 }
 
-/** Options for the {@linkcode DiffOperations.status} function. */
+/**
+ * Options for the {@linkcode DiffOperations.status git().diff.status}
+ * function.
+ */
 export interface DiffStatusOptions extends DiffOptions {
   /** Includes diff stats in the output. */
   stats?: boolean;
@@ -2117,7 +2207,9 @@ export interface DiffStatusOptions extends DiffOptions {
   ignored?: boolean;
 }
 
-/** Options for the {@linkcode DiffOperations.patch} function. */
+/**
+ * Options for the {@linkcode DiffOperations.patch git().diff.patch} function.
+ */
 export interface DiffPatchOptions extends DiffOptions {
   /**
    * Diff algorithm to use.
@@ -2132,8 +2224,8 @@ export interface DiffPatchOptions extends DiffOptions {
 }
 
 /**
- * Options for the {@linkcode IgnoreOperations.filter} and
- * {@linkcode IgnoreOperations.omit} functions.
+ * Options for the {@linkcode IgnoreOperations.filter git().ignore.filter} and
+ * the {@linkcode IgnoreOperations.omit git().ignore.omit} functions.
  */
 export interface IgnoreFilterOptions {
   /**
@@ -2143,13 +2235,15 @@ export interface IgnoreFilterOptions {
   index?: boolean;
 }
 
-/** Options for {@linkcode FileOperations} functions. */
+/** Options for the {@linkcode FileOperations git().file} functions. */
 export interface FileOptions {
   /** Revision to read file contents from. */
   source?: Commitish;
 }
 
-/** Options for the {@linkcode CommitOperations.log} function. */
+/**
+ * Options for the {@linkcode CommitOperations.log git().commit.log} function.
+ */
 export interface CommitLogOptions {
   /** Only commits by an author. */
   author?: User;
@@ -2160,7 +2254,8 @@ export interface CommitLogOptions {
   /**
    * Continue listing history across renames.
    *
-   * Requires exactly one path in {@linkcode CommitLogOptions.path}.
+   * Requires exactly one path set by the
+   * {@linkcode CommitLogOptions.path path} option.
    *
    * @default {false}
    */
@@ -2180,8 +2275,8 @@ export interface CommitLogOptions {
   /**
    * Only commits that are reachable from either end, but not from both.
    *
-   * Ignored if either {@linkcode CommitLogOptions.from} or
-   * {@linkcode CommitLogOptions.to} is not set.
+   * Ignored if either of the {@linkcode CommitLogOptions.from from} or
+   * {@linkcode CommitLogOptions.to to} options are not set.
    *
    * @default {false}
    */
@@ -2227,11 +2322,12 @@ export interface CommitLogOptions {
 }
 
 /**
- * Options for the {@linkcode CommitOperations.create} function.
+ * Options for the {@linkcode CommitOperations.create git().commit.create}
+ * function.
  */
 export interface CommitCreateOptions extends MessageOptions, SignOptions {
   /**
-   * Automatically stage modified or deleted files known to git.
+   * Automatically stage modified or deleted files known to Git.
    * @default {false}
    */
   all?: boolean;
@@ -2256,7 +2352,10 @@ export interface CommitCreateOptions extends MessageOptions, SignOptions {
   path?: string | string[];
 }
 
-/** Options for the {@linkcode BranchOperations.list} function. */
+/**
+ * Options for the {@linkcode BranchOperations.list git().branch.list}
+ * function.
+ */
 export interface BranchListOptions extends RefListOptions {
   /**
    * Type of branches to list.
@@ -2265,7 +2364,9 @@ export interface BranchListOptions extends RefListOptions {
   type?: "local" | "remote" | "all";
 }
 
-/** Options for the {@linkcode BranchOperations.get} function. */
+/**
+ * Options for the {@linkcode BranchOperations.get git().branch.get} function.
+ */
 export interface BranchGetOptions {
   /**
    * Remote of the branch, to look up a remote branch.
@@ -2285,7 +2386,8 @@ export interface BranchGetOptions {
 }
 
 /**
- * Options for the {@linkcode BranchOperations.create} function.
+ * Options for the {@linkcode BranchOperations.create git().branch.create}
+ * function.
  */
 export interface BranchCreateOptions extends BranchCreateTrackOptions {
   /**
@@ -2303,8 +2405,10 @@ export interface BranchCreateOptions extends BranchCreateTrackOptions {
 }
 
 /**
- * Options common to the {@linkcode BranchOperations.create} and
- * {@linkcode BranchOperations.switch} functions for upstream tracking set-up.
+ * Options common to the
+ * {@linkcode BranchOperations.create git().branch.create} and the
+ * {@linkcode BranchOperations.switch git().branch.switch} functions for
+ * upstream tracking set-up.
  */
 export interface BranchCreateTrackOptions {
   /**
@@ -2323,7 +2427,10 @@ export interface BranchCreateTrackOptions {
   track?: boolean | "inherit";
 }
 
-/** Options for the {@linkcode BranchOperations.switch} function. */
+/**
+ * Options for the {@linkcode BranchOperations.switch git().branch.switch}
+ * function.
+ */
 export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   /**
    * Creates a new branch at given target, `"HEAD"` if set to `true`.
@@ -2332,7 +2439,7 @@ export interface BranchSwitchOptions extends BranchCreateTrackOptions {
    * option.
    *
    * An error is thrown if the branch already exists, unless
-   * {@linkcode BranchSwitchOptions.force force} is set to `true`.
+   * the {@linkcode BranchSwitchOptions.force force} option is set to `true`.
    *
    * @default {false}
    */
@@ -2347,16 +2454,19 @@ export interface BranchSwitchOptions extends BranchCreateTrackOptions {
   /**
    * Discards any local changes when switching branches.
    *
-   * If creating a new branch with
-   * {@linkcode BranchSwitchOptions.create create}, this will reset the new
-   * branch even if it already exists.
+   * When creating a new branch with the
+   * {@linkcode BranchSwitchOptions.create create} option, this will reset
+   * the new branch even if it already exists.
    *
    * @default {false}
    */
   force?: boolean;
 }
 
-/** Options for the {@linkcode BranchOperations.detach} function. */
+/**
+ * Options for the {@linkcode BranchOperations.detach git().branch.detach}
+ * function.
+ */
 export interface BranchDetachOptions {
   /**
    * Target commit to detach `HEAD` at.
@@ -2365,7 +2475,10 @@ export interface BranchDetachOptions {
   target?: Commitish;
 }
 
-/** Options for the {@linkcode BranchOperations.reset} function. */
+/**
+ * Options for the {@linkcode BranchOperations.reset git().branch.reset}
+ * function.
+ */
 export interface BranchResetOptions {
   /**
    * Reset mode.
@@ -2389,7 +2502,10 @@ export interface BranchResetOptions {
   target?: Commitish;
 }
 
-/** Options for the {@linkcode BranchOperations.move} function. */
+/**
+ * Options for the {@linkcode BranchOperations.move git().branch.move}
+ * function.
+ */
 export interface BranchMoveOptions {
   /**
    * Forcefully renames the branch.
@@ -2398,7 +2514,10 @@ export interface BranchMoveOptions {
   force?: boolean;
 }
 
-/** Options for the {@linkcode BranchOperations.copy} function. */
+/**
+ * Options for the {@linkcode BranchOperations.copy git().branch.copy}
+ * function.
+ */
 export interface BranchCopyOptions {
   /**
    * Forcefully copies the branch.
@@ -2407,7 +2526,10 @@ export interface BranchCopyOptions {
   force?: boolean;
 }
 
-/** Options for the {@linkcode BranchOperations.delete} function. */
+/**
+ * Options for the {@linkcode BranchOperations.delete git().branch.delete}
+ * function.
+ */
 export interface BranchDeleteOptions {
   /**
    * Forcefully deletes the branch.
@@ -2421,7 +2543,7 @@ export interface BranchDeleteOptions {
   type?: "local" | "remote";
 }
 
-/** Options for the {@linkcode TagOperations.list} function. */
+/** Options for the {@linkcode TagOperations.list git().tag.list} function. */
 export interface TagListOptions extends RefListOptions {
   /**
    * Tag ordering.
@@ -2437,10 +2559,10 @@ export interface TagListOptions extends RefListOptions {
    * considered newer than the release versions. To change this behavior, set
    * the `"versionsort.suffix"` config option to the pre-release suffixes.
    *
-   * @example Semantic version sorting with pre-release suffixes.
+   * @example Semantic version sorting with pre-release suffixes
    * ```ts
-   * import { tempRepository } from "@roka/git/testing";
    * import { git } from "@roka/git";
+   * import { tempRepository } from "@roka/git/testing";
    * import { assertEquals } from "@std/assert";
    *
    * const directory = await tempRepository();
@@ -2469,7 +2591,9 @@ export interface TagListOptions extends RefListOptions {
   sort?: "name" | "date" | "version";
 }
 
-/** Options for the {@linkcode TagOperations.create} function. */
+/**
+ * Options for the {@linkcode TagOperations.create git().tag.create} function.
+ */
 export interface TagCreateOptions extends MessageOptions, SignOptions {
   /**
    * Target reference (commit, branch, or tag) to tag.
@@ -2489,7 +2613,8 @@ export interface TagCreateOptions extends MessageOptions, SignOptions {
 
 /**
  * Options common to operations that can merge heads, such as
- * {@linkcode MergeOperations.with} or {@linkcode SyncOperations.pull}.
+ * {@linkcode MergeOperations.with git().merge.with} or
+ * {@linkcode SyncOperations.pull git().sync.pull}.
  */
 export interface MergeOptions extends ResolveOptions, SignOptions {
   /**
@@ -2509,14 +2634,16 @@ export interface MergeOptions extends ResolveOptions, SignOptions {
    * Produces the working tree and index state as if a merge has happened, but
    * does not create a merge commit.
    *
-   * Implies {@linkcode MergeOptions.commit commit} is `false`.
+   * Implies the {@linkcode MergeOptions.commit commit} option is `false`.
    *
    * @default {false}
    */
   squash?: boolean;
 }
 
-/** Options for the {@linkcode MergeOperations.with} function. */
+/**
+ * Options for the {@linkcode MergeOperations.with git().merge.with} function.
+ */
 export interface MergeWithOptions
   extends MergeOptions, Omit<MessageOptions, "trailers"> {}
 
@@ -2536,8 +2663,8 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    * - `"reset"`: set author dates to the time of rebase
    * - `"committer-is-author"`: re-apply author dates as committer dates
    *
-   * Options other than `"preserve"` imply
-   * {@linkcode RebaseOptions.fastForward fastForward} is `false`.
+   * Values other than `"preserve"` imply
+   * the {@linkcode RebaseOptions.fastForward fastForward} option is `false`.
    *
    * @default {"preserve"}
    */
@@ -2549,7 +2676,7 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    * - `"keep"`: keep commits even if they become empty
    * - `"stop"`: stop the rebase when an empty commit is encountered
    *
-   * The `"stop"` value is available since git 2.45.
+   * The `"stop"` value is available since Git 2.45.
    *
    * @default {"drop"}
    */
@@ -2561,7 +2688,7 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
    * - `false`: disable fast-forwarding, and recreate every commit
    *
    * This option is ignored if history is being rewritten with
-   * {@linkcode RebaseOptions.dates dates}.
+   * the {@linkcode RebaseOptions.dates dates} option.
    *
    * @default {true}
    */
@@ -2582,7 +2709,10 @@ export interface RebaseOptions extends ResolveOptions, SignOptions {
   reapplyCherryPicks?: boolean;
 }
 
-/** Options for the {@linkcode CherryPickOperations.apply} function. */
+/**
+ * Options for the
+ * {@linkcode CherryPickOperations.apply git().cherrypick.apply} function.
+ */
 export interface CherryPickOptions extends ResolveOptions, SignOptions {
   /**
    * Allows empty commits.
@@ -2607,7 +2737,10 @@ export interface CherryPickOptions extends ResolveOptions, SignOptions {
   mainline?: number;
 }
 
-/** Options for the {@linkcode RevertOperations.apply} function. */
+/**
+ * Options for the {@linkcode RevertOperations.apply git().revert.apply}
+ * function.
+ */
 export interface RevertOptions extends ResolveOptions, SignOptions {
   /**
    * Creates commit after revert.
@@ -2623,7 +2756,9 @@ export interface RevertOptions extends ResolveOptions, SignOptions {
   mainline?: number;
 }
 
-/** Options for the {@linkcode RemoteOperations.add} function. */
+/**
+ * Options for the {@linkcode RemoteOperations.add git().remote.add} function.
+ */
 export interface RemoteAddOptions {
   /** Fetches remote immediately after adding. */
   fetch?: boolean;
@@ -2632,8 +2767,8 @@ export interface RemoteAddOptions {
 }
 
 /**
- * Options common to operations that work with remotes (e.g.
- * {@linkcode SyncOperations.push}).
+ * Options common to operations that work with remotes
+ * (e.g. the {@linkcode SyncOperations.push git().sync.push} function).
  */
 export interface SyncRemoteOptions {
   /**
@@ -2647,7 +2782,7 @@ export interface SyncRemoteOptions {
 
 /**
  * Options common to operations that use remote transport synchronization
- * (e.g. {@linkcode SyncOperations.push}).
+ * (e.g. the {@linkcode SyncOperations.push git().sync.push} function).
  */
 export interface SyncOptions {
   /** Either updates all refs or doesn't update any. */
@@ -2668,7 +2803,7 @@ export interface SyncOptions {
 
 /**
  * Options common to operations that can set up upstream tracking with remotes
- * (e.g. {@linkcode SyncOperations.push}).
+ * (e.g. the {@linkcode SyncOperations.push git().sync.push} function).
  */
 export interface SyncTrackOptions {
   /**
@@ -2680,7 +2815,7 @@ export interface SyncTrackOptions {
 
 /**
  * Options common to operations that can create partial repositories
- * (e.g. {@linkcode SyncOperations.pull}).
+ * (e.g. the {@linkcode SyncOperations.pull git().sync.pull} function).
  */
 export interface SyncShallowOptions {
   /**
@@ -2702,8 +2837,9 @@ export interface SyncShallowOptions {
 }
 
 /**
- * Options common to {@linkcode Git.clone} and {@linkcode SyncOperations.fetch}
- * for filtering fetched objects.
+ * Options common to the {@linkcode Git.clone git().clone} and the
+ * {@linkcode SyncOperations.fetch git().sync.fetch} functions for filtering
+ * objects during clone or fetch.
  */
 export interface SyncFilterOptions {
   /**
@@ -2724,15 +2860,17 @@ export interface SyncFilterOptions {
   filter?: string | string[];
 }
 
-/** Options for the {@linkcode SyncOperations.fetch} function. */
+/**
+ * Options for the {@linkcode SyncOperations.fetch git().sync.fetch} function.
+ */
 export type SyncFetchOptions =
   | SyncFetchSingleOptions
   | SyncFetchMultipleOptions
   | SyncFetchAllOptions;
 
 /**
- * Options for the {@linkcode SyncOperations.fetch} function when fetching
- * from a single repository.
+ * Options for the {@linkcode SyncOperations.fetch git().sync.fetch} function
+ * when fetching from a single repository.
  */
 export interface SyncFetchSingleOptions
   extends
@@ -2747,13 +2885,16 @@ export interface SyncFetchSingleOptions
    * The default behavior is to fetch from all remote branches.
    */
   target?: string | Branch | Tag;
-  /** Cannot be specified with {@linkcode SyncFetchSingleOptions.remote}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncFetchSingleOptions.remote remote} option.
+   */
   all?: never;
 }
 
 /**
- * Options for the {@linkcode SyncOperations.fetch} function when fetching
- * from multiple repositories.
+ * Options for the {@linkcode SyncOperations.fetch git().sync.fetch} function
+ * when fetching from multiple repositories.
  */
 export interface SyncFetchMultipleOptions
   extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SyncFilterOptions {
@@ -2763,34 +2904,48 @@ export interface SyncFetchMultipleOptions
    * If set to `"all"`, fetches from all configured remotes.
    */
   remote: (string | Remote)[];
-  /** Cannot be specified with {@linkcode SyncFetchMultipleOptions.remote}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncFetchMultipleOptions.remote remote} option.
+   */
   all?: never;
-  /** Cannot be specified with {@linkcode SyncFetchMultipleOptions.remote}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncFetchMultipleOptions.remote remote} option.
+   */
   target?: never;
 }
 
 /**
- * Options for the {@linkcode SyncOperations.fetch} function when fetching
- * from all repositories.
+ * Options for the {@linkcode SyncOperations.fetch git().sync.fetch} function
+ * when fetching from all repositories.
  */
 export interface SyncFetchAllOptions
   extends SyncOptions, SyncTrackOptions, SyncShallowOptions, SyncFilterOptions {
   /** Fetches from all configured repositories. */
   all: boolean;
-  /** Cannot be specified with {@linkcode SyncFetchAllOptions.all}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncFetchAllOptions.all all} option.
+   */
   remote?: never;
-  /** Cannot be specified with {@linkcode SyncFetchAllOptions.all}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncFetchAllOptions.all all} option.
+   */
   target?: never;
 }
 
-/** Options for the {@linkcode SyncOperations.pull} function. */
+/**
+ * Options for the {@linkcode SyncOperations.pull git().sync.pull} function.
+ */
 export type SyncPullOptions =
   | SyncPullSingleOptions
   | SyncPullAllOptions;
 
 /**
- * Options for the {@linkcode SyncOperations.pull} function when pulling from
- * a single repository.
+ * Options for the {@linkcode SyncOperations.pull git().sync.pull} function
+ * when pulling from a single repository.
  */
 export interface SyncPullSingleOptions
   extends
@@ -2805,13 +2960,16 @@ export interface SyncPullSingleOptions
    * The default behavior is to pull from the upstream of the current branch.
    */
   target?: string | Branch | Tag;
-  /** Cannot be specified with {@linkcode SyncPullSingleOptions.remote}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncPullSingleOptions.remote remote} option.
+   */
   all?: never;
 }
 
 /**
- * Options for the {@linkcode SyncOperations.pull} function when pulling from
- * all repositories.
+ * Options for the {@linkcode SyncOperations.pull git().sync.pull} function
+ * when pulling from all repositories.
  */
 export interface SyncPullAllOptions
   extends
@@ -2821,15 +2979,21 @@ export interface SyncPullAllOptions
     SyncPullMergeOptions {
   /** Pulls from all configured repositories. */
   all: boolean;
-  /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncPullAllOptions.all all} option.
+   */
   remote?: never;
-  /** Cannot be specified with {@linkcode SyncPullAllOptions.all}. */
+  /**
+   * Cannot be specified with the
+   * {@linkcode SyncPullAllOptions.all all} option.
+   */
   target?: never;
 }
 
 /**
- * Options for the {@linkcode SyncOperations.pull} function for controlling
- * rebase and merge behavior.
+ * Options for the {@linkcode SyncOperations.pull git().sync.pull} function
+ * for controlling rebase and merge behavior.
  */
 export interface SyncPullMergeOptions extends MergeOptions {
   /**
@@ -2844,15 +3008,17 @@ export interface SyncPullMergeOptions extends MergeOptions {
   rebase?: boolean | "merges";
 }
 
-/** Options for the {@linkcode SyncOperations.push} function. */
+/**
+ * Options for the {@linkcode SyncOperations.push git().sync.push} function.
+ */
 export type SyncPushOptions =
   | SyncPushBranchOptions
   | SyncPushAllBranchesOptions
   | SyncPushTagOptions;
 
 /**
- * Options for the {@linkcode SyncOperations.push} function when pushing
- * branches.
+ * Options for the {@linkcode SyncOperations.push git().sync.push} function
+ * when pushing branches.
  */
 export interface SyncPushBranchOptions
   extends
@@ -2866,9 +3032,9 @@ export interface SyncPushBranchOptions
    *
    * The default behavior is to push the current branch.
    *
-   * Note that this does not accept tag names. To push tags, use
+   * Note that this does not accept tag names. To push tags, use the
    * {@linkcode SyncPushTagOptions.tag tag} or
-   * {@linkcode SyncOptions.tags tags}.
+   * {@linkcode SyncOptions.tags tags} options.
    */
   target?: string | Branch | (string | Branch)[];
   /**
@@ -2877,18 +3043,20 @@ export interface SyncPushBranchOptions
    */
   delete?: boolean;
   /**
-   * Cannot be specified with {@linkcode SyncPushBranchOptions.target}.
+   * Cannot be specified with the
+   * {@linkcode SyncPushBranchOptions.target target} option.
    */
   branches?: never;
   /**
-   * Cannot be specified with {@linkcode SyncPushBranchOptions.target}.
+   * Cannot be specified with the
+   * {@linkcode SyncPushBranchOptions.target target} option.
    */
   tag?: never;
 }
 
 /**
- * Options for the {@linkcode SyncOperations.push} function when pushing
- * all branches.
+ * Options for the {@linkcode SyncOperations.push git().sync.push} function
+ * when pushing all branches.
  */
 export interface SyncPushAllBranchesOptions
   extends
@@ -2900,22 +3068,25 @@ export interface SyncPushAllBranchesOptions
   /** Pushes all branches to remote. */
   branches: "all";
   /**
-   * Cannot be specified with {@linkcode SyncPushAllBranchesOptions.branches}.
+   * Cannot be specified with the
+   * {@linkcode SyncPushAllBranchesOptions.branches branches} option.
    */
   target?: never;
   /**
-   * Cannot be specified with {@linkcode SyncPushAllBranchesOptions.branches}.
+   * Cannot be specified with the
+   * {@linkcode SyncPushAllBranchesOptions.branches branches} option.
    */
   tag?: never;
   /**
-   * Cannot be specified with {@linkcode SyncPushAllBranchesOptions.branches}.
+   * Cannot be specified with the
+   * {@linkcode SyncPushAllBranchesOptions.branches branches} option.
    */
   delete?: never;
 }
 
 /**
- * Options for the {@linkcode SyncOperations.push} function when pushing a
- * single tag.
+ * Options for the {@linkcode SyncOperations.push git().sync.push} function
+ * when pushing a single tag.
  */
 export interface SyncPushTagOptions
   extends
@@ -2932,22 +3103,26 @@ export interface SyncPushTagOptions
    */
   delete?: boolean;
   /**
-   * Cannot be specified with {@linkcode SyncPushTagOptions.tag}.
+   * Cannot be specified with the {@linkcode SyncPushTagOptions.tag tag}
+   * option.
    */
   target?: never;
   /**
-   * Cannot be specified with {@linkcode SyncPushTagOptions.tag}.
+   * Cannot be specified with the {@linkcode SyncPushTagOptions.tag tag}
+   * option.
    */
   branches?: never;
   /**
-   * Cannot be specified with {@linkcode SyncPushTagOptions.tag}.
+   * Cannot be specified with the {@linkcode SyncPushTagOptions.tag tag}
+   * option.
    */
   tags?: never;
 }
 
 /**
- * Options common to different push variants of
- * {@linkcode SyncOperations.push} to control forcing behavior.
+ * Options common to different push variants of the
+ * {@linkcode SyncOperations.push git().sync.push} function to control forcing
+ * behavior.
  */
 export interface SyncPushForceOptions {
   /**
@@ -2963,7 +3138,10 @@ export interface SyncPushForceOptions {
   force?: boolean | "with-lease" | "with-lease-if-includes";
 }
 
-/** Options for the {@linkcode SyncOperations.backfill} function. */
+/**
+ * Options for the {@linkcode SyncOperations.backfill git().sync.backfill}
+ * function.
+ */
 export interface SyncBackfillOptions {
   /**
    * Minimum number of objects to backfill in a single batch.
@@ -2974,47 +3152,52 @@ export interface SyncBackfillOptions {
 
 /**
  * Creates a new {@linkcode Git} instance for a local repository for running
- * git operations.
+ * Git operations.
  *
- * @example Retrieve the current branch name.
+ * @example Retrieve the current branch name
  * ```ts
  * import { git } from "@roka/git";
+ *
  * (async () => {
  *   const branch = await git().branch.current();
  *   return { branch };
  * });
  * ```
  *
- * @example Retrieve the last commit in a repository.
+ * @example Retrieve the last commit in a repository
  * ```ts
  * import { git } from "@roka/git";
+ *
  * (async () => {
  *   const commit = await git().commit.head();
  *   return { commit };
  * });
  * ```
  *
- * @example List all tags in a repository.
+ * @example List all tags in a repository
  * ```ts
  * import { git } from "@roka/git";
+ *
  * (async () => {
  *   const tags = await git().tag.list();
  *   return { tags };
  * });
  * ```
  *
- * @example Retrieve the default branch name from origin.
+ * @example Retrieve the default branch name from origin
  * ```ts
  * import { git } from "@roka/git";
+ *
  * (async () => {
  *   const branch = await git().remote.head("origin");
  *   return { branch };
  * });
  * ```
  *
- * @example Create a new git repository and add a file.
+ * @example Create a new Git repository and add a file
  * ```ts
  * import { git } from "@roka/git";
+ *
  * (async () => {
  *   const repo = await git().init({ directory: "/path/to/repo" });
  *   await Deno.writeTextFile(repo.path("file.txt"), "content");
@@ -3024,10 +3207,11 @@ export interface SyncBackfillOptions {
  * });
  * ```
  *
- * @example Delete local branches with pruned tracking branches.
+ * @example Delete local branches with pruned tracking branches
  * ```ts
  * import { git } from "@roka/git";
  * import { pool } from "@roka/async/pool";
+ *
  * (async () => {
  *   const repo = git({ directory: "/path/to/repo" });
  *   await repo.sync.fetch({ prune: true });
@@ -3039,9 +3223,10 @@ export interface SyncBackfillOptions {
  * });
  * ```
  *
- * @example Enable fetch pruning for all remotes except a single remote.
+ * @example Enable fetch pruning for all remotes except a single remote
  * ```ts
  * import { git } from "@roka/git";
+ *
  * (async () => {
  *   const repo = git({ directory: "/path/to/repo" });
  *   await repo.config.set("fetch.prune", true);
@@ -3049,8 +3234,8 @@ export interface SyncBackfillOptions {
  * });
  * ```
  *
- * @param options Options for the git repository.
- * @returns A {@linkcode Git} instance for the given repository.
+ * @param options Options for the Git repository
+ * @returns A {@linkcode Git} instance for the given repository
  */
 export function git(options?: GitOptions): Git {
   let cachedVersion: string | undefined;

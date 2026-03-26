@@ -5,11 +5,13 @@
  * ```ts
  * import { any } from "@roka/async/any";
  * import { assertEquals } from "@std/assert";
+ *
  * const result = await any([
  *   () => Promise.reject(new Error()),
  *   () => Promise.resolve().then(() => Promise.resolve("next tick")),
  *   () => Promise.resolve("first"),
  * ]);
+ *
  * assertEquals(result, "first");
  * ```
  *
@@ -27,33 +29,37 @@
  * Returns the first resolved result from a collection of promises. Rejections
  * are ignored unless all promises reject.
  *
- * @example Resolve to first available result from promises.
+ * @example Resolve to first available result from promises
  * ```ts
  * import { any } from "@roka/async/any";
  * import { assertEquals } from "@std/assert";
+ *
  * const result = await any([
  *   Promise.resolve().then(() => Promise.resolve(1)),
  *   Promise.reject(2),
  *   Promise.resolve(3),
  * ]);
+ *
  * assertEquals(result, 3);
  * ```
  *
- * @example Resolve to first available result from promise factories.
+ * @example Resolve to first available result from promise factories
  * ```ts
  * import { any } from "@roka/async/any";
  * import { assertEquals } from "@std/assert";
+ *
  * const result = await any([
  *   () => Promise.resolve().then(() => Promise.resolve(1)),
  *   () => Promise.reject(2),
  *   () => Promise.resolve(3),
  * ]);
+ *
  * assertEquals(result, 3);
  * ```
  *
- * @typeParam T The type of the input and output values.
- * @param array The promises to resolve.
- * @returns A promise that resolves to the first successful result.
+ * @typeParam T The type of the input and output values
+ * @param array The promises to resolve
+ * @returns A promise that resolves to the first successful result
  */
 export function any<T>(
   array: Iterable<Promise<T>> | Iterable<() => Promise<T>>,
@@ -63,22 +69,24 @@ export function any<T>(
  * Transforms values to promises and returns the first resolved result.
  * Rejections are ignored unless all promises reject.
  *
- * @example Resolve to first available result from values.
+ * @example Resolve to first available result from values
  * ```ts
  * import { any } from "@roka/async/any";
  * import { assertEquals } from "@std/assert";
+ *
  * const result = await any([1, 2, 3], async (x) => {
  *   if (x !== 2) return await Promise.reject(x);
  *   return await Promise.resolve(x);
  * });
+ *
  * assertEquals(result, 2);
  * ```
  *
- * @typeParam T The type of the input values.
- * @typeParam R The type of the output values.
- * @param array The input values to map to promises.
- * @param iteratorFn The function to transform the values to promises.
- * @returns A promise that resolves to the first successful result.
+ * @typeParam T The type of the input values
+ * @typeParam R The type of the output values
+ * @param array The input values to map to promises
+ * @param iteratorFn The function to transform the values to promises
+ * @returns A promise that resolves to the first successful result
  */
 export function any<T, R>(
   array: Iterable<T>,

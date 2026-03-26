@@ -5,6 +5,7 @@
  *
  * ```ts
  * import { mockFetch } from "@roka/http/testing";
+ *
  * Deno.test("mockFetch() example", async (t) => {
  *   using fetch = mockFetch(t, {
  *     path: "__mocks__/testing.ts.mock",
@@ -58,11 +59,12 @@ export interface MockFetchOptions extends MockOptions {
  * create a mock file in the `__mocks__` directory, using real fetch calls. The
  * mock file will be used in subsequent test runs when the flag is not present.
  *
- * In `"replay"` mode, a call to the mock will throw {@linkcode MockError} if
+ * In `"replay"` mode, a call to the mock will throw
+ * {@linkcode https://jsr.io/@std/testing/doc/mock/~/MockError MockError} if
  * no matching call was recorded. At the end of the test, the mock will verify
  * that at least one call was made, and all recorded calls were replayed.
  *
- * @example Mock a fetch call.
+ * @example Mock a fetch call
  * ```ts
  * import { mockFetch } from "@roka/http/testing";
  * import { assertEquals } from "@std/assert";
@@ -77,9 +79,9 @@ export interface MockFetchOptions extends MockOptions {
  * });
  * ```
  *
- * @param context The test context.
- * @param options Options for the mock.
- * @returns A mock function that records and replays calls to the global `fetch`.
+ * @param context The test context
+ * @param options Options for the mock
+ * @returns A mock function that records and replays calls to the global `fetch`
  */
 export function mockFetch(
   context: Deno.TestContext,

@@ -4,11 +4,13 @@
  *
  * ```ts
  * import { assertSameElements } from "@roka/assert";
+ *
  * assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]);
  * ```
  *
  * ```ts
  * import { assertArrayObjectMatch } from "@roka/assert";
+ *
  * assertArrayObjectMatch(
  *   [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }],
  *   [{ name: "Alice" }, { name: "Bob" }],
@@ -35,9 +37,9 @@ export type PropertyKey = string | number | symbol;
  * {@link https://jsr.io/@std/assert **@std/assert**} library.
  *
  * @throws {AssertionError} If the arrays differ in length or if the arrays
- * contain different groups of elements.
+ *                          contain different groups of elements
  *
- * @example Using `assertSameElements()`.
+ * @example Using `assertSameElements()`
  * ```ts
  * import { assertSameElements } from "@roka/assert";
  *
@@ -76,7 +78,7 @@ export function assertSameElements<T>(
  * the standard {@link https://jsr.io/@std/assert **@std/assert**}
  * library.
  *
- * @example Using `assertArrayObjectMatch()`.
+ * @example Using `assertArrayObjectMatch()`
  * ```ts
  * import { assertArrayObjectMatch } from "@roka/assert";
  *
@@ -93,12 +95,12 @@ export function assertSameElements<T>(
  * ```
  *
  * @throws {AssertionError} If the arrays differ in length or if any object in
- * the `actual` array does not match the corresponding object in the `expected`
- * array.
+ *                          the `actual` array does not match the corresponding
+ *                          object in the `expected` array
  *
- * @param actual The actual value to be matched.
- * @param expected The expected value to match.
- * @param msg The optional message to display if the assertion fails.
+ * @param actual The actual value to be matched
+ * @param expected The expected value to match
+ * @param msg The optional message to display if the assertion fails
  */
 export function assertArrayObjectMatch(
   // deno-lint-ignore no-explicit-any

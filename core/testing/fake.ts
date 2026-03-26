@@ -13,7 +13,9 @@
  * ```ts
  * import { fakeArgs } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using _ = fakeArgs(["arg1", "arg2"]);
+ *
  * assertEquals(Deno.args, ["arg1", "arg2"]);
  * ```
  *
@@ -24,7 +26,9 @@
  * ```ts
  * import { fakeEnv } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using env = fakeEnv({ ENV: "value" });
+ *
  * assertEquals(env.get("ENV"), "value");
  * ```
  *
@@ -36,7 +40,9 @@
  * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using console = fakeConsole();
+ *
  * console.log("I won't be printed");
  * assertEquals(console.output(), "I won't be printed");
  * ```
@@ -48,15 +54,15 @@
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using _ = fakeCommand({
  *   cat: [{ code: 0, stdout: "Hello, World!\n" }],
  * });
+ *
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
  * const { stdout } = await cmd.output();
  * assertEquals(new TextDecoder().decode(stdout), "Hello, World!\n");
  * ```
- *
- * @todo Support `Deno.spawn()` and family.
  *
  * @module fake
  */
@@ -82,11 +88,13 @@ export interface FakeArgs {
  *
  * Useful for testing command-line applications.
  *
- * @example Use fake script arguments for testing.
+ * @example Use fake script arguments for testing
  * ```ts
  * import { fakeArgs } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using _ = fakeArgs(["arg1", "arg2"]);
+ *
  * assertEquals(Deno.args, ["arg1", "arg2"]);
  * ```
  */
@@ -131,24 +139,29 @@ export interface FakeEnv extends Deno.Env {
  *
  * Useful for supplying and manipulating environment variables in tests.
  *
- * @example Use fake environment variables for testing.
+ * @example Use fake environment variables for testing
  * ```ts
  * import { fakeEnv } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using env = fakeEnv({ ENV1: "value1", ENV2: "value2" });
+ *
  * assertEquals(env.get("ENV1"), "value1");
  * assertEquals(env.get("ENV2"), "value2");
  * ```
  *
- * @example Verify environment variable updated from code under test.
+ * @example Verify environment variable updated from code under test
  * ```ts
  * import { fakeEnv } from "@roka/testing/fake";
  * import { assert, assertEquals, assertFalse } from "@std/assert";
+ *
  * using env = fakeEnv({});
  * assertFalse(env.has("ENV"));
+ *
  * env.set("ENV", "value");
  * assert(env.has("ENV"));
  * assertEquals(env.get("ENV"), "value");
+ *
  * env.delete("ENV");
  * assertFalse(env.has("ENV"));
  * ```
@@ -251,37 +264,44 @@ export interface FakeConsoleOutputOptions {
  *
  * Useful for verifying output from command-line tools.
  *
- * @example Verify console output.
+ * @example Verify console output
  * ```ts
  * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using console = fakeConsole();
+ *
  * console.log("PEACE");
  * console.error("WAR!");
  * assertEquals(console.output(), "PEACE\nWAR!");
  * ```
  *
- * @example Verify error output only.
+ * @example Verify error output only
  * ```ts
  * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using console = fakeConsole();
+ *
  * console.log("PEACE");
  * console.error("WAR!");
  * assertEquals(console.output({ level: "error" }), "WAR!");
  * ```
  *
- * @example Verify individual calls to the console.
+ * @example Verify individual calls to the console
  * ```ts
  * // deno-lint-ignore-file no-console
  * import { fakeConsole } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using console = fakeConsole();
+ *
  * console.log("PEACE");
  * console.warn("HELP!");
  * console.error("WAR!");
+ *
  * assertEquals(console.calls, [
  *   { level: "log", data: ["PEACE"] },
  *   { level: "warn", data: ["HELP!"] },
@@ -407,7 +427,8 @@ export interface FakeCommandOptions {
    *
    * If this is set to `true`, the process will not end automatically and
    * needs to be ended manually by calling the `kill()` method on
-   * the process supplied by {@linkcode FakeCommandRun.process}.
+   * the process supplied by the {@linkcode FakeCommandRun.process process}
+   * field.
    *
    * @default {false}
    */
@@ -434,59 +455,72 @@ export interface FakeCommandOptions {
  *
  * Useful for testing subprocess execution without actually running commands.
  *
- * @example Use fake commands for testing.
+ * @example Use fake commands for testing
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assert } from "@std/assert";
+ *
  * using _ = fakeCommand();
+ *
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
  * const { success } = await cmd.output();
  * assert(success);
  * ```
  *
- * @example Control the result of fake commands.
+ * @example Control the result of fake commands
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using _ = fakeCommand({
  *   cat: [
  *     { code: 0, stdout: "Hello, World!\n" },
  *     { code: 1, stdout: "Hello, Mars!\n" },
  *   ],
  * });
+ *
  * const cmd = new Deno.Command("cat", { args: ["greeting.txt"] });
  * const proc1 = cmd.spawn();
  * const proc2 = cmd.spawn();
+ *
  * assertEquals(await proc1.status, { success: true, code: 0, signal: null });
  * assertEquals(await proc2.status, { success: false, code: 1, signal: null });
  * ```
  *
- * @example Verify which commands were invoked.
+ * @example Verify which commands were invoked
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertArrayObjectMatch } from "@roka/assert";
+ *
  * using command = fakeCommand();
+ *
  * await new Deno.Command("echo", { args: ["hello"] }).output();
  * await new Deno.Command("cat", { args: ["file.txt"] }).output();
+ *
  * assertArrayObjectMatch(command.runs, [
  *   { command: "echo", options: { args: ["hello"] } },
  *   { command: "cat", options: { args: ["file.txt"] } },
  * ]);
  * ```
  *
- * @example Test an always-running process.
+ * @example Test an always-running process
  * ```ts
  * import { fakeCommand } from "@roka/testing/fake";
  * import { assertEquals } from "@std/assert";
+ *
  * using _ = fakeCommand({ sleep: [{ keep: true }] });
+ *
  * const cmd = new Deno.Command("sleep", { args: ["1000"] });
  * const process = cmd.spawn();
  * assertEquals(process.pid, 1);
+ *
  * process.kill();
  * const status = await process.status;
  * assertEquals(status.code, 1);
  * assertEquals(status.signal, "SIGTERM");
  * ```
+ *
+ * @todo Support `Deno.spawn()` and family
  */
 export function fakeCommand(
   commands?: Record<string, FakeCommandOptions[]>,

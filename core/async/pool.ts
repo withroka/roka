@@ -5,6 +5,7 @@
  *
  * ```ts
  * import { pool } from "@roka/async/pool";
+ *
  * await pool([1, 2, 3], (x) => Promise.resolve(x * 2));
  * ```
  *
@@ -15,11 +16,13 @@
  *
  * ```ts
  * import { pooled } from "@roka/async/pool";
+ *
  * const results = pooled(
  *   [1, 2, 3],
  *   (x) => Promise.resolve(x * 2),
  *   { concurrency: 2 },
  * );
+ *
  * for await (const _result of results) {
  *   // ...
  * }
@@ -57,46 +60,52 @@ export interface PoolOptions {
  * Resolves an iterable of promises, and returns the results as an array,
  * while limiting the maximum amount of concurrency.
  *
- * @example Resolve an iterable of promises.
+ * @example Resolve an iterable of promises
  * ```ts
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const result = await pool([
  *   () => Promise.resolve(1),
  *   () => Promise.resolve(2),
  *   () => Promise.resolve(3),
  * ]);
+ *
  * assertEquals(result, [1, 2, 3]);
  * ```
  *
- * @example Resolve an iterable of promises with a concurrency limit.
+ * @example Resolve an iterable of promises with a concurrency limit
  * ```ts
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const result = await pool([
  *   () => Promise.resolve(1),
  *   () => Promise.resolve(2),
  *   () => Promise.resolve(3),
  * ], { concurrency: 2 });
+ *
  * assertEquals(result, [1, 2, 3]);
  * ```
  *
- * @example Eagerly resolve an async iterable of promises.
+ * @example Eagerly resolve an async iterable of promises
  * ```ts
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * async function* asyncGenerator() {
  *   yield Promise.resolve(1);
  *   yield Promise.resolve(2);
  *   yield Promise.resolve(3);
  * }
+ *
  * const results = await pool(asyncGenerator());
  * assertEquals(results, [1, 2, 3]);
  * ```
  *
- * @typeParam T The type of the input and output values.
- * @param array The promises to resolve.
- * @returns A promise that resolves all inputs concurrently.
+ * @typeParam T The type of the input and output values
+ * @param array The promises to resolve
+ * @returns A promise that resolves all inputs concurrently
  */
 export async function pool<T>(
   array: Iterable<() => Promise<T>> | AsyncIterable<T>,
@@ -107,50 +116,57 @@ export async function pool<T>(
  * Transforms values to an iterable of promises, resolves them, and returns the
  * results as an array while limiting the maximum amount of concurrency.
  *
- * @example Resolve a mapping of promises.
+ * @example Resolve a mapping of promises
  * ```ts
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const results = await pool(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
  * );
+ *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
- * @example Resolve a mapping of promises with a concurrency limit.
+ * @example Resolve a mapping of promises with a concurrency limit
  * ```ts
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const results = await pool(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
  *   { concurrency: 2 },
  * );
+ *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
- * @example Eagerly resolve a mapping from an async iterable.
+ * @example Eagerly resolve a mapping from an async iterable
  * ```ts
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * async function* asyncIterable() {
  *   yield 1;
  *   yield 2;
  *   yield 3;
  * }
+ *
  * const results = await pool(
  *   asyncIterable(),
  *   (value) => Promise.resolve(value * 2),
  * );
+ *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
- * @typeParam T The type of the input values.
- * @typeParam R The type of the output values.
- * @param array The input values to map to promises.
- * @param iteratorFn The function to transform the values to promises.
- * @returns A promise that resolves all mapped inputs concurrently.
+ * @typeParam T The type of the input values
+ * @typeParam R The type of the output values
+ * @param array The input values to map to promises
+ * @param iteratorFn The function to transform the values to promises
+ * @returns A promise that resolves all mapped inputs concurrently
  */
 export async function pool<T, R>(
   array: Iterable<T> | AsyncIterable<T>,
@@ -181,54 +197,62 @@ export async function pool<T, R>(
  * Resolves an iterable of promises, and yields the results as an async
  * iterable, while limiting the maximum amount of concurrency.
  *
- * @example Resolve an iterable of promises.
+ * @example Resolve an iterable of promises
  * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const results: number[] = [];
  * const numbers = pooled([
  *   () => Promise.resolve(1),
  *   () => Promise.resolve(2),
  *   () => Promise.resolve(3),
  * ]);
+ *
  * for await (const number of numbers) {
  *   results.push(number);
  * }
+ *
  * assertEquals(results, [1, 2, 3]);
  * ```
  *
- * @example Resolve an iterable of promises with a concurrency limit.
+ * @example Resolve an iterable of promises with a concurrency limit
  * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const results: number[] = [];
  * const numbers = pooled([
  *   () => Promise.resolve(1),
  *   () => Promise.resolve(2),
  *   () => Promise.resolve(3),
  * ], { concurrency: 2 });
+ *
  * for await (const number of numbers) {
  *   results.push(number);
  * }
+ *
  * assertEquals(results, [1, 2, 3]);
  * ```
  *
- * @example Eagerly resolve an async iterable of promises.
+ * @example Eagerly resolve an async iterable of promises
  * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * async function* asyncGenerator() {
  *   yield Promise.resolve(1);
  *   yield Promise.resolve(2);
  *   yield Promise.resolve(3);
  * }
+ *
  * const results = await Array.fromAsync(pooled(asyncGenerator()));
  * assertEquals(results, [1, 2, 3]);
  * ```
  *
- * @typeParam T The type of the input and output values.
- * @param array The promises to resolve.
- * @returns An async iterator for the resolved promises.
+ * @typeParam T The type of the input and output values
+ * @param array The promises to resolve
+ * @returns An async iterator for the resolved promises
  */
 export function pooled<T>(
   array: Iterable<() => Promise<T>> | AsyncIterable<T>,
@@ -240,62 +264,72 @@ export function pooled<T>(
  * results as an async iterable while limiting the maximum amount of
  * concurrency.
  *
- * @example Resolve a mapping of promises.
+ * @example Resolve a mapping of promises
  * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const results: number[] = [];
  * const numbers = pooled(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
  * );
+ *
  * for await (const number of numbers) {
  *   results.push(number);
  * }
+ *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
- * @example Resolve a mapping of promises with a concurrency limit.
+ * @example Resolve a mapping of promises with a concurrency limit
  * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const results: number[] = [];
  * const numbers = pooled(
  *   [1, 2, 3],
  *   (value) => Promise.resolve(value * 2),
  *   { concurrency: 2 },
  * );
+ *
  * for await (const number of numbers) {
  *   results.push(number);
  * }
+ *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
- * @example Eagerly resolve a mapping from an async iterable.
+ * @example Eagerly resolve a mapping from an async iterable
  * ```ts
  * import { pooled } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
- * const results: number[] = [];
+ *
  * async function* asyncIterable() {
  *   yield 1;
  *   yield 2;
  *   yield 3;
  * }
+ *
+ * const results: number[] = [];
  * const numbers = pooled(
  *   asyncIterable(),
  *   (value) => Promise.resolve(value * 2),
  * );
+ *
  * for await (const number of numbers) {
  *   results.push(number);
  * }
+ *
  * assertEquals(results, [2, 4, 6]);
  * ```
  *
- * @typeParam T The type of the input values.
- * @typeParam R The type of the output values.
- * @param array The input values to map to promises.
- * @param iteratorFn The function to transform the values to promises.
- * @returns An async iterator for the transformed and resolved promises.
+ * @typeParam T The type of the input values
+ * @typeParam R The type of the output values
+ * @param array The input values to map to promises
+ * @param iteratorFn The function to transform the values to promises
+ * @returns An async iterator for the transformed and resolved promises
  */
 export function pooled<T, R>(
   array: Iterable<T> | AsyncIterable<T>,
