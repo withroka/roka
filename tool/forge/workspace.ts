@@ -201,7 +201,7 @@ export interface WorkspaceOptions {
    * Filters packages by name or directory.
    *
    * Each filter is a glob pattern that matches the name or the directory of
-   * the package relative to root. For example, either the `"forge"` or
+   * the package relative to root. For example, either `"forge"` or
    * `"tool/forge"` filters would match a package named `@roka/forge` in the
    * `tool/forge` directory.
    *
