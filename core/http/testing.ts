@@ -88,7 +88,7 @@ export function mockFetch(
   return mock(context, globalThis, "fetch", {
     conversion: {
       input: {
-        async convert(input: RequestInfo | URL, init?: RequestInit) {
+        async convert(input, init) {
           const request = input instanceof Request
             ? input.clone()
             : new Request(input, init);
