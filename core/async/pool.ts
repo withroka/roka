@@ -48,7 +48,7 @@ import { pooledMap } from "@std/async/pool";
 export interface PoolOptions {
   /**
    * The maximum number of concurrent operations.
-   * @default {Infinity}
+   * @default {Number.MAX_SAFE_INTEGER}
    */
   concurrency?: number;
 }
@@ -317,9 +317,11 @@ export function pooled<T, R>(
         iteratorFnOrOptions,
       );
   }
-  const { concurrency = Infinity } = options ?? {};
-  if (concurrency <= 0) {
-    throw new TypeError(`Invalid concurrency value: ${concurrency}`);
+  const { concurrency = Number.MAX_SAFE_INTEGER } = options ?? {};
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new RangeError(
+      `'concurrency' value must be a positive integer: ${concurrency}`,
+    );
   }
   return pooledMap(
     concurrency,

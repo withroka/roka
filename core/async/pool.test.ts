@@ -113,7 +113,23 @@ Deno.test("pool({ concurrency }) maintains execution order", async () => {
 Deno.test("pool({ concurrency }) rejects zero", async () => {
   await assertRejects(
     () => pool([], (x) => Promise.resolve(x), { concurrency: 0 }),
-    TypeError,
+    RangeError,
+    "concurrency",
+  );
+});
+
+Deno.test("pool({ concurrency }) rejects infinity", async () => {
+  await assertRejects(
+    () => pool([], (x) => Promise.resolve(x), { concurrency: Infinity }),
+    RangeError,
+    "concurrency",
+  );
+});
+
+Deno.test("pool({ concurrency }) rejects floating point", async () => {
+  await assertRejects(
+    () => pool([], (x) => Promise.resolve(x), { concurrency: 2.5 }),
+    RangeError,
     "concurrency",
   );
 });
@@ -121,7 +137,7 @@ Deno.test("pool({ concurrency }) rejects zero", async () => {
 Deno.test("pool({ concurrency }) rejects negative numbers", async () => {
   await assertRejects(
     () => pool([], (x) => Promise.resolve(x), { concurrency: -1 }),
-    TypeError,
+    RangeError,
     "concurrency",
   );
 });
@@ -237,7 +253,7 @@ Deno.test("pooled({ concurrency }) maintains execution order", async () => {
 Deno.test("pooled({ concurrency }) rejects zero", () => {
   assertThrows(
     () => pooled([], (x) => Promise.resolve(x), { concurrency: 0 }),
-    TypeError,
+    RangeError,
     "concurrency",
   );
 });
@@ -245,7 +261,23 @@ Deno.test("pooled({ concurrency }) rejects zero", () => {
 Deno.test("pooled({ concurrency }) rejects negative numbers", () => {
   assertThrows(
     () => pooled([], (x) => Promise.resolve(x), { concurrency: -1 }),
-    TypeError,
+    RangeError,
+    "concurrency",
+  );
+});
+
+Deno.test("pooled({ concurrency }) rejects floating point", () => {
+  assertThrows(
+    () => pooled([], (x) => Promise.resolve(x), { concurrency: 2.5 }),
+    RangeError,
+    "concurrency",
+  );
+});
+
+Deno.test("pooled({ concurrency }) rejects floating infinity", () => {
+  assertThrows(
+    () => pooled([], (x) => Promise.resolve(x), { concurrency: Infinity }),
+    RangeError,
     "concurrency",
   );
 });
