@@ -93,6 +93,7 @@ export function any<T, R>(
   iteratorFn: (value: T) => Promise<R>,
 ): Promise<R>;
 
+/** Implementation for {@linkcode any}. */
 export async function any<T, R>(
   array:
     | Iterable<Promise<T>>

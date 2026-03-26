@@ -103,6 +103,7 @@ export function conventional(commit: Commit): ConventionalCommit;
  */
 export function conventional(commit: CommitMessage): ConventionalCommitMessage;
 
+/** Implementation for {@linkcode conventional}. */
 export function conventional(
   commit: Commit | CommitMessage,
 ): ConventionalCommit | ConventionalCommitMessage {
