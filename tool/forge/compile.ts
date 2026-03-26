@@ -6,15 +6,16 @@
  * ```ts
  * import { compile } from "@roka/forge/compile";
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   await compile(pkg, { target: ["x86_64-unknown-linux-gnu"] });
  * });
  * ```
  *
- * The package configuration file (`deno.json`) must contain an entry of
- * type {@linkcode ForgeConfig}. This configuration declares the main entry
- * point and the additional files to bundle.
+ * The package configuration file (`deno.json`) must contain a `"forge"` field.
+ * This configuration declares the main entry point and the additional files to
+ * bundle.
  *
  * ```json
  * {
@@ -77,20 +78,22 @@ export interface CompileOptions {
 /**
  * Compiles a package using the given options.
  *
- * @example Compile a package for the current platform.
+ * @example Compile a package for the current platform
  * ```ts
  * import { compile } from "@roka/forge/compile";
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   await compile(pkg, { install: true });
  * });
  * ```
  *
- * @example Compile with bundling and checksums.
+ * @example Compile with bundling and checksums
  * ```ts
  * import { compile } from "@roka/forge/compile";
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   const artifacts = await compile(pkg, {
@@ -102,8 +105,8 @@ export interface CompileOptions {
  * });
  * ```
  *
- * @param pkg Package to compile.
- * @throws {PackageError} If the package does not have a compile configuration.
+ * @param pkg Package to compile
+ * @throws {PackageError} If the package does not have a compile configuration
  */
 export async function compile(
   pkg: Package,
@@ -171,9 +174,10 @@ export async function compile(
 /**
  * Returns all compile targets supported by `deno compile`.
  *
- * @example List available compile targets.
+ * @example List available compile targets
  * ```ts
  * import { targets } from "@roka/forge/compile";
+ *
  * (async () => {
  *   const available = await targets();
  *   return { available };

@@ -6,6 +6,7 @@
  *
  * ```ts
  * import { workspace } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const packages = await workspace();
  *   return { packages };
@@ -17,6 +18,7 @@
  *
  * ```ts
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo({
  *     directory: import.meta.dirname ?? ".",
@@ -25,17 +27,17 @@
  * });
  * ```
  *
- * The returned {@linkcode Package} object holds the following information:
+ * The returned {@linkcode Package} object holds the following information.
  *
- *  - Package name and directory.
+ *  - Package name and directory
  *  - Whether the package is a
  *    [Deno workspace](https://docs.deno.com/runtime/fundamentals/workspaces/)
- *    member.
- *  - Package configuration (`deno.json`).
- *  - The latest package release from git tags.
+ *    member
+ *  - Package configuration (`deno.json`)
+ *  - The latest package release from Git tags
  *  - {@link https://www.conventionalcommits.org Conventional Commits} since
- *    the latest release.
- *  - Calculated {@link https://semver.org semantic version}.
+ *    the latest release
+ *  - Calculated {@link https://semver.org semantic version}
  *
  * Commits are only attributed to a workspace member if they explicitly list
  * the package name. For example, a commit with a subject of "_feat: new_" will
@@ -129,13 +131,13 @@ export interface Package {
   /**
    * Latest release of this package.
    *
-   * This will be calculated only if the git history is available.
+   * This will be calculated only if the Git history is available.
    */
   latest?: Release;
   /**
    * Commits since the latest release.
    *
-   * This will be calculated only if the git history is available.
+   * This will be calculated only if the Git history is available.
    */
   changes?: ConventionalCommit[];
 }
@@ -199,7 +201,7 @@ export interface WorkspaceOptions {
    * Filters packages by name or directory.
    *
    * Each filter is a glob pattern that matches the name or the directory of
-   * the package relative to root. For example, either `"forge"` or the
+   * the package relative to root. For example, either `"forge"` or
    * `"tool/forge"` filters would match a package named `@roka/forge` in the
    * `tool/forge` directory.
    *
@@ -234,8 +236,8 @@ export interface PackageOptions {
    * If this is different than the package directory, the package is considered
    * a workspace member.
    *
-   * If not set, the root defaults to the value of
-   * {@linkcode Package.directory directory}.
+   * If not set, the root defaults to the value of the
+   * {@linkcode Package.directory directory} of the package.
    */
   root?: string | URL;
 }
@@ -271,8 +273,8 @@ export interface CommitOptions {
    * All types are returned by default.
    *
    * Breaking changes whose types are not included are returned by default.
-   * Setting {@linkcode CommitOptions.breaking breaking} to `false` will skip
-   * these commits.
+   * Setting the {@linkcode CommitOptions.breaking breaking} option to `false`
+   * will skip these commits.
    */
   types?: string[];
   /**
@@ -304,18 +306,20 @@ export interface ScopeOptions {
  * excluding its root. If the directory is not a monorepo, the function will
  * return the package in the directory.
  *
- * @example List all packages in a workspace.
+ * @example List all packages in a workspace
  * ```ts
  * import { workspace } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const packages = await workspace();
  *   return packages.map((pkg) => pkg.name);
  * });
  * ```
  *
- * @example Filter packages by name.
+ * @example Filter packages by name
  * ```ts
  * import { workspace } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const packages = await workspace({ filters: ["my-package"] });
  *   return { packages };
@@ -358,9 +362,10 @@ export async function workspace(
 /**
  * Returns information about a package.
  *
- * @example Get information about the current package.
+ * @example Get information about the current package
  * ```ts
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   return { name: pkg.name, version: pkg.version };
@@ -368,7 +373,7 @@ export async function workspace(
  * ```
  *
  * @throws {PackageError} If the package configuration was malformed or release
- *                        versions could not be parsed from git tags.
+ *                        versions could not be parsed from Git tags
  */
 export async function packageInfo(options?: PackageOptions): Promise<Package> {
   let directory = options?.directory;
@@ -424,7 +429,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
 /**
  * Returns the modules of a package based on its exports.
  *
- * @example Get modules of a package.
+ * @example Get modules of a package
  * ```ts
  * import { modules, packageInfo } from "@roka/forge/workspace";
  *
@@ -445,15 +450,15 @@ export function modules(pkg: Package): Record<string, string> {
 /**
  * Returns releases of a package.
  *
- * Releases are found first by using git tags in the "name@version" format,
- * then by searching git history beyond the first tag for config file changes.
+ * Releases are found first by using Git tags in the "name@version" format,
+ * then by searching Git history beyond the first tag for config file changes.
  * This captures all releases, regardless of when tagging started as a release
  * practice.
  *
  * Pre-release versions are not included by default. Use the
  * {@linkcode ReleaseOptions.prerelease prerelease} option to include them.
  *
- * @example Retrieve all releases of a package.
+ * @example Retrieve all releases of a package
  * ```ts
  * import { packageInfo, releases } from "@roka/forge/workspace";
  *
@@ -463,10 +468,10 @@ export function modules(pkg: Package): Record<string, string> {
  * });
  * ```
  *
- * @param pkg Package to search releases for.
- * @param options Options for fetching releases.
- * @returns All releases for this package.
- * @throws {GitError} If git history is not available.
+ * @param pkg Package to search releases for
+ * @param options Options for fetching releases
+ * @returns All releases for this package
+ * @throws {GitError} If Git history is not available
  */
 export async function releases(
   pkg: Package,
@@ -550,22 +555,24 @@ async function* historical(
 /**
  * Returns the commits for a particular release.
  *
- * By default, commits from the entire git history are returned. The
+ * By default, commits from the entire Git history are returned. The
  * {@linkcode CommitOptions.range range} option can be used to return
  * the commits of a specific range.
  *
- * @example Get commits since the last release.
+ * @example Get commits since the last release
  * ```ts
  * import { commits, packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, { types: ["feat", "fix"] });
  * });
  * ```
  *
- * @example Get commits for a specific release.
+ * @example Get commits for a specific release
  * ```ts
  * import { commits, packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   return await commits(pkg, {
@@ -574,10 +581,10 @@ async function* historical(
  * });
  * ```
  *
- * @param pkg Package to generate changelog for.
- * @param options Options for generating the changelog.
- * @returns Matched commits.
- * @throws {GitError} If git history is not available.
+ * @param pkg Package to generate changelog for
+ * @param options Options for generating the changelog
+ * @returns Matched commits
+ * @throws {GitError} If Git history is not available
  */
 export async function commits(
   pkg: Package,
@@ -604,11 +611,12 @@ export async function commits(
  *
  * If the package is not a workspace member, non-scoped titles also match.
  *
- * @example Get scopes for a commit.
+ * @example Get scopes for a commit
  * ```ts
- * import { assertEquals } from "@std/assert";
  * import { packageInfo, scopes } from "@roka/forge/workspace";
  * import { conventional } from "@roka/git/conventional";
+ * import { assertEquals } from "@std/assert";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   const commit = conventional({ subject: "fix(name,other,*): bugfix" });

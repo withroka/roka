@@ -6,6 +6,7 @@
  * ```ts
  * import { changelog } from "@roka/forge/changelog";
  * import { packageInfo } from "@roka/forge/workspace";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   const log = changelog(pkg.changes ?? []);
@@ -111,11 +112,12 @@ export interface ChangelogOptions {
 /**
  * Generates Markdown text for a package changelog.
  *
- * @example Generate a Markdown changelog.
+ * @example Generate a Markdown changelog
  * ```ts
  * import { changelog } from "@roka/forge/changelog";
  * import { packageInfo } from "@roka/forge/workspace";
  * import { assertExists } from "@std/assert";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   assertExists(pkg.changes);
@@ -127,11 +129,12 @@ export interface ChangelogOptions {
  * });
  * ```
  *
- * @example Generate a changelog with commit formatting options.
+ * @example Generate a changelog with commit formatting options
  * ```ts
  * import { changelog } from "@roka/forge/changelog";
  * import { packageInfo } from "@roka/forge/workspace";
  * import { assertExists } from "@std/assert";
+ *
  * (async () => {
  *   const pkg = await packageInfo();
  *   assertExists(pkg.changes);
@@ -143,9 +146,9 @@ export interface ChangelogOptions {
  * });
  * ```
  *
- * @param commits Commits that are used to generate the changelog.
- * @param options Options for generating the changelog.
- * @returns Markdown text.
+ * @param commits Commits that are used to generate the changelog
+ * @param options Options for generating the changelog
+ * @returns Markdown text
  */
 export function changelog(
   commits: Commit[],

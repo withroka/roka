@@ -2,16 +2,33 @@
  * A library for running Deno commands.
  *
  * This package provides the {@linkcode deno} function for running
- * {@link https://docs.deno.com/runtime/ deno} commands.
+ * {@link https://docs.deno.com/runtime/ Deno} commands.
  *
  * ```ts
  * import { deno } from "@roka/deno";
+ *
  * (async () => {
  *   const results = await deno().check(["file1.ts", "file2.md"]);
- *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.problem).forEach(console.error);
+ *
+ *   for (const file of results) {
+ *     for (const problem of file.problem) {
+ *       // deno-lint-ignore no-console
+ *       console.error(problem);
+ *     }
+ *   }
  * });
  * ```
+ *
+ * The library will use the `deno` executable installed on the system.
+ *
+ * ### Supported operations
+ *
+ * - {@link DenoCommands.check check}: Type checking with `deno check`
+ * - {@link DenoCommands.fmt fmt}: Formatting with `deno fmt`
+ * - {@link DenoCommands.doc doc}: Documentation linting with `deno doc`
+ * - {@link DenoCommands.lint lint}: Linting with `deno lint`
+ * - {@link DenoCommands.test test}: Testing with `deno test`
+ * - {@link DenoCommands.compile compile}: Compilation with `deno compile`
  *
  * @module deno
  */
@@ -27,9 +44,9 @@ import { parse } from "@std/semver";
 import { mergeReadableStreams, toTransformStream } from "@std/streams";
 
 /**
- * An error thrown by the `deno` command.
+ * An error thrown by the Deno command.
  *
- * If the error is from running a `deno` command, the message will include the
+ * If the error is from running a Deno command, the message will include the
  * command, the exit code, and the command output.
  */
 export class DenoError extends Error {
@@ -49,10 +66,10 @@ export interface DenoCommands {
    *
    * Code blocks in documentation are also linted.
    *
-   * @param files List of files to type check.
-   * @param options Options for type checking.
-   * @returns Problems found type checking.
-   * @throws {DenoError} If the command fails with no error message.
+   * @param files List of files to type check
+   * @param options Options for type checking
+   * @returns Problems found type checking
+   * @throws {DenoError} If the command fails with no error message
    */
   check(files: string[], options?: CheckOptions): Promise<FileResult[]>;
   /**
@@ -60,20 +77,20 @@ export interface DenoCommands {
    *
    * Code blocks in documentation are also formatted.
    *
-   * @param files List of files to format.
-   * @param options Options for formatting.
-   * @returns Problems found formatting.
-   * @throws {DenoError} If the command fails with no error message.
+   * @param files List of files to format
+   * @param options Options for formatting
+   * @returns Problems found formatting
+   * @throws {DenoError} If the command fails with no error message
    */
   fmt(files: string[], options?: FmtOptions): Promise<FileResult[]>;
   /**
    * Generates documentation data from given files using
    * [`deno doc`](https://docs.deno.com/go/doc).
    *
-   * @param files List of files to generate documentation from.
-   * @param options Options for documentation generation.
-   * @returns Problems found generating documentation or linting JSDoc comments.
-   * @throws {DenoError} If the command fails with no error message.
+   * @param files List of files to generate documentation from
+   * @param options Options for documentation generation
+   * @returns Problems found generating documentation or linting JSDoc comments
+   * @throws {DenoError} If the command fails with no error message
    */
   doc(files: string[], options?: DocOptions): Promise<FileResult[]>;
   /**
@@ -81,10 +98,10 @@ export interface DenoCommands {
    *
    * Code blocks in documentation are also linted.
    *
-   * @param files List of files to lint.
-   * @param options Options for linting.
-   * @returns Problems found linting.
-   * @throws {DenoError} If the command fails with no error message.
+   * @param files List of files to lint
+   * @param options Options for linting
+   * @returns Problems found linting
+   * @throws {DenoError} If the command fails with no error message
    */
   lint(files: string[], options?: LintOptions): Promise<FileResult[]>;
   /**
@@ -98,10 +115,10 @@ export interface DenoCommands {
    * In {@linkcode TestOptions.update update} mode, all permissions are
    * granted.
    *
-   * @param files List of files to run tests from.
-   * @param options Options for testing.
-   * @returns Problems found testing.
-   * @throws {DenoError} If the command fails with no error message.
+   * @param files List of files to run tests from
+   * @param options Options for testing
+   * @returns Problems found testing
+   * @throws {DenoError} If the command fails with no error message
    */
   test(files: string[], options?: TestOptions): Promise<FileResult[]>;
   /**
@@ -110,15 +127,15 @@ export interface DenoCommands {
    * Runtime permissions need to be specified in the `deno.json` configuration
    * file, as they are not passed through from this function.
    *
-   * @param script Script file to compile.
-   * @param options Options for compilation.
-   * @returns Problems found during compilation.
-   * @throws {DenoError} If the command fails with no error message.
+   * @param script Script file to compile
+   * @param options Options for compilation
+   * @returns Problems found during compilation
+   * @throws {DenoError} If the command fails with no error message
    */
   compile(script: string, options?: CompileOptions): Promise<FileResult[]>;
 }
 
-/** The result of running a `deno` command for a single file. */
+/** The result of running a Deno command for a single file. */
 export interface FileResult {
   /** The file the results belong to. */
   file: string;
@@ -129,9 +146,9 @@ export interface FileResult {
 }
 
 /**
- * Union of all error reports from `deno` commands.
+ * Union of all error reports from Deno commands.
  *
- * Discriminate on {@linkcode Report.kind} to determine the source.
+ * Discriminate on {@linkcode Report.kind kind} to determine the source.
  */
 export type Problem =
   | DenoProblem
@@ -141,13 +158,13 @@ export type Problem =
   | TestProblem;
 
 /**
- * Union of all informational reports from `deno` commands.
+ * Union of all informational reports from Deno commands.
  *
- * Discriminate on {@linkcode Report.kind} to determine the source.
+ * Discriminate on {@linkcode Report.kind kind} to determine the source.
  */
 export type Info = TestInfo | OutputInfo;
 
-/** A generic report from `deno`. */
+/** A generic report from Deno. */
 export interface Report {
   /** Discriminant identifying the report type. */
   kind: string;
@@ -161,15 +178,15 @@ export interface Report {
   column?: number;
 }
 
-/** A generic error from `deno`. */
+/** A generic error from Deno. */
 export interface DenoProblem extends Report {
-  /** Identifies a general `deno` error. */
+  /** Identifies a general Deno error. */
   kind: "error";
   /** The reason for the error. */
   reason?: string;
 }
 
-/** A check error reported from `deno`. */
+/** A check error reported from Deno. */
 export interface CheckProblem extends Report {
   /** Identifies a type-check error from `deno check`. */
   kind: "check";
@@ -179,7 +196,7 @@ export interface CheckProblem extends Report {
   reason: string;
 }
 
-/** A lint problem reported from `deno`. */
+/** A lint problem reported from Deno. */
 export interface LintProblem extends Report {
   /** Identifies a lint violation from `deno lint`. */
   kind: "lint";
@@ -195,7 +212,7 @@ export interface DiffProblem extends Report {
   kind: "diff";
 }
 
-/** A test problem reported from `deno`. */
+/** A test problem reported from Deno. */
 export interface TestProblem extends Report {
   /** Identifies a test failure from `deno test`. */
   kind: "failure";
@@ -203,7 +220,7 @@ export interface TestProblem extends Report {
   test: [string, ...string[]];
 }
 
-/** A test information reported from `deno`. */
+/** A test information reported from Deno. */
 export interface TestInfo extends Report {
   /** Identifies a test result from `deno test`. */
   kind: "test";
@@ -211,7 +228,7 @@ export interface TestInfo extends Report {
   test: [string, ...string[]];
   /** Whether the test was successful. */
   success: boolean;
-  /** Test status string from `deno`. */
+  /** Test status string from Deno. */
   status: string;
   /** The output of the test, if generated. */
   output?: string;
@@ -219,15 +236,15 @@ export interface TestInfo extends Report {
   time?: string;
 }
 
-/** An overall output report from `deno`. */
+/** An overall output report from Deno. */
 export interface OutputInfo extends Report {
-  /** Identifies overall output from a `deno` command. */
+  /** Identifies overall output from a Deno command. */
   kind: "output";
   /** Output from the run. */
   output: string;
 }
 
-/** Callback options for `deno` commands. */
+/** Callback options for Deno commands. */
 export interface DenoOptions {
   /**
    * Runs the commands under a specific directory.
@@ -248,7 +265,7 @@ export interface DenoOptions {
   onPartialDebug?: (info: Partial<Report>) => unknown;
 }
 
-/** Options for the {@linkcode Deno.check} function. */
+/** Options for the {@linkcode DenoCommands.check check} function. */
 export interface CheckOptions {
   /**
    * Do not fail on zero matching files.
@@ -257,7 +274,7 @@ export interface CheckOptions {
   permitNoFiles?: boolean;
 }
 
-/** Options for the {@linkcode Deno.doc} function. */
+/** Options for the {@linkcode DenoCommands.doc doc} function. */
 export interface DocOptions {
   /**
    * Output documentation in JSON format.
@@ -280,7 +297,7 @@ export interface DocOptions {
   permitNoFiles?: boolean;
 }
 
-/** Options for the {@linkcode Deno.fmt} function. */
+/** Options for the {@linkcode DenoCommands.fmt fmt} function. */
 export interface FmtOptions {
   /**
    * Checks if the source files are formatted.
@@ -298,7 +315,7 @@ export interface FmtOptions {
   permitNoFiles?: boolean;
 }
 
-/** Options for the {@linkcode Deno.lint} function. */
+/** Options for the {@linkcode DenoCommands.lint lint} function. */
 export interface LintOptions {
   /**
    * Fix any linting errors for rules that support it.
@@ -312,7 +329,7 @@ export interface LintOptions {
   permitNoFiles?: boolean;
 }
 
-/** Options for the {@linkcode Deno.test} function. */
+/** Options for the {@linkcode DenoCommands.test test} function. */
 export interface TestOptions {
   /**
    * Runs tests with this string or RegExp pattern in the test name.
@@ -333,7 +350,7 @@ export interface TestOptions {
   permitNoFiles?: boolean;
 }
 
-/** Options for the {@linkcode Deno.compile} function. */
+/** Options for the {@linkcode DenoCommands.compile compile} function. */
 export interface CompileOptions {
   /**
    * Script arguments.
@@ -358,62 +375,56 @@ export interface CompileOptions {
 }
 
 /**
- * Creates a new {@linkcode DenoCommands} instance for running `deno` commands.
+ * Creates a new {@linkcode DenoCommands} instance for running Deno commands.
  *
- * @example Type-check files and their code blocks.
+ * @example Type-check files and their code blocks
  * ```ts
  * import { deno } from "@roka/deno";
+ *
  * (async () => {
  *   const results = await deno().check(["file1.ts", "file2.md"]);
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.problem).forEach(console.error);
+ *   results.flatMap((result) => result.problem).forEach(console.error);
  * });
  * ```
  *
- * @example Format files and their code blocks.
+ * @example Format files and their code blocks
  * ```ts
  * import { deno } from "@roka/deno";
+ *
  * (async () => {
  *   const results = await deno().fmt(["file1.ts", "file2.md"], { check: true });
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.problem).forEach(console.error);
+ *   results.flatMap((result) => result.problem).forEach(console.error);
  * });
  * ```
  *
- * @example Lint files and their code blocks.
+ * @example Lint files and their code blocks
  * ```ts
  * import { deno } from "@roka/deno";
+ *
  * (async () => {
  *   const results = await deno().lint(["file1.ts", "file2.md"]);
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.problem).forEach(console.error);
+ *   results.flatMap((result) => result.problem).forEach(console.error);
  * });
  * ```
  *
- * @example Run tests in files and their code blocks.
+ * @example Run tests in files and their code blocks
  * ```ts
  * import { deno } from "@roka/deno";
+ *
  * (async () => {
  *   const results = await deno().test(["file1.ts", "file2.md"]);
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.problem).forEach(console.error);
+ *   results.flatMap((result) => result.problem).forEach(console.error);
  * });
  * ```
  *
- * @example Stream problems as they are found.
+ * @example Compile a script into a self-contained executable
  * ```ts
  * import { deno } from "@roka/deno";
- * (async () => {
- *   await deno({
- *     // deno-lint-ignore no-console
- *     onProblem: (problem) => console.error(problem.message),
- *   }).lint(["file1.ts"]);
- * });
- * ```
  *
- * @example Compile a script into a self-contained executable.
- * ```ts
- * import { deno } from "@roka/deno";
  * (async () => {
  *   const results = await deno().compile("script.ts", {
  *     target: "x86_64-unknown-linux-gnu",
@@ -421,7 +432,19 @@ export interface CompileOptions {
  *     output: "my-tool",
  *   });
  *   // deno-lint-ignore no-console
- *   results.flatMap((r) => r.problem).forEach(console.error);
+ *   results.flatMap((result) => result.problem).forEach(console.error);
+ * });
+ * ```
+ *
+ * @example Stream problems as they are found
+ * ```ts
+ * import { deno } from "@roka/deno";
+ *
+ * (async () => {
+ *   await deno({
+ *     // deno-lint-ignore no-console
+ *     onProblem: (problem) => console.error(problem.message),
+ *   }).lint(["file1.ts"]);
  * });
  * ```
  */

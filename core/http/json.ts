@@ -5,11 +5,13 @@
  *
  * ```ts
  * import { client } from "@roka/http/json";
+ *
+ * interface Issue {
+ *   number: number;
+ *   state: string;
+ * }
+ *
  * (async () => {
- *   interface Issue {
- *     number: number;
- *     state: string;
- *   }
  *   const api = client("https://api.github.com");
  *   await api.post<Issue>(
  *     "/repos/owner/repo/issues",
@@ -65,28 +67,32 @@ export type JsonRequestOptions = Omit<RequestOptions, "method" | "body">;
 /**
  * Creates an HTTP client for making JSON-based requests.
  *
- * @example Make a JSON request.
+ * @example Make a JSON request
  * ```ts
  * import { client } from "@roka/http/json";
+ *
+ * interface Issue {
+ *   number: number;
+ *   state: string;
+ * }
+ *
  * (async () => {
- *   interface Issue {
- *     number: number;
- *     state: string;
- *   }
  *   const api = client("https://api.github.com");
  *   const issue = await api.get<Issue>("/repos/owner/repo/issues/1");
  *   return { issue };
  * });
  * ```
  *
- * @example Make an authenticated JSON request.
+ * @example Make an authenticated JSON request
  * ```ts
  * import { client } from "@roka/http/json";
+ *
+ * interface Issue {
+ *   number: number;
+ *   state: string;
+ * }
+ *
  * (async () => {
- *   interface Issue {
- *     number: number;
- *     state: string;
- *   }
  *   const api = client("https://api.github.com", {
  *     token: "my-token",
  *   });

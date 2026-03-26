@@ -734,8 +734,8 @@ names and descriptions.
 /**
  * Parses a conventional commit subject into its components.
  *
- * @param delimiter Delimiter string separating type and description.
- * @throws {Error} If the subject format is invalid.
+ * @param delimiter Delimiter string separating type and description
+ * @throws {Error} If the subject format is invalid
  */
 export function parse(subject: string, delimiter = ": ") {
   const [type, description] = subject.split(delimiter, 2);
@@ -750,9 +750,9 @@ export function parse(subject: string, delimiter = ": ") {
 /**
  * Parses a subject.
  *
- * @param {string} subject - The subject.
- * @param {string} delimiter - The delimiter.
- * @returns The parsed string.
+ * @param {string} subject - The subject
+ * @param {string} delimiter - The delimiter
+ * @returns The parsed string
  */
 export function parse(subject: string, delimiter = ": ") {
   const [type, description] = subject.split(delimiter, 2);
@@ -774,8 +774,7 @@ right module for their needs. Examples should be valid code snippets.
  * This module provides the {@linkcode parse} function for parsing and
  * validating conventional commit subjects.
  *
- * @example
- * ```
+ * ```ts
  * import { parse } from "@roka/parse";
  * import { assertEquals } from "@std/assert";
  *
@@ -801,9 +800,7 @@ fields that begin with a verb.
 /** Parses a conventional commit subject into its components. */
 export function parse() {}
 
-/**
- * Options for the {@linkcode parse} function.
- */
+/** Options for the {@linkcode parse} function. */
 export interface ParseOptions {
   /** Splits the subject using the given delimiter. */
   delimiter?: string;
@@ -816,9 +813,7 @@ export interface ParseOptions {
 /** Parse a conventional commit subject into its components. */
 export function parse() {}
 
-/**
- * Options for the {@linkcode parse} function.
- */
+/** Options for the {@linkcode parse} function. */
 export interface ParseOptions {
   /** Split the subject using the given delimiter. */
   delimiter?: string;
@@ -838,8 +833,8 @@ current state of the code, and not as a replacement for issue tracking. Keep
 /**
  * Parses a conventional commit subject into its components.
  *
- * @todo Add support for multi-line commit bodies.
- * @todo Validate commit type against allowed types.
+ * @todo Add support for multi-line commit bodies
+ * @todo Validate commit type against allowed types
  */
 export function parse(subject: string) {
   const [type, description] = subject.split(": ", 2);

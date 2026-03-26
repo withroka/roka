@@ -6,13 +6,13 @@
  * create GitHub releases. It works best with monorepos of multiple packages
  * published to JSR.
  *
- * ## Usage
+ * ### Usage
  *
- * To get started, just run **forge** with `deno run -P jsr:@roka/forge` and
- * you’re all set! Or, you can install with `deno install -gP jsr:@roka/forge`,
+ * To get started, just run **forge** with `dx jsr:@roka/forge` and
+ * you are all set. Or, you can install with `deno install -gA jsr:@roka/forge`,
  * and then run with `forge`. No need for any configuration.
  *
- * ## Packages
+ * ### Packages
  *
  * The repository is treated as a list of Deno packages by **forge**. It
  * supports simple projects with a single package and monorepos that use
@@ -29,7 +29,7 @@
  *
  * The `version` field in this file is how we request new releases. If you are
  * not ready to release yet, you can set it “0.0.0”, **forge** will calculate
- * the first version for you. The package will be skipped if it doesn’t have a
+ * the first version for you. The package will be skipped if it does not have a
  * version.
  *
  * ```sh
@@ -48,7 +48,7 @@
  * forge list "exam*"
  * ```
  *
- * ## Versions
+ * ### Versions
  *
  * Versioning in **forge** is only effective when the repository adheres to
  * {@link https://www.conventionalcommits.org Conventional Commits}. Any bug
@@ -79,26 +79,26 @@
  * Additionally, the version will have a commit hash appended to it, which is
  * derived from the last commit that updated the package.
  *
- * If you’re working on just one package, you can skip the scopes altogether.
+ * If you are working on just one package, you can skip the scopes altogether.
  * In this case, a commit subject like “_feat: feature_” will also trigger a
- * version change. But if you’re in a workspace with multiple packages, the
+ * version change. But if you are in a workspace with multiple packages, the
  * scope is needed to figure out which packages will update.
  *
  * All packages can be updated with a single commit with the special wildcard
  * (“*”) scope. You can also update multiple packages with a single commit by
  * listing their names with a comma in between.
  *
- * ## Releases
+ * ### Releases
  *
  * ### Bump the versions
  *
- * To start a new release, we’ll need to update the package versions in the
- * configuration files. We’re talking about the `version` field in `deno.json`.
+ * To start a new release, we will need to update the package versions in the
+ * configuration files. We are talking about the `version` field in `deno.json`.
  * If you change this version, it means a new release is coming, and **forge**
  * can help you with that.
  *
- * Let’s create a pull request on GitHub to increment our package version.
- * We’ll use the [GitHub CLI](https://cli.github.com) to get a token and pass
+ * Time to create a pull request on GitHub to increment our package version.
+ * We will use the [GitHub CLI](https://cli.github.com) to get a token and pass
  * it to the tool to identify the pull request creator. When our releases are
  * automated with workflows, authentication will be handled differently. More
  * to that later.
@@ -121,12 +121,12 @@
  * `--emoji` flag.
  *
  * At this point, we are ready to publish the packages to JSR. However, before
- * that, let’s proceed to create a release on GitHub, which is the second step.
+ * that, we will create a release on GitHub, which is the second step.
  *
  * ### Release on GitHub
  *
- * Great news! The version change is now merged, and GitHub knows the commit
- * hash. Let’s create a release right here!
+ * The version change is now merged, and GitHub knows the commit
+ * hash. A release can be created right here.
  *
  * ```sh
  * git pull
@@ -161,8 +161,8 @@
  *
  * ### Automate with Actions
  *
- * We’ve covered the three steps, _bump_, _release_, and _publish_, all of
- * which can be automated using GitHub workflows. In fact, it’s the recommended
+ * We have covered the three steps, _bump_, _release_, and _publish_, all of
+ * which can be automated using GitHub workflows. In fact, it is the recommended
  * way, so we are not slowed down by mistakes.
  *
  * For authentication, the convenient `GITHUB_TOKEN` works. However, this token
@@ -173,17 +173,17 @@
  * _pull requests_.
  *
  * The personal access token is linked to your personal account, and PRs will
- * be created by you. If this suits your needs, you’re all set. However, you
- * won’t be able to approve the bump requests yourself. For teams, it may be
+ * be created by you. If this suits your needs, you are all set. However, you
+ * will not be able to approve the bump requests yourself. For teams, it may be
  * preferable to create a bot account and use its personal access token instead.
  *
  * Check out the workflows in the [roka](https://github.com/withroka/roka)
  * repository to see how we can automate all steps.
  *
- * ## Unstable features
+ * ### Unstable features
  *
  * Publishing early versions of an upcoming feature is a good idea. Until a
- * feature is stable, a minor release isn’t needed. The tool supports this
+ * feature is stable, a minor release is not needed. The tool supports this
  * scenario with the `unstable` modifier on commit messages.
  *
  * ```
@@ -223,7 +223,7 @@
  *
  * The unstable modifier does not change the behavior of breaking changes.
  *
- * ## Assets
+ * ### Assets
  *
  * _**WARNING**: This feature is highly experimental._
  *
@@ -268,23 +268,23 @@
  *   ◆ sha256.txt
  * ```
  *
- * ## Modules
+ * ### Submodules
  *
  * This library also offers programmatic functionality through the following
- * modules:
+ * modules.
  *
- *  -  {@link [bump]}: Bump package versions.
- *  -  {@link [changelog]}: Generate changelogs.
- *  -  {@link [compile]}: Create binary executables.
- *  -  {@link [release]}: Create GitHub releases.
- *  -  {@link [testing]}: Write tests for **forge**.
- *  -  {@link [version]}: Provide version from compiled binaries.
- *  -  {@link [workspace]}: Work with workspaces and packages.
+ *  - {@link [bump]}: Bump package versions
+ *  - {@link [changelog]}: Generate changelogs
+ *  - {@link [compile]}: Create binary executables
+ *  - {@link [release]}: Create GitHub releases
+ *  - {@link [testing]}: Write tests for **forge**
+ *  - {@link [version]}: Provide version from compiled binaries
+ *  - {@link [workspace]}: Work with workspaces and packages
  *
- * @todo Add documentation for GitHub workflows.
- * @todo Better output when we are on a pre-release tag.
- * @todo Make bump trigger CI on force push.
- * @todo Support `deno.jsonc`.
+ * @todo Add documentation for GitHub workflows
+ * @todo Better output when we are on a pre-release tag
+ * @todo Make bump trigger CI on force push
+ * @todo Support `deno.jsonc`
  *
  * @module forge
  */
@@ -375,7 +375,7 @@ export interface ForgeOptions {
 /**
  * Runs the `forge` CLI tool.
  *
- * @returns The exit code of the command.
+ * @returns The exit code of the command
  */
 export async function forge(
   options?: ForgeOptions,

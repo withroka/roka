@@ -1,19 +1,32 @@
 /**
- * A library for working with the file system.
+ * A library for working with the file system, complementary to the standard
+ * {@link https://jsr.io/@std/fs **@std/fs**} library.
  *
- * This package only provides the {@link [temp]} module to work with
- * temporary files and directories.
+ * ### Finding files and directories
+ *
+ * ```ts
+ * import { find } from "@roka/fs/find";
+ *
+ * const files = find(["."], { name: "*.ts" });
+ *
+ * for await (const _ of files) {
+ *   // ...
+ * }
+ * ```
+ *
+ * ### Temporary directories
  *
  * ```ts
  * import { tempDirectory } from "@roka/fs/temp";
- * await using dir = await tempDirectory();
- * await Deno.writeTextFile(dir.path("file.txt"), "Hello, world!");
+ *
+ * await using directory = await tempDirectory();
+ * await Deno.writeTextFile(directory.path("file.txt"), "Hello, world!");
  * ```
  *
- * ## Modules
+ * ### Modules
  *
- *  -  {@link [find]}: Find files and directories with glob patterns.
- *  -  {@link [temp]}: Work with temporary files and directories.
+ *  - {@link [find]}: Find files and directories with glob patterns
+ *  - {@link [temp]}: Work with temporary files and directories
  *
  * @module fs
  */

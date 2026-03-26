@@ -3,6 +3,7 @@
  *
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
+ *
  * await using _ = await tempPackage({
  *   config: { name: "@scope/name" },
  * });
@@ -10,6 +11,7 @@
  *
  * ```ts
  * import { tempWorkspace } from "@roka/forge/testing";
+ *
  * await using _ = await tempWorkspace({
  *   configs: [
  *     { name: "@scope/name1" },
@@ -35,7 +37,7 @@ import {
 export interface TempPackageOptions {
   /** File contents for package configuration (`deno.json`). */
   config?: Config;
-  /** Options for the initialization of the git repository. */
+  /** Options for the initialization of the Git repository. */
   repo?: TempRepositoryOptions;
   /** Commits and tags to create in the repository. */
   commits?: { subject: string; tags?: string[] }[];
@@ -51,7 +53,7 @@ export interface TempWorkspaceOptions {
    * If this is not provided, it is inferred from the `configs` option.
    */
   workspace?: string[];
-  /** Options for the initialization of the git repository. */
+  /** Options for the initialization of the Git repository. */
   repo?: TempRepositoryOptions;
   /** Commits and tags to create in the repository. */
   commits?: { subject: string; tags?: string[] }[];
@@ -63,7 +65,7 @@ export interface TempWorkspaceOptions {
  * The package will be created under a temporary directory, which will be
  * automatically removed when the package is disposed.
  *
- * @example Create a temporary package from configuration.
+ * @example Create a temporary package from configuration
  *
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
@@ -77,7 +79,7 @@ export interface TempWorkspaceOptions {
  * assertEquals(pkg.version, "1.2.3");
  * ```
  *
- * @example Create a package with given commits and tags.
+ * @example Create a package with given commits and tags
  *
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
@@ -110,7 +112,7 @@ export async function tempPackage(
  * The workspace will be created under a temporary directory, which will be
  * automatically removed when the workspace is disposed.
  *
- * @example Create a temporary workspace from configurations.
+ * @example Create a temporary workspace from configurations
  *
  * ```ts
  * import { tempWorkspace } from "@roka/forge/testing";
@@ -130,7 +132,7 @@ export async function tempPackage(
  * assertEquals(pkg2?.version, "3.2.1");
  * ```
  *
- * @example Create a workspace with given commits and tags.
+ * @example Create a workspace with given commits and tags
  *
  * ```ts
  * import { tempWorkspace } from "@roka/forge/testing";

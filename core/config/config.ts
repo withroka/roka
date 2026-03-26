@@ -1,18 +1,17 @@
 /**
  * A library for managing configuration data.
  *
- * This package only provides the {@linkcode config} function to manage a local
- * file system user configuration.
- *
- * The config object is a disposable resource that should be closed when no
- * longer needed, which can be achieved via the `using` keyword.
+ * This package only provides the {@linkcode config} function to manage a
+ * local file system user configuration.
  *
  * ```ts
  * import { config } from "@roka/config";
+ *
  * type AppConfig = {
  *   username: string;
  *   email: string;
  * };
+ *
  * (async () => {
  *   using cfg = config<AppConfig>();
  *   const { username } = await cfg.get();
@@ -20,6 +19,13 @@
  *   await cfg.set({ username, email: "new-email@example.com" });
  * });
  * ```
+ *
+ * ### Resource management
+ *
+ * The config object is a disposable resource that should be closed when no
+ * longer needed, which can be achieved via the `using` keyword.
+ *
+ * ### Notes
  *
  * The config system wraps the {@link https://deno.com/kv Deno.Kv} API to
  * provide a simple key-value store for the running application. This API is
@@ -34,7 +40,7 @@ import { basename, dirname, join, normalize } from "@std/path";
 /**
  * A key-value store returned by the {@linkcode config} function.
  *
- * @typeParam T The type of configuration data.
+ * @typeParam T The type of configuration data
  */
 export interface Config<T extends Record<string, unknown>> {
   /** Returns all data stored for this configuration. */
@@ -68,37 +74,39 @@ export interface ConfigOptions {
  * Setting {@linkcode ConfigOptions.path path} to `":memory:"` will create a
  * configuration that persists until the process ends.
  *
- * @example Use a file-based user configuration.
+ * @example Use a file-based user configuration
  * ```ts
  * import { config } from "@roka/config";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
+ *
  * await using directory = await tempDirectory();
- * using cfg = config<{ foo: string; bar: number }>({
- *   path: directory.path("config.db"),
- * });
+ * const path = directory.path("config.db");
+ *
+ * using cfg = config<{ foo: string; bar: number }>({ path });
  * await cfg.set({ foo: "value" });
  * await cfg.set({ bar: 42 });
+ *
  * assertEquals(await cfg.get(), { foo: "value", bar: 42 });
  * ```
  *
- * @example Use an in-memory configuration.
+ * @example Use an in-memory configuration
  * ```ts
  * import { config } from "@roka/config";
  * import { assertEquals } from "@std/assert";
- * using cfg = config<{ foo: string; bar: number }>({
- *   path: ":memory:",
- * });
+ *
+ * using cfg = config<{ foo: string; bar: number }>({ path: ":memory:" });
  * await cfg.set({ foo: "value" });
  * await cfg.set({ bar: 42 });
+ *
  * assertEquals(await cfg.get(), { foo: "value", bar: 42 });
  * ```
  *
- * @typeParam T The type of configuration data.
- * @returns A configuration object that closes itself at disposal.
+ * @typeParam T The type of configuration data
+ * @returns A configuration object that closes itself at disposal
  *
- * @todo Add single key getters.
- * @todo Add many key getters.
+ * @todo Add single key getters
+ * @todo Add many key getters
  */
 export function config<T extends Record<string, unknown>>(
   options?: ConfigOptions,

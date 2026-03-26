@@ -1,9 +1,9 @@
 /**
  * A library for handling operations that may fail.
  *
- * This package only provides the {@linkcode maybe} function, which executes a
- * function and captures any thrown exceptions as a failure result. It is an
- * alternative to using try-catch blocks for error handling.
+ * This package only provides the {@linkcode maybe} function, which executes
+ * the given callable and captures any thrown exceptions as a failure result.
+ * It is an alternative to using try-catch blocks for error handling.
  *
  * The function returns a result object of type {@linkcode Maybe}. If the
  * function executes successfully, the result object has a `value` property
@@ -22,10 +22,12 @@
  * ```ts
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
+ *
  * const { value, error } = maybe(() => {
  *   // some operation that may throw
  *   return 42;
  * });
+ *
  * if (error) {
  *   // deno-lint-ignore no-console
  *   console.error(error.message);
@@ -58,32 +60,37 @@ export function maybe(
 /**
  * Executes an asynchronous function, capturing exceptions as a failure result.
  *
- * @example Success case.
+ * @example Success case
  * ```ts
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
+ *
  * const { value, error } = await maybe(async () => await Promise.resolve(42));
+ *
  * assertEquals(value, 42);
  * assertEquals(error, undefined);
  * ```
  *
- * @example Failure case.
+ * @example Failure case
  * ```ts
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
+ *
  * const { value, error } = await maybe(async () => {
  *   // deno-lint-ignore no-constant-condition
  *   if (true) throw new Error("boom");
  *   return await Promise.resolve(42);
  * });
+ *
  * assertEquals(value, undefined);
  * assertEquals(error?.message, "boom");
  * ```
  *
- * @example Multiple errors from `AggregateError`.
+ * @example Multiple errors from `AggregateError`
  * ```ts
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
+ *
  * const { value, error, errors } = await maybe(async () => {
  *   // deno-lint-ignore no-constant-condition
  *   if (true) {
@@ -94,6 +101,7 @@ export function maybe(
  *   }
  *   return await Promise.resolve(42);
  * });
+ *
  * assertEquals(value, undefined);
  * assertEquals(error?.message, "aggregate");
  * assertEquals(errors?.[0]?.message, "boom");
@@ -105,33 +113,38 @@ export function maybe<T>(fn: () => Promise<T>): Promise<Maybe<T>>;
 /**
  * Executes a synchronous function, capturing exceptions as a failure result.
  *
- * @example Success case.
+ * @example Success case
  * ```ts
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
+ *
  * const { value, error } = maybe(() => 42);
+ *
  * assertEquals(value, 42);
  * assertEquals(error, undefined);
  * ```
  *
- * @example Failure case.
+ * @example Failure case
  * ```ts
  * import { maybe } from "@roka/maybe";
  * import { assertEquals } from "@std/assert";
+ *
  * const { value, error } = maybe(() => {
  *   // deno-lint-ignore no-constant-condition
  *   if (true) throw new Error("boom");
  *   return 42;
  * });
+ *
  * assertEquals(value, undefined);
  * assertEquals(error?.message, "boom");
  * ```
  *
- * @example Multiple errors from `AggregateError`.
+ * @example Multiple errors from `AggregateError`
  * ```ts
  * import { maybe } from "@roka/maybe";
  * import { pool } from "@roka/async/pool";
  * import { assertEquals } from "@std/assert";
+ *
  * const { value, errors } = await maybe(() =>
  *   pool([1, 2, 3], async (_) => {
  *     // deno-lint-ignore no-constant-condition
@@ -139,6 +152,7 @@ export function maybe<T>(fn: () => Promise<T>): Promise<Maybe<T>>;
  *     await Promise.resolve(42);
  *   })
  * );
+ *
  * assertEquals(value, undefined);
  * assertEquals(errors?.[0]?.message, "boom");
  * assertEquals(errors?.[1]?.message, "boom");

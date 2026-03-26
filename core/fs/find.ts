@@ -4,13 +4,14 @@
  *
  * ```ts
  * import { find } from "@roka/fs/find";
- * for await (
- *   const _ of find(["."], {
- *     type: "file",
- *     name: "*.ts",
- *     ignore: ["node_modules"],
- *   })
- * ) {
+ *
+ * const found = find(["."], {
+ *   type: "file",
+ *   name: "*.ts",
+ *   ignore: ["node_modules"],
+ * });
+ *
+ * for await (const _ of found) {
  *   // ...
  * }
  * ```
@@ -33,7 +34,7 @@ export interface FindOptions {
    * Extended glob pattern to match file or directory names.
    *
    * This only matches the name of the file or directory. Use
-   * {@linkcode FindOptions.path} to match the full path.
+   * the {@linkcode FindOptions.path path} option to match the full path.
    *
    * If not specified, all names are matched.
    */
@@ -46,8 +47,8 @@ export interface FindOptions {
    * paths. Similarly, if relative paths are given as input, the pattern should
    * match relative paths.
    *
-   * Use {@linkcode FindOptions.name} to match only the name of the file or
-   * directory.
+   * Use the {@linkcode FindOptions.name name} option to match only the name of
+   * the file or directory.
    *
    * If not specified, all paths are matched.
    */
@@ -60,9 +61,9 @@ export interface FindOptions {
    * the patterns, it will not be returned. If a directory matches any of
    * the patterns, it and its contents will be skipped entirely.
    *
-   * Similar to {@linkcode FindOptions.path path}, if absolute paths are
-   * given as input, the patterns should match absolute paths, and if relative
-   * paths are given as input, the patterns should match relative paths.
+   * Similar to the {@linkcode FindOptions.path path} option, if absolute paths
+   * are given as input, the patterns should match absolute paths, and if
+   * relative paths are given as input, the patterns should match relative paths.
    *
    * If not specified, no paths are ignored.
    */
@@ -95,12 +96,12 @@ export interface FindOptions {
  * the entries that match the given criteria.
  *
  * Symbolic links are not followed by default, but they can be followed by
- * setting {@linkcode FindOptions.followSymlinks} to `true`. File system nodes
- * that are neither files nor directories, such as sockets and devices, are
- * ignored.
+ * setting the {@linkcode FindOptions.followSymlinks followSymlinks} option to
+ * `true`. File system nodes that are neither files nor directories, such as
+ * sockets and devices, are not traversed.
  *
  * This function returns all file system node types by default. Filtering by
- * type can be done with {@linkcode FindOptions.type}.
+ * type can be done with the {@linkcode FindOptions.type type} option.
  *
  * The results contain no duplicates, even if there are multiple paths
  * leading to the same file or directory, for example via overlapping inputs or
@@ -108,16 +109,20 @@ export interface FindOptions {
  *
  * The results are not guaranteed to be in any specific order.
  *
- * @example Find all files and directories recursively.
+ * @example Find all files and directories recursively
  * ```ts
  * import { find } from "@roka/fs/find";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertSameElements } from "@roka/assert";
+ *
  * await using _ = await tempDirectory({ chdir: true });
+ *
  * await Deno.writeTextFile("a.txt", "a");
  * await Deno.mkdir("b");
  * await Deno.writeTextFile("b/c.md", "c");
- * assertSameElements(await Array.fromAsync(find(["."])), [
+ *
+ * const found = find(["."]);
+ * assertSameElements(await Array.fromAsync(found), [
  *   ".",
  *   "a.txt",
  *   "b",
@@ -125,71 +130,84 @@ export interface FindOptions {
  * ]);
  * ```
  *
- * @example Find only files with a specific name pattern.
+ * @example Find only files with a specific name pattern
  * ```ts
  * import { find } from "@roka/fs/find";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertSameElements } from "@roka/assert";
+ *
  * await using _ = await tempDirectory({ chdir: true });
+ *
  * await Deno.writeTextFile("a.txt", "a");
  * await Deno.mkdir("b");
  * await Deno.writeTextFile("b/c.md", "c");
+ *
+ * const found = find(["."], { name: "*.{txt,md}", type: "file" });
  * assertSameElements(
- *   await Array.fromAsync(find(["."], { name: "*.{txt,md}", type: "file" })),
+ *   await Array.fromAsync(found),
  *   ["a.txt", "b/c.md"],
  * );
  * ```
  *
- * @example Find only directories with a specific path pattern.
+ * @example Find only directories with a specific path pattern
  * ```ts
  * import { find } from "@roka/fs/find";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertSameElements } from "@roka/assert";
+ *
  * await using _ = await tempDirectory({ chdir: true });
+ *
  * await Deno.writeTextFile("a.txt", "a");
  * await Deno.mkdir("b");
  * await Deno.writeTextFile("b/c.md", "c");
+ *
+ * const found = find(["."], { path: "!(b)", type: "dir" });
  * assertSameElements(
- *   await Array.fromAsync(find(["."], { path: "!(b)", type: "dir" })),
+ *   await Array.fromAsync(found),
  *   ["."],
  * );
  * ```
  *
- * @example Ignore specific paths.
+ * @example Ignore specific paths
  * ```ts
  * import { find } from "@roka/fs/find";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertSameElements } from "@roka/assert";
+ *
  * await using _ = await tempDirectory({ chdir: true });
+ *
  * await Deno.writeTextFile("a.txt", "a");
  * await Deno.mkdir("b");
  * await Deno.writeTextFile("b/c.md", "c");
+ *
+ * const found = find(["."], { ignore: ["b"] });
  * assertSameElements(
- *   await Array.fromAsync(find(["."], { ignore: ["b"] })),
+ *   await Array.fromAsync(found),
  *   [".", "a.txt"],
  * );
  * ```
  *
- * @example Handle non-existing paths with validation.
+ * @example Handle non-existing paths with validation
  * ```ts
  * import { find } from "@roka/fs/find";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertRejects } from "@std/assert";
+ *
  * await using _ = await tempDirectory({ chdir: true });
- * await assertRejects(
- *   async () => {
- *     for await (const _ of find(["non-existing"], { validate: true })) {
- *       // ...
- *     }
- *   },
- *   Deno.errors.NotFound,
- * );
+ *
+ * const found = find(["non-existing"], { validate: true });
+ * await assertRejects(async () => {
+ *   for await (const _ of found) {
+ *     // ...
+ *   }
+ * }, Deno.errors.NotFound);
  * ```
  *
- * @param paths File or directory paths to start the search from.
- * @yields The paths of files and directories that match the specified criteria.
- * @throws {Deno.errors.NotFound} If {@linkcode FindOptions.validate} is `true`
- * and any of the given paths do not exist.
+ * @param paths File or directory paths to start the search from
+ * @yields The paths of files and directories that match the specified criteria
+ * @throws {Deno.errors.NotFound} If {@linkcode FindOptions.validate validate}
+ *                                is `true` and any of the given paths do not
+ *                                exist
  */
 export async function* find(
   paths: (string | URL)[],
