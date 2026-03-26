@@ -1,15 +1,4 @@
 import { assertArrayObjectMatch } from "@roka/assert";
-import {
-  commits,
-  modules,
-  type Package,
-  PackageError,
-  packageInfo,
-  releases,
-  type ScopeOptions,
-  scopes,
-  workspace,
-} from "@roka/forge/workspace";
 import { tempDirectory } from "@roka/fs/temp";
 import { git, GitError } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
@@ -22,6 +11,17 @@ import {
 } from "@std/assert";
 import { dirname, join, toFileUrl } from "@std/path";
 import { tempPackage, tempWorkspace } from "./testing.ts";
+import {
+  commits,
+  modules,
+  type Package,
+  PackageError,
+  packageInfo,
+  releases,
+  type ScopeOptions,
+  scopes,
+  workspace,
+} from "./workspace.ts";
 
 async function bump(pkg: Package, version: string) {
   const repo = git({ directory: pkg.directory });

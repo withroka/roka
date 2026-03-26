@@ -2,7 +2,6 @@ import { assertArrayObjectMatch, assertSameElements } from "@roka/assert";
 import { pool } from "@roka/async/pool";
 import { find } from "@roka/fs/find";
 import { tempDirectory } from "@roka/fs/temp";
-import { tempRepository } from "@roka/git/testing";
 import {
   assertEquals,
   assertExists,
@@ -17,6 +16,7 @@ import { basename, resolve, toFileUrl } from "@std/path";
 import { lessThan, parse } from "@std/semver";
 import { assertType, type IsExact } from "@std/testing/types";
 import { type Git, git, GitError, type Patch } from "./git.ts";
+import { tempRepository } from "./testing.ts";
 
 // some tests cannot check committer/tagger if Codespaces are signing with GPG
 const codespaces = !!Deno.env.get("CODESPACES");
