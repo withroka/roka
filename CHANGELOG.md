@@ -107,8 +107,8 @@
 - ✨ `git().remote.fetch({ shallow })` (#440)
 - ✨ add upstream tracking for fetch and pull (#439)
 - ✨ multiple remote support for fetch() and pull() (#438)
-- ✨ `git().remote.unshallow() (#437)
-- ✨ `git().remote.fetch({ filter }) (#436)
+- ✨ `git().remote.unshallow()` (#437)
+- ✨ `git().remote.fetch({ filter })` (#436)
 - ✨ `git().remote.fetch({ shallow })` (#435)
 - ✨ `Remote.filter` to expose filter for partial clones (#434)
 - ✨ `--separate-git-dir` for init and clone (#429)
@@ -208,7 +208,7 @@
 - 🐛 make `FakeConsole` not `Disposable` (#271)
 - 🐛 disable color in `fakeConsole()` by default (#250)
 - 🐛 test `mock()` writes mocks on `unload` event (#249)
-- 🐛 make types not disposable, but functions ret… (#248)
+- 🐛 make types not disposable, but functions return disposable (#248)
 
 ## flow@0.1.0
 
