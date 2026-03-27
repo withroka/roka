@@ -25,7 +25,8 @@
       "read": true,
       "write": true,
       "net": [
-        "api.github.com"
+        "api.github.com",
+        "uploads.github.com"
       ],
       "run": [
         "deno",
