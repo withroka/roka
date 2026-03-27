@@ -117,6 +117,7 @@ export async function release(
   return { release, assets: await upload(pkg, release) };
 }
 
+/** Checks if the package can be release. */
 export function canRelease(pkg: Package): boolean {
   if (pkg.config.version === undefined) return false;
   if (pkg.config.version === "0.0.0") return false;
