@@ -292,7 +292,6 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
-import { canRelease, release } from "@roka/forge/release";
 import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
@@ -312,6 +311,7 @@ import { join, relative } from "@std/path";
 import { bump, canBump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { canCompile, compile, targets } from "./compile.ts";
+import { canRelease, release } from "./release.ts";
 import { version } from "./version.ts";
 import {
   type CommitOptions,
@@ -642,7 +642,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
         empty: "No packages to bump",
         filter: {
           fn: canBump,
-          error: 'Package(s) missing "version" configuration',
+          error: "Nothing to bump since last release for package(s)",
         },
       }, context);
       if (!found.length) return;
