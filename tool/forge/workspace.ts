@@ -149,6 +149,8 @@ export interface Package {
 export interface Release {
   /** Release version. */
   version: string;
+  /** Release tag. */
+  tag?: string;
   /** Commit range. */
   range: { from?: string; to: string };
 }
@@ -492,13 +494,14 @@ export async function releases(
       return { version: parseTag(tag), semver, tag };
     })
     .filter((v) => prerelease || !v.semver.prerelease?.length);
-  const releases = tags.map(({ version, tag }, index) => {
+  const releases = tags.map(({ version, tag }, index): Release => {
     assertExists(version, `Cannot parse version from tag`);
     const previous = tags.slice(index + 1).find((v) =>
       !v.semver.prerelease?.length
     );
     return {
       version,
+      tag: tag.name,
       range: {
         ...previous && { from: previous.tag.name },
         to: tag.name,

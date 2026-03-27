@@ -442,7 +442,10 @@ function packageRow(pkg: Package): string[] {
   if (pkg.version !== (pkg.config.version)) { // modified
     return console.row(yellow, [name, pkg.version]);
   }
-  if (pkg.config.version !== (pkg.latest?.version ?? "0.0.0")) { // releasing
+  if (
+    pkg.config.version !== (pkg.latest?.version ?? "0.0.0") ||
+    pkg?.latest && !pkg?.latest.tag
+  ) { // releasing
     return console.row(red, [
       name,
       `${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`,
