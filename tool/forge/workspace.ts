@@ -505,16 +505,20 @@ export async function releases(
     };
   });
   let last = releases.at(-1);
+  let seenPrerelease = false;
   for await (const release of historical(pkg, last?.range.to)) {
     if (last?.version === release.version) continue;
-    if (!prerelease && parse(release.version).prerelease?.length) continue;
+    if (!prerelease && parse(release.version).prerelease?.length) {
+      seenPrerelease = true;
+      continue;
+    }
     if (last) last.range.from = release.range.to;
     releases.push(release);
     last = release;
     if (limit !== undefined && releases.length >= limit + 1) break;
   }
   // edge case: single untagged release is indistinguishable from first release
-  if (releases.length === 1 && !releases[0]?.tag) return [];
+  if (!seenPrerelease && releases.length === 1 && !releases[0]?.tag) return [];
   return releases.slice(0, limit);
 }
 

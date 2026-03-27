@@ -268,16 +268,12 @@ Deno.test("release({ draft }) creates draft release", async () => {
 });
 
 Deno.test("canRelease() filters for untagged packages that can be released", async () => {
+  const commit = [
+    { subject: "bump", config: [{ name: "@scope/name", version: "1.2.2" }] },
+    { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+  ];
   const pkg = {
-    ...await tempPackage({
-      commit: [{
-        subject: "bump version",
-        config: [{ name: "@scope/name", version: "1.2.2" }],
-      }, {
-        subject: "bump version",
-        config: [{ name: "@scope/name", version: "1.2.3" }],
-      }],
-    }),
+    ...await tempPackage({ commit }),
     config: { version: "1.2.3" },
   };
   const latest = (version: string) => ({ version, range: { to: "to" } });

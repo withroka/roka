@@ -425,7 +425,6 @@ function listCommand(context: ForgeOptions | undefined) {
         { packages, empty: "No packages found" },
         context,
       );
-      console.log(found);
       if (!found.length) return;
       Table.from([
         ...found.map((pkg) => {
