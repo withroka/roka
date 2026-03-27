@@ -9,28 +9,34 @@ import { forge } from "./forge.ts";
 import { tempWorkspace, type TempWorkspaceOptions } from "./testing.ts";
 
 const WORKSPACE: TempWorkspaceOptions = {
-  configs: [
+  config: [
     {
-      name: "@scope/name1",
+      name: "@scope/package1",
       version: "1.0.0",
-      exports: { ".": "./name2.ts", "./main": "./main.ts" },
+      exports: { ".": "./package2.ts", "./main": "./main.ts" },
       forge: { main: "main.ts", target: ["aarch64-unknown-linux-gnu"] },
     },
-    { name: "@scope/name2", version: "2.0.0", exports: "./name1.ts" },
-    { name: "@scope/name3", version: "3.0.0" },
-    { name: "@scope/name4", version: "4.0.0" },
-    { name: "@scope/dir/name5", version: "0.0.0" },
-    { name: "@scope/dir/name6" },
+    { name: "@scope/package2", version: "2.0.0", exports: "./package1.ts" },
+    { name: "@scope/package3", version: "3.0.0" },
+    { name: "@scope/package4", version: "4.0.0" },
+    { name: "@scope/package5", version: "0.1.0" },
+    { name: "@scope/directory/package6", version: "0.0.0" },
+    { name: "@scope/package7" },
   ],
-  commits: [
-    { subject: "initial", tags: ["name1@1.0.0-pre.1", "name4@4.0.0"] },
-    { subject: "feat(name2): name2", tags: ["name2@1.0.0"] },
-    { subject: "fix(name1): bug", tags: ["name2@2.0.0"] },
-    { subject: "refactor(name2): rewrite" },
-    { subject: "feat(name2): feature", tags: ["name3@2.0.0"] },
-    { subject: "docs(name3): fix typo" },
-    { subject: "refactor(name4)!: redesign api" },
-    { subject: "style(name5): tabs over spaces" },
+  commit: [
+    { subject: "initial", tag: ["package1@1.0.0-pre.1", "package4@4.0.0"] },
+    { subject: "feat(package2): package2", tag: ["package2@1.0.0"] },
+    { subject: "fix(package1): bug", tag: ["package2@2.0.0"] },
+    { subject: "refactor(package2): rewrite" },
+    { subject: "feat(package2): feature", tag: ["package3@2.0.0"] },
+    { subject: "docs(package3): fix typo" },
+    { subject: "refactor(package4)!: redesign api" },
+    { subject: "feat(package5): add feature" },
+    {
+      subject: "chore(package5): bump version",
+      config: [{ name: "@scope/package5", version: "0.1.0" }],
+    },
+    { subject: "style(package6): tabs over spaces" },
   ],
 };
 
@@ -55,14 +61,14 @@ async function run(context: Deno.TestContext) {
       .split(" ").slice(1)
       .map((arg) =>
         arg.replaceAll("[package]", pkg.name)
-          .replaceAll("[pattern]", "name*")
-          .replaceAll("[directory]", "dir")
+          .replaceAll("[pattern]", "package*")
+          .replaceAll("[directory]", "directory")
           .replaceAll("[unknown]", "unknown")
           .replaceAll("<file>", join(root, "CHANGELOG.md"))
           .replaceAll("<types>", "fix,feat")
           .replaceAll("<target>", "aarch64-unknown-linux-gnu")
           .replaceAll("<unscoped>", "fix: bug")
-          .replaceAll("<scoped>", "fix(name1): bug")
+          .replaceAll("<scoped>", "fix(package1): bug")
           .replaceAll("<unknown>", "fix(unknown): bug")
       ).flat(),
   );

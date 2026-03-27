@@ -53,12 +53,13 @@ snapshot[`forge list 1`] = `
 {
   code: 0,
   output: "
-@scope/name1     0.0.0 → 1.0.0
-@scope/name2     2.1.0-pre.1+<hash>
-@scope/name3     2.0.0 → 3.0.0
-@scope/name4     5.0.0-pre.1+<hash>
-@scope/dir/name5 0.0.0
-@scope/dir/name6
+@scope/package1           0.0.0 → 1.0.0
+@scope/package2           2.1.0-pre.1+<hash>
+@scope/package3           2.0.0 → 3.0.0
+@scope/package4           5.0.0-pre.1+<hash>
+@scope/package5           0.0.0 → 0.1.0
+@scope/directory/package6 0.0.0
+@scope/package7
 ",
 }
 `;
@@ -67,17 +68,18 @@ snapshot[`forge list --modules [packages...] 1`] = `
 {
   code: 0,
   output: "
-@scope/name1     0.0.0 → 1.0.0
-(default)        name1/name2.ts
-main             name1/main.ts
+@scope/package1           0.0.0 → 1.0.0
+(default)                 package1/package2.ts
+main                      package1/main.ts
 
-@scope/name2     2.1.0-pre.1+<hash>
-(default)        name2/name1.ts
+@scope/package2           2.1.0-pre.1+<hash>
+(default)                 package2/package1.ts
 
-@scope/name3     2.0.0 → 3.0.0
-@scope/name4     5.0.0-pre.1+<hash>
-@scope/dir/name5 0.0.0
-@scope/dir/name6
+@scope/package3           2.0.0 → 3.0.0
+@scope/package4           5.0.0-pre.1+<hash>
+@scope/package5           0.0.0 → 0.1.0
+@scope/directory/package6 0.0.0
+@scope/package7
 ",
 }
 `;
@@ -86,12 +88,13 @@ snapshot[`forge list [pattern] 1`] = `
 {
   code: 0,
   output: "
-@scope/name1     0.0.0 → 1.0.0
-@scope/name2     2.1.0-pre.1+<hash>
-@scope/name3     2.0.0 → 3.0.0
-@scope/name4     5.0.0-pre.1+<hash>
-@scope/dir/name5 0.0.0
-@scope/dir/name6
+@scope/package1           0.0.0 → 1.0.0
+@scope/package2           2.1.0-pre.1+<hash>
+@scope/package3           2.0.0 → 3.0.0
+@scope/package4           5.0.0-pre.1+<hash>
+@scope/package5           0.0.0 → 0.1.0
+@scope/directory/package6 0.0.0
+@scope/package7
 ",
 }
 `;
@@ -100,8 +103,7 @@ snapshot[`forge list [directory]/* 1`] = `
 {
   code: 0,
   output: "
-@scope/dir/name5 0.0.0
-@scope/dir/name6
+@scope/directory/package6 0.0.0
 ",
 }
 `;
@@ -119,26 +121,31 @@ snapshot[`forge changelog 1`] = `
 {
   code: 0,
   output: "
-name1@1.0.0
+package1@1.0.0
 
-  fix(name1): bug
+  fix(package1): bug
 
-name2@2.1.0-pre.1+<hash>
+package2@2.1.0-pre.1+<hash>
 
-  feat(name2): feature
-  refactor(name2): rewrite
+  feat(package2): feature
+  refactor(package2): rewrite
 
-name3@3.0.0
+package3@3.0.0
 
-  docs(name3): fix typo
+  docs(package3): fix typo
 
-name4@5.0.0-pre.1+<hash>
+package4@5.0.0-pre.1+<hash>
 
-  refactor(name4)!: redesign api
+  refactor(package4)!: redesign api
 
-name5@0.0.0
+package5@0.1.0
 
-  style(name5): tabs over spaces
+  feat(package5): add feature
+  chore(package5): bump version
+
+package6@0.0.0
+
+  style(package6): tabs over spaces
 
 ",
 }
@@ -148,28 +155,33 @@ snapshot[`forge changelog --all --emoji 1`] = `
 {
   code: 0,
   output: "
-name1@1.0.0
+package1@1.0.0
 
   🐛 bug
 
-name2@2.1.0-pre.1+<hash>
+package2@2.1.0-pre.1+<hash>
 
   ✨ feature
   ♻️ rewrite
 
-name2@1.0.0
+package2@1.0.0
 
-  ✨ name2
+  ✨ package2
 
-name3@3.0.0
+package3@3.0.0
 
   📝 fix typo
 
-name4@5.0.0-pre.1+<hash>
+package4@5.0.0-pre.1+<hash>
 
   ♻️ redesign api 💥
 
-name5@0.0.0
+package5@0.1.0
+
+  ✨ add feature
+  🧹 bump version
+
+package6@0.0.0
 
   🎨 tabs over spaces
 
@@ -181,17 +193,21 @@ snapshot[`forge changelog --types <types> 1`] = `
 {
   code: 0,
   output: "
-name1@1.0.0
+package1@1.0.0
 
-  fix(name1): bug
+  fix(package1): bug
 
-name2@2.1.0-pre.1+<hash>
+package2@2.1.0-pre.1+<hash>
 
-  feat(name2): feature
+  feat(package2): feature
 
-name4@5.0.0-pre.1+<hash>
+package4@5.0.0-pre.1+<hash>
 
-  refactor(name4)!: redesign api
+  refactor(package4)!: redesign api
+
+package5@0.1.0
+
+  feat(package5): add feature
 
 ",
 }
@@ -201,17 +217,21 @@ snapshot[`forge changelog --types <types> --no-breaking --all 1`] = `
 {
   code: 0,
   output: "
-name1@1.0.0
+package1@1.0.0
 
-  fix(name1): bug
+  fix(package1): bug
 
-name2@2.1.0-pre.1+<hash>
+package2@2.1.0-pre.1+<hash>
 
-  feat(name2): feature
+  feat(package2): feature
 
-name2@1.0.0
+package2@1.0.0
 
-  feat(name2): name2
+  feat(package2): package2
+
+package5@0.1.0
+
+  feat(package5): add feature
 
 ",
 }
@@ -221,9 +241,9 @@ snapshot[`forge changelog --breaking --markdown 1`] = `
 {
   code: 0,
   output: "
-## name4@5.0.0-pre.1+<hash>
+## package4@5.0.0-pre.1+<hash>
 
-- refactor(name4)!: redesign api
+- refactor(package4)!: redesign api
 
 ",
 }
@@ -242,10 +262,10 @@ snapshot[`forge compile --target <target> --bundle --install 1`] = `
 {
   code: 0,
   output: "
-✓ Compiled name1
+✓ Compiled package1
 
-  ◆ <directory>/dist/name1/1.0.0/aarch64-unknown-linux-gnu.tar.gz
-  ■ Installed name1
+  ◆ <directory>/dist/package1/1.0.0/aarch64-unknown-linux-gnu.tar.gz
+  ■ Installed package1
 
 ",
 }
@@ -266,7 +286,7 @@ snapshot[`forge bump --release --pr --changelog=<file> --emoji 1`] = `
   output: "
 ✓ Created bump pull request
 
-  [https://github.com/owner/repo/pulls/1]
+  (https://github.com/owner/repo/pulls/1)
 
 ",
 }
@@ -285,16 +305,20 @@ snapshot[`forge release --draft --emoji 1`] = `
 {
   code: 0,
   output: "
-✓ Created release name1@1.0.0
+✓ Created release package1@1.0.0
 
-  [https://github.com/owner/repo/releases/name1@1.0.0]
+  (https://github.com/owner/repo/releases/package1@1.0.0)
 
   ◆ aarch64-unknown-linux-gnu.tar.gz
   ◆ sha256.txt
 
-✓ Created release name3@3.0.0
+✓ Created release package3@3.0.0
 
-  [https://github.com/owner/repo/releases/name1@1.0.0]
+  (https://github.com/owner/repo/releases/package1@1.0.0)
+
+✓ Created release package5@0.1.0
+
+  (https://github.com/owner/repo/releases/package1@1.0.0)
 
 ",
 }
@@ -335,13 +359,14 @@ snapshot[`forge title <unknown> 1`] = `
 
 Allowed scopes:
 
-  name1
-  name1/main
-  name2
-  name3
-  name4
-  name5
-  name6
+  package1
+  package1/main
+  package2
+  package3
+  package4
+  package5
+  package6
+  package7
 ',
 }
 `;

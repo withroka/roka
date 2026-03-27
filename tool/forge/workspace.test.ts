@@ -13,6 +13,7 @@ import { dirname, join, toFileUrl } from "@std/path";
 import { tempPackage, tempWorkspace } from "./testing.ts";
 import {
   commits,
+  type Config,
   modules,
   type Package,
   PackageError,
@@ -23,20 +24,9 @@ import {
   workspace,
 } from "./workspace.ts";
 
-async function bump(pkg: Package, version: string) {
-  const repo = git({ directory: pkg.directory });
-  const path = join(pkg.directory, "deno.json");
-  await Deno.writeTextFile(
-    path,
-    JSON.stringify({ ...pkg.config, version }),
-  );
-  await repo.index.add(path);
-  return await repo.commit.create({ subject: "bump" });
-}
-
 Deno.test("workspace() returns simple package", async () => {
   await using temp = await tempWorkspace({
-    configs: [{ name: "pkg" }],
+    config: [{ name: "pkg" }],
   });
   const [pkg] = temp;
   assertExists(pkg);
@@ -53,7 +43,7 @@ Deno.test("workspace() returns simple package", async () => {
 
 Deno.test("workspace() returns monorepo packages", async () => {
   await using temp = await tempWorkspace({
-    configs: [
+    config: [
       { name: "pkg1", version: "0.1.0" },
       { name: "pkg2" },
       { name: "pkg2/pkg3" },
@@ -90,7 +80,7 @@ Deno.test("workspace() returns monorepo packages", async () => {
 
 Deno.test("workspace() handles file URL", async () => {
   await using temp = await tempWorkspace({
-    configs: [{ name: "pkg" }],
+    config: [{ name: "pkg" }],
   });
   const [pkg] = temp;
   assertExists(pkg);
@@ -107,7 +97,7 @@ Deno.test("workspace() handles file URL", async () => {
 
 Deno.test("workspace() does not return nested workspace packages", async () => {
   await using temp = await tempWorkspace({
-    configs: [
+    config: [
       { name: "pkg1" },
       { name: "pkg2", workspace: ["./something"] },
     ],
@@ -118,50 +108,14 @@ Deno.test("workspace() does not return nested workspace packages", async () => {
   assertEquals(await workspace({ root }), [pkg1, pkg2]);
 });
 
-Deno.test("workspace() handles path patterns", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "dir1/pkg1" },
-      { name: "dir1/pkg2" },
-      { name: "dir2/pkg1" },
-      { name: "dir2/pkg2" },
-    ],
-    workspace: ["dir1/*", "*/pkg2"],
-  });
-  const [pkg1, pkg2, pkg3] = temp;
-  assertExists(pkg1);
-  assertExists(pkg2);
-  assertExists(pkg3);
-  const root = pkg1.root;
-  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
-  assertEquals(pkg2.directory, join(root, "dir1/pkg2"));
-  assertEquals(pkg3.directory, join(root, "dir2/pkg2"));
-  assertEquals(await workspace({ root }), [pkg1, pkg2, pkg3]);
-});
-
-Deno.test("workspace() does not recurse path patterns", async () => {
-  await using temp = await tempWorkspace({
-    configs: [
-      { name: "dir1/pkg1" },
-      { name: "dir1/subdir/pkg2" },
-    ],
-    workspace: ["dir1/*"],
-  });
-  const [pkg1] = temp;
-  assertExists(pkg1);
-  const root = pkg1.root;
-  assertEquals(pkg1.directory, join(root, "dir1/pkg1"));
-  assertEquals(await workspace({ root }), [pkg1]);
-});
-
 Deno.test("workspace() matches commit scope", async () => {
   await using temp = await tempWorkspace({
-    configs: [
+    config: [
       { name: "pkg1" },
       { name: "pkg2" },
       { name: "pkg3" },
     ],
-    commits: [
+    commit: [
       { subject: "initial" },
       { subject: "fix(pkg1): fix" },
       { subject: "fix(pkg2/submodule): fix" },
@@ -195,12 +149,12 @@ Deno.test("workspace() matches commit scope", async () => {
 
 Deno.test("workspace() considers unstable changes", async () => {
   await using temp = await tempWorkspace({
-    configs: [
+    config: [
       { name: "pkg1", version: "1.2.3" },
       { name: "pkg2", version: "1.2.3" },
     ],
-    commits: [
-      { subject: "initial", tags: ["pkg1@1.2.3", "pkg2@1.2.3", "pkg3@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["pkg1@1.2.3", "pkg2@1.2.3", "pkg3@1.2.3"] },
       { subject: "fix(*/unstable): fix all" },
       { subject: "feat(pkg1/dir/unstable): feat" },
       { subject: "feat(pkg2): feat" },
@@ -233,30 +187,33 @@ Deno.test("workspace() considers unstable changes", async () => {
   }]);
 });
 
-Deno.test("workspace({ filters }) filters packages", async () => {
+Deno.test("workspace({ filter }) filters packages", async () => {
   await using temp = await tempWorkspace({
-    configs: [
+    config: [
       { name: "dir1/pkg1" },
       { name: "dir2/pkg2" },
       { name: "dir2/pkg3" },
+      { name: "dir2/subdir/pkg3" },
     ],
   });
-  const [pkg1, pkg2, pkg3] = temp;
+  const [pkg1, pkg2, pkg3, pkg4] = temp;
   assertExists(pkg1);
   assertExists(pkg2);
   assertExists(pkg3);
+  assertExists(pkg4);
   const root = pkg1.root;
-  assertEquals(await workspace({ root, filters: ["pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ root, filters: ["*1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["pk*"] }), [pkg1, pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["dir1/pkg1"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["*1/*"] }), [pkg1]);
-  assertEquals(await workspace({ root, filters: ["*2/pkg?"] }), [pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["dir2/*"] }), [pkg2, pkg3]);
-  assertEquals(await workspace({ root, filters: ["*/pkg2"] }), [pkg2]);
-  assertEquals(await workspace({ root, filters: ["none*"] }), []);
-  assertEquals(await workspace({ root, filters: ["*2", "*3"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filter: ["pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filter: ["pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filter: ["*1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filter: ["pk*3"] }), [pkg3, pkg4]);
+  assertEquals(await workspace({ root, filter: ["dir1/pkg1"] }), [pkg1]);
+  assertEquals(await workspace({ root, filter: ["*1/*"] }), [pkg1]);
+  assertEquals(await workspace({ root, filter: ["*2/pkg?"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filter: ["dir2/*"] }), [pkg2, pkg3]);
+  assertEquals(await workspace({ root, filter: ["*/pkg2"] }), [pkg2]);
+  assertEquals(await workspace({ root, filter: ["none*"] }), []);
+  assertEquals(await workspace({ root, filter: ["*1", "*2"] }), [pkg1, pkg2]);
+  assertEquals(await workspace({ root, filter: ["**/pkg3"] }), [pkg3, pkg4]);
 });
 
 Deno.test("packageInfo() rejects non-Deno package", async () => {
@@ -312,7 +269,7 @@ Deno.test("packageInfo() rejects invalid version", async () => {
 Deno.test("packageInfo() returns release version at release commit", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [{ subject: "initial", tags: ["name@1.2.3"] }],
+    commit: [{ subject: "initial", tag: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
   assertEquals(await packageInfo({ directory }), {
@@ -321,7 +278,11 @@ Deno.test("packageInfo() returns release version at release commit", async () =>
     directory,
     root: directory,
     config: { name: "@scope/name", version: "1.2.3" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
+    latest: {
+      version: "1.2.3",
+      tag: "name@1.2.3",
+      range: { to: "name@1.2.3" },
+    },
     changes: [],
   });
 });
@@ -329,10 +290,33 @@ Deno.test("packageInfo() returns release version at release commit", async () =>
 Deno.test("packageInfo() calculates patch version update", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "fix: bug fix" },
     ],
+  });
+  const directory = temp.directory;
+  const repo = git({ directory });
+  const commit = await repo.commit.head();
+  assertObjectMatch(await packageInfo({ directory }), {
+    name: "name",
+    version: `1.2.4-pre.1+${commit.short}`,
+    changes: [conventional(commit)],
+  });
+});
+
+Deno.test("packageInfo() calculates patch version update over untagged release", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [{
+      subject: "initial",
+      config: [{ name: "@scope/name", version: "0.1.0" }],
+    }, {
+      subject: "chore: bump version",
+      config: [{ name: "@scope/name", version: "1.2.3" }],
+    }, {
+      subject: "fix: bug fix",
+    }],
   });
   const directory = temp.directory;
   const repo = git({ directory });
@@ -347,10 +331,33 @@ Deno.test("packageInfo() calculates patch version update", async () => {
 Deno.test("packageInfo() calculates minor version update", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature" },
     ],
+  });
+  const directory = temp.directory;
+  const repo = git({ directory });
+  const commit = await repo.commit.head();
+  assertObjectMatch(await packageInfo({ directory }), {
+    name: "name",
+    version: `1.3.0-pre.1+${commit.short}`,
+    changes: [conventional(commit)],
+  });
+});
+
+Deno.test("packageInfo() calculates minor version update over untagged release", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [{
+      subject: "initial",
+      config: [{ name: "@scope/name", version: "0.1.0" }],
+    }, {
+      subject: "chore: bump version",
+      config: [{ name: "@scope/name", version: "1.2.3" }],
+    }, {
+      subject: "feat: new feature",
+    }],
   });
   const directory = temp.directory;
   const repo = git({ directory });
@@ -365,10 +372,33 @@ Deno.test("packageInfo() calculates minor version update", async () => {
 Deno.test("packageInfo() calculates major version update", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "fix!: breaking change" },
     ],
+  });
+  const directory = temp.directory;
+  const repo = git({ directory });
+  const commit = await repo.commit.head();
+  assertObjectMatch(await packageInfo({ directory }), {
+    name: "name",
+    version: `2.0.0-pre.1+${commit.short}`,
+    changes: [conventional(commit)],
+  });
+});
+
+Deno.test("packageInfo() calculates major version update over untagged release", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [{
+      subject: "initial",
+      config: [{ name: "@scope/name", version: "0.1.0" }],
+    }, {
+      subject: "chore: bump version",
+      config: [{ name: "@scope/name", version: "1.2.3" }],
+    }, {
+      subject: "fix!: breaking change",
+    }],
   });
   const directory = temp.directory;
   const repo = git({ directory });
@@ -383,7 +413,7 @@ Deno.test("packageInfo() calculates major version update", async () => {
 Deno.test("packageInfo() matches all scopes for non-workspace", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "fix(something): done" },
       { subject: "fix: something else" },
     ],
@@ -403,7 +433,7 @@ Deno.test("packageInfo() matches all scopes for non-workspace", async () => {
 Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "fix: fix bug" },
       { subject: "style: argue on whitespace" },
     ],
@@ -423,7 +453,7 @@ Deno.test("packageInfo() skips change if type is not feat or fix", async () => {
 Deno.test("packageInfo() considers all breaking changes", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "fix: fix bug" },
       { subject: "style!: api breaking whitespace changes" },
     ],
@@ -443,8 +473,8 @@ Deno.test("packageInfo() considers all breaking changes", async () => {
 Deno.test("packageInfo() calculates patch version update for unstable changes", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat(unstable): new unstable feature" },
       { subject: "fix(unstable): fix unstable feature" },
     ],
@@ -464,8 +494,8 @@ Deno.test("packageInfo() calculates patch version update for unstable changes", 
 Deno.test("packageInfo() breaking changes are still breaking for unstable", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat(unstable)!: new unstable feature" },
     ],
   });
@@ -482,10 +512,10 @@ Deno.test("packageInfo() breaking changes are still breaking for unstable", asyn
 Deno.test("packageInfo() skips over pre-release versions", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature" },
-      { subject: "fix: bug fix", tags: ["name@1.3.0-pre.2+fedcba9"] },
+      { subject: "fix: bug fix", tag: ["name@1.3.0-pre.2+fedcba9"] },
       { subject: "docs: fix typo" },
       { subject: "feat: another feature" },
     ],
@@ -507,7 +537,7 @@ Deno.test("packageInfo() skips over pre-release versions", async () => {
 Deno.test("packageInfo() uses forced version for unreleased package", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [{ subject: "initial" }],
+    commit: [{ subject: "initial" }],
   });
   const directory = temp.directory;
   assertObjectMatch(await packageInfo({ directory }), {
@@ -520,7 +550,7 @@ Deno.test("packageInfo() uses forced version for unreleased package", async () =
 Deno.test("packageInfo() uses forced version for released package", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.4" },
-    commits: [{ subject: "initial", tags: ["name@1.2.3"] }],
+    commit: [{ subject: "initial", tag: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
   assertObjectMatch(await packageInfo({ directory }), {
@@ -533,7 +563,7 @@ Deno.test("packageInfo() uses forced version for released package", async () => 
 Deno.test("packageInfo() ignores forced lower version", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.2" },
-    commits: [{ subject: "initial", tags: ["name@1.2.3"] }],
+    commit: [{ subject: "initial", tag: ["name@1.2.3"] }],
   });
   const directory = temp.directory;
   assertObjectMatch(await packageInfo({ directory }), {
@@ -570,36 +600,55 @@ Deno.test("modules() returns empty for no exports", async () => {
 Deno.test("releases() returns releases for a package", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "first", tags: ["name@1.2.0", "name@1.2.1"] },
-      { subject: "second", tags: ["name@1.2.2"] },
-      { subject: "third", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "first", tag: ["name@1.2.0", "name@1.2.1"] },
+      { subject: "second", tag: ["name@1.2.2"] },
+      { subject: "third", tag: ["name@1.2.3"] },
     ],
   });
-  assertEquals(await releases(pkg), [
-    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
-    { version: "1.2.2", range: { from: "name@1.2.1", to: "name@1.2.2" } },
-    { version: "1.2.1", range: { from: "name@1.2.0", to: "name@1.2.1" } },
-    { version: "1.2.0", range: { to: "name@1.2.0" } },
-  ]);
+  assertEquals(await releases(pkg), [{
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { from: "name@1.2.2", to: "name@1.2.3" },
+  }, {
+    version: "1.2.2",
+    tag: "name@1.2.2",
+    range: { from: "name@1.2.1", to: "name@1.2.2" },
+  }, {
+    version: "1.2.1",
+    tag: "name@1.2.1",
+    range: { from: "name@1.2.0", to: "name@1.2.1" },
+  }, {
+    version: "1.2.0",
+    tag: "name@1.2.0",
+    range: { to: "name@1.2.0" },
+  }]);
 });
 
 Deno.test("releases() ignores unknown tag format", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
-      { subject: "first", tags: ["beta"] },
-      { subject: "second", tags: ["1.2.3"] },
+    commit: [
+      { subject: "first", tag: ["beta"] },
+      { subject: "second", tag: ["1.2.3"] },
     ],
   });
   assertEquals(await releases(pkg), []);
 });
 
 Deno.test("releases() returns versions from untagged releases", async () => {
-  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
-  await bump(pkg, "0.0.0");
-  const commit1 = await bump(pkg, "1.2.3");
-  const commit2 = await bump(pkg, "1.2.4");
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "0.0.0" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.4" }] },
+    ],
+  });
+  const repo = git({ directory: pkg.directory });
+  const [commit2, commit1] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit2);
   assertEquals(await releases(pkg), [
     { version: "1.2.4", range: { from: commit1.hash, to: commit2.hash } },
     { version: "1.2.3", range: { to: commit1.hash } },
@@ -607,18 +656,36 @@ Deno.test("releases() returns versions from untagged releases", async () => {
 });
 
 Deno.test("releases() skips untagged pre-releases", async () => {
-  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
-  const commit1 = await bump(pkg, "1.2.3");
-  await bump(pkg, "1.2.4-pre.1+fedcba9");
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+      {
+        subject: "bump",
+        config: [{ name: "@scope/name", version: "1.2.4-pre.1+fedcba9" }],
+      },
+    ],
+  });
+  const repo = git({ directory: pkg.directory });
+  const [_, commit1] = await repo.commit.log();
+  assertExists(commit1);
   assertEquals(await releases(pkg), [
     { version: "1.2.3", range: { to: commit1.hash } },
   ]);
 });
 
 Deno.test("releases() handles unordered untagged releases", async () => {
-  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
-  const commit1 = await bump(pkg, "1.2.1");
-  const commit2 = await bump(pkg, "1.2.0");
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.1" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.0" }] },
+    ],
+  });
+  const repo = git({ directory: pkg.directory });
+  const [commit2, commit1] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit2);
   assertEquals(await releases(pkg), [
     { version: "1.2.0", range: { from: commit1.hash, to: commit2.hash } },
     { version: "1.2.1", range: { to: commit1.hash } },
@@ -626,64 +693,142 @@ Deno.test("releases() handles unordered untagged releases", async () => {
 });
 
 Deno.test("releases() combines tagged and untagged versions", async () => {
-  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
-  const commit1 = await bump(pkg, "1.2.3");
-  const commit2 = await bump(pkg, "1.2.4");
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.4" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.3.0" }] },
+    ],
+  });
   const repo = git({ directory: pkg.directory });
-  await bump(pkg, "1.3.0");
   await repo.tag.create("name@1.3.0");
-  assertEquals(await releases(pkg), [
-    { version: "1.3.0", range: { from: commit2.hash, to: "name@1.3.0" } },
-    { version: "1.2.4", range: { from: commit1.hash, to: commit2.hash } },
-    { version: "1.2.3", range: { to: commit1.hash } },
-  ]);
+  const [_, commit2, commit1] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit2);
+  assertEquals(await releases(pkg), [{
+    version: "1.3.0",
+    tag: "name@1.3.0",
+    range: { from: commit2.hash, to: "name@1.3.0" },
+  }, {
+    version: "1.2.4",
+    range: { from: commit1.hash, to: commit2.hash },
+  }, {
+    version: "1.2.3",
+    range: { to: commit1.hash },
+  }]);
 });
 
 Deno.test("releases() ignores missing config", async () => {
-  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
-  const commit1 = await bump(pkg, "1.2.3");
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.2" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+    ],
+  });
   const repo = git({ directory: pkg.directory });
   const path = join(pkg.directory, "deno.json");
   await repo.index.remove(path);
-  await repo.commit.create({ subject: "commit" });
+  await repo.commit.create({ subject: "delete" });
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "1.2.4" }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "add" });
+  const [commit1, _, commit3, commit4] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit3);
+  assertExists(commit4);
   assertEquals(await releases(pkg), [
-    { version: "1.2.3", range: { to: commit1.hash } },
+    { version: "1.2.4", range: { from: commit3.hash, to: commit1.hash } },
+    { version: "1.2.3", range: { from: commit4.hash, to: commit3.hash } },
+    { version: "1.2.2", range: { to: commit4.hash } },
   ]);
 });
 
 Deno.test("releases() ignores malformed version", async () => {
   await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: "1.4.0" },
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.2" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+    ],
   });
-  const commit1 = await bump(pkg, "1.2.3");
-  await bump(pkg, -1 as unknown as string);
+  const repo = git({ directory: pkg.directory });
+  const path = join(pkg.directory, "deno.json");
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: -1 as unknown as string }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "break" });
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "1.2.4" }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "fix" });
+  const [commit1, _, commit3, commit4] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit3);
+  assertExists(commit4);
   assertEquals(await releases(pkg), [
-    { version: "1.2.3", range: { to: commit1.hash } },
+    { version: "1.2.4", range: { from: commit3.hash, to: commit1.hash } },
+    { version: "1.2.3", range: { from: commit4.hash, to: commit3.hash } },
+    { version: "1.2.2", range: { to: commit4.hash } },
   ]);
 });
 
 Deno.test("releases() ignores invalid version", async () => {
   await using pkg = await tempPackage({
-    config: { name: "@scope/name", version: "1.4.0" },
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.2" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+    ],
   });
-  const commit1 = await bump(pkg, "1.2.3");
-  await bump(pkg, "bad");
+  const repo = git({ directory: pkg.directory });
+  const path = join(pkg.directory, "deno.json");
+  await Deno.writeTextFile(path, JSON.stringify("invalid"));
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "break" });
+  await Deno.writeTextFile(
+    path,
+    JSON.stringify({ ...pkg.config, version: "1.2.4" }),
+  );
+  await repo.index.add(path);
+  await repo.commit.create({ subject: "fix" });
+  const [commit1, _, commit3, commit4] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit3);
+  assertExists(commit4);
   assertEquals(await releases(pkg), [
-    { version: "1.2.3", range: { to: commit1.hash } },
+    { version: "1.2.4", range: { from: commit3.hash, to: commit1.hash } },
+    { version: "1.2.3", range: { from: commit4.hash, to: commit3.hash } },
+    { version: "1.2.2", range: { to: commit4.hash } },
   ]);
 });
 
 Deno.test("releases() ignores malformed config", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.4.0" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+      {
+        subject: "bump",
+        config: ["invalid" as unknown as Config],
+      },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.4" }] },
+    ],
   });
-  const commit1 = await bump(pkg, "1.2.3");
   const repo = git({ directory: pkg.directory });
-  const path = join(pkg.directory, "deno.json");
-  await Deno.writeTextFile(path, "invalid");
-  await repo.index.add(path);
-  await repo.commit.create({ subject: "commit" });
+  const [commit3, _, commit1] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit3);
   assertEquals(await releases(pkg), [
+    { version: "1.2.4", range: { from: commit1.hash, to: commit3.hash } },
     { version: "1.2.3", range: { to: commit1.hash } },
   ]);
 });
@@ -703,46 +848,83 @@ Deno.test("releases() rejects non-repository", async () => {
 Deno.test("releases({ limit }) caps tagged releases", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
-    commits: [
-      { subject: "first", tags: ["name@1.2.1"] },
-      { subject: "second", tags: ["name@1.2.2"] },
-      { subject: "third", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "first", tag: ["name@1.2.1"] },
+      { subject: "second", tag: ["name@1.2.2"] },
+      { subject: "third", tag: ["name@1.2.3"] },
     ],
   });
-  assertEquals(await releases(pkg, { limit: 10 }), [
-    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
-    { version: "1.2.2", range: { from: "name@1.2.1", to: "name@1.2.2" } },
-    { version: "1.2.1", range: { to: "name@1.2.1" } },
-  ]);
-  assertEquals(await releases(pkg, { limit: 2 }), [
-    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
-    { version: "1.2.2", range: { from: "name@1.2.1", to: "name@1.2.2" } },
-  ]);
-  assertEquals(await releases(pkg, { limit: 1 }), [
-    { version: "1.2.3", range: { from: "name@1.2.2", to: "name@1.2.3" } },
-  ]);
+  assertEquals(await releases(pkg, { limit: 10 }), [{
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { from: "name@1.2.2", to: "name@1.2.3" },
+  }, {
+    version: "1.2.2",
+    tag: "name@1.2.2",
+    range: { from: "name@1.2.1", to: "name@1.2.2" },
+  }, {
+    version: "1.2.1",
+    tag: "name@1.2.1",
+    range: { to: "name@1.2.1" },
+  }]);
+  assertEquals(await releases(pkg, { limit: 2 }), [{
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { from: "name@1.2.2", to: "name@1.2.3" },
+  }, {
+    version: "1.2.2",
+    tag: "name@1.2.2",
+    range: { from: "name@1.2.1", to: "name@1.2.2" },
+  }]);
+  assertEquals(await releases(pkg, { limit: 1 }), [{
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { from: "name@1.2.2", to: "name@1.2.3" },
+  }]);
   assertEquals(await releases(pkg, { limit: 0 }), []);
 });
 
 Deno.test("releases({ limit }) caps untagged releases", async () => {
-  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
-  const commit1 = await bump(pkg, "1.2.1");
-  const commit2 = await bump(pkg, "1.2.2");
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.1" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.2" }] },
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+    ],
+  });
   const repo = git({ directory: pkg.directory });
-  await bump(pkg, "1.2.3");
   await repo.tag.create("name@1.2.3");
-  assertEquals(await releases(pkg, { limit: 10 }), [
-    { version: "1.2.3", range: { from: commit2.hash, to: "name@1.2.3" } },
-    { version: "1.2.2", range: { from: commit1.hash, to: commit2.hash } },
-    { version: "1.2.1", range: { to: commit1.hash } },
-  ]);
-  assertEquals(await releases(pkg, { limit: 2 }), [
-    { version: "1.2.3", range: { from: commit2.hash, to: "name@1.2.3" } },
-    { version: "1.2.2", range: { from: commit1.hash, to: commit2.hash } },
-  ]);
-  assertEquals(await releases(pkg, { limit: 1 }), [
-    { version: "1.2.3", range: { from: commit2.hash, to: "name@1.2.3" } },
-  ]);
+  const [_, commit2, commit1] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit2);
+  assertEquals(await releases(pkg, { limit: 10 }), [{
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { from: commit2.hash, to: "name@1.2.3" },
+  }, {
+    version: "1.2.2",
+    range: { from: commit1.hash, to: commit2.hash },
+  }, {
+    version: "1.2.1",
+    range: { to: commit1.hash },
+  }]);
+  assertEquals(await releases(pkg, { limit: 2 }), [{
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { from: commit2.hash, to: "name@1.2.3" },
+  }, {
+    version: "1.2.2",
+    range: {
+      from: commit1.hash,
+      to: commit2.hash,
+    },
+  }]);
+  assertEquals(await releases(pkg, { limit: 1 }), [{
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { from: commit2.hash, to: "name@1.2.3" },
+  }]);
   assertEquals(await releases(pkg, { limit: 0 }), []);
 });
 
@@ -754,45 +936,66 @@ Deno.test("releases({ limit }) rejects negative values", async () => {
 Deno.test("releases({ prerelease }) includes tagged pre-releases", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
-      { subject: "1.2.3", tags: ["name@1.2.3"] },
-      { subject: "2.0.0-pre", tags: ["name@2.0.0-pre.42+fedcba9"] },
-      { subject: "2.0.0", tags: ["name@2.0.0"] },
+    commit: [
+      { subject: "1.2.3", tag: ["name@1.2.3"] },
+      { subject: "2.0.0-pre", tag: ["name@2.0.0-pre.42+fedcba9"] },
+      { subject: "2.0.0", tag: ["name@2.0.0"] },
     ],
   });
-  assertEquals(await releases(pkg), [
-    { version: "2.0.0", range: { from: "name@1.2.3", to: "name@2.0.0" } },
-    { version: "1.2.3", range: { to: "name@1.2.3" } },
-  ]);
-  assertEquals(await releases(pkg, { prerelease: true }), [
-    { version: "2.0.0", range: { from: "name@1.2.3", to: "name@2.0.0" } },
-    {
-      version: "2.0.0-pre.42+fedcba9",
-      range: { from: "name@1.2.3", to: "name@2.0.0-pre.42+fedcba9" },
-    },
-    { version: "1.2.3", range: { to: "name@1.2.3" } },
-  ]);
+  assertEquals(await releases(pkg), [{
+    version: "2.0.0",
+    tag: "name@2.0.0",
+    range: { from: "name@1.2.3", to: "name@2.0.0" },
+  }, {
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { to: "name@1.2.3" },
+  }]);
+  assertEquals(await releases(pkg, { prerelease: true }), [{
+    version: "2.0.0",
+    tag: "name@2.0.0",
+    range: { from: "name@1.2.3", to: "name@2.0.0" },
+  }, {
+    version: "2.0.0-pre.42+fedcba9",
+    tag: "name@2.0.0-pre.42+fedcba9",
+    range: { from: "name@1.2.3", to: "name@2.0.0-pre.42+fedcba9" },
+  }, {
+    version: "1.2.3",
+    tag: "name@1.2.3",
+    range: { to: "name@1.2.3" },
+  }]);
 });
 
 Deno.test("releases({ prerelease }) includes untagged pre-releases", async () => {
-  await using pkg = await tempPackage({ config: { name: "@scope/name" } });
-  const commit1 = await bump(pkg, "1.2.3");
-  const commit2 = await bump(pkg, "1.2.4-pre.42+fedcba9");
-  assertEquals(await releases(pkg, { prerelease: true }), [
-    {
-      version: "1.2.4-pre.42+fedcba9",
-      range: { from: commit1.hash, to: commit2.hash },
-    },
-    { version: "1.2.3", range: { to: commit1.hash } },
-  ]);
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [
+      { subject: "bump", config: [{ name: "@scope/name", version: "1.2.3" }] },
+      {
+        subject: "bump",
+        config: [{ name: "@scope/name", version: "1.2.4-pre.42+fedcba9" }],
+      },
+    ],
+  });
+  const repo = git({ directory: pkg.directory });
+  const [commit2, commit1] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit2);
+  assertEquals(await releases(pkg, { prerelease: true }), [{
+    version: "1.2.4-pre.42+fedcba9",
+    range: { from: commit1.hash, to: commit2.hash },
+  }, {
+    version: "1.2.3",
+    range: { to: commit1.hash },
+  }]);
 });
 
 Deno.test("commits() returns all history", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "feat: new feature" },
-      { subject: "fix!: fix bug", tags: ["name@1.2.3"] },
+      { subject: "fix!: fix bug", tag: ["name@1.2.3"] },
       { subject: "docs: add docs" },
     ],
   });
@@ -808,11 +1011,11 @@ Deno.test("commits() returns all history", async () => {
 
 Deno.test("commits() enforces scope for workspace members", async () => {
   const [pkg1, pkg2] = await tempWorkspace({
-    configs: [
+    config: [
       { name: "@scope/name1" },
       { name: "@scope/name2" },
     ],
-    commits: [
+    commit: [
       { subject: "feat: new feature" },
       { subject: "fix(name1)!: fix bug" },
       { subject: "docs(name2): add docs" },
@@ -829,11 +1032,11 @@ Deno.test("commits() enforces scope for workspace members", async () => {
 
 Deno.test("commits() assigns wildcard scope to all members", async () => {
   const [pkg1, pkg2] = await tempWorkspace({
-    configs: [
+    config: [
       { name: "@scope/name1" },
       { name: "@scope/name2" },
     ],
-    commits: [
+    commit: [
       { subject: "feat(name1): new feature" },
       { subject: "fix(*): fix bug" },
       { subject: "chore(*/deps): update dependencies" },
@@ -860,9 +1063,9 @@ Deno.test("commits() assigns wildcard scope to all members", async () => {
 Deno.test("commits({ range }) returns from a range", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "feat: new feature" },
-      { subject: "fix!: fix bug", tags: ["name@1.2.3"] },
+      { subject: "fix!: fix bug", tag: ["name@1.2.3"] },
       { subject: "docs: add docs" },
     ],
   });
@@ -879,7 +1082,7 @@ Deno.test("commits({ range }) returns from a range", async () => {
 Deno.test("commits({ types }) filters by type", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "feat: new feature" },
       { subject: "fix!: fix bug" },
       { subject: "docs: add docs" },
@@ -897,7 +1100,7 @@ Deno.test("commits({ types }) filters by type", async () => {
 Deno.test("commits({ types }) always includes breaking changes", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "feat: new feature" },
       { subject: "fix!: fix bug" },
       { subject: "docs: add docs" },
@@ -915,7 +1118,7 @@ Deno.test("commits({ types }) always includes breaking changes", async () => {
 Deno.test("commits({ breaking }) can filter breaking changes", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "feat: new feature" },
       { subject: "fix!: fix bug" },
       { subject: "docs: add docs" },
@@ -932,7 +1135,7 @@ Deno.test("commits({ breaking }) can filter breaking changes", async () => {
 Deno.test("commits({ breaking }) can filter non-breaking changes", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [
+    commit: [
       { subject: "feat: new feature" },
       { subject: "fix!: fix bug" },
       { subject: "docs: add docs" },
@@ -958,7 +1161,7 @@ function assertScopes(
 
 Deno.test("scopes() returns matching scopes for workspace member", async () => {
   await using workspace = await tempWorkspace({
-    configs: [{ name: "@scope/name" }],
+    config: [{ name: "@scope/name" }],
   });
   const [pkg] = workspace;
   assertExists(pkg);
@@ -998,7 +1201,7 @@ Deno.test("scopes() returns matching scopes for non-workspace package", async ()
 
 Deno.test("scopes({ strict }) validates module-level scopes", async () => {
   await using workspace = await tempWorkspace({
-    configs: [{
+    config: [{
       name: "@scope/name",
       exports: { ".": "./name.ts", "./sub": "./sub.ts" },
     }],

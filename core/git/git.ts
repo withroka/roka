@@ -58,6 +58,7 @@
  *    {@link https://www.conventionalcommits.org Conventional Commits}
  *  - {@link [testing]}: Write tests using temporary Git repositories
  *
+ * @todo Add `git().relative()`, relative from repo top-level
  * @todo Add `git().worktree.*`
  * @todo Add `git().stash.*`
  * @todo Add `git().bisect.*`
@@ -105,7 +106,13 @@ export class GitError extends Error {
 
 /** A local repository returned by the {@linkcode git} function. */
 export interface Git {
-  /** Returns the repository directory, with optional relative children. */
+  /**
+   * Returns the repository directory, with optional relative children.
+   *
+   * This returns paths relative to the {@linkcode GitOptions.directory}
+   * option, which defaults to the current working directory, not to the
+   * repository top-level.
+   */
   path(...parts: string[]): string;
   /** Returns the installed Git version. */
   version(): Promise<string>;

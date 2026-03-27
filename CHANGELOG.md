@@ -234,6 +234,7 @@
 - ✨ support wildcard scopes in commit matching (#564)
 - ✨ use permissions from standard Deno config (#256)
 - ✨ support submodules and `unstable` in scopes (#234)
+- 🐛 migration releases (#635)
 - 🐛 show relative paths for modules in list output (#613)
 - 🐛 cleaner CLI outputs (#591)
 - 🐛 allow empty matches (#589)

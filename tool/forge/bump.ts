@@ -35,7 +35,7 @@ import { github, type PullRequest, type Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
 import { common, join } from "@std/path";
-import { format, parse } from "@std/semver";
+import { format, greaterThan, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
 import { type Package, PackageError } from "./workspace.ts";
 
@@ -93,12 +93,11 @@ export interface BumpOptions {
 /**
  * Updates the version numbers on package configuration files (`deno.json`).
  *
- * The version for the package is calculated using the latest release tag and
- * the {@link https://www.conventionalcommits.org Conventional Commits} for
- * the package since that release. If the changelog is not empty, the version
- * will be a pre-release version. If the {@linkcode BumpOptions.release release}
- * option is set, the version of the next release will be written, dropping
- * prerelease and build information from the version string.
+ * The version for the package is calculated using the {@linkcode [workspace]}
+ * module. For tagged packages, the latest release tag and the
+ * {@link https://www.conventionalcommits.org Conventional Commits} for the
+ * package since that release are used. For packages without a prior tag, the
+ * versions are based on the configuration file.
  *
  * When working with pull requests, if there is an open PR, it will be updated
  * with the new version information.
@@ -138,14 +137,14 @@ export async function bump(
   options?: BumpOptions,
 ): Promise<PullRequest | undefined> {
   const bumps = packages
+    .filter(canBump)
     .map((pkg) => ({
       pkg,
       bump: format({
         ...parse(pkg.version),
         ...options?.release ? { prerelease: [], build: [] } : {},
       }),
-    }))
-    .filter(({ pkg, bump }) => pkg.config.version !== bump);
+    }));
   await checkDirty(packages, options);
   packages = await pool(bumps, ({ pkg, bump }) => updateConfig(pkg, bump));
   if (packages.length === 0) throw new PackageError("No packages to bump");
@@ -163,10 +162,16 @@ async function checkDirty(packages: Package[], options?: BumpOptions) {
   });
   if (status.length) {
     throw new PackageError([
-      `Cannot bump version, uncommitted changes in:`,
+      "Cannot bump version, uncommitted changes in:",
       ...status.map((s) => s.path),
     ].join("\n"));
   }
+}
+
+/** Checks if the package can be bumped to a newer version. */
+export function canBump(pkg: Package): boolean {
+  return pkg.config.version !== undefined &&
+    greaterThan(parse(pkg.version), parse(pkg.config.version));
 }
 
 async function updateConfig(pkg: Package, version: string) {

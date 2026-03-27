@@ -1,3 +1,4 @@
+import { releases } from "@roka/forge/workspace";
 import { git } from "@roka/git";
 import { conventional } from "@roka/git/conventional";
 import { assertEquals, assertExists, assertRejects } from "@std/assert";
@@ -14,7 +15,7 @@ Deno.test("tempPackage() creates a disposable package", async () => {
     directory = pkg.directory;
     assertEquals(omit(pkg, [Symbol.asyncDispose]), {
       name: "name",
-      version: `1.2.3`,
+      version: "1.2.3",
       directory,
       root: directory,
       config: { name: "@scope/name", version: "1.2.3" },
@@ -27,22 +28,40 @@ Deno.test("tempPackage() creates a disposable package", async () => {
 
 Deno.test("tempPackage() creates package in a repository", async () => {
   await using pkg = await tempPackage({
-    config: { name: "@scope/name" },
-    commits: [
-      { subject: "feat: feature", tags: ["name@1.2.3"] },
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [
+      {
+        subject: "chore: bump",
+        config: [{ name: "@scope/name", version: "1.2.3" }],
+      },
+      { subject: "feat: feature", tag: ["name@1.2.4"] },
       { subject: "fix: bug" },
     ],
   });
   const repo = git({ directory: pkg.root });
-  const commit = await git({ directory: pkg.root }).commit.head();
+  const [commit3, _, commit1] = await repo.commit.log();
+  assertExists(commit1);
+  assertExists(commit3);
+  assertEquals(await releases(pkg), [{
+    tag: "name@1.2.4",
+    version: "1.2.4",
+    range: { from: commit1.hash, to: "name@1.2.4" },
+  }, {
+    version: "1.2.3",
+    range: { to: commit1.hash },
+  }]);
   assertEquals(omit(pkg, [Symbol.asyncDispose]), {
     name: "name",
-    version: `1.2.4-pre.1+${commit.short}`,
+    version: `1.2.5-pre.1+${commit3.short}`,
     directory: repo.path(),
     root: repo.path(),
-    config: { name: "@scope/name" },
-    latest: { version: "1.2.3", range: { to: "name@1.2.3" } },
-    changes: [conventional(commit)],
+    config: { name: "@scope/name", version: "1.2.3" },
+    latest: {
+      version: "1.2.4",
+      tag: "name@1.2.4",
+      range: { from: commit1.hash, to: "name@1.2.4" },
+    },
+    changes: [conventional(commit3)],
   });
 });
 
@@ -52,18 +71,26 @@ Deno.test("tempPackage() creates a package with no config", async () => {
   assertEquals(pkg.config, {});
 });
 
+Deno.test("tempPackage() creates a package with release tag", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [{ subject: "release", tag: ["name@1.2.3"] }],
+  });
+  assertEquals(pkg.version, "1.2.3");
+});
+
 Deno.test("tempWorkspace() creates a disposable workspace", async () => {
   let root: string;
   {
     await using packages = await tempWorkspace({
-      configs: [{ name: "@scope/name", version: "1.2.3" }],
+      config: [{ name: "@scope/name", version: "1.2.3" }],
     });
     const [pkg] = packages;
     assertExists(pkg);
     root = pkg.root;
     assertEquals([...packages], [{
       name: "name",
-      version: `1.2.3`,
+      version: "1.2.3",
       directory: join(root, "name"),
       root,
       config: { name: "@scope/name", version: "1.2.3" },
@@ -76,12 +103,12 @@ Deno.test("tempWorkspace() creates a disposable workspace", async () => {
 
 Deno.test("tempWorkspace() creates workspace in a repository", async () => {
   await using packages = await tempWorkspace({
-    configs: [
+    config: [
       { name: "@scope/name1" },
       { name: "@scope/name2" },
       { name: "@scope/name3" },
     ],
-    commits: [
+    commit: [
       { subject: "fix(name1): bug" },
       { subject: "feat(name2): feature" },
       { subject: "feat(name3)!: breaking" },
@@ -122,7 +149,7 @@ Deno.test("tempWorkspace() creates workspace in a repository", async () => {
 });
 
 Deno.test("tempWorkspace() can create a workspace with a nameless package", async () => {
-  await using packages = await tempWorkspace({ configs: [{}] });
+  await using packages = await tempWorkspace({ config: [{}] });
   const [pkg] = packages;
   assertExists(pkg);
   assertEquals(pkg.version, "0.0.0");
@@ -138,7 +165,7 @@ Deno.test("tempWorkspace() can change working directory", async () => {
   const cwd = Deno.cwd();
   {
     await using repo = await tempWorkspace({
-      configs: [{ name: "@scope/name", version: "1.2.3" }],
+      config: [{ name: "@scope/name", version: "1.2.3" }],
       repo: { chdir: true },
     });
     const root = repo[0]?.root;

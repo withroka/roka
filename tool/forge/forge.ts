@@ -308,10 +308,10 @@ import {
   yellow,
 } from "@std/fmt/colors";
 import { join, relative } from "@std/path";
-import { bump } from "./bump.ts";
+import { bump, canBump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
-import { compile, targets } from "./compile.ts";
-import { release } from "./release.ts";
+import { canCompile, compile, targets } from "./compile.ts";
+import { canRelease, release } from "./release.ts";
 import { version } from "./version.ts";
 import {
   type CommitOptions,
@@ -377,9 +377,7 @@ export interface ForgeOptions {
  *
  * @returns The exit code of the command
  */
-export async function forge(
-  options?: ForgeOptions,
-): Promise<number> {
+export async function forge(options?: ForgeOptions): Promise<number> {
   const cmd = new Command()
     .name("forge")
     .version(await version({ release: true, target: true }))
@@ -439,14 +437,13 @@ function listCommand(context: ForgeOptions | undefined) {
 function packageRow(pkg: Package): string[] {
   const name = pkg.config.name ?? pkg.name;
   if (pkg.config.version === undefined) return [name];
-  if (pkg.version !== (pkg.config.version)) { // modified
-    return console.row(yellow, [name, pkg.version]);
-  }
-  if (pkg.config.version !== (pkg.latest?.version ?? "0.0.0")) { // releasing
+  if (canRelease(pkg)) {
     return console.row(red, [
       name,
       `${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`,
     ]);
+  } else if (canBump(pkg)) {
+    return console.row(yellow, [name, pkg.version]);
   }
   return console.row(cyan, [name, pkg.version]);
 }
@@ -544,7 +541,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
             ...changelogOptions,
             content: {
               title: unreleased
-                ? `${pkg.name}@${pkg.version} (unreleased)`
+                ? `${pkg.name}@${pkg.version} (post-release)`
                 : `${pkg.name}@${pkg.version}`,
             },
           });
@@ -591,7 +588,7 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
         packages,
         empty: "No packages to compile",
         filter: {
-          fn: (pkg) => pkg.config.forge !== undefined,
+          fn: canCompile,
           error: 'Missing "forge" configuration for compile',
         },
       }, context);
@@ -644,8 +641,8 @@ function bumpCommand(context: ForgeOptions | undefined) {
         packages,
         empty: "No packages to bump",
         filter: {
-          fn: (pkg) => pkg.config.version !== undefined,
-          error: 'Package(s) missing "version" configuration',
+          fn: canBump,
+          error: "Nothing to bump since last release for package(s)",
         },
       }, context);
       if (!found.length) return;
@@ -656,7 +653,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
       if (pr) {
         console.log(SUCCESS, "Created bump pull request");
         console.log();
-        console.log(`  [${pr.url}]`);
+        console.log(`  (${pr.url})`);
         console.log();
       } else {
         console.log(SUCCESS, "Bumped package versions");
@@ -682,21 +679,19 @@ function releaseCommand(context: ForgeOptions | undefined) {
         packages,
         empty: "No packages to release",
         filter: {
-          fn: (pkg) =>
-            pkg.config.version !== undefined &&
-            pkg.config.version !== (pkg.latest?.version ?? "0.0.0"),
+          fn: canRelease,
           error: "Nothing to release for package(s)",
         },
       }, context);
       if (!found.length) return;
       await pool(found, async (pkg) => {
-        const [rls, assets] = await release(pkg, {
+        const { release: rls, assets } = await release(pkg, {
           ...options,
           ...context?.repo && { repo: context.repo },
         });
         console.log(SUCCESS, `Created release ${pkg.name}@${pkg.version}`);
         console.log();
-        console.log(`  [${rls.url}]`);
+        console.log(`  (${rls.url})`);
         console.log();
         if (assets.length) {
           assets.forEach((asset) => console.log(ARTIFACT, gray(asset.name)));
@@ -718,7 +713,7 @@ async function find(
 ): Promise<Package[]> {
   let found = await workspace({
     ...options?.repo && { root: options?.repo.git.path() },
-    filters: packages,
+    filter: packages,
   });
   if (filter) {
     const [filtered, skipped] = partition(found, filter.fn);

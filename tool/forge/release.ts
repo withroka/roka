@@ -30,7 +30,7 @@ import {
   type Repository,
 } from "@roka/github";
 import { assertExists } from "@std/assert";
-import { lessOrEqual, parse } from "@std/semver";
+import { greaterThan, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
 import { type Package, PackageError } from "./workspace.ts";
@@ -67,7 +67,7 @@ export interface ReleaseOptions {
  *
  * (async () => {
  *   const pkg = await packageInfo();
- *   const [rls, assets] = await release(pkg, { draft: true });
+ *   const { release: rls, assets } = await release(pkg, { draft: true });
  *   return { rls, assets };
  * });
  * ```
@@ -81,7 +81,7 @@ export interface ReleaseOptions {
 export async function release(
   pkg: Package,
   options?: ReleaseOptions,
-): Promise<[Release, ReleaseAsset[]]> {
+): Promise<{ release: Release; assets: ReleaseAsset[] }> {
   const {
     repo = await github(options).repos.get({ directory: pkg.root }),
     draft = false,
@@ -92,11 +92,9 @@ export async function release(
       `Cannot release without configuration version: ${pkg.name}`,
     );
   }
-  const version = parse(pkg.config.version);
-  const latest = parse(pkg.latest?.version ?? "0.0.0");
-  if (lessOrEqual(version, latest)) {
+  if (!canRelease(pkg)) {
     throw new PackageError(`Release version not newer: ${pkg.name}`, {
-      cause: { version: pkg.config.version, latest: pkg.latest?.version },
+      cause: { pkg },
     });
   }
   const name = `${pkg.name}@${pkg.config.version}`;
@@ -108,7 +106,7 @@ export async function release(
     tag: name,
     body: body(pkg, repo, options),
     draft,
-    prerelease: !!version.prerelease?.length,
+    prerelease: !!parse(pkg.config.version).prerelease?.length,
     commit: head.hash,
   };
   if (release) {
@@ -116,7 +114,17 @@ export async function release(
   } else {
     release = await repo.releases.create(name, { ...data });
   }
-  return [release, await upload(pkg, release)];
+  return { release, assets: await upload(pkg, release) };
+}
+
+/** Checks if the package can be released. */
+export function canRelease(pkg: Package): boolean {
+  if (pkg.config.version === undefined) return false;
+  if (pkg.config.version === "0.0.0") return false;
+  return greaterThan(
+    parse(pkg.config.version),
+    parse(pkg.latest?.version ?? "0.0.0"),
+  );
 }
 
 async function upload(pkg: Package, release: Release): Promise<ReleaseAsset[]> {

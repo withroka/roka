@@ -117,12 +117,11 @@ export async function compile(
     target = [Deno.build.target],
     concurrency = navigator.hardwareConcurrency,
   } = options ?? {};
-  const { main, include = [] } = pkg.config.forge ?? {};
-  if (!main) {
-    throw new PackageError(
-      `Package needs "forge" configuration for compile: ${pkg.name}`,
-    );
+  if (!canCompile(pkg)) {
+    throw new PackageError(`Package needs "forge" configuration: ${pkg.name}`);
   }
+  const { main, include = [] } = pkg.config.forge ?? {};
+  assertExists(main);
   const directory = join(dist, pkg.name, pkg.version);
   try {
     await Deno.remove(directory, { recursive: true });
@@ -169,6 +168,11 @@ export async function compile(
     artifacts.push(checksumFile);
   }
   return artifacts;
+}
+
+/** Checks if the package is configured to be compiled. */
+export function canCompile(pkg: Package): boolean {
+  return pkg.config.forge?.main !== undefined;
 }
 
 /**
