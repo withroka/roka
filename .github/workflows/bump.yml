@@ -9,13 +9,19 @@ on:
         type: choice
         options:
           - All packages
+          - assert
           - async
           - config
-          - forge
+          - deno
+          - fs
           - git
           - github
+          - html
           - http
+          - maybe
           - testing
+          - flow
+          - forge
       prerelease:
         description: "Pre-release"
         required: false
