@@ -1,7 +1,7 @@
 name: Title
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - reopened
@@ -15,14 +15,11 @@ jobs:
   title:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
       - name: Setup
         uses: denoland/setup-deno@v2
 
       - name: Check PR title
-        run: deno run -Pq tool/forge/forge.ts title "$TITLE" --types \
+        run: deno run -A jsr:@roka/forge title --verbose "$TITLE" --types \
           build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test
         env:
           TITLE: ${{ github.event.pull_request.title }}
