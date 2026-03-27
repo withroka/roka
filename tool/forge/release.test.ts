@@ -4,11 +4,11 @@ import { fakeRelease, fakeRepository } from "@roka/github/testing";
 import {
   assert,
   assertEquals,
+  assertExists,
   assertFalse,
   assertObjectMatch,
   assertRejects,
 } from "@std/assert";
-import { assertExists } from "@std/assert/exists";
 import { dirname, join } from "@std/path";
 import { canRelease, release } from "./release.ts";
 import { tempPackage, unstableTestImports } from "./testing.ts";

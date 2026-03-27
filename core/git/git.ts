@@ -80,13 +80,13 @@ import {
   assertGreater,
 } from "@std/assert";
 import {
+  deepMerge,
   distinct,
+  filterValues,
   mapEntries,
   mapValues,
   slidingWindows,
 } from "@std/collections";
-import { deepMerge } from "@std/collections/deep-merge";
-import { filterValues } from "@std/collections/filter-values";
 import { join, normalize, resolve, toFileUrl } from "@std/path";
 import { canParse, greaterOrEqual, parse } from "@std/semver";
 

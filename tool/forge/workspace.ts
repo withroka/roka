@@ -54,8 +54,7 @@ import { type Commit, git, GitError, type Tag } from "@roka/git";
 import { conventional, type ConventionalCommit } from "@roka/git/conventional";
 import { maybe } from "@roka/maybe";
 import { assertExists } from "@std/assert";
-import { distinct } from "@std/collections";
-import { mapKeys } from "@std/collections/map-keys";
+import { distinct, mapKeys } from "@std/collections";
 import { expandGlob } from "@std/fs";
 import {
   basename,
