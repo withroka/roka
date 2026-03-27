@@ -71,6 +71,14 @@ Deno.test("tempPackage() creates a package with no config", async () => {
   assertEquals(pkg.config, {});
 });
 
+Deno.test("tempPackage() creates a package with release tag", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name" },
+    commit: [{ subject: "release", tag: ["name@1.2.3"] }],
+  });
+  assertEquals(pkg.version, "1.2.3");
+});
+
 Deno.test("tempWorkspace() creates a disposable workspace", async () => {
   let root: string;
   {

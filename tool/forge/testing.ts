@@ -60,7 +60,6 @@ export interface TempWorkspaceOptions {
  * automatically removed when the package is disposed.
  *
  * @example Create a temporary package from configuration
- *
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
  * import { assertEquals } from "@std/assert";
@@ -73,17 +72,20 @@ export interface TempWorkspaceOptions {
  * assertEquals(pkg.version, "1.2.3");
  * ```
  *
- * @example Create a package with config version update
- *
+ * @example Create a package with config version updates
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
  * import { assertEquals } from "@std/assert";
  *
  * await using pkg = await tempPackage({
- *   config: { name: "@scope/name" },
+ *   config: { name: "@scope/name", version: "1.2.3" },
  *   commit: [{
  *     subject: "bump",
- *     config: [{ name: "@scope/name", version: "1.2.3" }],
+ *     config: [
+ *       { name: "@scope/name", version: "1.2.1" },
+ *       { name: "@scope/name", version: "1.2.2" },
+ *       { name: "@scope/name", version: "1.2.3" },
+ *     ],
  *   }],
  * });
  *
@@ -91,7 +93,6 @@ export interface TempWorkspaceOptions {
  * ```
  *
  * @example Create a package with release tag
- *
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
  * import { assertEquals } from "@std/assert";
@@ -121,7 +122,6 @@ export async function tempPackage(
  * automatically removed when the workspace is disposed.
  *
  * @example Create a temporary workspace from configurations
- *
  * ```ts
  * import { tempWorkspace } from "@roka/forge/testing";
  * import { assertEquals } from "@std/assert";
@@ -141,7 +141,6 @@ export async function tempPackage(
  * ```
  *
  * @example Create a workspace with given commits and tags
- *
  * ```ts
  * import { tempWorkspace } from "@roka/forge/testing";
  * import { assertEquals } from "@std/assert";
