@@ -653,7 +653,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
       if (pr) {
         console.log(SUCCESS, "Created bump pull request");
         console.log();
-        console.log(`  [${pr.url}]`);
+        console.log(`  (${pr.url})`);
         console.log();
       } else {
         console.log(SUCCESS, "Bumped package versions");
@@ -691,7 +691,7 @@ function releaseCommand(context: ForgeOptions | undefined) {
         });
         console.log(SUCCESS, `Created release ${pkg.name}@${pkg.version}`);
         console.log();
-        console.log(`  [${rls.url}]`);
+        console.log(`  (${rls.url})`);
         console.log();
         if (assets.length) {
           assets.forEach((asset) => console.log(ARTIFACT, gray(asset.name)));
