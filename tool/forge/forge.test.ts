@@ -19,8 +19,8 @@ const WORKSPACE: TempWorkspaceOptions = {
     { name: "@scope/package2", version: "2.0.0", exports: "./package1.ts" },
     { name: "@scope/package3", version: "3.0.0" },
     { name: "@scope/package4", version: "4.0.0" },
-    { name: "@scope/directory/package5", version: "0.0.0" },
-    { name: "@scope/package6", version: "0.1.0" },
+    { name: "@scope/package5", version: "0.1.0" },
+    { name: "@scope/directory/package6", version: "0.0.0" },
     { name: "@scope/package7" },
   ],
   commit: [
@@ -31,11 +31,12 @@ const WORKSPACE: TempWorkspaceOptions = {
     { subject: "feat(package2): feature", tag: ["package3@2.0.0"] },
     { subject: "docs(package3): fix typo" },
     { subject: "refactor(package4)!: redesign api" },
-    { subject: "style(package5): tabs over spaces" },
+    { subject: "feat(package5): add feature" },
     {
-      subject: "chore(package6): bump version",
-      config: [{ name: "@scope/package6", version: "0.1.0" }],
+      subject: "chore(package5): bump version",
+      config: [{ name: "@scope/package5", version: "0.1.0" }],
     },
+    { subject: "style(package6): tabs over spaces" },
   ],
 };
 

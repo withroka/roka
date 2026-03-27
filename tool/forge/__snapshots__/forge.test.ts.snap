@@ -57,8 +57,8 @@ snapshot[`forge list 1`] = `
 @scope/package2           2.1.0-pre.1+<hash>
 @scope/package3           2.0.0 → 3.0.0
 @scope/package4           5.0.0-pre.1+<hash>
-@scope/directory/package5 0.0.0
-@scope/package6           0.1.0 → 0.1.0
+@scope/package5           0.0.0 → 0.1.0
+@scope/directory/package6 0.0.0
 @scope/package7
 ",
 }
@@ -77,8 +77,8 @@ main                      package1/main.ts
 
 @scope/package3           2.0.0 → 3.0.0
 @scope/package4           5.0.0-pre.1+<hash>
-@scope/directory/package5 0.0.0
-@scope/package6           0.1.0 → 0.1.0
+@scope/package5           0.0.0 → 0.1.0
+@scope/directory/package6 0.0.0
 @scope/package7
 ",
 }
@@ -92,8 +92,8 @@ snapshot[`forge list [pattern] 1`] = `
 @scope/package2           2.1.0-pre.1+<hash>
 @scope/package3           2.0.0 → 3.0.0
 @scope/package4           5.0.0-pre.1+<hash>
-@scope/directory/package5 0.0.0
-@scope/package6           0.1.0 → 0.1.0
+@scope/package5           0.0.0 → 0.1.0
+@scope/directory/package6 0.0.0
 @scope/package7
 ",
 }
@@ -138,9 +138,14 @@ package4@5.0.0-pre.1+<hash>
 
   refactor(package4)!: redesign api
 
-package5@0.0.0
+package5@0.1.0
 
-  style(package5): tabs over spaces
+  feat(package5): add feature
+  chore(package5): bump version
+
+package6@0.0.0
+
+  style(package6): tabs over spaces
 
 ",
 }
@@ -171,13 +176,14 @@ package4@5.0.0-pre.1+<hash>
 
   ♻️ redesign api 💥
 
-package5@0.0.0
+package5@0.1.0
+
+  ✨ add feature
+  🧹 bump version
+
+package6@0.0.0
 
   🎨 tabs over spaces
-
-package6@0.1.0
-
-  🧹 bump version
 
 ",
 }
@@ -199,6 +205,10 @@ package4@5.0.0-pre.1+<hash>
 
   refactor(package4)!: redesign api
 
+package5@0.1.0
+
+  feat(package5): add feature
+
 ",
 }
 `;
@@ -218,6 +228,10 @@ package2@2.1.0-pre.1+<hash>
 package2@1.0.0
 
   feat(package2): package2
+
+package5@0.1.0
+
+  feat(package5): add feature
 
 ",
 }
@@ -302,7 +316,7 @@ snapshot[`forge release --draft --emoji 1`] = `
 
   [https://github.com/owner/repo/releases/package1@1.0.0]
 
-✓ Created release package6@0.1.0
+✓ Created release package5@0.1.0
 
   [https://github.com/owner/repo/releases/package1@1.0.0]
 

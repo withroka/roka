@@ -15,7 +15,7 @@ Deno.test("tempPackage() creates a disposable package", async () => {
     directory = pkg.directory;
     assertEquals(omit(pkg, [Symbol.asyncDispose]), {
       name: "name",
-      version: `1.2.3`,
+      version: "1.2.3",
       directory,
       root: directory,
       config: { name: "@scope/name", version: "1.2.3" },
@@ -82,7 +82,7 @@ Deno.test("tempWorkspace() creates a disposable workspace", async () => {
     root = pkg.root;
     assertEquals([...packages], [{
       name: "name",
-      version: `1.2.3`,
+      version: "1.2.3",
       directory: join(root, "name"),
       root,
       config: { name: "@scope/name", version: "1.2.3" },

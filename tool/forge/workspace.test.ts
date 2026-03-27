@@ -315,6 +315,27 @@ Deno.test("packageInfo() calculates patch version update", async () => {
   });
 });
 
+Deno.test("packageInfo() calculates patch version update over untagged release", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [
+      {
+        subject: "initial",
+        config: [{ name: "@scope/name", version: "1.2.3" }],
+      },
+      { subject: "fix: bug fix" },
+    ],
+  });
+  const directory = temp.directory;
+  const repo = git({ directory });
+  const commit = await repo.commit.head();
+  assertObjectMatch(await packageInfo({ directory }), {
+    name: "name",
+    version: `1.2.4-pre.1+${commit.short}`,
+    changes: [conventional(commit)],
+  });
+});
+
 Deno.test("packageInfo() calculates minor version update", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
@@ -333,11 +354,53 @@ Deno.test("packageInfo() calculates minor version update", async () => {
   });
 });
 
+Deno.test("packageInfo() calculates minor version update over untagged release", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [
+      {
+        subject: "initial",
+        config: [{ name: "@scope/name", version: "1.2.3" }],
+      },
+      { subject: "feat: new feature" },
+    ],
+  });
+  const directory = temp.directory;
+  const repo = git({ directory });
+  const commit = await repo.commit.head();
+  assertObjectMatch(await packageInfo({ directory }), {
+    name: "name",
+    version: `1.3.0-pre.1+${commit.short}`,
+    changes: [conventional(commit)],
+  });
+});
+
 Deno.test("packageInfo() calculates major version update", async () => {
   await using temp = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
     commit: [
       { subject: "initial", tag: ["name@1.2.3"] },
+      { subject: "fix!: breaking change" },
+    ],
+  });
+  const directory = temp.directory;
+  const repo = git({ directory });
+  const commit = await repo.commit.head();
+  assertObjectMatch(await packageInfo({ directory }), {
+    name: "name",
+    version: `2.0.0-pre.1+${commit.short}`,
+    changes: [conventional(commit)],
+  });
+});
+
+Deno.test("packageInfo() calculates major version update over untagged release", async () => {
+  await using temp = await tempPackage({
+    config: { name: "@scope/name", version: "1.2.3" },
+    commit: [
+      {
+        subject: "initial",
+        config: [{ name: "@scope/name", version: "1.2.3" }],
+      },
       { subject: "fix!: breaking change" },
     ],
   });

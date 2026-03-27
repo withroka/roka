@@ -292,7 +292,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
-import { release } from "@roka/forge/release";
+import { canRelease, release } from "@roka/forge/release";
 import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
@@ -309,9 +309,9 @@ import {
   yellow,
 } from "@std/fmt/colors";
 import { join, relative } from "@std/path";
-import { bump } from "./bump.ts";
+import { bump, canBump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
-import { compile, targets } from "./compile.ts";
+import { canCompile, compile, targets } from "./compile.ts";
 import { version } from "./version.ts";
 import {
   type CommitOptions,
@@ -425,6 +425,7 @@ function listCommand(context: ForgeOptions | undefined) {
         { packages, empty: "No packages found" },
         context,
       );
+      console.log(found);
       if (!found.length) return;
       Table.from([
         ...found.map((pkg) => {
@@ -437,7 +438,7 @@ function listCommand(context: ForgeOptions | undefined) {
 function packageRow(pkg: Package): string[] {
   const name = pkg.config.name ?? pkg.name;
   if (pkg.config.version === undefined) return [name];
-  if (canRelease(pkg)) { // releasing
+  if (canRelease(pkg)) {
     return console.row(red, [
       name,
       `${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`,
@@ -541,7 +542,7 @@ function changelogCommand(context: ForgeOptions | undefined) {
             ...changelogOptions,
             content: {
               title: unreleased
-                ? `${pkg.name}@${pkg.version} (unreleased)`
+                ? `${pkg.name}@${pkg.version} (post-release)`
                 : `${pkg.name}@${pkg.version}`,
             },
           });
@@ -728,20 +729,6 @@ async function find(
     console.warn(packages.length ? `${empty}: ${packages.join(", ")}` : empty);
   }
   return found;
-}
-
-function canCompile(pkg: Package): boolean {
-  return pkg.config.forge !== undefined;
-}
-
-function canBump(pkg: Package): boolean {
-  return pkg.config.version !== pkg.version;
-}
-
-function canRelease(pkg: Package): boolean {
-  return pkg.config.version !== undefined &&
-    (pkg.config.version !== (pkg.latest?.version ?? "0.0.0") ||
-      (pkg?.latest !== undefined && pkg?.latest.tag === undefined));
 }
 
 if (import.meta.main) Deno.exit(await forge());

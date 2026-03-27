@@ -128,11 +128,7 @@ export interface Package {
   root: string;
   /** Package config from `deno.json`. */
   config: Config;
-  /**
-   * Latest release of this package.
-   *
-   * This will be calculated only if the Git history is available.
-   */
+  /** Latest release of this package. */
   latest?: Release;
   /**
    * Commits since the latest release.
@@ -416,7 +412,7 @@ export async function packageInfo(options?: PackageOptions): Promise<Package> {
       ...head && latest?.range.to &&
         { range: { from: latest.range.to, to: head.hash } },
     });
-    if (latest !== undefined) pkg.latest = latest;
+    if (latest) pkg.latest = latest;
     if (changes !== undefined) {
       pkg.changes = changes;
       pkg.version = calculateVersion(pkg, latest, changes, head);
@@ -489,13 +485,13 @@ export async function releases(
     .filter(parseTag)
     .map((tag) => {
       const version = parseTag(tag);
-      assertExists(version, `Cannot parse version from tag`);
+      assertExists(version, "Cannot parse version from tag");
       const semver = parse(version);
       return { version: parseTag(tag), semver, tag };
     })
     .filter((v) => prerelease || !v.semver.prerelease?.length);
   const releases = tags.map(({ version, tag }, index): Release => {
-    assertExists(version, `Cannot parse version from tag`);
+    assertExists(version, "Cannot parse version from tag");
     const previous = tags.slice(index + 1).find((v) =>
       !v.semver.prerelease?.length
     );
@@ -517,6 +513,8 @@ export async function releases(
     last = release;
     if (limit !== undefined && releases.length >= limit + 1) break;
   }
+  // edge case: single untagged release is indistinguishable from first release
+  if (releases.length === 1 && !releases[0]?.tag) return [];
   return releases.slice(0, limit);
 }
 

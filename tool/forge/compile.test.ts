@@ -6,8 +6,9 @@ import {
   assertMatch,
   assertRejects,
 } from "@std/assert";
+import { assertFalse } from "@std/assert/false";
 import { basename, dirname, join } from "@std/path";
-import { compile } from "./compile.ts";
+import { canCompile, compile } from "./compile.ts";
 import { tempPackage, unstableTestImports } from "./testing.ts";
 import { PackageError } from "./workspace.ts";
 
@@ -137,4 +138,11 @@ Deno.test("compile({ bundle }) creates release bundles", async () => {
     checksumContent,
     /[A-Fa-f0-9]{64}\s+x86_64-pc-windows-msvc.zip/,
   );
+});
+
+Deno.test("canCompile() filters for packages with compile configuration", async () => {
+  const pkg = await tempPackage();
+  assertFalse(canCompile({ ...pkg, config: {} }));
+  assertFalse(canCompile({ ...pkg, config: { forge: {} } }));
+  assert(canCompile({ ...pkg, config: { forge: { main: "./main.ts" } } }));
 });
