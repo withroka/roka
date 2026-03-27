@@ -11,7 +11,7 @@ import {
 } from "@std/assert";
 import { dirname, join } from "@std/path";
 import { canRelease, release } from "./release.ts";
-import { tempPackage, unstableTestImports } from "./testing.ts";
+import { tempPackage, tempWorkspace, unstableTestImports } from "./testing.ts";
 import { PackageError } from "./workspace.ts";
 
 Deno.test("release() rejects package without version", async () => {
@@ -129,7 +129,43 @@ Deno.test("release() creates initial release", async () => {
       "",
       "### Details",
       "",
-      `- [Full changelog](https://host/repo/commits/name@0.1.0/${pkg.directory})`,
+      "- [Full changelog](https://host/repo/commits/name@0.1.0/)",
+      "- [Documentation](https://jsr.io/@scope/name@0.1.0)",
+      "",
+    ].join("\n"),
+    prerelease: false,
+    draft: false,
+  });
+  assertEquals(assets, []);
+});
+
+Deno.test("release() creates initial release in a workspace", async () => {
+  await using packages = await tempWorkspace({
+    config: [{ name: "@scope/name", version: "0.1.0" }],
+    commit: [
+      { subject: "fix(name): bug fix (#2)" },
+      { subject: "feat(name): new feature (#1)" },
+    ],
+  });
+  const [pkg] = packages;
+  assertExists(pkg);
+  const repo = fakeRepository({
+    url: new URL("https://host/repo"),
+    git: git({ directory: pkg.root }),
+  });
+  const { release: rls, assets } = await release(pkg, { repo });
+  assertObjectMatch(rls, {
+    tag: "name@0.1.0",
+    name: "name@0.1.0",
+    body: [
+      "## Initial release",
+      "",
+      "feat(name): new feature (#1)",
+      "fix(name): bug fix (#2)",
+      "",
+      "### Details",
+      "",
+      "- [Full changelog](https://host/repo/commits/name@0.1.0/name)",
       "- [Documentation](https://jsr.io/@scope/name@0.1.0)",
       "",
     ].join("\n"),
@@ -159,6 +195,39 @@ Deno.test("release() creates update release", async () => {
       "## Changes",
       "",
       "feat: new feature (#1)",
+      "",
+      "### Details",
+      "",
+      "- [Full changelog](https://host/repo/compare/name@1.2.3...name@1.3.0)",
+      "- [Documentation](https://jsr.io/@scope/name@1.3.0)",
+      "",
+    ].join("\n"),
+  });
+  assertEquals(assets, []);
+});
+
+Deno.test("release() creates update release in a workspace", async () => {
+  await using packages = await tempWorkspace({
+    config: [{ name: "@scope/name", version: "1.3.0" }],
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
+      { subject: "feat(name): new feature (#1)" },
+    ],
+  });
+  const [pkg] = packages;
+  assertExists(pkg);
+  const repo = fakeRepository({
+    url: new URL("https://host/repo"),
+    git: git({ directory: pkg.root }),
+  });
+  const { release: rls, assets } = await release(pkg, { repo });
+  assertObjectMatch(rls, {
+    tag: "name@1.3.0",
+    name: "name@1.3.0",
+    body: [
+      "## Changes",
+      "",
+      "feat(name): new feature (#1)",
       "",
       "### Details",
       "",

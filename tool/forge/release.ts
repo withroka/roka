@@ -30,6 +30,7 @@ import {
   type Repository,
 } from "@roka/github";
 import { assertExists } from "@std/assert";
+import { relative } from "@std/path";
 import { greaterThan, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
@@ -156,7 +157,7 @@ function body(
   const latestTag = pkg.latest && `${pkg.name}@${pkg.latest?.version}`;
   const changelogUrl = latestTag
     ? `compare/${latestTag}...${currentTag}`
-    : `commits/${currentTag}/${pkg.directory}`;
+    : `commits/${currentTag}/${relative(pkg.root, pkg.directory)}`;
   return changelog(pkg.changes ?? [], {
     content: {
       title,
