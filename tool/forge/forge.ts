@@ -292,6 +292,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
+import { release } from "@roka/forge/release";
 import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
@@ -311,7 +312,6 @@ import { join, relative } from "@std/path";
 import { bump } from "./bump.ts";
 import { changelog, type ChangelogOptions } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
-import { release } from "./release.ts";
 import { version } from "./version.ts";
 import {
   type CommitOptions,
@@ -377,9 +377,7 @@ export interface ForgeOptions {
  *
  * @returns The exit code of the command
  */
-export async function forge(
-  options?: ForgeOptions,
-): Promise<number> {
+export async function forge(options?: ForgeOptions): Promise<number> {
   const cmd = new Command()
     .name("forge")
     .version(await version({ release: true, target: true }))
@@ -439,17 +437,13 @@ function listCommand(context: ForgeOptions | undefined) {
 function packageRow(pkg: Package): string[] {
   const name = pkg.config.name ?? pkg.name;
   if (pkg.config.version === undefined) return [name];
-  if (pkg.version !== (pkg.config.version)) { // modified
-    return console.row(yellow, [name, pkg.version]);
-  }
-  if (
-    pkg.config.version !== (pkg.latest?.version ?? "0.0.0") ||
-    pkg?.latest && !pkg?.latest.tag
-  ) { // releasing
+  if (canRelease(pkg)) { // releasing
     return console.row(red, [
       name,
       `${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`,
     ]);
+  } else if (canBump(pkg)) {
+    return console.row(yellow, [name, pkg.version]);
   }
   return console.row(cyan, [name, pkg.version]);
 }
@@ -594,7 +588,7 @@ function compileCommand(targets: string[], context: ForgeOptions | undefined) {
         packages,
         empty: "No packages to compile",
         filter: {
-          fn: (pkg) => pkg.config.forge !== undefined,
+          fn: canCompile,
           error: 'Missing "forge" configuration for compile',
         },
       }, context);
@@ -647,7 +641,7 @@ function bumpCommand(context: ForgeOptions | undefined) {
         packages,
         empty: "No packages to bump",
         filter: {
-          fn: (pkg) => pkg.config.version !== undefined,
+          fn: canBump,
           error: 'Package(s) missing "version" configuration',
         },
       }, context);
@@ -685,15 +679,13 @@ function releaseCommand(context: ForgeOptions | undefined) {
         packages,
         empty: "No packages to release",
         filter: {
-          fn: (pkg) =>
-            pkg.config.version !== undefined &&
-            pkg.config.version !== (pkg.latest?.version ?? "0.0.0"),
+          fn: canRelease,
           error: "Nothing to release for package(s)",
         },
       }, context);
       if (!found.length) return;
       await pool(found, async (pkg) => {
-        const [rls, assets] = await release(pkg, {
+        const { release: rls, assets } = await release(pkg, {
           ...options,
           ...context?.repo && { repo: context.repo },
         });
@@ -721,7 +713,7 @@ async function find(
 ): Promise<Package[]> {
   let found = await workspace({
     ...options?.repo && { root: options?.repo.git.path() },
-    filters: packages,
+    filter: packages,
   });
   if (filter) {
     const [filtered, skipped] = partition(found, filter.fn);
@@ -736,6 +728,20 @@ async function find(
     console.warn(packages.length ? `${empty}: ${packages.join(", ")}` : empty);
   }
   return found;
+}
+
+function canCompile(pkg: Package): boolean {
+  return pkg.config.forge !== undefined;
+}
+
+function canBump(pkg: Package): boolean {
+  return pkg.config.version !== pkg.version;
+}
+
+function canRelease(pkg: Package): boolean {
+  return pkg.config.version !== undefined &&
+    (pkg.config.version !== (pkg.latest?.version ?? "0.0.0") ||
+      (pkg?.latest !== undefined && pkg?.latest.tag === undefined));
 }
 
 if (import.meta.main) Deno.exit(await forge());

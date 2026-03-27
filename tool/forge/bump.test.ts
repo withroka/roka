@@ -11,8 +11,8 @@ import { PackageError, packageInfo } from "./workspace.ts";
 Deno.test("bump() minor updates released package", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.2.3` },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature" },
     ],
   });
@@ -30,7 +30,7 @@ Deno.test("bump() minor updates released package", async () => {
 Deno.test("bump() minor updates unreleased package", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [{ subject: "feat: new feature" }],
+    commit: [{ subject: "feat: new feature" }],
   });
   const repo = git({ directory: pkg.root });
   const commit = await repo.commit.head();
@@ -41,7 +41,7 @@ Deno.test("bump() minor updates unreleased package", async () => {
 Deno.test("bump() patch updates unreleased package", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [{ subject: "fix: bug fix" }],
+    commit: [{ subject: "fix: bug fix" }],
   });
   const repo = git({ directory: pkg.root });
   const commit = await repo.commit.head();
@@ -52,7 +52,7 @@ Deno.test("bump() patch updates unreleased package", async () => {
 Deno.test("bump() patch updates package with unstable changes", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [{ subject: "feat(unstable): new unstable feature" }],
+    commit: [{ subject: "feat(unstable): new unstable feature" }],
   });
   const repo = git({ directory: pkg.root });
   const commit = await repo.commit.head();
@@ -63,8 +63,8 @@ Deno.test("bump() patch updates package with unstable changes", async () => {
 Deno.test("bump() does not mutate package on failure", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.0.1" },
-    commits: [
-      { subject: "initial", tags: ["name@0.0.1"] },
+    commit: [
+      { subject: "initial", tag: ["name@0.0.1"] },
       { subject: "feat: new feature" },
     ],
   });
@@ -76,16 +76,16 @@ Deno.test("bump() does not mutate package on failure", async () => {
 
 Deno.test("bump() updates workspace", async () => {
   const packages = await tempWorkspace({
-    configs: [
+    config: [
       { name: "@scope/name1" },
       { name: "@scope/name2" },
       { name: "@scope/name3" },
       { name: "@scope/name4" },
     ],
-    commits: [
+    commit: [
       {
         subject: "initial",
-        tags: ["name1@1.2.3", "name2@1.2.3", "name3@1.2.3", "name4@1.2.3"],
+        tag: ["name1@1.2.3", "name2@1.2.3", "name3@1.2.3", "name4@1.2.3"],
       },
       { subject: "fix(name1): fix bug (#1)" },
       { subject: "feat(name2): new feature (#2)" },
@@ -105,8 +105,8 @@ Deno.test("bump() updates workspace", async () => {
 Deno.test("bump() rejects package with modified config file", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.2.3` },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature" },
     ],
   });
@@ -124,8 +124,8 @@ Deno.test("bump() rejects package with modified config file", async () => {
 Deno.test("bump({ release }) bumps to release version", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.2.3` },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature" },
     ],
   });
@@ -135,11 +135,11 @@ Deno.test("bump({ release }) bumps to release version", async () => {
 
 Deno.test("bump({ changelog }) creates a changelog file", async () => {
   const packages = await tempWorkspace({
-    configs: [
+    config: [
       { name: "@scope/name1" },
       { name: "@scope/name2" },
     ],
-    commits: [
+    commit: [
       { subject: "feat(name1): introduce name1 (#1)" },
       { subject: "feat(name2): introduce name2 (#2)" },
       { subject: "fix(name1): fix bug (#3)" },
@@ -176,7 +176,7 @@ Deno.test("bump({ changelog }) creates a changelog file", async () => {
 Deno.test("bump({ changelog }) can update a changelog file", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [{ subject: "fix: bug (#42)" }],
+    commit: [{ subject: "fix: bug (#42)" }],
   });
   const changelog = join(pkg.directory, "changelog.txt");
   await Deno.writeTextFile(
@@ -209,8 +209,8 @@ Deno.test("bump({ pr }) creates a pull request", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
     repo: { clone: remote },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature (#42)" },
       { subject: "fix: force pushed" },
     ],
@@ -263,8 +263,8 @@ Deno.test("bump({ pr }) can update a pull request", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
     repo: { clone: remote },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature (#42)" },
     ],
   });
@@ -302,7 +302,7 @@ Deno.test("bump({ pr }) creates a pull request against the current branch", asyn
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },
-    commits: [{ subject: "feat: new feature" }],
+    commit: [{ subject: "feat: new feature" }],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   const pr = await bump([pkg], {
@@ -319,7 +319,7 @@ Deno.test("bump({ pr }) creates a pull request against the current branch", asyn
 Deno.test("bump({ pr }) rejects pull request without update", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ subject: "feat: new feature", tags: ["name@0.1.0"] }],
+    commit: [{ subject: "feat: new feature", tag: ["name@0.1.0"] }],
   });
   await assertRejects(() => bump([pkg], { pr: true }), PackageError);
 });
@@ -329,8 +329,8 @@ Deno.test("bump({ pr }) rejects if pull request branch exists locally", async ()
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.2.3" },
     repo: { clone: remote },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature (#42)" },
       { subject: "fix: force pushed" },
     ],
@@ -346,7 +346,7 @@ Deno.test("bump({ draft }) can create a draft pull request", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
     repo: { clone: remote },
-    commits: [{ subject: "feat: new feature" }],
+    commit: [{ subject: "feat: new feature" }],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   const pr = await bump([pkg], {

@@ -13,7 +13,7 @@
  * import { tempWorkspace } from "@roka/forge/testing";
  *
  * await using _ = await tempWorkspace({
- *   configs: [
+ *   config: [
  *     { name: "@scope/name1" },
  *     { name: "@scope/name2" },
  *   ],
@@ -40,23 +40,17 @@ export interface TempPackageOptions {
   /** Options for the initialization of the Git repository. */
   repo?: TempRepositoryOptions;
   /** Commits and tags to create in the repository. */
-  commits?: { subject: string; tags?: string[] }[];
+  commit?: { subject: string; config?: Config[]; tag?: string[] }[];
 }
 
 /** Options for the {@linkcode tempWorkspace} function. */
 export interface TempWorkspaceOptions {
   /** File contents for package configurations (`deno.json`). */
-  configs?: Config[];
-  /**
-   * The workspace package list for the root package.
-   *
-   * If this is not provided, it is inferred from the `configs` option.
-   */
-  workspace?: string[];
+  config?: Config[];
   /** Options for the initialization of the Git repository. */
   repo?: TempRepositoryOptions;
   /** Commits and tags to create in the repository. */
-  commits?: { subject: string; tags?: string[] }[];
+  commit?: { subject: string; config?: Config[]; tag?: string[] }[];
 }
 
 /**
@@ -79,7 +73,7 @@ export interface TempWorkspaceOptions {
  * assertEquals(pkg.version, "1.2.3");
  * ```
  *
- * @example Create a package with given commits and tags
+ * @example Create a package with config version update
  *
  * ```ts
  * import { tempPackage } from "@roka/forge/testing";
@@ -87,9 +81,24 @@ export interface TempWorkspaceOptions {
  *
  * await using pkg = await tempPackage({
  *   config: { name: "@scope/name" },
- *   commits: [
- *     { subject: "release", tags: ["name@1.2.3"] },
- *   ],
+ *   commit: [{
+ *     subject: "bump",
+ *     config: [{ name: "@scope/name", version: "1.2.3" }],
+ *   }],
+ * });
+ *
+ * assertEquals(pkg.version, "1.2.3");
+ * ```
+ *
+ * @example Create a package with release tag
+ *
+ * ```ts
+ * import { tempPackage } from "@roka/forge/testing";
+ * import { assertEquals } from "@std/assert";
+ *
+ * await using pkg = await tempPackage({
+ *   config: { name: "@scope/name" },
+ *   commit: [{ subject: "release", tag: ["name@1.2.3"] }],
  * });
  *
  * assertEquals(pkg.version, "1.2.3");
@@ -98,9 +107,8 @@ export interface TempWorkspaceOptions {
 export async function tempPackage(
   options?: TempPackageOptions,
 ): Promise<Package & AsyncDisposable> {
-  const repo = await createRepository(options);
-  await createPackage(repo.path(), options?.config);
-  const pkg = await packageInfo({ directory: repo.path() });
+  const repo = await createRepository({ workspace: false, ...options });
+  const { pkg } = await createPackage(repo.path(), options?.config);
   return Object.assign(pkg, {
     [Symbol.asyncDispose]: repo[Symbol.asyncDispose],
   });
@@ -119,7 +127,7 @@ export async function tempPackage(
  * import { assertEquals } from "@std/assert";
  *
  * await using workspace = await tempWorkspace({
- *   configs: [
+ *   config: [
  *     { name: "@scope/name1", version: "1.2.3" },
  *     { name: "@scope/name2", version: "3.2.1" },
  *   ],
@@ -139,13 +147,13 @@ export async function tempPackage(
  * import { assertEquals } from "@std/assert";
  *
  * await using workspace = await tempWorkspace({
- *   configs: [
+ *   config: [
  *     { name: "@scope/name1" },
  *     { name: "@scope/name2" },
  *   ],
- *   commits: [
- *     { subject: "fix(name1): bug", tags: ["name1@1.2.3"] },
- *     { subject: "fix(name2): bug", tags: ["name2@3.2.1"] },
+ *   commit: [
+ *     { subject: "fix(name1): bug", tag: ["name1@1.2.3"] },
+ *     { subject: "fix(name2): bug", tag: ["name2@3.2.1"] },
  *   ],
  * });
  * const [pkg1, pkg2] = workspace;
@@ -157,21 +165,14 @@ export async function tempPackage(
 export async function tempWorkspace(
   options?: TempWorkspaceOptions,
 ): Promise<Package[] & AsyncDisposable> {
-  function memberDirectory(config: Config, index: number) {
-    if (!config.name) return `package${index}`;
-    return config.name.replace(/^@[^/]+\//, "");
-  }
-  const repo = await createRepository(options);
-  await Promise.all(
-    (options?.configs ?? []).map((config, index) =>
-      createPackage(repo.path(memberDirectory(config, index)), config)
-    ),
-  );
+  const repo = await createRepository({ workspace: true, ...options });
+  await Promise.all((options?.config ?? [])
+    .map((config) =>
+      createPackage(repo.path(memberDirectory(config)), config)
+    ));
   await createPackage(repo.path(), {
-    workspace: options?.workspace ??
-      (options?.configs ?? [])?.map((config, index) =>
-        memberDirectory(config, index)
-      ),
+    workspace: (options?.config ?? [])
+      ?.map((config) => memberDirectory(config)),
   });
   const packages = await workspace({ root: repo.path() });
   return Object.assign(packages, {
@@ -215,12 +216,23 @@ export async function unstableTestImports(): Promise<Record<string, string>> {
 }
 
 async function createRepository(
-  options: TempPackageOptions | TempWorkspaceOptions | undefined,
+  options: { workspace: boolean } & (TempPackageOptions | TempWorkspaceOptions),
 ) {
   const repo = await tempRepository(options?.repo);
-  for (const { subject, tags } of options?.commits ?? []) {
+  for (
+    const { subject, tag: tags, config: configs } of options?.commit ?? []
+  ) {
+    for (const config of configs ?? []) {
+      // deno-lint-ignore no-await-in-loop
+      const { path } = await createPackage(
+        options.workspace ? repo.path(memberDirectory(config)) : repo.path(),
+        config,
+      );
+      // deno-lint-ignore no-await-in-loop
+      await repo.index.add(path);
+    }
     // deno-lint-ignore no-await-in-loop
-    await repo.commit.create({ subject, allowEmpty: true });
+    await repo.commit.create({ subject, allowEmpty: !configs?.length });
     for (const tag of tags ?? []) {
       // deno-lint-ignore no-await-in-loop
       await repo.tag.create(tag);
@@ -230,9 +242,13 @@ async function createRepository(
 }
 
 async function createPackage(directory: string, config: Config | undefined) {
+  const path = join(directory, "deno.json");
   await Deno.mkdir(directory, { recursive: true });
-  await Deno.writeTextFile(
-    join(directory, "deno.json"),
-    JSON.stringify(config ?? {}, undefined, 2),
-  );
+  await Deno.writeTextFile(path, JSON.stringify(config ?? {}, undefined, 2));
+  return { pkg: await packageInfo({ directory }), path };
+}
+
+function memberDirectory(config: Config) {
+  if (!config.name) return "pkg";
+  return config.name.replace(/^@[^/]+\//, "");
 }

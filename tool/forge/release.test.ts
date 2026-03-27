@@ -1,7 +1,12 @@
 import { assertArrayObjectMatch } from "@roka/assert";
 import { git } from "@roka/git";
 import { fakeRelease, fakeRepository } from "@roka/github/testing";
-import { assertEquals, assertObjectMatch, assertRejects } from "@std/assert";
+import {
+  assertEquals,
+  assertExists,
+  assertObjectMatch,
+  assertRejects,
+} from "@std/assert";
 import { dirname, join } from "@std/path";
 import { release } from "./release.ts";
 import { tempPackage, unstableTestImports } from "./testing.ts";
@@ -10,7 +15,7 @@ import { PackageError } from "./workspace.ts";
 Deno.test("release() rejects package without version", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name" },
-    commits: [{ subject: "feat: new feature" }],
+    commit: [{ subject: "feat: new feature" }],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -19,7 +24,19 @@ Deno.test("release() rejects package without version", async () => {
 Deno.test("release() rejects version downgrade", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ subject: "feat: new feature", tags: ["name@0.1.1"] }],
+    commit: [{ subject: "feat: new feature", tag: ["name@0.1.1"] }],
+  });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
+  await assertRejects(() => release(pkg, { repo }), PackageError);
+});
+
+Deno.test("release() rejects version downgrade during migration", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "0.1.0" },
+    commit: [{
+      subject: "feat: new feature",
+      config: [{ name: "@scope/name", version: "0.1.1" }],
+    }],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -28,16 +45,42 @@ Deno.test("release() rejects version downgrade", async () => {
 Deno.test("release() rejects no change", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [{ subject: "feat: new feature", tags: ["name@0.1.0"] }],
+    commit: [{ subject: "feat: new feature", tag: ["name@0.1.0"] }],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
 });
 
+Deno.test("release() accepts no change during migration", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "0.1.0" },
+    commit: [{
+      subject: "feat: new feature",
+      config: [{ name: "@scope/name", version: "0.1.0" }],
+    }],
+  });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
+  const { release: rls } = await release(pkg, { repo });
+  assertExists(rls);
+  assertEquals(rls.tag, "name@0.1.0");
+});
+
 Deno.test("release() rejects 0.0.0", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.0.0" },
-    commits: [{ subject: "feat: new feature" }],
+    commit: [{ subject: "feat: new feature" }],
+  });
+  const repo = fakeRepository({ git: git({ directory: pkg.root }) });
+  await assertRejects(() => release(pkg, { repo }), PackageError);
+});
+
+Deno.test("release() rejects migrating 0.0.0", async () => {
+  await using pkg = await tempPackage({
+    config: { name: "@scope/name", version: "0.0.0" },
+    commit: [{
+      subject: "feat: new feature",
+      config: [{ name: "@scope/name", version: "0.0.0" }],
+    }],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   await assertRejects(() => release(pkg, { repo }), PackageError);
@@ -46,7 +89,7 @@ Deno.test("release() rejects 0.0.0", async () => {
 Deno.test("release() creates initial release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "0.1.0" },
-    commits: [
+    commit: [
       { subject: "fix: bug fix (#2)" },
       { subject: "feat: new feature (#1)" },
     ],
@@ -55,7 +98,7 @@ Deno.test("release() creates initial release", async () => {
     url: new URL("https://host/repo"),
     git: git({ directory: pkg.root }),
   });
-  const [rls, assets] = await release(pkg, { repo });
+  const { release: rls, assets } = await release(pkg, { repo });
   assertObjectMatch(rls, {
     tag: "name@0.1.0",
     name: "name@0.1.0",
@@ -80,8 +123,8 @@ Deno.test("release() creates initial release", async () => {
 Deno.test("release() creates update release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.3.0" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature (#1)" },
     ],
   });
@@ -89,7 +132,7 @@ Deno.test("release() creates update release", async () => {
     url: new URL("https://host/repo"),
     git: git({ directory: pkg.root }),
   });
-  const [rls, assets] = await release(pkg, { repo });
+  const { release: rls, assets } = await release(pkg, { repo });
   assertObjectMatch(rls, {
     tag: "name@1.3.0",
     name: "name@1.3.0",
@@ -111,13 +154,13 @@ Deno.test("release() creates update release", async () => {
 Deno.test("release() can create a pre-release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.3.0-pre.1+fedcba9` },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature" },
     ],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
-  const [rls] = await release(pkg, { repo });
+  const { release: rls } = await release(pkg, { repo });
   assertObjectMatch(rls, {
     name: `name@1.3.0-pre.1+fedcba9`,
     prerelease: true,
@@ -127,8 +170,8 @@ Deno.test("release() can create a pre-release", async () => {
 Deno.test("release() can update an existing release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: `1.3.0` },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature (#1)" },
     ],
   });
@@ -138,7 +181,7 @@ Deno.test("release() can update an existing release", async () => {
   });
   const existing = fakeRelease({ repo, id: 42, tag: "name@1.2.3" });
   repo.releases.list = async () => await Promise.resolve([existing]);
-  const [rls] = await release(pkg, { repo });
+  const { release: rls } = await release(pkg, { repo });
   assertObjectMatch(rls, {
     id: 42,
     body: [
@@ -183,7 +226,7 @@ Deno.test("release() can compile and upload release assets", async () => {
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
   const existing = fakeRelease({ repo, id: 42, tag: "name@1.2.3" });
   repo.releases.list = async () => await Promise.resolve([existing]);
-  const [rls, assets] = await release(pkg, { repo });
+  const { release: rls, assets } = await release(pkg, { repo });
   assertEquals(rls.id, 42);
   assertArrayObjectMatch(assets, [
     { release: rls, name: "x86_64-unknown-linux-gnu.tar.gz" },
@@ -195,12 +238,12 @@ Deno.test("release() can compile and upload release assets", async () => {
 Deno.test("release({ draft }) creates draft release", async () => {
   await using pkg = await tempPackage({
     config: { name: "@scope/name", version: "1.3.0" },
-    commits: [
-      { subject: "initial", tags: ["name@1.2.3"] },
+    commit: [
+      { subject: "initial", tag: ["name@1.2.3"] },
       { subject: "feat: new feature" },
     ],
   });
   const repo = fakeRepository({ git: git({ directory: pkg.root }) });
-  const [rls] = await release(pkg, { repo, draft: true });
+  const { release: rls } = await release(pkg, { repo, draft: true });
   assertEquals(rls.draft, true);
 });

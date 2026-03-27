@@ -212,7 +212,7 @@ export interface WorkspaceOptions {
    *
    * @default {[]}
    */
-  filters?: string[];
+  filter?: string[];
   /**
    * Max concurrent package processing.
    * @default {4}
@@ -323,7 +323,7 @@ export interface ScopeOptions {
  * import { workspace } from "@roka/forge/workspace";
  *
  * (async () => {
- *   const packages = await workspace({ filters: ["my-package"] });
+ *   const packages = await workspace({ filter: ["my-package"] });
  *   return { packages };
  * });
  * ```
@@ -331,7 +331,7 @@ export interface ScopeOptions {
 export async function workspace(
   options?: WorkspaceOptions,
 ): Promise<Package[]> {
-  const { root = ".", filters = [], concurrency = 4 } = options ?? {};
+  const { root = ".", filter: filters = [], concurrency = 4 } = options ?? {};
   const patterns = filters.map((f) => globToRegExp(f));
   const rootPackage = await packageInfo({ directory: root, ...options });
   const packages = rootPackage.config.workspace === undefined
