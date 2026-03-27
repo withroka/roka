@@ -3,10 +3,10 @@ import {
   assert,
   assertEquals,
   assertExists,
+  assertFalse,
   assertMatch,
   assertRejects,
 } from "@std/assert";
-import { assertFalse } from "@std/assert/false";
 import { basename, dirname, join } from "@std/path";
 import { canCompile, compile } from "./compile.ts";
 import { tempPackage, unstableTestImports } from "./testing.ts";
