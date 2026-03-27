@@ -62,7 +62,7 @@ async function run(context: Deno.TestContext) {
       .map((arg) =>
         arg.replaceAll("[package]", pkg.name)
           .replaceAll("[pattern]", "package*")
-          .replaceAll("[directory]", "dir")
+          .replaceAll("[directory]", "directory")
           .replaceAll("[unknown]", "unknown")
           .replaceAll("<file>", join(root, "CHANGELOG.md"))
           .replaceAll("<types>", "fix,feat")

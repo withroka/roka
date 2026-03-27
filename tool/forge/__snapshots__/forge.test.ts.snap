@@ -103,7 +103,7 @@ snapshot[`forge list [directory]/* 1`] = `
 {
   code: 0,
   output: "
-No packages found: dir/*
+@scope/directory/package6 0.0.0
 ",
 }
 `;
