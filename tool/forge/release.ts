@@ -30,7 +30,7 @@ import {
   type Repository,
 } from "@roka/github";
 import { assertExists } from "@std/assert";
-import { relative } from "@std/path";
+import { relative } from "@std/path/posix";
 import { greaterThan, parse } from "@std/semver";
 import { changelog } from "./changelog.ts";
 import { compile, targets } from "./compile.ts";
