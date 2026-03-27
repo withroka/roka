@@ -1,3 +1,7 @@
+## forge@0.2.1
+
+- 🐛 fix broken changelog URLs for new packages (#638)
+
 ## assert@0.1.0
 
 - ✨ `assertSameElements` function to compare arrays without order (#287)
