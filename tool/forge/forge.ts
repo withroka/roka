@@ -292,6 +292,7 @@
 import { Command, EnumType } from "@cliffy/command";
 import { Table } from "@cliffy/table";
 import { pool, pooled } from "@roka/async/pool";
+import { console, render } from "@roka/cli/console";
 import { conventional } from "@roka/git/conventional";
 import type { Repository } from "@roka/github";
 import { maybe } from "@roka/maybe";
@@ -303,7 +304,6 @@ import {
   gray,
   green,
   red,
-  stripAnsiCode,
   white,
   yellow,
 } from "@std/fmt/colors";
@@ -335,30 +335,6 @@ const SUCCESS = green(bold("✓"));
 const ERROR = red("✘");
 const PACKAGE = cyan("  ■");
 const ARTIFACT = cyan("  ◆");
-
-const console = {
-  verbose: false,
-  print(
-    fn: typeof globalThis.console.log,
-    pipe: typeof Deno.stdout,
-    data: unknown[],
-  ) {
-    if (pipe.isTerminal()) return fn(...data);
-    return fn(...data.map((x) => typeof x === "string" ? stripAnsiCode(x) : x));
-  },
-  debug: (...data: unknown[]) =>
-    console.verbose
-      ? console.print(globalThis.console.debug, Deno.stdout, data)
-      : undefined,
-  log: (...data: unknown[]) =>
-    console.print(globalThis.console.log, Deno.stdout, data),
-  warn: (...data: unknown[]) =>
-    console.print(globalThis.console.warn, Deno.stderr, data),
-  error: (...data: unknown[]) =>
-    console.print(globalThis.console.error, Deno.stderr, data),
-  row: (color: (data: string) => string, data: string[]) =>
-    Deno.stdout.isTerminal() ? data.map((x) => color(x)) : data,
-};
 
 /**
  * Options for the {@link forge} function.
@@ -438,22 +414,22 @@ function packageRow(pkg: Package): string[] {
   const name = pkg.config.name ?? pkg.name;
   if (pkg.config.version === undefined) return [name];
   if (canRelease(pkg)) {
-    return console.row(red, [
+    return [
       name,
       `${pkg.latest?.version ?? "0.0.0"} → ${pkg.config.version}`,
-    ]);
+    ].map((cell) => render(red(cell)));
   } else if (canBump(pkg)) {
-    return console.row(yellow, [name, pkg.version]);
+    return [name, pkg.version].map((cell) => render(yellow(cell)));
   }
-  return console.row(cyan, [name, pkg.version]);
+  return [name, pkg.version].map((cell) => render(cyan(cell)));
 }
 
 function moduleRows(pkg: Package): string[][] {
-  const rows = Object.entries(modules(pkg)).map(([name, path]) =>
-    console.row(dim, [
-      name || "(default)",
-      relative(pkg.root, join(pkg.directory, path)),
-    ])
+  const rows = Object.entries(modules(pkg)).map((
+    [name, path],
+  ) =>
+    [name || "(default)", relative(pkg.root, join(pkg.directory, path))]
+      .map((cell) => render(dim(cell)))
   );
   return rows.length ? [...rows, []] : [];
 }
