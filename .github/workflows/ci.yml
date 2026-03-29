@@ -25,7 +25,7 @@ jobs:
       - name: Test
         run: deno task ok ${{ matrix.component }}
 
-      - name: Upload coverage reports to Codecov
+      - name: Coverage
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
