@@ -1,3 +1,9 @@
+## cli@0.3.0
+
+- ✨ add terminal-aware `console` module (#644)
+- 🐛 don't create a config file if config is in-memory (#261)
+- 🐛 make types not disposable, but functions return disposable (#248)
+
 ## forge@0.2.1
 
 - 🐛 fix broken changelog URLs for new packages (#638)
