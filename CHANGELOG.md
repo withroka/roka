@@ -2,7 +2,7 @@
 
 - ✨ add terminal-aware `console` module (#644)
 - 🐛 don't create a config file if config is in-memory (#261)
-- 🐛 make types not disposable, but functions ret… (#248)
+- 🐛 make types not disposable, but functions return disposable (#248)
 
 ## forge@0.2.1
 
