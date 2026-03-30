@@ -5,7 +5,7 @@
  * local file system user configuration.
  *
  * ```ts
- * import { config } from "@roka/config";
+ * import { config } from "@roka/cli/config";
  *
  * type AppConfig = {
  *   username: string;
@@ -20,12 +20,8 @@
  * });
  * ```
  *
- * ### Resource management
- *
  * The config object is a disposable resource that should be closed when no
  * longer needed, which can be achieved via the `using` keyword.
- *
- * ### Notes
  *
  * The config system wraps the {@link https://deno.com/kv Deno.Kv} API to
  * provide a simple key-value store for the running application. This API is
@@ -76,7 +72,7 @@ export interface ConfigOptions {
  *
  * @example Use a file-based user configuration
  * ```ts
- * import { config } from "@roka/config";
+ * import { config } from "@roka/cli/config";
  * import { tempDirectory } from "@roka/fs/temp";
  * import { assertEquals } from "@std/assert";
  *
@@ -92,7 +88,7 @@ export interface ConfigOptions {
  *
  * @example Use an in-memory configuration
  * ```ts
- * import { config } from "@roka/config";
+ * import { config } from "@roka/cli/config";
  * import { assertEquals } from "@std/assert";
  *
  * using cfg = config<{ foo: string; bar: number }>({ path: ":memory:" });
