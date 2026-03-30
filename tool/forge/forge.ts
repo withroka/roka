@@ -258,7 +258,7 @@
  * ```
  * ✓ Created release example@2.0.0
  *
- *   [https://github.com/withroka/example/releases/tag/example@2.0.0]
+ *   (https://github.com/withroka/example/releases/tag/example@2.0.0)
  *
  *   ◆ x86_64-unknown-linux-gnu.tar.gz
  *   ◆ aarch64-unknown-linux-gnu.tar.gz
