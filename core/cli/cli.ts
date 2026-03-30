@@ -1,9 +1,6 @@
 /**
  * A library with helpers for CLI applications.
  *
- * This package only provides the {@link [config]} module to manage a local
- * file system user configuration.
- *
  * ### Storing user configuration in a local file system
  *
  * ```ts
@@ -18,9 +15,19 @@
  * });
  * ```
  *
+ * ### Terminal aware console
+ *
+ * ```ts
+ * import { console } from "@roka/cli/console";
+ * import { red } from "@std/fmt/colors";
+ *
+ * console.log(red("Red in terminal, but not when piped"));
+ * ```
+ *
  * ### Modules
  *
  *  -  {@link [config]}: Store user configuration
+ *  -  {@link [console]}: Terminal aware console
  *
  * @module cli
  */

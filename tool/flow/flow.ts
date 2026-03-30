@@ -61,6 +61,7 @@
  */
 import { Command } from "@cliffy/command";
 import { pool } from "@roka/async/pool";
+import { console } from "@roka/cli/console";
 import {
   deno,
   type DenoCommands,
@@ -86,7 +87,7 @@ import {
   intersect,
   sumOf,
 } from "@std/collections";
-import { bold, gray, green, red, stripAnsiCode, yellow } from "@std/fmt/colors";
+import { bold, gray, green, red, yellow } from "@std/fmt/colors";
 import { basename, dirname, toFileUrl } from "@std/path";
 import { toText } from "@std/streams";
 
@@ -99,30 +100,6 @@ const DESCRIPTION = `
 
 const SUCCESS = green(bold("✓"));
 const ERROR = red("✘");
-
-const console = {
-  verbose: false,
-  print(
-    fn: typeof globalThis.console.log,
-    pipe: typeof Deno.stdout,
-    data: unknown[],
-  ) {
-    if (pipe.isTerminal()) return fn(...data);
-    return fn(...data.map((x) => typeof x === "string" ? stripAnsiCode(x) : x));
-  },
-  debug: (...data: unknown[]) =>
-    console.verbose
-      ? console.print(globalThis.console.debug, Deno.stdout, data)
-      : undefined,
-  log: (...data: unknown[]) =>
-    console.print(globalThis.console.log, Deno.stdout, data),
-  warn: (...data: unknown[]) =>
-    console.print(globalThis.console.warn, Deno.stderr, data),
-  error: (...data: unknown[]) =>
-    console.print(globalThis.console.error, Deno.stderr, data),
-  row: (color: (data: string) => string, data: string[]) =>
-    Deno.stdout.isTerminal() ? data.map((x) => color(x)) : data,
-};
 
 /**
  * Runs the `flow` CLI tool.
@@ -325,8 +302,7 @@ function denoOptions(): DenoOptions {
       console.error(`\n${message}\n`);
     },
     onDebug({ message }) {
-      if (!console.verbose) return;
-      reported = true;
+      if (console.verbose) reported = true;
       console.debug(`\n${message}\n`);
     },
     onPartialInfo(report) {

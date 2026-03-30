@@ -1,7 +1,7 @@
 /**
  * A library for managing configuration data.
  *
- * This package only provides the {@linkcode config} function to manage a
+ * This module only provides the {@linkcode config} function to manage a
  * local file system user configuration.
  *
  * ```ts

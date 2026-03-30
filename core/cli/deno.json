@@ -1,9 +1,10 @@
 {
   "name": "@roka/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "exports": {
     ".": "./cli.ts",
-    "./config": "./config.ts"
+    "./config": "./config.ts",
+    "./console": "./console.ts"
   },
   "test": {
     "permissions": {
