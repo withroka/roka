@@ -309,6 +309,7 @@ export function mock<
   let state: MockState<Input, Output> | undefined;
   let errored = false;
   const mockContext = MockContext.get();
+  const mode = mockMode(options);
   const conversion = {
     input: {
       convert: options?.conversion?.input?.convert ??
@@ -326,9 +327,9 @@ export function mock<
   ) {
     try {
       if (stubbed.restored) throw new MockError("Mock already restored");
-      state = await mockContext.load(context, self, property, options);
+      state = await mockContext.load(context, self, property, mode, options);
       let output: Output;
-      if (mode(options) === "replay") {
+      if (mode === "replay") {
         const input = await conversion.input.convert(...args);
         output = mockContext.replay(state, property, input);
       } else {
@@ -356,14 +357,14 @@ export function mock<
   const mock = Object.assign(
     fake as Self[Prop],
     {
-      mode: mode(options),
+      mode,
       original: stubbed.original as unknown as Self[Prop],
       restored: false,
       restore() {
         stubbed.restore();
         if (errored) return;
         if (!state) throw new MockError("No calls made");
-        if (mode(state?.options) === "update") return;
+        if (mode === "update") return;
         if (state.remaining.length > 0) {
           throw new MockError(
             `Unmatched calls: ${
@@ -385,7 +386,7 @@ export function mock<
   });
 }
 
-function mode(options: MockOptions | undefined): MockMode {
+function mockMode(options: MockOptions | undefined): MockMode {
   return options?.mode ??
     (Deno.args.some((arg) => arg === "--update" || arg === "-u")
       ? "update"
@@ -407,11 +408,8 @@ function mockPath(
   }
 }
 
-async function checkPermission(
-  path: string,
-  options: MockOptions | undefined,
-) {
-  if (mode(options) !== "update") return;
+async function checkPermission(path: string, mode: MockMode) {
+  if (mode !== "update") return;
   const permission = await Deno.permissions.query({ name: "write", path });
   if (permission.state !== "granted") {
     throw new Deno.errors.PermissionDenied(
@@ -482,9 +480,10 @@ class MockContext {
     context: Deno.TestContext,
     self: Self,
     property: Prop,
+    mode: MockMode,
     options: MockOptions | undefined,
   ): Promise<MockState<Input, Output>> {
-    await checkPermission(mockPath(context, options), options);
+    await checkPermission(mockPath(context, options), mode);
     const path = mockPath(context, options);
     if (!this.mocks.has(path)) {
       const { value: mock, error } = await maybe<
@@ -492,7 +491,7 @@ class MockContext {
       >(() => import(toFileUrl(path).toString()));
       if (error) {
         if (!(error instanceof TypeError)) throw error;
-        if (mode(options) === "replay") {
+        if (mock === "replay") {
           throw new MockError(`No mock found: ${path}`);
         }
       }
@@ -587,7 +586,7 @@ class MockContext {
     const removedNames: string[] = [];
     for (const [path, { records, states }] of this.mocks.entries()) {
       const updatedStates = Array.from(
-        states.values().filter((state) => mode(state.options) === "update"),
+        states.values().filter((state) => mockMode(state.options) === "update"),
       );
       if (!updatedStates.length) continue;
       const contents = [`export const mock = {};\n`];
