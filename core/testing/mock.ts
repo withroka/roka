@@ -309,7 +309,10 @@ export function mock<
   let state: MockState<Input, Output> | undefined;
   let errored = false;
   const mockContext = MockContext.get();
-  const mode = mockMode(options);
+  const mode = options?.mode ??
+    (Deno.args.some((arg) => arg === "--update" || arg === "-u")
+      ? "update"
+      : "replay");
   const conversion = {
     input: {
       convert: options?.conversion?.input?.convert ??
@@ -386,13 +389,6 @@ export function mock<
   });
 }
 
-function mockMode(options: MockOptions | undefined): MockMode {
-  return options?.mode ??
-    (Deno.args.some((arg) => arg === "--update" || arg === "-u")
-      ? "update"
-      : "replay");
-}
-
 function mockPath(
   context: Deno.TestContext,
   options: MockOptions | undefined,
@@ -445,6 +441,7 @@ interface MockCall<Input, Output> {
 
 interface MockState<Input, Output> {
   name: string;
+  mode: MockMode;
   path: string;
   options: MockOptions | undefined;
   calls: MockCall<Input, Output>[];
@@ -491,9 +488,7 @@ class MockContext {
       >(() => import(toFileUrl(path).toString()));
       if (error) {
         if (!(error instanceof TypeError)) throw error;
-        if (mock === "replay") {
-          throw new MockError(`No mock found: ${path}`);
-        }
+        if (mode === "replay") throw new MockError(`No mock found: ${path}`);
       }
       if (!this.mocks.has(path)) {
         this.mocks.set(path, {
@@ -519,6 +514,7 @@ class MockContext {
       ];
       mock.states.set(name, {
         name,
+        mode,
         path,
         options,
         calls: [],
@@ -586,7 +582,7 @@ class MockContext {
     const removedNames: string[] = [];
     for (const [path, { records, states }] of this.mocks.entries()) {
       const updatedStates = Array.from(
-        states.values().filter((state) => mockMode(state.options) === "update"),
+        states.values().filter((state) => state.mode === "update"),
       );
       if (!updatedStates.length) continue;
       const contents = [`export const mock = {};\n`];

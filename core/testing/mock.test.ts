@@ -1,6 +1,5 @@
 import { tempDirectory } from "@roka/fs/temp";
 import { maybe } from "@roka/maybe";
-import { fakeArgs } from "@roka/testing/fake";
 import {
   assertEquals,
   assertFalse,
@@ -10,6 +9,7 @@ import {
 import { dirname, fromFileUrl, join } from "@std/path";
 import { MockError } from "@std/testing/mock";
 import { assertType, type IsExact } from "@std/testing/types";
+import { fakeArgs } from "./fake.ts";
 import { type Mock, mock } from "./mock.ts";
 
 assertType<
