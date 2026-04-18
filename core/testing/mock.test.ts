@@ -1,3 +1,4 @@
+import { tempDirectory } from "@roka/fs/temp";
 import { maybe } from "@roka/maybe";
 import {
   assertEquals,
@@ -8,6 +9,7 @@ import {
 import { dirname, fromFileUrl, join } from "@std/path";
 import { MockError } from "@std/testing/mock";
 import { assertType, type IsExact } from "@std/testing/types";
+import { fakeArgs } from "./fake.ts";
 import { type Mock, mock } from "./mock.ts";
 
 assertType<
@@ -68,6 +70,20 @@ Deno.test("mock() implements spy like interface", async (t) => {
   mocked.restore();
   assertEquals(mocked.restored, true);
   await assertRejects(() => mocked(2, 4), MockError);
+});
+
+Deno.test("mock() determines mode once", async (t) => {
+  await using directory = await tempDirectory();
+  const self = { func: async () => await Promise.resolve(42) };
+  let mocked: ReturnType<typeof mock<typeof self, "func">>;
+  {
+    using _ = fakeArgs(["--update"]);
+    mocked = mock(t, self, "func", { path: directory.path("args.mock") });
+  }
+  {
+    using _ = fakeArgs([]);
+    assertEquals(await mocked(), 42);
+  }
 });
 
 Deno.test("mock() matches arguments", async (t) => {
