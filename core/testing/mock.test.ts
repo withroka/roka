@@ -75,7 +75,7 @@ Deno.test("mock() implements spy like interface", async (t) => {
 Deno.test("mock() determines mode once", async (t) => {
   await using directory = await tempDirectory();
   const self = { func: async () => await Promise.resolve(42) };
-  let mocked: ReturnType<typeof mock<typeof self, "func">> | null;
+  let mocked: ReturnType<typeof mock<typeof self, "func">>;
   {
     using _ = fakeArgs(["--update"]);
     mocked = mock(t, self, "func", { path: directory.path("args.mock") });
