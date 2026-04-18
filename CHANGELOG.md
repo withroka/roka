@@ -1,3 +1,7 @@
+## testing@0.3.1
+
+- 🐛 determine mock mode once (#649)
+
 ## cli@0.3.0
 
 - ✨ add terminal-aware `console` module (#644)
