@@ -231,6 +231,7 @@ async function makeRequest(
       const { value, error } = await maybe(() => fetch(request));
       if (error) {
         caught = error;
+        response = undefined;
         return undefined;
       }
       response = value;
