@@ -16,12 +16,12 @@ mock[`request() makes request > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f8089cc87b1bd-AMS",
+          "cf-ray": "9f1f83d97d2aae32-AMS",
           "content-type": "text/html",
           "last-modified": "Sat, 18 Apr 2026 00:51:00 GMT",
-          age: "13775",
+          age: "13910",
           allow: "GET, HEAD",
-          date: "Sat, 25 Apr 2026 18:44:58 GMT",
+          date: "Sat, 25 Apr 2026 18:47:14 GMT",
           server: "cloudflare",
         },
         status: 200,
@@ -47,10 +47,10 @@ mock[`request() rejects failed response > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f808a1d220eb1-AMS",
+          "cf-ray": "9f1f83d9bb73fba6-AMS",
           "content-type": "text/html",
-          age: "4413",
-          date: "Sat, 25 Apr 2026 18:44:58 GMT",
+          age: "4549",
+          date: "Sat, 25 Apr 2026 18:47:14 GMT",
           server: "cloudflare",
         },
         status: 404,
@@ -79,12 +79,12 @@ mock[`request() passes common headers > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f808a5834b8a2-AMS",
+          "cf-ray": "9f1f83da0d4fc099-AMS",
           "content-type": "text/html",
           "last-modified": "Sat, 18 Apr 2026 00:51:00 GMT",
-          age: "13775",
+          age: "13911",
           allow: "GET, HEAD",
-          date: "Sat, 25 Apr 2026 18:44:58 GMT",
+          date: "Sat, 25 Apr 2026 18:47:14 GMT",
           server: "cloudflare",
         },
         status: 200,
@@ -110,14 +110,93 @@ mock[`request({ allowedErrors }) can ignore errors > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f808a99a25d56-AMS",
+          "cf-ray": "9f1f83da4fe36628-AMS",
           "content-type": "text/html",
-          age: "4413",
-          date: "Sat, 25 Apr 2026 18:44:58 GMT",
+          age: "4549",
+          date: "Sat, 25 Apr 2026 18:47:14 GMT",
           server: "cloudflare",
         },
         status: 404,
         statusText: "Not Found",
+      },
+    ],
+  },
+];
+
+mock[`request({ allowedErrors }) accepts retryable status code > fetch 1`] =
+[
+  {
+    input: [
+      "https://httpbin.org/status/429",
+      {
+        headers: {},
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      "",
+      {
+        headers: {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          date: "Sat, 25 Apr 2026 18:47:15 GMT",
+          server: "gunicorn/19.9.0",
+        },
+        status: 429,
+        statusText: "Too Many Requests",
+      },
+    ],
+  },
+  {
+    input: [
+      "https://httpbin.org/status/429",
+      {
+        headers: {},
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      "",
+      {
+        headers: {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          date: "Sat, 25 Apr 2026 18:47:15 GMT",
+          server: "gunicorn/19.9.0",
+        },
+        status: 429,
+        statusText: "Too Many Requests",
+      },
+    ],
+  },
+  {
+    input: [
+      "https://httpbin.org/status/429",
+      {
+        headers: {},
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      "",
+      {
+        headers: {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          date: "Sat, 25 Apr 2026 18:47:15 GMT",
+          server: "gunicorn/19.9.0",
+        },
+        status: 429,
+        statusText: "Too Many Requests",
       },
     ],
   },
@@ -139,12 +218,12 @@ mock[`request({ cache }) can cache response > reload > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f808b0d060a5f-AMS",
+          "cf-ray": "9f1f83e239352d00-AMS",
           "content-type": "text/html",
           "last-modified": "Sat, 18 Apr 2026 00:51:00 GMT",
-          age: "13775",
+          age: "13912",
           allow: "GET, HEAD",
-          date: "Sat, 25 Apr 2026 18:44:58 GMT",
+          date: "Sat, 25 Apr 2026 18:47:15 GMT",
           server: "cloudflare",
         },
         status: 200,

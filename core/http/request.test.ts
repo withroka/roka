@@ -38,12 +38,8 @@ Deno.test("request({ allowedErrors }) can ignore errors", async (t) => {
 });
 
 Deno.test("request({ allowedErrors }) accepts retryable status code", async (t) => {
-  using _fetch = mockFetch(t, {
-    path: "__mocks__/request.test.429.ts.mock",
-    ignore: { headers: true },
-    mode: "replay",
-  });
-  const response = await request("https://example.com/429", {
+  using _fetch = mockFetch(t);
+  const response = await request("https://httpbin.org/status/429", {
     allowedErrors: [STATUS_CODE.TooManyRequests],
     retry: { maxAttempts: 3, minTimeout: 0, jitter: 0 },
   });
