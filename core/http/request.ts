@@ -242,7 +242,7 @@ async function makeRequest(
       return response;
     }, options?.retry)
   );
-  if (error && !(error instanceof RetryError)) throw error;
+  if (error && !(response && error instanceof RetryError)) throw error;
   if (response === undefined) throw caught;
   return response;
 }

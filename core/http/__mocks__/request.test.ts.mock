@@ -16,12 +16,12 @@ mock[`request() makes request > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f6b4ec8c11c9a-AMS",
+          "cf-ray": "9f1f8089cc87b1bd-AMS",
           "content-type": "text/html",
           "last-modified": "Sat, 18 Apr 2026 00:51:00 GMT",
-          age: "12905",
+          age: "13775",
           allow: "GET, HEAD",
-          date: "Sat, 25 Apr 2026 18:30:28 GMT",
+          date: "Sat, 25 Apr 2026 18:44:58 GMT",
           server: "cloudflare",
         },
         status: 200,
@@ -47,10 +47,10 @@ mock[`request() rejects failed response > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f6b4f1ae8e459-AMS",
+          "cf-ray": "9f1f808a1d220eb1-AMS",
           "content-type": "text/html",
-          age: "3544",
-          date: "Sat, 25 Apr 2026 18:30:28 GMT",
+          age: "4413",
+          date: "Sat, 25 Apr 2026 18:44:58 GMT",
           server: "cloudflare",
         },
         status: 404,
@@ -79,12 +79,12 @@ mock[`request() passes common headers > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f6b4f6cb3f5bf-AMS",
+          "cf-ray": "9f1f808a5834b8a2-AMS",
           "content-type": "text/html",
           "last-modified": "Sat, 18 Apr 2026 00:51:00 GMT",
-          age: "12905",
+          age: "13775",
           allow: "GET, HEAD",
-          date: "Sat, 25 Apr 2026 18:30:29 GMT",
+          date: "Sat, 25 Apr 2026 18:44:58 GMT",
           server: "cloudflare",
         },
         status: 200,
@@ -110,108 +110,14 @@ mock[`request({ allowedErrors }) can ignore errors > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f6b4fbf8c0bb6-AMS",
+          "cf-ray": "9f1f808a99a25d56-AMS",
           "content-type": "text/html",
-          age: "3544",
-          date: "Sat, 25 Apr 2026 18:30:29 GMT",
+          age: "4413",
+          date: "Sat, 25 Apr 2026 18:44:58 GMT",
           server: "cloudflare",
         },
         status: 404,
         statusText: "Not Found",
-      },
-    ],
-  },
-];
-
-mock[`request({ allowedErrors }) accepts retrieable errors > fetch 1`] =
-[
-  {
-    input: [
-      "https://httpstatus.is/429",
-      {
-        headers: {},
-        method: "GET",
-        redirect: "follow",
-      },
-    ],
-    output: [
-      '{"code":429,"official":true,"description":"Too Many Requests"}',
-      {
-        headers: {
-          "cache-control": "no-cache",
-          "cache-status": '"Netlify Durable"; fwd=bypass, "Netlify Edge"; fwd=miss',
-          "content-type": "application/json; charset=utf-8",
-          "netlify-vary": "query",
-          "strict-transport-security": "max-age=31536000",
-          "x-nf-request-id": "01KQ2YGKH5NKQNY4Z119JT12HK",
-          "x-powered-by": "helloapi.co",
-          age: "0",
-          date: "Sat, 25 Apr 2026 18:30:29 GMT",
-          etag: 'W/"3e-Wd0ddchfCf0yh8UMbREtg1EQY+0"',
-          server: "Netlify",
-        },
-        status: 429,
-        statusText: "Too Many Requests",
-      },
-    ],
-  },
-  {
-    input: [
-      "https://httpstatus.is/429",
-      {
-        headers: {},
-        method: "GET",
-        redirect: "follow",
-      },
-    ],
-    output: [
-      '{"code":429,"official":true,"description":"Too Many Requests"}',
-      {
-        headers: {
-          "cache-control": "no-cache",
-          "cache-status": '"Netlify Durable"; fwd=bypass, "Netlify Edge"; fwd=miss',
-          "content-type": "application/json; charset=utf-8",
-          "netlify-vary": "query",
-          "strict-transport-security": "max-age=31536000",
-          "x-nf-request-id": "01KQ2YGKVAV5VR892SWKZ0CDPG",
-          "x-powered-by": "helloapi.co",
-          age: "0",
-          date: "Sat, 25 Apr 2026 18:30:29 GMT",
-          etag: 'W/"3e-Wd0ddchfCf0yh8UMbREtg1EQY+0"',
-          server: "Netlify",
-        },
-        status: 429,
-        statusText: "Too Many Requests",
-      },
-    ],
-  },
-  {
-    input: [
-      "https://httpstatus.is/429",
-      {
-        headers: {},
-        method: "GET",
-        redirect: "follow",
-      },
-    ],
-    output: [
-      '{"code":429,"official":true,"description":"Too Many Requests"}',
-      {
-        headers: {
-          "cache-control": "no-cache",
-          "cache-status": '"Netlify Durable"; fwd=bypass, "Netlify Edge"; fwd=miss',
-          "content-type": "application/json; charset=utf-8",
-          "netlify-vary": "query",
-          "strict-transport-security": "max-age=31536000",
-          "x-nf-request-id": "01KQ2YGM18Y6RW83DZ3AYXX9MH",
-          "x-powered-by": "helloapi.co",
-          age: "0",
-          date: "Sat, 25 Apr 2026 18:30:29 GMT",
-          etag: 'W/"3e-Wd0ddchfCf0yh8UMbREtg1EQY+0"',
-          server: "Netlify",
-        },
-        status: 429,
-        statusText: "Too Many Requests",
       },
     ],
   },
@@ -233,12 +139,12 @@ mock[`request({ cache }) can cache response > reload > fetch 1`] =
       {
         headers: {
           "cf-cache-status": "HIT",
-          "cf-ray": "9f1f6b54cb426d1d-AMS",
+          "cf-ray": "9f1f808b0d060a5f-AMS",
           "content-type": "text/html",
           "last-modified": "Sat, 18 Apr 2026 00:51:00 GMT",
-          age: "12906",
+          age: "13775",
           allow: "GET, HEAD",
-          date: "Sat, 25 Apr 2026 18:30:29 GMT",
+          date: "Sat, 25 Apr 2026 18:44:58 GMT",
           server: "cloudflare",
         },
         status: 200,

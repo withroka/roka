@@ -1,0 +1,62 @@
+export const mock = {};
+
+mock[`request({ allowedErrors }) accepts retryable status code > fetch 1`] =
+[
+  {
+    input: [
+      "https://example.com/429",
+      {
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      '{"code":429,"official":true,"description":"Too Many Requests"}',
+      {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        status: 429,
+        statusText: "Too Many Requests",
+      },
+    ],
+  },
+  {
+    input: [
+      "https://example.com/429",
+      {
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      '{"code":429,"official":true,"description":"Too Many Requests"}',
+      {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        status: 429,
+        statusText: "Too Many Requests",
+      },
+    ],
+  },
+  {
+    input: [
+      "https://example.com/429",
+      {
+        method: "GET",
+        redirect: "follow",
+      },
+    ],
+    output: [
+      '{"code":429,"official":true,"description":"Too Many Requests"}',
+      {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        status: 429,
+        statusText: "Too Many Requests",
+      },
+    ],
+  },
+];
