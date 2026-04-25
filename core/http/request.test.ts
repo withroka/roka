@@ -37,6 +37,16 @@ Deno.test("request({ allowedErrors }) can ignore errors", async (t) => {
   assertEquals(response.status, STATUS_CODE.NotFound);
 });
 
+Deno.test("request({ allowedErrors }) accepts retrieable errors", async (t) => {
+  using _fetch = mockFetch(t);
+  const response = await request("https://httpstatus.is/429", {
+    allowedErrors: [STATUS_CODE.TooManyRequests],
+    retry: { maxAttempts: 3, minTimeout: 0, jitter: 0 },
+  });
+  assertEquals(response.status, STATUS_CODE.TooManyRequests);
+  await assertSnapshot(t, await response.text());
+});
+
 Deno.test("request({ cache }) can cache response", async (t) => {
   const cacheStore = t.name;
   await t.step("reload", async (t) => {

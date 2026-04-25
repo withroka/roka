@@ -20,7 +20,7 @@
 
 import { maybe } from "@roka/maybe";
 import "@sigma/deno-compile-extra/cachesPolyfill";
-import { retry, type RetryOptions } from "@std/async/retry";
+import { retry, RetryError, type RetryOptions } from "@std/async/retry";
 import { omit } from "@std/collections";
 import { STATUS_CODE } from "@std/http/status";
 
@@ -224,20 +224,25 @@ async function makeRequest(
   options: RequestOptions | undefined,
 ): Promise<Response> {
   let caught: unknown = undefined;
-  const response = await retry(async () => {
-    const { value: response, error } = await maybe(() => fetch(request));
-    if (error) {
-      caught = error;
-      return undefined;
-    }
-    if (RETRYABLE_STATUSES.includes(response.status)) {
-      await response.body?.cancel();
-      throw new RequestError(response.statusText, {
-        status: response.status,
-      });
-    }
-    return response;
-  }, options?.retry);
+  let response: Response | undefined = undefined;
+  const { error } = await maybe(() =>
+    retry(async () => {
+      await response?.body?.cancel();
+      const { value, error } = await maybe(() => fetch(request));
+      if (error) {
+        caught = error;
+        return undefined;
+      }
+      response = value;
+      if (RETRYABLE_STATUSES.includes(response.status)) {
+        throw new RequestError(response.statusText, {
+          status: response.status,
+        });
+      }
+      return response;
+    }, options?.retry)
+  );
+  if (error && !(error instanceof RetryError)) throw error;
   if (response === undefined) throw caught;
   return response;
 }
