@@ -1,3 +1,7 @@
+## http@0.3.1
+
+- 🐛 return last response on max retry attempts (#651)
+
 ## testing@0.3.1
 
 - 🐛 determine mock mode once (#649)
