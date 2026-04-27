@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "@b-fuze/deno-dom": "npm:@jsr/b-fuze__deno-dom",
+    "@sigma/deno-compile-extra": "npm:@jsr/sigma__deno-compile-extra",
+    "@std/assert": "npm:@jsr/std__assert@^1.0.19",
+    "@std/async": "npm:@jsr/std__async",
+    "@std/collections": "npm:@jsr/std__collections",
+    "@std/fs": "npm:@jsr/std__fs",
+    "@std/http": "npm:@jsr/std__http",
+    "@std/path": "npm:@jsr/std__path",
+    "@std/testing": "npm:@jsr/std__testing@^1.0.17"
+  },
+  "devDependencies": {
+    "@deno/shim-deno": "^0.19.2",
+    "@deno/shim-deno-test": "^0.5.0"
+  }
+}

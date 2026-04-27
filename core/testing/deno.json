@@ -4,7 +4,8 @@
   "exports": {
     ".": "./testing.ts",
     "./fake": "./fake.ts",
-    "./mock": "./mock.ts"
+    "./mock": "./mock.ts",
+    "./test": "./test.ts"
   },
   "test": {
     "permissions": {

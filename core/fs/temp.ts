@@ -13,6 +13,9 @@
  * @module temp
  */
 
+import { runtime } from "@roka/runtime";
+import { makeTempDir } from "@std/fs/unstable-make-temp-dir";
+import { remove } from "@std/fs/unstable-remove";
 import { join } from "@std/path";
 
 /** A temporary directory returned by the {@linkcode tempDirectory} function. */
@@ -61,16 +64,16 @@ export interface TempDirectoryOptions {
 export async function tempDirectory(
   options?: TempDirectoryOptions,
 ): Promise<TempDirectory & AsyncDisposable> {
-  const directory = await Deno.makeTempDir();
-  const cwd = options?.chdir ? Deno.cwd() : undefined;
-  if (options?.chdir) Deno.chdir(directory);
+  const directory = await makeTempDir();
+  const cwd = options?.chdir ? runtime.cwd() : undefined;
+  if (options?.chdir) runtime.chdir(directory);
   return Object.assign({
     path: (...paths: string[]) => join(directory, ...paths),
   }, {
     toString: () => directory,
     async [Symbol.asyncDispose]() {
-      if (cwd) Deno.chdir(cwd);
-      await Deno.remove(directory, { recursive: true });
+      if (cwd) runtime.chdir(cwd);
+      await remove(directory, { recursive: true });
     },
   });
 }

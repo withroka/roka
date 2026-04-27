@@ -80,6 +80,7 @@
  */
 
 import { maybe } from "@roka/maybe";
+import { runtime } from "@roka/runtime";
 import { assertExists } from "@std/assert";
 import {
   dirname,
@@ -310,7 +311,7 @@ export function mock<
   let errored = false;
   const mockContext = MockContext.get();
   const mode = options?.mode ??
-    (Deno.args.some((arg) => arg === "--update" || arg === "-u")
+    (runtime.args.some((arg) => arg === "--update" || arg === "-u")
       ? "update"
       : "replay");
   const conversion = {
@@ -393,7 +394,10 @@ function mockPath(
   context: Deno.TestContext,
   options: MockOptions | undefined,
 ): string {
-  const testFile = fromFileUrl(context.origin);
+  const testFile =
+    ("filePath" in context && typeof context.filePath === "string")
+      ? context.filePath
+      : fromFileUrl(context.origin);
   const { dir, base } = parse(testFile);
   if (options?.path) {
     return resolve(dir, normalize(options.path));
@@ -415,7 +419,7 @@ async function checkPermission(path: string, mode: MockMode) {
 }
 
 function serialize(calls: unknown): string {
-  return Deno.inspect(calls, {
+  return runtime.inspect(calls, {
     compact: false,
     depth: Infinity,
     iterableLimit: Infinity,
@@ -484,19 +488,21 @@ class MockContext {
     const path = mockPath(context, options);
     if (!this.mocks.has(path)) {
       const { value: mock, error } = await maybe<
-        { mock: Record<string, MockCall<Input, Output>[]> }
-      >(() => import(toFileUrl(path).toString()));
+        Record<string, MockCall<Input, Output>[]>
+      >(async () => (await import(toFileUrl(path).toString())).mock);
       if (error) {
         if (!(error instanceof TypeError)) throw error;
         if (mode === "replay") throw new MockError(`No mock found: ${path}`);
       }
       if (!this.mocks.has(path)) {
         this.mocks.set(path, {
-          records: mock?.mock ?? {},
+          records: mock ?? {},
           states: new Map(),
           names: new Map(),
         });
       }
+      console.log({ mocks: mock });
+      process.exit(1);
     }
     const mock = this.mocks.get(path);
     assertExists(mock, "Mock not loaded correctly");

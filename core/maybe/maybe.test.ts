@@ -1,3 +1,4 @@
+import { test } from "@roka/testing/test";
 import {
   assert,
   assertEquals,
@@ -19,14 +20,14 @@ assertType<IsExact<ReturnType<typeof promiseNumberFn>, Promise<Maybe<number>>>>(
   true,
 );
 
-Deno.test("maybe() returns success when function succeeds", () => {
+test("maybe() returns success when function succeeds", () => {
   const { value, error, errors } = maybe(() => 42);
   assertEquals(value, 42);
   assertEquals(error, undefined);
   assertEquals(errors, undefined);
 });
 
-Deno.test("maybe() returns success when async function succeeds", async () => {
+test("maybe() returns success when async function succeeds", async () => {
   const { value, error, errors } = await maybe(async () =>
     await Promise.resolve(42)
   );
@@ -35,7 +36,7 @@ Deno.test("maybe() returns success when async function succeeds", async () => {
   assertEquals(errors, undefined);
 });
 
-Deno.test("maybe() captures thrown error", () => {
+test("maybe() captures thrown error", () => {
   const thrown = new Error("boom");
   const { value, error, errors } = maybe(() => {
     // deno-lint-ignore no-constant-condition
@@ -48,7 +49,7 @@ Deno.test("maybe() captures thrown error", () => {
   assertStrictEquals(errors[0], thrown);
 });
 
-Deno.test("maybe() captures thrown error from async function", async () => {
+test("maybe() captures thrown error from async function", async () => {
   const thrown = new Error("boom");
   const { value, error, errors } = await maybe(async () => {
     // deno-lint-ignore no-constant-condition
@@ -61,7 +62,7 @@ Deno.test("maybe() captures thrown error from async function", async () => {
   assertStrictEquals(errors[0], thrown);
 });
 
-Deno.test("maybe() captures thrown literal", () => {
+test("maybe() captures thrown literal", () => {
   const { value, error, errors } = maybe(() => {
     // deno-lint-ignore no-throw-literal
     throw "boom";
@@ -74,7 +75,7 @@ Deno.test("maybe() captures thrown literal", () => {
   assertStrictEquals(errors[0], error);
 });
 
-Deno.test("maybe() captures thrown literal from async function", async () => {
+test("maybe() captures thrown literal from async function", async () => {
   const { value, error, errors } = await maybe(async () => {
     // deno-lint-ignore no-constant-condition
     if (true) {
@@ -90,7 +91,7 @@ Deno.test("maybe() captures thrown literal from async function", async () => {
   assertStrictEquals(errors[0], error);
 });
 
-Deno.test("maybe() returns multiple errors from AggregateError", () => {
+test("maybe() returns multiple errors from AggregateError", () => {
   const thrown1 = new Error("boom1");
   const thrown2 = "boom2";
   const aggregate = new AggregateError([thrown1, thrown2], "multiple");
@@ -108,7 +109,7 @@ Deno.test("maybe() returns multiple errors from AggregateError", () => {
   assertEquals(errors[1].cause, thrown2);
 });
 
-Deno.test("maybe() returns the AggregateError when it has zero errors", () => {
+test("maybe() returns the AggregateError when it has zero errors", () => {
   const aggregate = new AggregateError([], "zero errors");
   const { value, error, errors } = maybe(() => {
     // deno-lint-ignore no-constant-condition
@@ -121,14 +122,14 @@ Deno.test("maybe() returns the AggregateError when it has zero errors", () => {
   assertStrictEquals(errors[0], aggregate);
 });
 
-Deno.test("maybe() handles undefined return value", () => {
+test("maybe() handles undefined return value", () => {
   const { value, error, errors } = maybe(() => undefined);
   assertEquals(value, undefined);
   assertEquals(error, undefined);
   assertEquals(errors, undefined);
 });
 
-Deno.test("maybe() handles object return value", () => {
+test("maybe() handles object return value", () => {
   const obj = { a: 1 };
   const { value, error, errors } = maybe(() => obj);
   assertStrictEquals(value, obj);
@@ -136,7 +137,7 @@ Deno.test("maybe() handles object return value", () => {
   assertEquals(errors, undefined);
 });
 
-Deno.test("maybe() handles optional return value", () => {
+test("maybe() handles optional return value", () => {
   const result: number | undefined = 42;
   const { value, error, errors } = maybe(() => result);
   assertType<IsExact<typeof value, number | undefined>>(true);
@@ -145,7 +146,7 @@ Deno.test("maybe() handles optional return value", () => {
   assertEquals(errors, undefined);
 });
 
-Deno.test("maybe() handles never return value", () => {
+test("maybe() handles never return value", () => {
   const thrown = new Error("boom");
   const { value, error, errors } = maybe(() => {
     throw thrown;
@@ -157,7 +158,7 @@ Deno.test("maybe() handles never return value", () => {
   assertStrictEquals(errors[0], thrown);
 });
 
-Deno.test("maybe() executes function only once", () => {
+test("maybe() executes function only once", () => {
   let calls = 0;
   const { value } = maybe(() => {
     calls += 1;
@@ -168,7 +169,7 @@ Deno.test("maybe() executes function only once", () => {
   assertStrictEquals(calls, 1);
 });
 
-Deno.test("maybe() executes async function only once", async () => {
+test("maybe() executes async function only once", async () => {
   let calls = 0;
   const { value } = await maybe(async () => {
     calls += 1;
@@ -179,7 +180,7 @@ Deno.test("maybe() executes async function only once", async () => {
   assertStrictEquals(calls, 1);
 });
 
-Deno.test("maybe() preserves result type", () => {
+test("maybe() preserves result type", () => {
   const { value } = maybe(() => "hello");
   if (value) {
     const upper = value.toUpperCase();
@@ -187,7 +188,7 @@ Deno.test("maybe() preserves result type", () => {
   }
 });
 
-Deno.test("maybe() partially resolves types with value", () => {
+test("maybe() partially resolves types with value", () => {
   function fn(): string | undefined {
     return "hello";
   }
@@ -201,7 +202,7 @@ Deno.test("maybe() partially resolves types with value", () => {
   }
 });
 
-Deno.test("maybe() fully resolves types with error", () => {
+test("maybe() fully resolves types with error", () => {
   const { value, error, errors } = maybe(() => "hello");
   if (error) {
     assertType<IsExact<typeof value, undefined>>(true);
@@ -217,7 +218,7 @@ Deno.test("maybe() fully resolves types with error", () => {
   }
 });
 
-Deno.test("maybe() fully resolves types with errors", () => {
+test("maybe() fully resolves types with errors", () => {
   const { value, error, errors } = maybe(() => "hello");
   if (errors) {
     assertType<IsExact<typeof value, undefined>>(true);

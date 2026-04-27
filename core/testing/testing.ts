@@ -58,6 +58,7 @@
  *
  *  - {@link [fake]}: Use fake objects in tests
  *  - {@link [mock]}: Build test mocks for async functions
+ *  - {@link [test]}: Run tests under different runtimes
  *
  * @module testing
  */

@@ -19,10 +19,14 @@
  */
 
 import { maybe } from "@roka/maybe";
-import "@sigma/deno-compile-extra/cachesPolyfill";
+import { runtime } from "@roka/runtime";
 import { retry, RetryError, type RetryOptions } from "@std/async/retry";
 import { omit } from "@std/collections";
 import { STATUS_CODE } from "@std/http/status";
+
+if (runtime.title === "deno") {
+  import("@sigma/deno-compile-extra/cachesPolyfill");
+}
 
 export { type RetryOptions } from "@std/async/retry";
 

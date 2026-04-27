@@ -1,7 +1,8 @@
+import { test } from "@roka/testing/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { any } from "./any.ts";
 
-Deno.test("any() returns the first resolved result", async () => {
+test("any() returns the first resolved result", async () => {
   const result = await any([
     Promise.resolve()
       .then(() => Promise.resolve())
@@ -13,7 +14,7 @@ Deno.test("any() returns the first resolved result", async () => {
   assertEquals(result, "first");
 });
 
-Deno.test("any() ignores rejections with successful result", async () => {
+test("any() ignores rejections with successful result", async () => {
   const result = await any([
     Promise.resolve()
       .then(() => Promise.reject(new Error("rejected"))),
@@ -23,7 +24,7 @@ Deno.test("any() ignores rejections with successful result", async () => {
   assertEquals(result, "first");
 });
 
-Deno.test("any() rejects when all promises reject", async () => {
+test("any() rejects when all promises reject", async () => {
   await assertRejects(() =>
     any([
       Promise.reject("rejected"),
@@ -32,11 +33,11 @@ Deno.test("any() rejects when all promises reject", async () => {
     ]), AggregateError);
 });
 
-Deno.test("any() rejects empty array", async () => {
+test("any() rejects empty array", async () => {
   await assertRejects(() => any([]), AggregateError);
 });
 
-Deno.test("any() handles promise factory", async () => {
+test("any() handles promise factory", async () => {
   const result = await any([
     Promise.reject("rejected"),
     Promise.resolve()
@@ -46,7 +47,7 @@ Deno.test("any() handles promise factory", async () => {
   assertEquals(result, "first");
 });
 
-Deno.test("any() rejects all rejecting callables", async () => {
+test("any() rejects all rejecting callables", async () => {
   const array = [
     () => Promise.reject(new Error("rejected")),
     () => Promise.reject(new Error("rejected")),
@@ -55,7 +56,7 @@ Deno.test("any() rejects all rejecting callables", async () => {
   await assertRejects(() => any(array), AggregateError);
 });
 
-Deno.test("any() handles iterable of promises", async () => {
+test("any() handles iterable of promises", async () => {
   function* generator() {
     yield () =>
       Promise.resolve()
@@ -66,7 +67,7 @@ Deno.test("any() handles iterable of promises", async () => {
   assertEquals(result, "first");
 });
 
-Deno.test("any() handles iterable to promises map", async () => {
+test("any() handles iterable to promises map", async () => {
   function* generator() {
     yield "delayed";
     yield "rejected";
@@ -84,7 +85,7 @@ Deno.test("any() handles iterable to promises map", async () => {
   assertEquals(result, "first");
 });
 
-Deno.test("any() rejects all rejecting iterable", async () => {
+test("any() rejects all rejecting iterable", async () => {
   function* generator() {
     yield "rejected";
     yield "rejected";

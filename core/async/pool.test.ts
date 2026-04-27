@@ -1,7 +1,8 @@
+import { test } from "@roka/testing/test";
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import { pool, pooled } from "./pool.ts";
 
-Deno.test("pool() resolves all promises", async () => {
+test("pool() resolves all promises", async () => {
   const array = [
     () => Promise.resolve(1),
     () => Promise.resolve(2),
@@ -11,19 +12,19 @@ Deno.test("pool() resolves all promises", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool() handles empty array", async () => {
+test("pool() handles empty array", async () => {
   const array: (() => Promise<number>)[] = [];
   const results = await pool(array);
   assertEquals(results, []);
 });
 
-Deno.test("pool() handles empty array map", async () => {
+test("pool() handles empty array map", async () => {
   const array: (() => Promise<number>)[] = [];
   const results = await pool(array, (x) => x());
   assertEquals(results, []);
 });
 
-Deno.test("pool() handles iterable", async () => {
+test("pool() handles iterable", async () => {
   function* iterable() {
     yield () => Promise.resolve(1);
     yield () => Promise.resolve(2);
@@ -33,7 +34,7 @@ Deno.test("pool() handles iterable", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool() handles iterable map", async () => {
+test("pool() handles iterable map", async () => {
   function* iterable() {
     yield 1;
     yield 2;
@@ -43,7 +44,7 @@ Deno.test("pool() handles iterable map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled() handles async iterable", async () => {
+test("pooled() handles async iterable", async () => {
   async function* asyncIterable() {
     yield Promise.resolve(1);
     yield Promise.resolve(2);
@@ -53,7 +54,7 @@ Deno.test("pooled() handles async iterable", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool() handles async iterable map", async () => {
+test("pool() handles async iterable map", async () => {
   async function* asyncIterable() {
     yield 1;
     yield 2;
@@ -63,7 +64,7 @@ Deno.test("pool() handles async iterable map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool() handles async iterable of promises map", async () => {
+test("pool() handles async iterable of promises map", async () => {
   async function* asyncIterable() {
     yield Promise.resolve(1);
     yield Promise.resolve(2);
@@ -73,7 +74,7 @@ Deno.test("pool() handles async iterable of promises map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool() rejects failing promises", async () => {
+test("pool() rejects failing promises", async () => {
   const array = [
     () => Promise.resolve(1),
     () => Promise.reject(new Error("error")),
@@ -82,7 +83,7 @@ Deno.test("pool() rejects failing promises", async () => {
   await assertRejects(() => pool(array), AggregateError);
 });
 
-Deno.test("pool() rejects iterable of promises", async () => {
+test("pool() rejects iterable of promises", async () => {
   const array = [Promise.resolve(1), Promise.resolve(2)];
   await assertRejects(
     () => pool(array as unknown as Iterable<() => Promise<number>>),
@@ -90,7 +91,7 @@ Deno.test("pool() rejects iterable of promises", async () => {
   );
 });
 
-Deno.test("pool({ concurrency }) limits async operation concurrency", async () => {
+test("pool({ concurrency }) limits async operation concurrency", async () => {
   const array = [
     () => Promise.resolve(1),
     () => Promise.resolve(2),
@@ -100,7 +101,7 @@ Deno.test("pool({ concurrency }) limits async operation concurrency", async () =
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pool({ concurrency }) maintains execution order", async () => {
+test("pool({ concurrency }) maintains execution order", async () => {
   const order: number[] = [];
   await pool([1, 2, 3], async (number) => {
     order.push(number);
@@ -110,7 +111,7 @@ Deno.test("pool({ concurrency }) maintains execution order", async () => {
   assertEquals(order, [1, 1, 2, 2, 3, 3]);
 });
 
-Deno.test("pool({ concurrency }) rejects zero", async () => {
+test("pool({ concurrency }) rejects zero", async () => {
   await assertRejects(
     () => pool([], (x) => Promise.resolve(x), { concurrency: 0 }),
     RangeError,
@@ -118,7 +119,7 @@ Deno.test("pool({ concurrency }) rejects zero", async () => {
   );
 });
 
-Deno.test("pool({ concurrency }) rejects infinity", async () => {
+test("pool({ concurrency }) rejects infinity", async () => {
   await assertRejects(
     () => pool([], (x) => Promise.resolve(x), { concurrency: Infinity }),
     RangeError,
@@ -126,7 +127,7 @@ Deno.test("pool({ concurrency }) rejects infinity", async () => {
   );
 });
 
-Deno.test("pool({ concurrency }) rejects floating point", async () => {
+test("pool({ concurrency }) rejects floating point", async () => {
   await assertRejects(
     () => pool([], (x) => Promise.resolve(x), { concurrency: 2.5 }),
     RangeError,
@@ -134,7 +135,7 @@ Deno.test("pool({ concurrency }) rejects floating point", async () => {
   );
 });
 
-Deno.test("pool({ concurrency }) rejects negative numbers", async () => {
+test("pool({ concurrency }) rejects negative numbers", async () => {
   await assertRejects(
     () => pool([], (x) => Promise.resolve(x), { concurrency: -1 }),
     RangeError,
@@ -142,7 +143,7 @@ Deno.test("pool({ concurrency }) rejects negative numbers", async () => {
   );
 });
 
-Deno.test("pooled() resolves all promises", async () => {
+test("pooled() resolves all promises", async () => {
   const array = [
     () => Promise.resolve(1),
     () => Promise.resolve(2),
@@ -153,19 +154,19 @@ Deno.test("pooled() resolves all promises", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled() handles empty array", async () => {
+test("pooled() handles empty array", async () => {
   const array: (() => Promise<number>)[] = [];
   const results = await Array.fromAsync(pooled(array));
   assertEquals(results, []);
 });
 
-Deno.test("pooled() handles empty array map", async () => {
+test("pooled() handles empty array map", async () => {
   const array: (() => Promise<number>)[] = [];
   const results = await Array.fromAsync(pooled(array));
   assertEquals(results, []);
 });
 
-Deno.test("pooled() handles iterable", async () => {
+test("pooled() handles iterable", async () => {
   function* iterable() {
     yield () => Promise.resolve(1);
     yield () => Promise.resolve(2);
@@ -175,7 +176,7 @@ Deno.test("pooled() handles iterable", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled() handles iterable map", async () => {
+test("pooled() handles iterable map", async () => {
   function* iterable() {
     yield 1;
     yield 2;
@@ -187,7 +188,7 @@ Deno.test("pooled() handles iterable map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled() handles async iterable", async () => {
+test("pooled() handles async iterable", async () => {
   async function* asyncIterable() {
     yield Promise.resolve(1);
     yield Promise.resolve(2);
@@ -197,7 +198,7 @@ Deno.test("pooled() handles async iterable", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled() handles async iterable map", async () => {
+test("pooled() handles async iterable map", async () => {
   async function* asyncIterable() {
     yield Promise.resolve(1);
     yield Promise.resolve(2);
@@ -209,7 +210,7 @@ Deno.test("pooled() handles async iterable map", async () => {
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled() rejects failing promises", async () => {
+test("pooled() rejects failing promises", async () => {
   const array = [
     () => Promise.resolve(1),
     () => Promise.reject(new Error("error")),
@@ -218,7 +219,7 @@ Deno.test("pooled() rejects failing promises", async () => {
   await assertRejects(() => Array.fromAsync(pooled(array)), AggregateError);
 });
 
-Deno.test("pooled() rejects iterable of promises", async () => {
+test("pooled() rejects iterable of promises", async () => {
   const array = [Promise.resolve(1), Promise.resolve(2)];
   await assertRejects(
     () =>
@@ -229,7 +230,7 @@ Deno.test("pooled() rejects iterable of promises", async () => {
   );
 });
 
-Deno.test("pooled({ concurrency }) limits async operation concurrency", async () => {
+test("pooled({ concurrency }) limits async operation concurrency", async () => {
   const array = [
     () => Promise.resolve(1),
     () => Promise.resolve(2),
@@ -240,7 +241,7 @@ Deno.test("pooled({ concurrency }) limits async operation concurrency", async ()
   assertEquals(results, [1, 2, 3]);
 });
 
-Deno.test("pooled({ concurrency }) maintains execution order", async () => {
+test("pooled({ concurrency }) maintains execution order", async () => {
   const order: number[] = [];
   await Array.fromAsync(pooled([1, 2, 3], async (number) => {
     order.push(number);
@@ -250,7 +251,7 @@ Deno.test("pooled({ concurrency }) maintains execution order", async () => {
   assertEquals(order, [1, 1, 2, 2, 3, 3]);
 });
 
-Deno.test("pooled({ concurrency }) rejects zero", () => {
+test("pooled({ concurrency }) rejects zero", () => {
   assertThrows(
     () => pooled([], (x) => Promise.resolve(x), { concurrency: 0 }),
     RangeError,
@@ -258,7 +259,7 @@ Deno.test("pooled({ concurrency }) rejects zero", () => {
   );
 });
 
-Deno.test("pooled({ concurrency }) rejects negative numbers", () => {
+test("pooled({ concurrency }) rejects negative numbers", () => {
   assertThrows(
     () => pooled([], (x) => Promise.resolve(x), { concurrency: -1 }),
     RangeError,
@@ -266,7 +267,7 @@ Deno.test("pooled({ concurrency }) rejects negative numbers", () => {
   );
 });
 
-Deno.test("pooled({ concurrency }) rejects floating point", () => {
+test("pooled({ concurrency }) rejects floating point", () => {
   assertThrows(
     () => pooled([], (x) => Promise.resolve(x), { concurrency: 2.5 }),
     RangeError,
@@ -274,7 +275,7 @@ Deno.test("pooled({ concurrency }) rejects floating point", () => {
   );
 });
 
-Deno.test("pooled({ concurrency }) rejects infinity", () => {
+test("pooled({ concurrency }) rejects infinity", () => {
   assertThrows(
     () => pooled([], (x) => Promise.resolve(x), { concurrency: Infinity }),
     RangeError,

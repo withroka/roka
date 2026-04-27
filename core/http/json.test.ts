@@ -1,8 +1,9 @@
+import { test } from "@roka/testing/test";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { client } from "./json.ts";
 import { mockFetch } from "./testing.ts";
 
-Deno.test("client() can make requests", async (t) => {
+test("client() can make requests", async (t) => {
   let issue: Partial<{ number: number; state: string }>;
   using _fetch = mockFetch(t);
   const token = _fetch.mode === "update"

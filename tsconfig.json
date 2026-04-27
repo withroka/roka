@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@roka/assert": ["./core/assert/assert.ts"],
+      "@roka/async": ["./core/async/async.ts"],
+      "@roka/async/*": ["./core/async/*.ts"],
+      "@roka/cli": ["./core/cli/cli.ts"],
+      "@roka/cli/*": ["./core/cli/*.ts"],
+      "@roka/deno": ["./core/deno/deno.ts"],
+      "@roka/fs": ["./core/fs/fs.ts"],
+      "@roka/fs/*": ["./core/fs/*.ts"],
+      "@roka/git": ["./core/git/git.ts"],
+      "@roka/git/*": ["./core/git/*.ts"],
+      "@roka/github": ["./core/github/github.ts"],
+      "@roka/github/*": ["./core/github/*.ts"],
+      "@roka/html": ["./core/html/html.ts"],
+      "@roka/html/*": ["./core/html/*.ts"],
+      "@roka/http": ["./core/http/http.ts"],
+      "@roka/http/*": ["./core/http/*.ts"],
+      "@roka/maybe": ["./core/maybe/maybe.ts"],
+      "@roka/runtime": ["./core/runtime/runtime.ts"],
+      "@roka/testing": ["./core/testing/testing.ts"],
+      "@roka/testing/*": ["./core/testing/*.ts"]
+    }
+  }
+}

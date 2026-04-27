@@ -1,60 +1,67 @@
+import { runtime } from "@roka/runtime";
+import { test } from "@roka/testing/test";
 import { assertEquals, assertNotEquals, assertRejects } from "@std/assert";
+import { readDir } from "@std/fs/unstable-read-dir";
+import { readTextFile } from "@std/fs/unstable-read-text-file";
+import { realPath } from "@std/fs/unstable-real-path";
+import { stat } from "@std/fs/unstable-stat";
+import { writeTextFile } from "@std/fs/unstable-write-text-file";
 import { tempDirectory } from "./temp.ts";
 
-Deno.test("tempDirectory() creates a disposable directory", async () => {
-  const cwd = Deno.cwd();
+test("tempDirectory() creates a disposable directory", async () => {
+  const cwd = runtime.cwd();
   let path: string;
   {
     await using directory = await tempDirectory();
     path = directory.path();
-    assertEquals((await Deno.stat(path)).isDirectory, true);
-    assertEquals(await Array.fromAsync(Deno.readDir(path)), []);
-    assertEquals(Deno.cwd(), cwd);
+    assertEquals((await stat(path)).isDirectory, true);
+    assertEquals(await Array.fromAsync(readDir(path)), []);
+    assertEquals(runtime.cwd(), cwd);
   }
-  await assertRejects(() => Deno.stat(path), Deno.errors.NotFound);
-  assertEquals(Deno.cwd(), cwd);
+  await assertRejects(() => stat(path));
+  assertEquals(runtime.cwd(), cwd);
 });
 
-Deno.test("tempDirectory({ chdir }) changes working directory", async () => {
-  const cwd = Deno.cwd();
+test("tempDirectory({ chdir }) changes working directory", async () => {
+  const cwd = runtime.cwd();
   {
     await using directory = await tempDirectory({ chdir: true });
     assertEquals(
-      await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(directory.path()),
+      await realPath(runtime.cwd()),
+      await realPath(directory.path()),
     );
-    await Deno.writeTextFile("test.txt", "Hello, world!");
+    await writeTextFile("test.txt", "Hello, world!");
     assertEquals(
-      await Deno.readTextFile(directory.path("test.txt")),
+      await readTextFile(directory.path("test.txt")),
       "Hello, world!",
     );
   }
-  assertEquals(Deno.cwd(), cwd);
+  assertEquals(runtime.cwd(), cwd);
 });
 
-Deno.test("tempDirectory({ chdir }) works recursively", async () => {
-  const cwd = Deno.cwd();
+test("tempDirectory({ chdir }) works recursively", async () => {
+  const cwd = runtime.cwd();
   {
     await using outer = await tempDirectory({ chdir: true });
     assertEquals(
-      await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(outer.path()),
+      await realPath(runtime.cwd()),
+      await realPath(outer.path()),
     );
     {
       await using inner = await tempDirectory({ chdir: true });
       assertNotEquals(
-        await Deno.realPath(inner.path()),
-        await Deno.realPath(outer.path()),
+        await realPath(inner.path()),
+        await realPath(outer.path()),
       );
       assertEquals(
-        await Deno.realPath(Deno.cwd()),
-        await Deno.realPath(inner.path()),
+        await realPath(runtime.cwd()),
+        await realPath(inner.path()),
       );
     }
     assertEquals(
-      await Deno.realPath(Deno.cwd()),
-      await Deno.realPath(outer.path()),
+      await realPath(runtime.cwd()),
+      await realPath(outer.path()),
     );
   }
-  assertEquals(Deno.cwd(), cwd);
+  assertEquals(runtime.cwd(), cwd);
 });

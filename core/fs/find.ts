@@ -20,6 +20,11 @@
  */
 
 import { maybe } from "@roka/maybe";
+import { errors } from "@roka/runtime";
+import { lstat } from "@std/fs/unstable-lstat";
+import { readDir } from "@std/fs/unstable-read-dir";
+import { realPath } from "@std/fs/unstable-real-path";
+import { stat } from "@std/fs/unstable-stat";
 import { basename, globToRegExp, join, normalize } from "@std/path";
 
 /** Options for the {@linkcode find} function. */
@@ -238,34 +243,34 @@ export async function* find(
     if (ignorePatterns.some((p) => p.exec(path))) return;
     const { value, error } = await maybe(async () => {
       if (info) return info;
-      const [real, stat] = await Promise.all([
-        Deno.realPath(path),
-        followSymlinks ? Deno.stat(path) : Deno.lstat(path),
+      const [real, pathStat] = await Promise.all([
+        realPath(path),
+        followSymlinks ? stat(path) : lstat(path),
       ]);
-      return { real, stat };
+      return { real, stat: pathStat };
     });
-    const { real, stat } = value ?? {};
+    const { real, stat: pathStat } = value ?? {};
     if (
-      (!real || !stat) ||
-      (type === "dir" && !stat.isDirectory) ||
-      (type === "file" && !stat.isFile && !stat.isDirectory) ||
-      (type === "symlink" && !stat.isSymlink && !stat.isDirectory)
+      (!real || !pathStat) ||
+      (type === "dir" && !pathStat.isDirectory) ||
+      (type === "file" && !pathStat.isFile && !pathStat.isDirectory) ||
+      (type === "symlink" && !pathStat.isSymlink && !pathStat.isDirectory)
     ) {
       if (validate) {
         if (error) throw error;
-        throw new Deno.errors.NotFound(`No such file or directory: ${path}`);
+        throw new errors.NotFound(`No such file or directory: ${path}`);
       }
       return;
     }
     if (found.has(real)) return;
     found.add(real);
     if (
-      (type === undefined || type === "dir" || !stat.isDirectory) &&
+      (type === undefined || type === "dir" || !pathStat.isDirectory) &&
       (namePattern === undefined || namePattern?.exec(basename(path))) &&
       (pathPattern === undefined || pathPattern?.exec(path))
     ) yield path;
-    if (stat.isDirectory) {
-      for await (const entry of Deno.readDir(real)) {
+    if (pathStat.isDirectory) {
+      for await (const entry of readDir(real)) {
         yield* internal(
           depth + 1,
           false,

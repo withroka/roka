@@ -1,15 +1,16 @@
+import { test } from "@roka/testing/test";
 import { AssertionError, assertThrows } from "@std/assert";
 import { assertArrayObjectMatch, assertSameElements } from "./assert.ts";
 
-Deno.test("assertSameElements() asserts arrays with same elements in different order", () => {
+test("assertSameElements() asserts arrays with same elements in different order", () => {
   assertSameElements(["Alice", "Bob"], ["Bob", "Alice"]);
 });
 
-Deno.test("assertSameElements() handles empty arrays", () => {
+test("assertSameElements() handles empty arrays", () => {
   assertSameElements([], []);
 });
 
-Deno.test("assertSameElements() rejects arrays with different lengths", () => {
+test("assertSameElements() rejects arrays with different lengths", () => {
   assertThrows(
     () => assertSameElements(["Alice"], []),
     AssertionError,
@@ -28,18 +29,18 @@ Deno.test("assertSameElements() rejects arrays with different lengths", () => {
   );
 });
 
-Deno.test("assertSameElements() rejects arrays with different elements", () => {
+test("assertSameElements() rejects arrays with different elements", () => {
   assertThrows(
     () => assertSameElements(["Alice", "Bob"], ["Alice", "Charlie"]),
     AssertionError,
   );
 });
 
-Deno.test("assertSameElements() handles elements occurring multiple times", () => {
+test("assertSameElements() handles elements occurring multiple times", () => {
   assertSameElements(["Alice", "Bob", "Alice"], ["Bob", "Alice", "Alice"]);
 });
 
-Deno.test("assertSameElements() rejects different counts of same elements", () => {
+test("assertSameElements() rejects different counts of same elements", () => {
   assertThrows(
     () => assertSameElements(["Alice", "Bob", "Alice"], ["Bob", "Alice"]),
     AssertionError,
@@ -50,7 +51,7 @@ Deno.test("assertSameElements() rejects different counts of same elements", () =
   );
 });
 
-Deno.test("assertSameElements() handles non-comparable elements", () => {
+test("assertSameElements() handles non-comparable elements", () => {
   assertSameElements(
     [{ id: 1 }, { id: 2 }],
     [{ id: 2 }, { id: 1 }],
@@ -67,7 +68,7 @@ Deno.test("assertSameElements() handles non-comparable elements", () => {
     ), AssertionError);
 });
 
-Deno.test("assertSameElements() asserts array elements are exact", () => {
+test("assertSameElements() asserts array elements are exact", () => {
   assertSameElements(
     [[1, 2], [3, 4]],
     [[3, 4], [1, 2]],
@@ -89,7 +90,7 @@ Deno.test("assertSameElements() asserts array elements are exact", () => {
     ), AssertionError);
 });
 
-Deno.test("assertSameElements() fails with custom message", () => {
+test("assertSameElements() fails with custom message", () => {
   assertThrows(
     () => assertSameElements(["Alice", "Bob"], ["Alice"], "custom-message"),
     AssertionError,
@@ -97,7 +98,7 @@ Deno.test("assertSameElements() fails with custom message", () => {
   );
 });
 
-Deno.test("assertArrayObjectMatch() asserts expected objects are subsets of actual objects", () => {
+test("assertArrayObjectMatch() asserts expected objects are subsets of actual objects", () => {
   const actual = [
     { id: 1, name: "Alice", age: 30 },
     { id: 2, name: "Bob", age: 25, extra: true },
@@ -110,11 +111,11 @@ Deno.test("assertArrayObjectMatch() asserts expected objects are subsets of actu
   assertArrayObjectMatch(actual, expected);
 });
 
-Deno.test("assertArrayObjectMatch() handles empty arrays", () => {
+test("assertArrayObjectMatch() handles empty arrays", () => {
   assertArrayObjectMatch([], []);
 });
 
-Deno.test("assertArrayObjectMatch() asserts expected arrays are subsets of actual arrays ", () => {
+test("assertArrayObjectMatch() asserts expected arrays are subsets of actual arrays ", () => {
   assertArrayObjectMatch([
     { id: 1, data: [1, 2, 3] },
     { id: 2, data: [4, 5, 6] },
@@ -135,7 +136,7 @@ Deno.test("assertArrayObjectMatch() asserts expected arrays are subsets of actua
     ]), AssertionError);
 });
 
-Deno.test("assertArrayObjectMatch() rejects length mismatch", () => {
+test("assertArrayObjectMatch() rejects length mismatch", () => {
   assertThrows(
     () => assertArrayObjectMatch([{ id: 1 }, { id: 2 }], [{ id: 1 }]),
     AssertionError,
@@ -143,7 +144,7 @@ Deno.test("assertArrayObjectMatch() rejects length mismatch", () => {
   );
 });
 
-Deno.test("assertArrayObjectMatch() rejects length mismatch with custom message", () => {
+test("assertArrayObjectMatch() rejects length mismatch with custom message", () => {
   assertThrows(
     () =>
       assertArrayObjectMatch(
@@ -156,7 +157,7 @@ Deno.test("assertArrayObjectMatch() rejects length mismatch with custom message"
   );
 });
 
-Deno.test("assertArrayObjectMatch() rejects missing expected keys", () => {
+test("assertArrayObjectMatch() rejects missing expected keys", () => {
   assertThrows(
     () =>
       assertArrayObjectMatch(
@@ -168,7 +169,7 @@ Deno.test("assertArrayObjectMatch() rejects missing expected keys", () => {
   );
 });
 
-Deno.test("assertArrayObjectMatch() rejects missing expected keys with custom message", () => {
+test("assertArrayObjectMatch() rejects missing expected keys with custom message", () => {
   assertThrows(
     () =>
       assertArrayObjectMatch(
@@ -181,7 +182,7 @@ Deno.test("assertArrayObjectMatch() rejects missing expected keys with custom me
   );
 });
 
-Deno.test("assertArrayObjectMatch() rejects undefined object", () => {
+test("assertArrayObjectMatch() rejects undefined object", () => {
   assertThrows(() =>
     assertArrayObjectMatch(
       [undefined as unknown as Record<string, unknown>],
