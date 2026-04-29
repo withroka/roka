@@ -1,3 +1,11 @@
+## github@0.3.1
+
+- 🐛 update correct PR when bumping (#654)
+
+## forge@0.2.2
+
+- 🐛 update correct PR when bumping (#654)
+
 ## http@0.3.1
 
 - 🐛 return last response on max retry attempts (#651)

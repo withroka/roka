@@ -1,6 +1,6 @@
 {
   "name": "@roka/github",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "exports": {
     ".": "./github.ts",
     "./testing": "./testing.ts"
