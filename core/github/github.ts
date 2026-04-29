@@ -377,7 +377,12 @@ function repository(
         const response = await api.rest.pulls.list({
           repo,
           owner,
-          ...options?.head !== undefined && { head: options.head },
+          ...options?.head !== undefined &&
+            {
+              head: options.head.includes(":")
+                ? options.head
+                : `${owner}:${options.head}`,
+            },
           ...options?.base !== undefined && { base: options.base },
           ...options?.closed !== undefined
             ? { state: options.closed ? "closed" : "open" }
